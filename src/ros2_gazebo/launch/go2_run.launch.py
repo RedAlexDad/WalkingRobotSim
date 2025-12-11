@@ -1,166 +1,132 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
-# go2_run.launch.py
+# go2_run_harmonic.launch.py
 
 import os
-from ament_index_python.packages import get_package_share_directory, get_package_prefix
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import (
-    DeclareLaunchArgument,
-    IncludeLaunchDescription,
-    RegisterEventHandler,
-)
-from launch.event_handlers import OnProcessExit
-from launch.substitutions import (
-    LaunchConfiguration,
-    PathJoinSubstitution,
-    PythonExpression,
-)
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
-    # Package directories
+    # Пути к пакетам
     pkg_ros2_gazebo = get_package_share_directory("ros2_gazebo")
-    pkg_gazebo_ros = get_package_share_directory("gazebo_ros")
     pkg_go2_description = get_package_share_directory("go2_description")
-    install_dir = get_package_prefix("go2_description")
+    pkg_ros_gz_sim = get_package_share_directory("ros_gz_sim")
 
-    # Set Gazebo paths
-    gazebo_models_path = os.path.join(pkg_ros2_gazebo, "models")
-    os.environ["GAZEBO_MODEL_PATH"] = (
-        f"{install_dir}/share:{gazebo_models_path}"
-        if "GAZEBO_MODEL_PATH" not in os.environ
-        else f"{os.environ['GAZEBO_MODEL_PATH']}:{install_dir}/share:{gazebo_models_path}"
-    )
-    os.environ["GAZEBO_PLUGIN_PATH"] = (
-        f"{install_dir}/lib"
-        if "GAZEBO_PLUGIN_PATH" not in os.environ
-        else f"{os.environ['GAZEBO_PLUGIN_PATH']}:{install_dir}/lib"
-    )
-
-    # Launch configurations
-    world_file_name = LaunchConfiguration("world_file_name")
-    urdf_file = LaunchConfiguration("urdf_file")
-    x_pos = LaunchConfiguration("x")
-    y_pos = LaunchConfiguration("y")
-    z_pos = LaunchConfiguration("z")
-
-    # Normalize world file name
-    normalized_world_file = PathJoinSubstitution(
-        [
-            pkg_ros2_gazebo,
-            "worlds",
-            PythonExpression(
-                [
-                    "'",
-                    world_file_name,
-                    "'",
-                    " if '",
-                    world_file_name,
-                    "'.endswith('.world') else '",
-                    world_file_name,
-                    ".world'",
-                ]
-            ),
-        ]
-    )
-
-    # Declare launch arguments
-    world_file_arg = DeclareLaunchArgument(
+    # Аргументы запуска
+    world_arg = DeclareLaunchArgument(
         "world_file_name",
-        default_value="test_latest.world",
-        description="World file name (e.g., 'train' or 'train.world')",
+        default_value="test_latest.sdf",  # теперь .sdf!
+        description="SDF world file (e.g., empty.sdf or your converted world)",
     )
     urdf_file_arg = DeclareLaunchArgument(
-        "urdf_file",
-        default_value="robot.xacro",
-        description="URDF/XACRO file for the robot",
+        "urdf_file", default_value="robot.xacro", description="URDF/XACRO file"
     )
-    x_pos_arg = DeclareLaunchArgument(
-        "x", default_value="0.0", description="X coordinate for robot spawn position"
-    )
-    y_pos_arg = DeclareLaunchArgument(
-        "y", default_value="0.0", description="Y coordinate for robot spawn position"
-    )
-    z_pos_arg = DeclareLaunchArgument(
-        "z", default_value="0.6", description="Z coordinate for robot spawn position"
+    x_arg = DeclareLaunchArgument("x", default_value="0.0")
+    y_arg = DeclareLaunchArgument("y", default_value="0.0")
+    z_arg = DeclareLaunchArgument("z", default_value="0.6")
+
+    # Путь к world SDF
+    world_path = PathJoinSubstitution(
+        [pkg_ros2_gazebo, "worlds", LaunchConfiguration("world_file_name")]
     )
 
-    # Gazebo launch
-    gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_gazebo_ros, "launch", "gazebo.launch.py")
-        ),
-        launch_arguments={"verbose": "true", "world": normalized_world_file}.items(),
-    )
-
-    # Robot spawn parameters
-    robot_name = "Go2"
-    orientation = [0.0, 0.0, 0.0]  # [Roll, Pitch, Yaw]
-
-    # Spawn robot
-    spawn_robot = Node(
-        package="gazebo_ros",
-        executable="spawn_entity.py",
-        name="spawn_entity",
-        output="screen",
-        arguments=[
-            "-entity",
-            robot_name,
-            "-x",
-            x_pos,
-            "-y",
-            y_pos,
-            "-z",
-            z_pos,
-            "-R",
-            str(orientation[0]),
-            "-P",
-            str(orientation[1]),
-            "-Y",
-            str(orientation[2]),
-            "-topic",
-            "/robot_description",
+    # Установка путей для ресурсов (модели, плагины)
+    set_gz_resource_path = SetEnvironmentVariable(
+        name="GZ_SIM_RESOURCE_PATH",
+        value=[
+            os.path.join(pkg_go2_description, "meshes"),
+            os.path.join(pkg_go2_description, "dae"),
+            os.path.join(pkg_ros2_gazebo, "models"),
+            # добавьте другие пути к meshes/models
         ],
     )
 
-    # Odometry transform publisher
-    odom_tf_publisher_node = Node(
-        package="ros2_odometry",
-        executable="nav_tf_publisher",
-        name="odom_transform_publisher",
+    # Запуск Gazebo Harmonic (server + GUI)
+    gz_sim = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_ros_gz_sim, "launch", "gz_sim.launch.py")
+        ),
+        launch_arguments={
+            "gz_args": ["-r ", world_path]
+        }.items(),  # -r - запуск симуляции сразу
+    )
+
+    # Спавн робота из /robot_description (XACRO → URDF автоматически)
+    spawn_robot = Node(
+        package="ros_gz_sim",
+        executable="create",
+        arguments=[
+            "-name",
+            "Go2",
+            "-topic",
+            "/robot_description",
+            "-x",
+            LaunchConfiguration("x"),
+            "-y",
+            LaunchConfiguration("y"),
+            "-z",
+            LaunchConfiguration("z"),
+        ],
         output="screen",
     )
 
-    # Visualize robot
-    visualize_robot = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_go2_description, "launch", "go2_visualize.launch.py")
-        ),
-        launch_arguments={
-            "use_joint_state_publisher": "False",
-            "use_sim_time": "True",
-            "urdf_file": urdf_file,
-        }.items(),
+    # Публикация robot_description (если не делается в go2_visualize)
+    robot_description_node = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        parameters=[
+            {
+                "robot_description": PathJoinSubstitution(
+                    [pkg_go2_description, "xacro", LaunchConfiguration("urdf_file")]
+                ),
+                "use_sim_time": True,
+            }
+        ],
     )
 
-    # ROS2 control
+    # Загрузка контроллеров ros2_control (ваш существующий launch)
     launch_ros2_control = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_go2_description, "launch", "controllers_go2.launch.py")
         )
     )
 
+    # Визуализация (RViz + joint_state_publisher если нужно)
+    visualize_robot = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_go2_description, "launch", "go2_visualize.launch.py")
+        ),
+        launch_arguments={
+            "use_sim_time": "True",
+            "urdf_file": LaunchConfiguration("urdf_file"),
+        }.items(),
+    )
+
+    # Odometry TF (ваш node, проверьте совместимость)
+    odom_tf_publisher_node = Node(
+        package="ros2_odometry",
+        executable="nav_tf_publisher",
+        name="odom_transform_publisher",
+        output="screen",
+        parameters=[{"use_sim_time": True}],
+    )
+
     return LaunchDescription(
         [
-            world_file_arg,
+            world_arg,
             urdf_file_arg,
-            x_pos_arg,
-            y_pos_arg,
-            z_pos_arg,
-            gazebo,
+            x_arg,
+            y_arg,
+            z_arg,
+            set_gz_resource_path,
+            gz_sim,
+            robot_description_node,  # обязательно для /robot_description
             spawn_robot,
             launch_ros2_control,
             visualize_robot,

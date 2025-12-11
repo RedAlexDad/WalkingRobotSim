@@ -1,21 +1,12 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-# go1_run.launch.py
+# go1_run.launch.py - Gazebo Harmonic (ros_gz) version
 
 import os
-from ament_index_python.packages import get_package_share_directory, get_package_prefix
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import (
-    DeclareLaunchArgument,
-    IncludeLaunchDescription,
-    RegisterEventHandler,
-)
-from launch.event_handlers import OnProcessExit
-from launch.substitutions import (
-    LaunchConfiguration,
-    PathJoinSubstitution,
-    PythonExpression,
-)
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable, IncludeLaunchDescription
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
@@ -23,22 +14,8 @@ from launch_ros.actions import Node
 def generate_launch_description():
     # Package directories
     pkg_ros2_gazebo = get_package_share_directory("ros2_gazebo")
-    pkg_gazebo_ros = get_package_share_directory("gazebo_ros")
     pkg_go1_description = get_package_share_directory("go1_description")
-    install_dir = get_package_prefix("go1_description")
-
-    # Set Gazebo paths
-    gazebo_models_path = os.path.join(pkg_ros2_gazebo, "models")
-    os.environ["GAZEBO_MODEL_PATH"] = (
-        f"{install_dir}/share:{gazebo_models_path}"
-        if "GAZEBO_MODEL_PATH" not in os.environ
-        else f"{os.environ['GAZEBO_MODEL_PATH']}:{install_dir}/share:{gazebo_models_path}"
-    )
-    os.environ["GAZEBO_PLUGIN_PATH"] = (
-        f"{install_dir}/lib"
-        if "GAZEBO_PLUGIN_PATH" not in os.environ
-        else f"{os.environ['GAZEBO_PLUGIN_PATH']}:{install_dir}/lib"
-    )
+    pkg_ros_gz_sim = get_package_share_directory("ros_gz_sim")
 
     # Launch configurations
     world_file_name = LaunchConfiguration("world_file_name")
@@ -48,31 +25,11 @@ def generate_launch_description():
     z_pos = LaunchConfiguration("z")
     use_sim_time = LaunchConfiguration("use_sim_time")
 
-    # Normalize world file name
-    normalized_world_file = PathJoinSubstitution(
-        [
-            pkg_ros2_gazebo,
-            "worlds",
-            PythonExpression(
-                [
-                    "'",
-                    world_file_name,
-                    "'",
-                    " if '",
-                    world_file_name,
-                    "'.endswith('.world') else '",
-                    world_file_name,
-                    ".world'",
-                ]
-            ),
-        ]
-    )
-
     # Declare launch arguments
     world_file_arg = DeclareLaunchArgument(
         "world_file_name",
-        default_value="test_latest.world",
-        description="World file name (e.g., 'train' or 'train.world')",
+        default_value="test_latest.sdf",
+        description="SDF world file name (e.g., 'test_latest.sdf')",
     )
     urdf_file_arg = DeclareLaunchArgument(
         "urdf_file",
@@ -94,42 +51,61 @@ def generate_launch_description():
         description="Use simulation (Gazebo) time instead of system time",
     )
 
-    # Gazebo launch
-    gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_gazebo_ros, "launch", "gazebo.launch.py")
-        ),
-        launch_arguments={"verbose": "false", "world": normalized_world_file}.items(),
+    # Path to world SDF file
+    world_path = PathJoinSubstitution(
+        [pkg_ros2_gazebo, "worlds", world_file_name]
     )
 
-    # Robot spawn parameters
-    robot_name = "Go1"
-    orientation = [0.0, 0.0, 0.0]  # [Roll, Pitch, Yaw]
+    # Set Gazebo Harmonic resource paths
+    set_gz_resource_path = SetEnvironmentVariable(
+        name="GZ_SIM_RESOURCE_PATH",
+        value=[
+            os.path.join(pkg_go1_description, "meshes"),
+            os.path.join(pkg_ros2_gazebo, "models"),
+        ],
+    )
 
-    # Spawn robot
+    # Launch Gazebo Harmonic
+    gz_sim = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_ros_gz_sim, "launch", "gz_sim.launch.py")
+        ),
+        launch_arguments={
+            "gz_args": ["-r ", world_path]
+        }.items(),
+    )
+
+    # Robot state publisher (publishes robot_description)
+    robot_description_node = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        parameters=[
+            {
+                "robot_description": PathJoinSubstitution(
+                    [pkg_go1_description, "xacro", urdf_file]
+                ),
+                "use_sim_time": use_sim_time,
+            }
+        ],
+    )
+
+    # Spawn robot in Gazebo
     spawn_robot = Node(
-        package="gazebo_ros",
-        executable="spawn_entity.py",
-        name="spawn_entity",
-        output="screen",
+        package="ros_gz_sim",
+        executable="create",
         arguments=[
-            "-entity",
-            robot_name,
+            "-name",
+            "Go1",
+            "-topic",
+            "/robot_description",
             "-x",
             x_pos,
             "-y",
             y_pos,
             "-z",
             z_pos,
-            "-R",
-            str(orientation[0]),
-            "-P",
-            str(orientation[1]),
-            "-Y",
-            str(orientation[2]),
-            "-topic",
-            "/robot_description",
         ],
+        output="screen",
     )
 
     # Odometry transform publisher
@@ -147,7 +123,6 @@ def generate_launch_description():
             os.path.join(pkg_go1_description, "launch", "go1_visualize.launch.py")
         ),
         launch_arguments={
-            "use_joint_state_publisher": "False",
             "use_sim_time": use_sim_time,
             "urdf_file": urdf_file,
         }.items(),
@@ -171,7 +146,9 @@ def generate_launch_description():
             y_pos_arg,
             z_pos_arg,
             use_sim_time_arg,
-            gazebo,
+            set_gz_resource_path,
+            gz_sim,
+            robot_description_node,
             spawn_robot,
             launch_ros2_control,
             visualize_robot,

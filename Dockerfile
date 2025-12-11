@@ -1,4 +1,4 @@
-FROM osrf/ros:humble-desktop
+FROM osrf/ros:jazzy-desktop
 
 # Объявляем ARG сразу после FROM — это обязательно для BuildKit
 ARG ROBOT_TYPE=Go2
@@ -12,92 +12,90 @@ RUN apt-get update && apt-get install -y \
     nano \
     && rm -rf /var/lib/apt/lists/*
 
-# Установка пакетов Navigation2, SLAM Toolbox, интеграции Gazebo, управления роботом и LiDAR
+# Установка пакетов Navigation2, SLAM Toolbox, интеграции Gazebo Harmonic, управления роботом и LiDAR
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     # Управление роботом: ros2-control и ros2-controllers
     # Фреймворк управления роботами в ROS 2
-    ros-humble-ros2-control \                     
+    ros-jazzy-ros2-control \                     
     # Набор контроллеров для ros2-control (например, joint_trajectory_controller)
-    ros-humble-ros2-controllers \       
-    ros-humble-controller-manager \     
-    ros-humble-controller-interface \     
-    ros-humble-joint-state-broadcaster \
-    ros-humble-hardware-interface \
-    ros-humble-angles \
+    ros-jazzy-ros2-controllers \       
+    ros-jazzy-controller-manager \     
+    ros-jazzy-controller-interface \     
+    ros-jazzy-joint-state-broadcaster \
+    ros-jazzy-hardware-interface \
+    ros-jazzy-angles \
 
     # Navigation2: навигация и локализация
     # Основной пакет для навигации роботов
-    ros-humble-navigation2 \                      
+    ros-jazzy-navigation2 \                      
     # Инструменты для запуска системы навигации
-    ros-humble-nav2-bringup \                     
+    ros-jazzy-nav2-bringup \                     
     # Сервер карт для навигации
-    ros-humble-nav2-map-server \                  
+    ros-jazzy-nav2-map-server \                  
     # Алгоритм адаптивного Монте-Карло локализации (AMCL)
-    ros-humble-nav2-amcl \                        
+    ros-jazzy-nav2-amcl \                        
     # Планировщик путей
-    ros-humble-nav2-planner \                     
+    ros-jazzy-nav2-planner \                     
     # Контроллер движения (например, DWB)
-    ros-humble-nav2-controller \                  
+    ros-jazzy-nav2-controller \                  
 
     # SLAM Toolbox: построение карт и локализация
     # Пакет для выполнения SLAM (синхронная или асинхронная работа)
-    ros-humble-slam-toolbox \
-    ros-humble-cartographer \
-    ros-humble-cartographer-* \                     
+    ros-jazzy-slam-toolbox \
+    ros-jazzy-cartographer \
+    ros-jazzy-cartographer-* \                     
 
-    # Интеграция Gazebo
-    # Интеграция Gazebo с ros2-control
-    ros-humble-gazebo-ros2-control \              
-    # Дополнительные плагины для Gazebo
-    ros-humble-gazebo-plugins \                   
-    # Базовая интеграция ROS 2 с Gazebo
-    ros-humble-gazebo-ros \           
-    ros-humble-gazebo-ros-pkgs \
+    # Интеграция Gazebo Harmonic (ros_gz)
+    # ROS-GZ bridge и симулятор Gazebo Harmonic
+    ros-jazzy-ros-gz \              
+    # Плагины и интеграция с ros2-control для Gazebo Harmonic
+    ros-jazzy-ros-gz-sim-dev \                   
+    ros-jazzy-ros-gz-plugins \
 
     # Локализация и калибровка
     # Пакет для объединения данных от IMU, LiDAR и других датчиков
-    ros-humble-robot-localization \               
+    ros-jazzy-robot-localization \               
     # Инструменты для работы с IMU (инерциальными датчиками)
-    ros-humble-imu-tools \                        
-    ros-humble-imu-sensor-broadcaster \
+    ros-jazzy-imu-tools \                        
+    ros-jazzy-imu-sensor-broadcaster \
 
     # Xacro: работа с URDF-моделями
     # Инструмент для работы с макросами в URDF
-    ros-humble-xacro \                            
+    ros-jazzy-xacro \                            
 
     # LiDAR Velodyne: драйверы и обработка данных
     # Мета-пакет для работы с устройствами Velodyne
-    ros-humble-velodyne \                         
+    ros-jazzy-velodyne \                         
     # Драйвер для получения данных с устройства Velodyne
-    ros-humble-velodyne-driver \                  
+    ros-jazzy-velodyne-driver \                  
     # Преобразование сырых данных в точечное облако
-    ros-humble-velodyne-pointcloud \              
+    ros-jazzy-velodyne-pointcloud \              
     # Преобразование данных в формат LaserScan
-    ros-humble-velodyne-laserscan \     
-    # Для работы с плагинами     
-    ros-humble-velodyne-gazebo-plugins \     
+    ros-jazzy-velodyne-laserscan \     
+    # Для работы с плагинами Gazebo Harmonic    
+    ros-jazzy-ros-gz-plugins-velodyne \     
 
     # Дополнительные инструменты
     # Интеграция Point Cloud Library (PCL) с ROS 2
-    ros-humble-pcl-ros \                          
+    ros-jazzy-pcl-ros \                          
     # Визуализация данных в RViz2
-    ros-humble-rviz2 \                            
+    ros-jazzy-rviz2 \                            
     # Инструменты для работы с TF2 (трансформации)
-    ros-humble-tf2-tools \                        
+    ros-jazzy-tf2-tools \                        
     # Публикация состояния шарниров (joints)
-    ros-humble-joint-state-publisher \    
-    ros-humble-joint-state-publisher-gui \        
+    ros-jazzy-joint-state-publisher \    
+    ros-jazzy-joint-state-publisher-gui \        
     # Управление роботом с клавиатуры
-    ros-humble-teleop-twist-keyboard \            
+    ros-jazzy-teleop-twist-keyboard \            
     # Поддержка геймпадов и джойстиков
-    ros-humble-joy \                              
+    ros-jazzy-joy \                              
 
     # Утилиты для работы с сетью и топиками
     # Утилиты для работы с топиками ROS 2
-    ros-humble-topic-tools \                      
+    ros-jazzy-topic-tools \                      
     # Инструменты для диагностики состояния робота
-    ros-humble-diagnostic-updater \               
+    ros-jazzy-diagnostic-updater \               
 
     # Очистка кэша
     && rm -rf /var/lib/apt/lists/*
@@ -115,12 +113,8 @@ RUN git clone https://github.com/unitreerobotics/unitree_sdk2.git /tmp/unitree_s
 ARG CMAKE_PREFIX_PATH=""
 ENV CMAKE_PREFIX_PATH="/opt/unitree_robotics:${CMAKE_PREFIX_PATH}"
 
-RUN apt-get update && apt-get install -y \
-    lsb-release wget gnupg && \
-    wget https://packages.osrfoundation.org/gazebo.key -O - | apt-key add - && \
-    sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" > /etc/apt/sources.list.d/gazebo-stable.list' && \
-    apt-get update && \
-    apt-get install -y ignition-fortress
+# Gazebo Harmonic установлен через ros-jazzy-ros-gz пакеты
+# Дополнительно убедитесь, что установлены необходимые плагины
 
 # Установка PyTorch C++ API (LibTorch)
 RUN wget https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-2.2.2%2Bcpu.zip && \
@@ -149,7 +143,7 @@ RUN if [ -z "$ROBOT_TYPE" ]; then \
         Go1|Go2) echo "Building for robot: $ROBOT_TYPE" ;; \
         *) echo "ERROR: ROBOT_TYPE must be Go1 or Go2, got: $ROBOT_TYPE"; exit 1;; \
     esac && \
-    . /opt/ros/humble/setup.sh && \
+    . /opt/ros/jazzy/setup.sh && \
     rm -rf build install log && \
     colcon build --symlink-install \
         --cmake-args \
@@ -158,14 +152,14 @@ RUN if [ -z "$ROBOT_TYPE" ]; then \
 
 # Установка переменных окружения
 ARG LD_LIBRARY_PATH=""
-ENV LD_LIBRARY_PATH="/usr/local/lib:/opt/ros/humble/lib:/opt/libtorch/lib:$LD_LIBRARY_PATH"
+ENV LD_LIBRARY_PATH="/usr/local/lib:/opt/ros/jazzy/lib:/opt/libtorch/lib:$LD_LIBRARY_PATH"
 ARG AMENT_PREFIX_PATH=""
-ENV AMENT_PREFIX_PATH="/opt/ros/humble:$AMENT_PREFIX_PATH"
+ENV AMENT_PREFIX_PATH="/opt/ros/jazzy:$AMENT_PREFIX_PATH"
 
 # Подготовка окружения
-RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc && \
+RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc && \
     echo "source /root/ros2_ws/install/setup.bash" >> ~/.bashrc && \
-    echo "export LD_LIBRARY_PATH=/usr/local/lib:/opt/ros/humble/lib:/opt/libtorch/lib:\$LD_LIBRARY_PATH" >> ~/.bashrc
+    echo "export LD_LIBRARY_PATH=/usr/local/lib:/opt/ros/jazzy/lib:/opt/libtorch/lib:\$LD_LIBRARY_PATH" >> ~/.bashrc
 
 # Копируем скрипт приветствия в контейнер
 COPY startup.bash /root/startup.bash

@@ -1,6 +1,6 @@
 # WalkingRobotSim
 
-Симуляция шагающего робота в Gazebo с ROS 2 для автономной навигации и распознавания объектов. Проект для дипломной работы и курсов МГТУ им. Баумана.
+Симуляция шагающего робота в Gazebo Harmonic с ROS 2 Jazzy для автономной навигации и распознавания объектов. Проект для дипломной работы и курсов МГТУ им. Баумана.
 
 ## 📋 Описание
 
@@ -13,7 +13,7 @@ WalkingRobotSim - это комплексный симулятор шагающ�
 
 ### 🌟 Основные возможности
 
-- **Физическая симуляция**: Реалистичная симуляция в Gazebo с точными моделями роботов
+- **Физическая симуляция**: Реалистичная симуляция в Gazebo Harmonic с точными моделями роботов
 - **Навигация**: SLAM и автономная навигация с использованием Nav2
 - **Компьютерное зрение**: Распознавание объектов с помощью YOLO
 - **Управление движением**: Реализация различных походок и режимов движения
@@ -24,24 +24,26 @@ WalkingRobotSim - это комплексный симулятор шагающ�
 
 ## 🛠️ Установка
 
-### 🐧 Вариант 1: Локальная установка (Ubuntu 22.04)
+### 🐧 Вариант 1: Локальная установка (Ubuntu 22.04 + ROS 2 Jazzy)
 
-1. Установите ROS 2 Humble:
+1. Установите ROS 2 Jazzy:
 
    ```bash
    sudo apt update && sudo apt install curl gnupg lsb-release
-   sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+   sudo curl -sSL https://repo.ros2.org/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(source /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
    sudo apt update
-   sudo apt install ros-humble-desktop
+   sudo apt install ros-jazzy-desktop
    ```
 
-2. Установите Gazebo и дополнительные пакеты:
+2. Установите симулятор и дополнительные пакеты (для Gazebo Harmonic используйте `ros_gz`):
 
    ```bash
-   sudo apt install ros-humble-gazebo-ros ros-humble-gazebo-plugins
-   sudo apt install ros-humble-navigation2 ros-humble-nav2-bringup
-   sudo apt install ros-humble-slam-toolbox
+   # Для Gazebo Harmonic (ros_gz) и мостов ROS-GZ
+   sudo apt install ros-jazzy-ros-gz ros-jazzy-ros-gz-plugins
+   # Навигация и SLAM
+   sudo apt install ros-jazzy-navigation2 ros-jazzy-nav2-bringup
+   sudo apt install ros-jazzy-slam-toolbox
    ```
 
 3. Клонируйте репозиторий и установите зависимости:
@@ -223,7 +225,7 @@ WalkingRobotSim/
 ### Зависимости
 
 - ROS 2 Humble
-- Gazebo Fortress
+- Gazebo Harmonic
 - Navigation2
 - SLAM Toolbox
 - OpenCV
@@ -321,10 +323,11 @@ rosdep update
 ```
 
 **Ошибка**: `Gazebo not found`
-**Решение**: Убедитесь, что установлены пакеты Gazebo:
+**Решение**: Убедитесь, что установлены пакеты Gazebo Harmonic:
 
 ```bash
-sudo apt install ros-humble-gazebo-ros ros-humble-gazebo-plugins
+# Для Gazebo Harmonic (ros_gz) установите ros_gz и плагины
+sudo apt install ros-jazzy-ros-gz ros-jazzy-ros-gz-plugins
 ```
 
 **Ошибка**: `Docker permission denied`

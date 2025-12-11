@@ -10,7 +10,7 @@ services:
     container_name: unitree_sim
     network_mode: host
     environment:
-      - DISPLAY=${DISPLAY}
+      - DISPLAY=$DISPLAY
       - QT_X11_NO_MITSHM=1
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw

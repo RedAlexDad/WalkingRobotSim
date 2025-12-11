@@ -94,7 +94,7 @@ if(CATKIN_MAKE)
         add_definitions(-DCOMPILE_WITH_SIMULATION)
         find_package(controller_manager REQUIRED)
         find_package(joint_trajectory_controller REQUIRED)
-        find_package(gazebo_ros REQUIRED)
+        # gazebo_ros is replaced by ros_gz for Gazebo Harmonic
     endif()
 
     # find_package(rosidl_generator REQUIRED)

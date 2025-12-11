@@ -1,42 +1,12 @@
 <?xml version="1.0"?>
-<robot>
-    <!-- ros_control plugin -->
-    <!-- <gazebo>
-        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-            <robotNamespace>/go2_gazebo</robotNamespace>
-            <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
-        </plugin>
-    </gazebo> -->
-
-    <!-- Show the trajectory of trunk center. -->
-    <!--gazebo>
-        <plugin name="3dplot" filename="libLinkPlot3DPlugin.so">
-            <frequency>10</frequency>
-            <plot>
-                <link>base</link>
-                <pose>0 0 0 0 0 0</pose>
-                <material>Gazebo/Yellow</material>
-            </plot>
-        </plugin>
-    </gazebo-->
-
-    <!-- Show the trajectory of foot. You can add another trajectory about another foot. -->
-    <!-- <gazebo>
-        <plugin name="3dplot" filename="libLinkPlot3DPlugin.so">
-            <frequency>100</frequency>
-            <plot>
-                <link>FL_foot</link>
-                <pose>0 0 0 0 0 0</pose>
-            </plot>
-        </plugin>
-    </gazebo>
-
-    <gazebo>
-        <plugin filename="libgazebo_ros_force.so" name="gazebo_ros_force">
-            <bodyName>trunk</bodyName>
-            <topicName>/apply_force/trunk</topicName>
-        </plugin>
-    </gazebo> -->
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+    <!--
+        Этот xacro подготовлен для миграции на Gazebo Harmonic (ros_gz).
+        По умолчанию `use_gazebo_classic` = false — плагины Gazebo Classic не включаются.
+        Если нужно запустить старый Gazebo Classic, передайте параметр xacro
+        `use_gazebo_classic:=true` при генерации/включении xacro.
+    -->
+    <xacro:property name="use_gazebo_classic" value="false"/>
 
     <gazebo reference="imu_link">
         <gravity>true</gravity>
@@ -45,15 +15,18 @@
             <update_rate>1000</update_rate>
             <visualize>true</visualize>
             <topic>__default_topic__</topic>
-            <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
-                <topicName>trunk_imu</topicName>
-                <bodyName>imu_link</bodyName>
-                <updateRateHZ>1000.0</updateRateHZ>
-                <gaussianNoise>0.0</gaussianNoise>
-                <xyzOffset>0 0 0</xyzOffset>
-                <rpyOffset>0 0 0</rpyOffset>
-                <frameName>imu_link</frameName>
-            </plugin>
+            <xacro:if value="${use_gazebo_classic}">
+                <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+                    <topicName>trunk_imu</topicName>
+                    <bodyName>imu_link</bodyName>
+                    <updateRateHZ>1000.0</updateRateHZ>
+                    <gaussianNoise>0.0</gaussianNoise>
+                    <xyzOffset>0 0 0</xyzOffset>
+                    <rpyOffset>0 0 0</rpyOffset>
+                    <frameName>imu_link</frameName>
+                </plugin>
+            </xacro:if>
+            <!-- Для Gazebo Harmonic (ros_gz) используйте мост `ros_gz`/`parameter_bridge` для публикации IMU -->
             <pose>0 0 0 0 0 0</pose>
         </sensor>
     </gazebo>
@@ -62,7 +35,7 @@
     <gazebo reference="front_laser">
         <sensor name="front_laser_sensor" type="ray">
             <always_on>true</always_on>
-            <visualize>false</visualize>            <!-- на Gazebo будет отображаться синие лучи -->
+            <visualize>false</visualize>
             <pose>0 0 0 0 0 0</pose>
             <update_rate>5</update_rate>
             <ray>
@@ -85,25 +58,31 @@
                     <stddev>0.01</stddev>
                 </noise>
             </ray>
-            <plugin name="gazebo_ros_front_laserscan" filename="libgazebo_ros_ray_sensor.so">
-                <ros>
-                    <remapping>~/out:=scan</remapping>
-                </ros>
-                <output_type>sensor_msgs/LaserScan</output_type>
-                <frame_name>front_laser</frame_name>
-            </plugin>
+            <xacro:if value="${use_gazebo_classic}">
+                <plugin name="gazebo_ros_front_laserscan" filename="libgazebo_ros_ray_sensor.so">
+                    <ros>
+                        <remapping>~/out:=scan</remapping>
+                    </ros>
+                    <output_type>sensor_msgs/LaserScan</output_type>
+                    <frame_name>front_laser</frame_name>
+                </plugin>
+            </xacro:if>
+            <!-- В Gazebo Harmonic: настройте ros_gz parameter_bridge для выдачи LaserScan -->
         </sensor>
     </gazebo>
 
-    <!-- Плагин одометрия -->
+    <!-- Плагин одометрия (classic) -->
     <gazebo>
-        <plugin name="p3d_ground_truth" filename="libgazebo_ros_p3d.so">
-            <!-- <robotNamespace>${g_robot_name}</robotNamespace> -->
-            <body_name>base_link</body_name>
-            <topic_name>odom</topic_name>
-            <frame_name>odom</frame_name>
-            <update_rate>100.0</update_rate>
-        </plugin>
+        <xacro:if value="${use_gazebo_classic}">
+            <plugin name="p3d_ground_truth" filename="libgazebo_ros_p3d.so">
+                <!-- <robotNamespace>${g_robot_name}</robotNamespace> -->
+                <body_name>base_link</body_name>
+                <topic_name>odom</topic_name>
+                <frame_name>odom</frame_name>
+                <update_rate>100.0</update_rate>
+            </plugin>
+        </xacro:if>
+        <!-- Для Harmonic используйте bridge/ros_gz для публикации одометрии / ground truth -->
     </gazebo>
 
     <gazebo reference="base_link">
@@ -227,6 +206,5 @@
         <kp value="1000000.0" />
         <kd value="1.0" />
     </gazebo>
-
 
 </robot>
