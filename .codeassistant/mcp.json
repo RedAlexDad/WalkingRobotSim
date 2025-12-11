@@ -1,0 +1,14 @@
+{
+    "mcpServers": {
+        "sourcecraft": {
+            "type": "streamable-http",
+            "url": "https://api.sourcecraft.tech/mcp",
+            "useSourceCraftToken": true,
+            "disabled": false,
+            "headers": {},
+            "disabledTools": [],
+            "timeout": 60,
+            "alwaysAllow": []
+        }
+    }
+}

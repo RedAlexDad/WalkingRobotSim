@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<robot>
+    <!-- Lidar 3D -->
+    <gazebo reference="lidar">
+        <sensor name="lidar_link_3D" type="ray">
+            <pose>0 0 0 0 0 0</pose>
+            <visualize>false</visualize>
+            <update_rate>5</update_rate>
+            <ray>
+                <scan>
+                    <horizontal>
+                        <samples>440</samples>
+                        <resolution>1</resolution>
+                        <min_angle>-3.141592653589793</min_angle>
+                        <max_angle>3.141592653589793</max_angle>
+                    </horizontal>
+                    <vertical>
+                        <samples>16</samples>
+                        <resolution>1</resolution>
+                        <min_angle>-0.2617993877991494</min_angle>
+                        <max_angle> 0.2617993877991494</max_angle>
+                    </vertical>
+                </scan>
+                <range>
+                    <min>0.3</min>
+                    <max>130.0</max>
+                    <resolution>0.001</resolution>
+                </range>
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.0</stddev>
+                </noise>
+            </ray>
+            <plugin filename="libgazebo_ros_velodyne_laser.so" name="gazebo_ros_laser_controller">
+                <ros>
+                    <namespace>/</namespace>
+                    <remapping>~/out:=velodyne_points</remapping>
+                </ros>
+                <frame_name>lidar</frame_name>
+                <organize_cloud>false</organize_cloud>
+                <min_range>0.5</min_range>
+                <max_range>130.0</max_range>
+                <gaussian_noise>0.008</gaussian_noise>
+
+            </plugin>
+        </sensor>
+    </gazebo>
+
+    <!-- Camera -->
+             <!-- RGB Camera Sensor -->
+    <gazebo reference="front_camera">
+        <sensor type="camera" name="rgb_cam">
+            <always_on>1</always_on>
+            <update_rate>10.0</update_rate>
+            <camera name="rgb_cam">
+                <pose>0.1 0 0.5 0 0 0</pose>
+                <horizontal_fov>1.3962634</horizontal_fov>
+                <image>
+                    <width>640</width>
+                    <height>480</height>
+                    <format>R8G8B8</format>
+                </image>
+                <clip>
+                    <near>0.005</near>
+                    <far>20.0</far>
+                </clip>
+            </camera>
+            <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+                <alwaysOn>true</alwaysOn>
+                <updateRate>0.0</updateRate>
+                <cameraName>camera/rgb</cameraName>
+                <imageTopicName>image_raw</imageTopicName>
+                <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+                <frameName>front_camera</frameName>
+                <hackBaseline>0.07</hackBaseline>
+                <distortionK1>0.0</distortionK1>
+                <distortionK2>0.0</distortionK2>
+                <distortionK3>0.0</distortionK3>
+                <distortionT1>0.0</distortionT1>
+                <distortionT2>0.0</distortionT2>
+            </plugin>
+        </sensor>
+
+        <!-- Depth Camera Sensor -->
+        <sensor type="depth" name="depth_cam">
+            <always_on>1</always_on>
+            <update_rate>10.0</update_rate>
+            <camera name="depth_cam">
+                <pose>0.1 0 0.5 0 0 0</pose>
+                <horizontal_fov>1.3962634</horizontal_fov>
+                <image>
+                    <width>640</width>
+                    <height>480</height>
+                    <format>R8G8B8</format>
+                </image>
+                <clip>
+                    <near>0.005</near>
+                    <far>20.0</far>
+                </clip>
+                <depth_camera>
+                    <format>32FC1</format>
+                </depth_camera>
+            </camera>
+            <plugin name="depth_camera_controller" filename="libgazebo_ros_camera.so">
+                <alwaysOn>true</alwaysOn>
+                <updateRate>0.0</updateRate>
+                <cameraName>camera/depth</cameraName>
+                <imageTopicName>image_raw</imageTopicName>
+                <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+                <depthImageTopicName>image_depth</depthImageTopicName>
+                <frameName>front_camera</frameName>
+                <hackBaseline>0.07</hackBaseline>
+                <distortionK1>0.0</distortionK1>
+                <distortionK2>0.0</distortionK2>
+                <distortionK3>0.0</distortionK3>
+                <distortionT1>0.0</distortionT1>
+                <distortionT2>0.0</distortionT2>
+            </plugin>
+        </sensor>
+    </gazebo>   
+</robot>
