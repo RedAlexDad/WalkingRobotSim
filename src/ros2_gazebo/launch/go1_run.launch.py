@@ -6,9 +6,10 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable, IncludeLaunchDescription
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, Command
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -28,8 +29,8 @@ def generate_launch_description():
     # Declare launch arguments
     world_file_arg = DeclareLaunchArgument(
         "world_file_name",
-        default_value="test_latest.sdf",
-        description="SDF world file name (e.g., 'test_latest.sdf')",
+        default_value="empty.world",
+        description="World file name (e.g., empty.world, train.world, etc.)",
     )
     urdf_file_arg = DeclareLaunchArgument(
         "urdf_file",
@@ -51,9 +52,9 @@ def generate_launch_description():
         description="Use simulation (Gazebo) time instead of system time",
     )
 
-    # Path to world SDF file
-    world_path = PathJoinSubstitution(
-        [pkg_ros2_gazebo, "worlds", world_file_name]
+    # Path to xacro file
+    xacro_file = PathJoinSubstitution(
+        [pkg_go1_description, "xacro", urdf_file]
     )
 
     # Set Gazebo Harmonic resource paths
@@ -81,8 +82,14 @@ def generate_launch_description():
         executable="robot_state_publisher",
         parameters=[
             {
-                "robot_description": PathJoinSubstitution(
-                    [pkg_go1_description, "xacro", urdf_file]
+                "robot_description": ParameterValue(
+                    Command(
+                        [
+                            "xacro ",
+                            xacro_file,
+                        ]
+                    ),
+                    value_type=str
                 ),
                 "use_sim_time": use_sim_time,
             }
