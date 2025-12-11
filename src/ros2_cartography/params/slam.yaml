@@ -1,0 +1,70 @@
+slam_toolbox:
+  ros__parameters:
+    # Параметры плагина оптимизации
+    solver_plugin: solver_plugins::CeresSolver # Выбор Ceres Solver как бэкенда для оптимизации графа
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY # Тип линейного решателя; оптимален для разреженных матриц
+    ceres_preconditioner: SCHUR_JACOBI # Предобуславливатель для ускорения сходимости решателя
+    ceres_trust_strategy: LEVENBERG_MARQUARDT # Метод доверительного региона для оптимизации (устойчивый выбор)
+    ceres_dogleg_type: TRADITIONAL_DOGLEG # Не используется с текущей стратегией доверительного региона, можно убрать
+    ceres_loss_function: None # Функция потерь; None означает отсутствие робастной функции (можно заменить на Huber для устойчивости к выбросам)
+
+    # Параметры ROS
+    odom_frame: odom # Имя фрейма одометрии
+    map_frame: map # Имя фрейма карты
+    base_frame: base_link # Фрейм базы робота
+    scan_topic: /scan # Топик, из которого берутся лазерные сканы
+    mode: mapping # Режим работы: mapping (создание карты) или localization (локализация на готовой карте)
+    scan_queue_size: 1 # Для асинхронного режима
+
+    # Автоматическая загрузка карты и установка позы старта
+    #map_file_name: test_steve # Путь к карте для продолжения
+    #map_start_pose: [0.0, 0.0, 0.0] # Начальная поза робота при загрузке карты
+    #map_start_at_dock: true # Начать с дока (взаимоисключающее с map_start_pose)
+
+    debug_logging: true # Включает подробный лог
+    throttle_scans: 1 # Использовать каждый скан (можно увеличить для уменьшения нагрузки)
+    transform_publish_period: 0.02 # Частота публикации трансформации odom->base_link
+    map_update_interval: 5.0 # Интервал обновления карты в секундах
+    resolution: 0.05 # Разрешение карты (в метрах на клетку)
+    max_laser_range: 5.0 # Максимальная дальность лазера для рисования карты
+    minimum_time_interval: 0.5 # Минимальный интервал между сканами для обработки
+    transform_timeout: 0.2 # Таймаут на трансформацию между фреймами
+    tf_buffer_duration: 30. # Длительность хранения трансформаций в TF буфере
+    stack_size_to_use: 40000000 # Увеличенный стек для сериализации карты
+    enable_interactive_mode: true # Включает режим ручного управления картой (RViz интерактив)
+
+    # Общие параметры
+    use_scan_matching: true # Использовать сопоставление сканов для локализации
+    use_scan_barycenter: true # Использовать центр тяжести скана вместо первой точки
+    minimum_travel_distance: 0.5 # Минимальная дистанция, после которой строить новую вершину в графе
+    minimum_travel_heading: 0.5 # Минимальное изменение угла, после которого строить новую вершину
+    scan_buffer_size: 10 # Кол-во сканов, хранимых в буфере для сопоставления
+    scan_buffer_maximum_scan_distance: 10.0 # Максимальная дистанция для сканов в буфере
+    link_match_minimum_response_fine: 0.1 # Порог отклика для "тонкого" сопоставления между сканами
+    link_scan_maximum_distance: 1.5 # Макс. расстояние между вершинами, чтобы считать их связанными
+    loop_search_maximum_distance: 3.0 # Радиус поиска для замыкания петель
+    do_loop_closing: true # Включает замыкание петель
+    loop_match_minimum_chain_size: 10 # Мин. длина цепочки при поиске замыкания
+    loop_match_maximum_variance_coarse: 3.0 # Макс. дисперсия для грубого сопоставления в замыкании
+    loop_match_minimum_response_coarse: 0.35 # Мин. отклик для грубого замыкания петли
+    loop_match_minimum_response_fine: 0.45 # Мин. отклик для точного замыкания петли
+
+    # Параметры корреляции (локального сопоставления)
+    correlation_search_space_dimension: 0.5 # Пространство поиска по положению при локальном сопоставлении
+    correlation_search_space_resolution: 0.01 # Разрешение поиска по положению
+    correlation_search_space_smear_deviation: 0.1 # Размытие функции корреляции (гауссово)
+
+    # Параметры корреляции (для замыкания петель)
+    loop_search_space_dimension: 8.0 # Пространство поиска при замыкании петель
+    loop_search_space_resolution: 0.05 # Разрешение поиска при замыкании
+    loop_search_space_smear_deviation: 0.03 # Размытие при замыкании
+
+    # Параметры сопоставления сканов
+    distance_variance_penalty: 0.5 # Штраф за расстояние (меньше — больше доверия сканам)
+    angle_variance_penalty: 1.0 # Штраф за угол (меньше — больше доверия вращению)
+    fine_search_angle_offset: 0.00349 # Максимальное отклонение при тонком поиске угла (в радианах)
+    coarse_search_angle_offset: 0.349 # Отклонение при грубом поиске угла
+    coarse_angle_resolution: 0.0349 # Шаг при грубом поиске угла
+    minimum_angle_penalty: 0.9 # Минимальный штраф за угол (предотвращает ложные совпадения)
+    minimum_distance_penalty: 0.5 # Минимальный штраф за расстояние
+    use_response_expansion: true # Включает расширение области сопоставления, если найдена хорошая корреляция

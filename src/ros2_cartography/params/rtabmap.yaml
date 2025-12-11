@@ -1,0 +1,29 @@
+rtabmap_ros:
+  ros__parameters:
+    frame_id: "base_link"
+    map_frame_id: "map"
+    odom_frame_id: "odom"
+    RGBD/OptimizeFromGraphEnd: false
+    RGBD/LoopClosureConstraint: true
+    RGBD/ProximityBySpace: true
+    RGBD/AngularUpdate: 0.1
+    RGBD/LinearUpdate: 0.1
+    Grid/RangeMax: 20.0
+    Grid/DepthMax: 20.0
+    Grid/3D: true
+    Reg/Strategy: 1
+    Reg/Force3DoF: false
+    Vis/MinInliers: 10
+    Vis/EstimationType: 1
+    Vis/CorNNDR: 0.6
+    Vis/MaxFeatures: 1000
+    Icp/VoxelSize: 0.05
+    Icp/PointToPlane: true
+
+    camera_info_topic: "/rgb_cam/camera_info" # Топик с информацией о камере
+    image_topic: "/rgb_cam/image_raw" # Топик с изображением
+    depth_topic: "/depth_cam/depth/image_raw" # Топик с глубиной
+    transform_pixel_to_3d: true # Включение преобразования пикселей в 3D
+    transform_pixel_to_3d_roll: -1.5708 # Угол поворота по оси X (в радианах)
+    transform_pixel_to_3d_pitch: 0 # Угол поворота по оси Y (в радианах)
+    transform_pixel_to_3d_yaw: 0 # Угол поворота по оси Z (в радианах)

@@ -1,0 +1,51 @@
+name: Test Build
+
+on:
+  push:
+    branches: [ main, humble ]
+  pull_request:
+    branches: [ main, humble ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Reset buildx cache
+      run: docker buildx prune -f
+
+    - name: Install Docker Compose
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y docker-compose
+
+    - name: Debug - Print Dockerfile version
+      run: |
+        echo ">>> Dockerfile used in CI:"
+        cat Dockerfile
+
+    - name: Build Docker image for Go2
+      run: |
+        docker-compose build --no-cache --build-arg ROBOT_TYPE=Go2
+
+    - name: Test running container
+      run: |
+        docker-compose up -d
+        sleep 10
+        docker-compose exec -T unitree_sim echo "Container built successfully"
+        docker-compose down
+
+    - name: Test basic ROS 2 functionality
+      run: |
+        docker-compose up -d
+        sleep 10
+        docker-compose exec -T unitree_sim ros2 --help
+        docker-compose down

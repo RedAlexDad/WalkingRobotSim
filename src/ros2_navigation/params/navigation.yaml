@@ -1,0 +1,378 @@
+# Конфигурация для узла AMCL (Adaptive Monte Carlo Localization) — локализация робота
+amcl:
+  ros__parameters:
+    use_sim_time: False # Указывает, использовать ли симуляционное время (False — использует системное время, а не /clock из Gazebo).
+    alpha1: 0.2 # Шум вращения от вращения робота (0.2 — уровень шума для модели одометрии).
+    alpha2: 0.2 # Шум вращения от поступательного движения (0.2 — уровень шума для модели одометрии).
+    alpha3: 0.2 # Шум поступательного движения от поступательного движения (0.2 — уровень шума для модели одометрии).
+    alpha4: 0.2 # Шум поступательного движения от вращения (0.2 — уровень шума для модели одометрии).
+    alpha5: 0.2 # Шум масштабирования для поступательного движения (0.2 — уровень шума для модели одометрии).
+    base_frame_id: "base_link" # Имя базового фрейма робота (base_link — центр робота).
+    beam_skip_distance: 0.5 # Минимальная дистанция для пропуска лучей лидара (0.5 м — пропускает лучи, если препятствие слишком далеко).
+    beam_skip_error_threshold: 0.9 # Порог ошибки для пропуска лучей лидара (0.9 — вероятность ошибки для пропуска).
+    beam_skip_threshold: 0.3 # Порог для пропуска лучей (0.3 — минимальная вероятность для использования луча).
+    do_beamskip: false # Включает пропуск лучей лидара при большом количестве ошибок (false — отключено).
+    global_frame_id: "map" # Имя глобального фрейма карты (map — фрейм для глобальной карты).
+    lambda_short: 0.1 # Коэффициент экспоненциального затухания для коротких лучей (0.1 — для модели likelihood_field).
+    laser_likelihood_max_dist: 2.0 # Максимальная дистанция для расчёта вероятности препятствий (2.0 м — для likelihood_field).
+    laser_max_range: 100.0 # Максимальная дальность лидара (100.0 м — верхний предел дальности).
+    laser_min_range: -1.0 # Минимальная дальность лидара (-1.0 — игнорировать, если отрицательное).
+    laser_model_type: "likelihood_field" # Тип модели лидара (likelihood_field — использует вероятностное поле для сопоставления).
+    max_beams: 60 # Максимальное количество лучей лидара для обработки (60 лучей на скан).
+    max_particles: 2000 # Максимальное количество частиц в фильтре частиц (2000 — верхний предел для AMCL).
+    min_particles: 500 # Минимальное количество частиц в фильтре частиц (500 — нижний предел для AMCL).
+    odom_frame_id: "odom" # Имя фрейма одометрии (odom — фрейм для локальных данных одометрии).
+    pf_err: 0.05 # Ожидаемая ошибка фильтра частиц (0.05 — целевая ошибка для сходимости).
+    pf_z: 0.99 # Вероятность правильной локализации (0.99 — высокая уверенность в оценке позы).
+    recovery_alpha_fast: 0.0 # Скорость быстрого восстановления частиц (0.0 — отключено).
+    recovery_alpha_slow: 0.0 # Скорость медленного восстановления частиц (0.0 — отключено).
+    resample_interval: 1 # Интервал повторной выборки частиц (1 — повторная выборка каждое обновление).
+    robot_model_type: "nav2_amcl::DifferentialMotionModel" # Тип модели движения робота (DifferentialMotionModel — для дифференциального привода).
+    save_pose_rate: 0.5 # Частота сохранения текущей позы (0.5 с — сохраняет позу каждые 0.5 секунды).
+    sigma_hit: 0.2 # Стандартное отклонение для модели likelihood_field (0.2 — разброс вероятности попадания луча).
+    tf_broadcast: true # Включает публикацию трансформаций (true — AMCL публикует TF между map и odom).
+    transform_tolerance: 1.0 # Допуск времени для трансформаций (1.0 с — максимальная задержка TF).
+    update_min_a: 0.2 # Минимальное угловое перемещение для обновления фильтра (0.2 радиан ≈ 11.5°).
+    update_min_d: 0.25 # Минимальное линейное перемещение для обновления фильтра (0.25 м).
+    z_hit: 0.5 # Вес вероятности попадания луча в модель likelihood_field (0.5 — вклад в вероятность).
+    z_max: 0.05 # Вес максимальной дальности луча (0.05 — вклад в вероятность).
+    z_rand: 0.5 # Вес случайного шума для лучей (0.5 — вклад шума).
+    z_short: 0.05 # Вес коротких лучей для модели likelihood_field (0.05 — вклад в вероятность).
+
+# Конфигурация для клиента карты AMCL
+amcl_map_client:
+  ros__parameters:
+    use_sim_time: False # Указывает, использовать ли симуляционное время для клиента карты (False — системное время).
+
+# Конфигурация для RCLCPP-узла AMCL
+amcl_rclcpp_node:
+  ros__parameters:
+    use_sim_time: False # Указывает, использовать ли симуляционное время для RCLCPP-узла AMCL (False — системное время).
+
+# Конфигурация для Behavior Tree Navigator (управление поведением навигации)
+bt_navigator:
+  ros__parameters:
+    use_sim_time: False # Указывает, использовать ли симуляционное время для BT Navigator (False — системное время).
+    global_frame: map # Глобальный фрейм для навигации (map — фрейм карты).
+    robot_base_frame: base_link # Базовый фрейм робота (base_link — центр робота).
+    odom_topic: /odom # Топик для данных одометрии (/odom — топик для сообщений nav_msgs/Odometry).
+    default_bt_xml_filename: "navigate_w_replanning_and_recovery.xml" # Имя XML-файла с деревом поведения (описывает логику навигации).
+    bt_loop_duration: 10 # Длительность цикла обновления дерева поведения (10 мс — частота обновления).
+    default_server_timeout: 20 # Таймаут для действий сервера (20 мс — время ожидания ответа).
+    enable_groot_monitoring: True # Включает мониторинг через Groot (true — позволяет визуализировать дерево поведения).
+    groot_zmq_publisher_port: 1666 # Порт для публикации данных Groot через ZMQ (1666).
+    groot_zmq_server_port: 1667 # Порт для сервера Groot через ZMQ (1667).
+    plugin_lib_names: # Список плагинов для дерева поведения.
+      - nav2_compute_path_to_pose_action_bt_node # Плагин для вычисления пути к заданной позе.
+      - nav2_compute_path_through_poses_action_bt_node # Плагин для вычисления пути через несколько поз.
+      - nav2_follow_path_action_bt_node # Плагин для следования по пути.
+      - nav2_back_up_action_bt_node # Плагин для движения назад.
+      - nav2_spin_action_bt_node # Плагин для вращения на месте.
+      - nav2_wait_action_bt_node # Плагин для ожидания.
+      - nav2_clear_costmap_service_bt_node # Плагин для очистки карты затрат.
+      - nav2_is_stuck_condition_bt_node # Плагин для проверки, застрял ли робот.
+      - nav2_goal_reached_condition_bt_node # Плагин для проверки достижения цели.
+      - nav2_goal_updated_condition_bt_node # Плагин для обработки обновления цели.
+      - nav2_initial_pose_received_condition_bt_node # Плагин для проверки получения начальной позы.
+      - nav2_reinitialize_global_localization_service_bt_node # Плагин для переинициализации глобальной локализации.
+      - nav2_rate_controller_bt_node # Плагин для управления частотой действий.
+      - nav2_distance_controller_bt_node # Плагин для управления дистанцией.
+      - nav2_speed_controller_bt_node # Плагин для управления скоростью.
+      - nav2_truncate_path_action_bt_node # Плагин для усечения пути.
+      - nav2_goal_updater_node_bt_node # Плагин для обновления цели.
+      - nav2_recovery_node_bt_node # Плагин для восстановления (recovery).
+      - nav2_pipeline_sequence_bt_node # Плагин для последовательного выполнения действий.
+      - nav2_round_robin_node_bt_node # Плагин для циклического выполнения действий.
+      - nav2_transform_available_condition_bt_node # Плагин для проверки доступности трансформаций.
+      - nav2_time_expired_condition_bt_node # Плагин для проверки истечения времени.
+      - nav2_distance_traveled_condition_bt_node # Плагин для проверки пройденной дистанции.
+      - nav2_single_trigger_bt_node # Плагин для однократного запуска действия.
+      - nav2_is_battery_low_condition_bt_node # Плагин для проверки низкого заряда батареи.
+      - nav2_navigate_through_poses_action_bt_node # Плагин для навигации через несколько поз.
+      - nav2_navigate_to_pose_action_bt_node # Плагин для навигации к одной позе.
+      - nav2_remove_passed_goals_action_bt_node # Плагин для удаления пройденных целей.
+      - nav2_planner_selector_bt_node # Плагин для выбора планировщика.
+      - nav2_controller_selector_bt_node # Плагин для выбора контроллера.
+      - nav2_goal_checker_selector_bt_node # Плагин для выбора проверки достижения цели.
+
+# Конфигурация для RCLCPP-узла BT Navigator
+bt_navigator_rclcpp_node:
+  ros__parameters:
+    use_sim_time: False # Указывает, использовать ли симуляционное время для RCLCPP-узла BT Navigator (False — системное время).
+
+# Конфигурация для Controller Server (управление движением робота)
+controller_server:
+  ros__parameters:
+    use_sim_time: False # Указывает, использовать ли симуляционное время для Controller Server (False — системное время).
+    controller_frequency: 10.0 # Частота обновления контроллера (10 Гц).
+    min_x_velocity_threshold: 0.001 # Минимальный порог линейной скорости по X (0.001 м/с).
+    min_y_velocity_threshold: 0.5 # Минимальный порог линейной скорости по Y (0.5 м/с, для дифференциального привода обычно не используется).
+    min_theta_velocity_threshold: 0.001 # Минимальный порог угловой скорости (0.001 рад/с).
+    failure_tolerance: 0.3 # Допуск для сбоев в достижении цели (0.3 с).
+    progress_checker_plugin: "progress_checker" # Имя плагина для проверки прогресса движения.
+    goal_checker_plugins: ["general_goal_checker"] # Список плагинов для проверки достижения цели.
+    controller_plugins: ["FollowPath"] # Список плагинов контроллера (FollowPath — следование по пути).
+
+    # Параметры плагина проверки прогресса
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker" # Плагин для проверки прогресса (SimpleProgressChecker — простой проверяющий).
+      required_movement_radius: 0.5 # Минимальный радиус перемещения для подтверждения прогресса (0.5 м).
+      movement_time_allowance: 10.0 # Допустимое время для движения без прогресса (10 с).
+
+    # Параметры плагина проверки цели
+    general_goal_checker:
+      stateful: True # Включает состояние для проверки цели (true — сохраняет состояние).
+      plugin: "nav2_controller::SimpleGoalChecker" # Плагин для проверки достижения цели (SimpleGoalChecker — простой проверяющий).
+      xy_goal_tolerance: 0.25 # Допуск по координатам X и Y для достижения цели (0.25 м).
+      yaw_goal_tolerance: 0.25 # Допуск по углу поворота для достижения цели (0.25 радиан ≈ 14.3°).
+
+    # Параметры DWB (Dynamic Window Approach) контроллера
+    FollowPath:
+      plugin: "dwb_core::DWBLocalPlanner" # Плагин локального планировщика (DWBLocalPlanner — планировщик динамического окна).
+      debug_trajectory_details: True # Включает отладочную информацию о траекториях (true — выводит подробности).
+      min_vel_x: 0.0 # Минимальная линейная скорость по X (0.0 м/с).
+      min_vel_y: 0.0 # Минимальная линейная скорость по Y (0.0 м/с, для дифференциального привода обычно 0).
+      max_vel_x: 1.0 # Максимальная линейная скорость по X (0.22 м/с).
+      max_vel_y: 0.0 # Максимальная линейная скорость по Y (0.0 м/с, для дифференциального привода).
+      max_vel_theta: 1.0 # Максимальная угловая скорость (1.0 рад/с ≈ 57.3°/с).
+      min_speed_xy: 0.0 # Минимальная общая линейная скорость (0.0 м/с).
+      max_speed_xy: 1.0 # Максимальная общая линейная скорость (0.22 м/с).
+      min_speed_theta: 0.0 # Минимальная угловая скорость (0.0 рад/с).
+      acc_lim_x: 2.5 # Ограничение линейного ускорения по X (2.5 м/с²).
+      acc_lim_y: 0.0 # Ограничение линейного ускорения по Y (0.0 м/с², для дифференциального привода).
+      acc_lim_theta: 3.2 # Ограничение углового ускорения (3.2 рад/с²).
+      decel_lim_x: -2.5 # Ограничение линейного замедления по X (-2.5 м/с²).
+      decel_lim_y: 0.0 # Ограничение линейного замедления по Y (0.0 м/с²).
+      decel_lim_theta: -3.2 # Ограничение углового замедления (-3.2 рад/с²).
+      vx_samples: 20 # Количество выборок линейной скорости по X (20 — для траекторий).
+      vy_samples: 0 # Количество выборок линейной скорости по Y (0 — для дифференциального привода).
+      vtheta_samples: 40 # Количество выборок угловой скорости (40 — для траекторий).
+      sim_time: 2.0 # Время симуляции траекторий (2.0 с — горизонт планирования).
+      linear_granularity: 0.05 # Линейная гранулярность траекторий (0.05 м — шаг по расстоянию).
+      angular_granularity: 0.025 # Угловая гранулярность траекторий (0.025 радиан ≈ 1.4°).
+      transform_tolerance: 0.2 # Допуск времени для трансформаций (0.2 с).
+      xy_goal_tolerance: 0.05 # Допуск по координатам X и Y для локального планировщика (0.05 м).
+      trans_stopped_velocity: 0.25 # Порог остановки по линейной скорости (0.25 м/с).
+      short_circuit_trajectory_evaluation: True # Включает укороченную оценку траекторий (true — ускоряет планирование).
+      stateful: True # Включает сохранение состояния планировщика (true — сохраняет состояние).
+      critics: # Список критериев для оценки траекторий.
+        [
+          "RotateToGoal", # Критерий для поворота к цели.
+          "Oscillation", # Критерий для предотвращения колебаний.
+          "BaseObstacle", # Критерий для избегания препятствий.
+          "GoalAlign", # Критерий для выравнивания с целью.
+          "PathAlign", # Критерий для выравнивания с путём.
+          "PathDist", # Критерий для минимизации расстояния до пути.
+          "GoalDist", # Критерий для минимизации расстояния до цели.
+        ]
+      BaseObstacle.scale: 0.02 # Вес критерия избегания препятствий (0.02).
+      PathAlign.scale: 32.0 # Вес критерия выравнивания с путём (32.0).
+      PathAlign.forward_point_distance: 0.1 # Дистанция до точки впереди для выравнивания пути (0.1 м).
+      GoalAlign.scale: 24.0 # Вес критерия выравнивания с целью (24.0).
+      GoalAlign.forward_point_distance: 0.1 # Дистанция до точки впереди для выравнивания цели (0.1 м).
+      PathDist.scale: 32.0 # Вес критерия минимизации расстояния до пути (32.0).
+      GoalDist.scale: 24.0 # Вес критерия минимизации расстояния до цели (24.0).
+      RotateToGoal.scale: 32.0 # Вес критерия поворота к цели (32.0).
+      RotateToGoal.slowing_factor: 5.0 # Фактор замедления при повороте к цели (5.0).
+      RotateToGoal.lookahead_time: -1.0 # Время упреждения для поворота (-1.0 — отключено).
+
+# Конфигурация для RCLCPP-узла Controller Server
+controller_server_rclcpp_node:
+  ros__parameters:
+    use_sim_time: False # Указывает, использовать ли симуляционное время для RCLCPP-узла Controller Server (False — системное время).
+
+# Конфигурация для локальной карты затрат
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      update_frequency: 5.0 # Частота обновления локальной карты затрат (5 Гц).
+      publish_frequency: 2.0 # Частота публикации локальной карты затрат (2 Гц).
+      global_frame: odom # Глобальный фрейм для локальной карты (odom — для локального планирования).
+      robot_base_frame: base_link # Базовый фрейм робота (base_link — центр робота).
+      use_sim_time: False # Указывает, использовать ли симуляционное время для локальной карты (False — системное время).
+      rolling_window: true # Включает скользящее окно для локальной карты (true — карта движется с роботом).
+      width: 3 # Ширина локальной карты в клетках (3 клеток).
+      height: 3 # Высота локальной карты в клетках (3 клеток).
+      resolution: 0.05 # Разрешение карты в метрах на клетку (0.05 м).
+      robot_radius: 0.5 # Радиус робота для расчёта затрат (0.22 м).
+      plugins: ["obstacle_layer", "voxel_layer", "inflation_layer"] # Список плагинов для локальной карты.
+      inflation_layer: # Настройки слоя инфляции.
+        plugin: "nav2_costmap_2d::InflationLayer" # Плагин для добавления зоны инфляции вокруг препятствий.
+        inflation_radius: 1.0 # Радиус инфляции вокруг препятствий (1.0 м).
+        cost_scaling_factor: 3.0 # Фактор масштабирования затрат для инфляции (3.0).
+      obstacle_layer: # Настройки слоя препятствий.
+        plugin: "nav2_costmap_2d::ObstacleLayer" # Плагин для обработки препятствий.
+        enabled: True # Включает слой препятствий (true — активен).
+        observation_sources: scan # Источник данных для препятствий (scan — данные лидара).
+        scan: # Настройки источника данных лидара.
+          topic: /scan # Топик для данных лидара (/scan — сообщения sensor_msgs/LaserScan).
+          max_obstacle_height: 2.0 # Максимальная высота препятствий (2.0 м).
+          clearing: True # Включает очистку препятствий (true — удаляет старые препятствия).
+          marking: True # Включает добавление новых препятствий (true — отмечает препятствия).
+          data_type: "LaserScan" # Тип данных источника (LaserScan — формат сообщений лидара).
+      voxel_layer: # Настройки воксельного слоя.
+        plugin: "nav2_costmap_2d::VoxelLayer" # Плагин для воксельной карты (3D-карта препятствий).
+        enabled: True # Включает воксельный слой (true — активен).
+        publish_voxel_map: True # Публикует воксельную карту (true — для визуализации).
+        origin_z: 0.0 # Начальная высота воксельной карты (0.0 м).
+        z_resolution: 0.05 # Разрешение по высоте вокселей (0.05 м).
+        z_voxels: 16 # Количество вокселей по высоте (16).
+        max_obstacle_height: 2.0 # Максимальная высота препятствий (2.0 м).
+        mark_threshold: 0 # Порог для отметки вокселей как препятствий (0 — минимальный порог).
+        observation_sources: scan # Источник данных для вокселей (scan — данные лидара).
+        scan: # Настройки источника данных лидара.
+          topic: /scan # Топик для данных лидара (/scan).
+          max_obstacle_height: 2.0 # Максимальная высота препятствий (2.0 м).
+          clearing: True # Включает очистку препятствий (true).
+          marking: True # Включает добавление препятствий (true).
+          data_type: "LaserScan" # Тип данных источника (LaserScan).
+          raytrace_max_range: 3.0 # Максимальная дальность трассировки лучей (3.0 м).
+          raytrace_min_range: 0.0 # Минимальная дальность трассировки лучей (0.0 м).
+          obstacle_max_range: 2.5 # Максимальная дальность для препятствий (2.5 м).
+          obstacle_min_range: 0.0 # Минимальная дальность для препятствий (0.0 м).
+      static_layer: # Настройки статического слоя.
+        map_subscribe_transient_local: True # Включает подписку на карту с временным локальным хранением (true).
+      always_send_full_costmap: True # Всегда отправляет полную карту затрат (true — для всех клиентов).
+  local_costmap_client: # Конфигурация клиента локальной карты.
+    ros__parameters:
+      use_sim_time: False # Указывает, использовать ли симуляционное время для клиента локальной карты (False).
+  local_costmap_rclcpp_node: # Конфигурация RCLCPP-узла локальной карты.
+    ros__parameters:
+      use_sim_time: False # Указывает, использовать ли симуляционное время для RCLCPP-узла локальной карты (False).
+
+# Конфигурация для глобальной карты затрат
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      update_frequency: 1.0 # Частота обновления глобальной карты затрат (1 Гц).
+      publish_frequency: 1.0 # Частота публикации глобальной карты затрат (1 Гц).
+      global_frame: map # Глобальный фрейм для глобальной карты (map).
+      robot_base_frame: base_link # Базовый фрейм робота (base_link).
+      use_sim_time: False # Указывает, использовать ли симуляционное время для глобальной карты (True — симуляционное время).
+      robot_radius: 0.5 # Радиус робота для расчёта затрат (0.22 м).
+      resolution: 0.05 # Разрешение карты в метрах на клетку (0.05 м).
+      track_unknown_space: true # Отслеживает неизвестное пространство как препятствия (true — неизвестное считается занятым).
+      plugins: [
+          "static_layer",
+          "obstacle_layer",
+          "voxel_layer",
+          "inflation_layer",
+        ] # Список плагинов для глобальной карты.
+      obstacle_layer: # Настройки слоя препятствий.
+        plugin: "nav2_costmap_2d::ObstacleLayer" # Плагин для обработки препятствий.
+        enabled: True # Включает слой препятствий (true).
+        observation_sources: scan # Источник данных для препятствий (scan).
+        scan: # Настройки источника данных лидара.
+          topic: /scan # Топик для данных лидара (/scan).
+          max_obstacle_height: 2.0 # Максимальная высота препятствий (2.0 м).
+          clearing: True # Включает очистку препятствий (true).
+          marking: True # Включает добавление препятствий (true).
+          data_type: "LaserScan" # Тип данных источника (LaserScan).
+          raytrace_max_range: 3.0 # Максимальная дальность трассировки лучей (3.0 м).
+          raytrace_min_range: 0.0 # Минимальная дальность трассировки лучей (0.0 м).
+          obstacle_max_range: 2.5 # Максимальная дальность для препятствий (2.5 м).
+          obstacle_min_range: 0.0 # Минимальная дальность для препятствий (0.0 м).
+      voxel_layer: # Настройки воксельного слоя.
+        plugin: "nav2_costmap_2d::VoxelLayer" # Плагин для воксельной карты.
+        enabled: True # Включает воксельный слой (true).
+        publish_voxel_map: True # Публикует воксельную карту (true).
+        origin_z: 0.0 # Начальная высота воксельной карты (0.0 м).
+        z_resolution: 0.05 # Разрешение по высоте вокселей (0.05 м).
+        z_voxels: 16 # Количество вокселей по высоте (16).
+        max_obstacle_height: 2.0 # Максимальная высота препятствий (2.0 м).
+        mark_threshold: 0 # Порог для отметки вокселей как препятствий (0).
+        observation_sources: scan # Источник данных для вокселей (scan).
+        scan: # Настройки источника данных лидара.
+          topic: /scan # Топик для данных лидара (/scan).
+          max_obstacle_height: 2.0 # Максимальная высота препятствий (2.0 м).
+          clearing: True # Включает очистку препятствий (true).
+          marking: True # Включает добавление препятствий (true).
+          data_type: "LaserScan" # Тип данных источника (LaserScan).
+          raytrace_max_range: 3.0 # Максимальная дальность трассировки лучей (3.0 м).
+          raytrace_min_range: 0.0 # Минимальная дальность трассировки лучей (0.0 м).
+          obstacle_max_range: 2.5 # Максимальная дальность для препятствий (2.5 м).
+          obstacle_min_range: 0.0 # Минимальная дальность для препятствий (0.0 м).
+      static_layer: # Настройки статического слоя.
+        plugin: "nav2_costmap_2d::StaticLayer" # Плагин для статической карты.
+        map_subscribe_transient_local: True # Включает подписку на карту с временным локальным хранением (true).
+      inflation_layer: # Настройки слоя инфляции.
+        plugin: "nav2_costmap_2d::InflationLayer" # Плагин для инфляции.
+        cost_scaling_factor: 3.0 # Фактор масштабирования затрат для инфляции (3.0).
+        inflation_radius: 0.55 # Радиус инфляции вокруг препятствий (0.55 м).
+      always_send_full_costmap: True # Всегда отправляет полную карту затрат (true).
+  global_costmap_client: # Конфигурация клиента глобальной карты.
+    ros__parameters:
+      use_sim_time: False # Указывает, использовать ли симуляционное время для клиента глобальной карты (False).
+  global_costmap_rclcpp_node: # Конфигурация RCLCPP-узла глобальной карты.
+    ros__parameters:
+      use_sim_time: False # Указывает, использовать ли симуляционное время для RCLCPP-узла глобальной карты (False).
+
+# Конфигурация для Map Server (сервер карты)
+map_server:
+  ros__parameters:
+    use_sim_time: False # Указывает, использовать ли симуляционное время для Map Server (False).
+    yaml_filename: "map.yaml" # Имя YAML-файла с картой (map.yaml — файл с параметрами карты).
+
+# Конфигурация для Map Saver (сохранение карты)
+map_saver:
+  ros__parameters:
+    use_sim_time: False # Указывает, использовать ли симуляционное время для Map Saver (False).
+    save_map_timeout: 5.0 # Таймаут для сохранения карты (5.0 с).
+    free_thresh_default: 0.25 # Порог для свободного пространства на карте (0.25 — для определения свободных ячеек).
+    occupied_thresh_default: 0.65 # Порог для занятого пространства на карте (0.65 — для определения занятых ячеек).
+    map_subscribe_transient_local: True # Включает подписку на карту с временным локальным хранением (true).
+
+# Конфигурация для Planner Server (планирование пути)
+planner_server:
+  ros__parameters:
+    expected_planner_frequency: 20.0 # Ожидаемая частота планировщика (20 Гц).
+    use_sim_time: False # Указывает, использовать ли симуляционное время для Planner Server (False).
+    planner_plugins: ["GridBased"] # Список плагинов планировщика (GridBased — сеточный планировщик).
+    GridBased: # Настройки сеточного планировщика.
+      plugin: "nav2_navfn_planner/NavfnPlanner" # Плагин планировщика (NavfnPlanner — классический планировщик A*).
+      tolerance: 0.5 # Допуск для достижения цели (0.5 м).
+      use_astar: false # Использовать алгоритм A* (false — использует Dijkstra).
+      allow_unknown: true # Разрешает планирование через неизвестное пространство (true).
+
+# Конфигурация для RCLCPP-узла Planner Server
+planner_server_rclcpp_node:
+  ros__parameters:
+    use_sim_time: False # Указывает, использовать ли симуляционное время для RCLCPP-узла Planner Server (False).
+
+# Конфигурация для Recoveries Server (восстановление при сбоях)
+recoveries_server:
+  ros__parameters:
+    costmap_topic: local_costmap/costmap_raw # Топик для сырой локальной карты затрат.
+    footprint_topic: local_costmap/published_footprint # Топик для следа робота.
+    cycle_frequency: 10.0 # Частота цикла восстановления (10 Гц).
+    recovery_plugins: ["spin", "backup", "wait"] # Список плагинов восстановления.
+    spin: # Настройки плагина вращения.
+      plugin: "nav2_recoveries/Spin" # Плагин для вращения на месте.
+    backup: # Настройки плагина движения назад.
+      plugin: "nav2_recoveries/BackUp" # Плагин для движения назад.
+    wait: # Настройки плагина ожидания.
+      plugin: "nav2_recoveries/Wait" # Плагин для ожидания.
+    global_frame: odom # Глобальный фрейм для восстановления (odom).
+    robot_base_frame: base_link # Базовый фрейм робота (base_link).
+    transform_timeout: 0.1 # Таймаут для трансформаций (0.1 с).
+    use_sim_time: False # Указывает, использовать ли симуляционное время для Recoveries Server (true — симуляционное время).
+    simulate_ahead_time: 2.0 # Время симуляции для восстановления (2.0 с).
+    max_rotational_vel: 1.0 # Максимальная угловая скорость для восстановления (1.0 рад/с).
+    min_rotational_vel: 0.4 # Минимальная угловая скорость для восстановления (0.4 рад/с).
+    rotational_acc_lim: 3.2 # Ограничение углового ускорения для восстановления (3.2 рад/с²).
+
+# Конфигурация для Robot State Publisher
+robot_state_publisher:
+  ros__parameters:
+    use_sim_time: False # Указывает, использовать ли симуляционное время для Robot State Publisher (False).
+
+# Конфигурация для Waypoint Follower (следование по путевым точкам)
+waypoint_follower:
+  ros__parameters:
+    loop_rate: 200 # Частота цикла следования по путевым точкам (200 Гц).
+    stop_on_failure: false # Останавливать ли выполнение при сбое (false — продолжает при сбое).
+    waypoint_task_executor_plugin: "wait_at_waypoint" # Плагин для выполнения задач на путевых точках.
+    wait_at_waypoint: # Настройки плагина ожидания на путевой точке.
+      plugin: "nav2_waypoint_follower::WaitAtWaypoint" # Плагин для ожидания на путевой точке.
+      enabled: True # Включает плагин ожидания (true).
+      waypoint_pause_duration: 200 # Длительность паузы на путевой точке (200 мс).
