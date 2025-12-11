@@ -52,6 +52,15 @@ def generate_launch_description():
         ]),
     )
 
+    # Установка пути для Gazebo моделей (для корректного разрешения mesh URIs в GUI)
+    set_gazebo_model_path = SetEnvironmentVariable(
+        name="GAZEBO_MODEL_PATH",
+        value=":".join([
+            os.path.dirname(pkg_go2_description),  # Папка содержащая go2_description
+            os.path.join(pkg_ros2_gazebo, "models"),
+        ]),
+    )
+
     # Запуск Gazebo Harmonic (server + GUI)
     gz_sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -139,6 +148,7 @@ def generate_launch_description():
             y_arg,
             z_arg,
             set_gz_resource_path,
+            set_gazebo_model_path,
             gz_sim,
             robot_description_node,
             spawn_robot,
