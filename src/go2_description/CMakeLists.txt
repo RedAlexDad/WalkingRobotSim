@@ -30,6 +30,7 @@ endif()
 install(
   DIRECTORY
     config
+    dae
     launch
     meshes
     rviz

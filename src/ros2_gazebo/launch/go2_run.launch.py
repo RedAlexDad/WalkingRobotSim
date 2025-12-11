@@ -45,11 +45,11 @@ def generate_launch_description():
     # Установка путей для ресурсов (модели, плагины)
     set_gz_resource_path = SetEnvironmentVariable(
         name="GZ_SIM_RESOURCE_PATH",
-        value=[
+        value=":".join([
             os.path.join(pkg_go2_description, "meshes"),
             os.path.join(pkg_go2_description, "dae"),
             os.path.join(pkg_ros2_gazebo, "models"),
-        ],
+        ]),
     )
 
     # Запуск Gazebo Harmonic (server + GUI)
