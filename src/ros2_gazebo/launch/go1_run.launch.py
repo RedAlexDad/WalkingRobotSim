@@ -29,7 +29,7 @@ def generate_launch_description():
     # Declare launch arguments
     world_file_arg = DeclareLaunchArgument(
         "world_file_name",
-        default_value="empty.world",
+        default_value="test.sdf",
         description="World file name (e.g., empty.world, train.world, etc.)",
     )
     urdf_file_arg = DeclareLaunchArgument(
