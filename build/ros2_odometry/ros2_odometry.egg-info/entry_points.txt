@@ -1,4 +1,0 @@
-[console_scripts]
-cmd_vel_bridge = ros2_odometry.cmd_vel_bridge:main
-nav_tf_publisher = ros2_odometry.tf_publisher:main
-static_map_publisher = ros2_odometry.static_map_publisher:main

@@ -1,0 +1,59 @@
+# === Стандартные каталоги сборки ROS 2 / Colcon / Catkin ===
+build/
+install/
+log/
+devel/
+bin/
+
+# Изолированная сборка
+build_isolated/
+devel_isolated/
+
+# Генерируемые папки сообщений/сервисов
+msg_gen/
+srv_gen/
+
+# Автоматически генерируемые файлы сообщений (action и т.д.)
+msg/*Action.msg
+msg/*ActionFeedback.msg
+msg/*ActionGoal.msg
+msg/*ActionResult.msg
+msg/*Feedback.msg
+msg/*Goal.msg
+msg/*Result.msg
+msg/_*.py
+srv/_*.py
+
+# Генерируемые конфиги dynamic reconfigure
+*.cfgc
+/cfg/cpp/
+/cfg/*.py
+
+# IDE мусор
+*.swp
+*~
+.#*
+.project
+.cproject
+CMakeLists.txt.user
+*.user
+qtcreator-*
+.idea/
+.vscode/settings.json
+
+# Файлы точечной карты и облака
+*.pcd
+*.bag
+*.bag.active
+
+# === ВАЖНО: НЕ игнорируем предкомпилированные библиотеки Unitree ===
+# Мы специально ХОТИМ, чтобы эти файлы попали в репозиторий!
+# Поэтому никаких правил вроде lib/ или *.so здесь НЕТ
+
+# Если хотите игнорировать ВСЕ свои собранные .so (кроме Unitree), можно добавить:
+# **/build/**/**/*.so
+# **/install/**/**/*.so
+
+# Но точно НЕ делайте:
+# lib/               ← убивает наш текущий билд!
+# *.so               ← убьёт вообще все библиотеки
