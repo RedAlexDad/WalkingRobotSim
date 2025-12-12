@@ -1,0 +1,6 @@
+[console_scripts]
+debug_node = ros2_yolo_recognition.debug_node:main
+detect_3d_node = ros2_yolo_recognition.detect_3d_node:main
+detect_object = ros2_yolo_recognition.detect_object:main
+tracking_node = ros2_yolo_recognition.tracking_node:main
+yolo_node = ros2_yolo_recognition.yolo_node:main

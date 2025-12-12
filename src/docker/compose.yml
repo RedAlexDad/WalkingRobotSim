@@ -1,0 +1,69 @@
+x-basic: &basic
+  ipc: host
+  stdin_open: true
+  network_mode: host
+  tty: true
+  privileged: true
+  environment:
+    DISPLAY:
+    XAUTHORITY: "/root/.Xauthority"
+    QT_X11_NO_MITSHM: "1"
+    XDG_RUNTIME_DIR:
+  volumes:
+    - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    - $HOME/.Xauthority:/root/.Xauthority
+
+x-server: &server
+  ipc: host
+  stdin_open: true
+  network_mode: host
+  tty: true
+  privileged: true
+
+
+x-gui_env: &env_gui
+  DISPLAY:
+  XAUTHORITY: "/root/.Xauthority"
+  QT_X11_NO_MITSHM: "1"
+  XDG_RUNTIME_DIR:
+
+x-gpu: &nvidia
+  <<: *basic
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities:
+              - gpu
+              - graphics
+              - utility # nvidia-smi
+              - compute # CUDA. Required to avoid "CUDA version: N/A"
+              - video # NVDEC/NVENC
+
+services:
+
+  simulator:
+    <<: *nvidia
+    image: go2_simulator
+    container_name: simulator
+    #command: bash
+    command: bash -c "source install/setup.bash && ros2 launch gazebo_sim launch.py use_sim_time:=true" 
+    environment:
+      <<: *env_gui
+      RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+      GAZEBO_RESOURCE_PATH: "/usr/share/gazebo-11"
+      GZ_SIM_RESOURCE_PATH: "/root/ws/src/gazebo_sim/models/"
+      GAZEBO_MODEL_PATH: "/usr/share/gazebo-11/models/:/opt/ros/jazzy/share/turtlebot3_gazebo/models/"
+      CYCLONEDDS_URI: file:///cyclonedds.xml
+      ROS_DOMAIN_ID: 0
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        ROS_DISTRO: jazzy
+        BASE_IMG: ros:jazzy
+    volumes:
+      - ./cyclonedds.xml:/cyclonedds.xml
+      - ./../:/root/ws/src/

@@ -2,46 +2,45 @@
 
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
     <xacro:macro name="depthCamera" params="camID name *origin">
-
         <joint name="camera_joint_${name}" type="fixed">
-            <xacro:insert_block name="origin" />
-            <parent link="trunk" />
-            <child link="camera_${name}" />
+            <xacro:insert_block name="origin"/>
+            <parent link="trunk"/>
+            <child link="camera_${name}"/>
         </joint>
 
         <link name="camera_${name}">
             <collision>
-                <origin xyz="0 0 0" rpy="0 0 0" />
-                <geometry>
-                    <box size=".001 .001 .001" />
-                </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size=".001 .001 .001"/>
+            </geometry>
             </collision>
 
             <visual>
-                <origin xyz="0 0 0" rpy="0 0 0" />
-                <geometry>
-                    <mesh filename="package://go1_description/meshes/depthCamera.dae" scale="1 1 1" />
-                </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <mesh filename="file://$(find go1_description)/meshes/depthCamera.dae" scale="1 1 1"/>
+            </geometry>
             </visual>
 
             <inertial>
-                <mass value="1e-5" />
-                <origin xyz="0 0 0" rpy="0 0 0" />
-                <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
+            <mass value="1e-5" />
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
             </inertial>
         </link>
 
         <joint name="camera_optical_joint_${name}" type="fixed">
-            <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}" />
-            <parent link="camera_${name}" />
-            <child link="camera_optical_${name}" />
+            <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+            <parent link="camera_${name}"/>
+            <child link="camera_optical_${name}"/>
         </joint>
 
         <link name="camera_optical_${name}">
         </link>
 
-        <gazebo reference="camera_${name}">
-            <!-- <material>Gazebo/Black</material> -->
+        <!-- <gazebo reference="camera_${name}">
+
             <sensor name="camera_${name}_camera" type="depth">
                 <update_rate>16</update_rate>
                 <camera>
@@ -49,7 +48,7 @@
                     <image>
                         <width>928</width>
                         <height>800</height>
-                        <format>B8G8R8</format>
+                        <format>R8G8B8</format>
                     </image>
                     <clip>
                         <near>0.1</near>
@@ -65,7 +64,7 @@
                     <cameraInfoTopicName>/camera_${name}/color/camera_info</cameraInfoTopicName>
                     <depthImageTopicName>/camera_${name}/depth/image_raw</depthImageTopicName>
                     <depthImageInfoTopicName>/camera_${name}/depth/camera_info</depthImageInfoTopicName>
-                    <!-- <pointCloudTopicName>/camera_${name}/depth/points</pointCloudTopicName> -->
+
                     <pointCloudTopicName>/cam${camID}/point_cloud_${name}</pointCloudTopicName>
                     <frameName>camera_optical_${name}</frameName>
                     <pointCloudCutoff>0.1</pointCloudCutoff>
@@ -82,7 +81,7 @@
                     <hackBaseline>0</hackBaseline>
                 </plugin>
             </sensor>
-        </gazebo>
+        </gazebo> -->
 
     </xacro:macro>
 </robot>

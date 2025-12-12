@@ -1,0 +1,16 @@
+{
+  "package_name": "ros2_unitree_legged_msgs",
+  "non_idl_tuples": [
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_msgs:msg/MotorCmd.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_msgs:msg/MotorState.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_msgs:msg/BmsCmd.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_msgs:msg/BmsState.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_msgs:msg/Cartesian.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_msgs:msg/IMU.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_msgs:msg/LED.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_msgs:msg/LowCmd.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_msgs:msg/LowState.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_msgs:msg/HighCmd.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_msgs:msg/HighState.msg"
+  ]
+}

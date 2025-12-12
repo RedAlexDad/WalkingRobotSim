@@ -1,0 +1,18 @@
+{
+  "package_name": "yolo_msgs",
+  "non_idl_tuples": [
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_yolo_recognition/yolo_msgs:msg/Point2D.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_yolo_recognition/yolo_msgs:msg/Vector2.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_yolo_recognition/yolo_msgs:msg/Pose2D.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_yolo_recognition/yolo_msgs:msg/BoundingBox2D.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_yolo_recognition/yolo_msgs:msg/BoundingBox3D.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_yolo_recognition/yolo_msgs:msg/Mask.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_yolo_recognition/yolo_msgs:msg/KeyPoint2D.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_yolo_recognition/yolo_msgs:msg/KeyPoint2DArray.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_yolo_recognition/yolo_msgs:msg/KeyPoint3D.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_yolo_recognition/yolo_msgs:msg/KeyPoint3DArray.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_yolo_recognition/yolo_msgs:msg/Detection.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_yolo_recognition/yolo_msgs:msg/DetectionArray.msg",
+    "/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_yolo_recognition/yolo_msgs:srv/SetClasses.srv"
+  ]
+}

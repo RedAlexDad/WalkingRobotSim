@@ -1,0 +1,35 @@
+[ 50%] Built target ros2_unitree_legged_control_parameters
+[100%] Built target ros2_unitree_legged_control
+-- Install configuration: ""
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/include/ros2_unitree_legged_control
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/include/ros2_unitree_legged_control/ros2_unitree_legged_control_parameters.hpp
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/ros2_unitree_legged_control.xml
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/include/ros2_unitree_legged_control
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/include/ros2_unitree_legged_control/ros2_unitree_legged_control
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/include/ros2_unitree_legged_control/ros2_unitree_legged_control/ros2_unitree_legged_control.hpp
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/include/ros2_unitree_legged_control/ros2_unitree_legged_control/visibility_control.h
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/include/ros2_unitree_legged_control/ros2_unitree_legged_control/unitree_joint_control_tool.h
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/lib/ros2_unitree_legged_control/libunitree_joint_control_tool.so
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/lib/ros2_unitree_legged_control/libros2_unitree_legged_control.so
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/environment/library_path.sh
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/environment/library_path.dsv
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ament_index/resource_index/package_run_dependencies/ros2_unitree_legged_control
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ament_index/resource_index/parent_prefix_path/ros2_unitree_legged_control
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/environment/ament_prefix_path.sh
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/environment/ament_prefix_path.dsv
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/environment/path.sh
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/environment/path.dsv
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/local_setup.bash
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/local_setup.sh
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/local_setup.zsh
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/local_setup.dsv
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/package.dsv
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ament_index/resource_index/packages/ros2_unitree_legged_control
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ament_index/resource_index/controller_interface__pluginlib__plugin/ros2_unitree_legged_control
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/cmake/ros2_unitree_legged_controlExport.cmake
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/cmake/ros2_unitree_legged_controlExport-noconfig.cmake
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/cmake/ament_cmake_export_dependencies-extras.cmake
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/cmake/ament_cmake_export_targets-extras.cmake
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/cmake/ros2_unitree_legged_controlConfig.cmake
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/cmake/ros2_unitree_legged_controlConfig-version.cmake
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/share/ros2_unitree_legged_control/package.xml

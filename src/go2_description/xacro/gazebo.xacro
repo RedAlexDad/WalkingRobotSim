@@ -1,210 +1,284 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://ros.org/wiki/xacro">
-    <!--
-        Этот xacro подготовлен для миграции на Gazebo Harmonic (ros_gz).
-        По умолчанию `use_gazebo_classic` = false — плагины Gazebo Classic не включаются.
-        Если нужно запустить старый Gazebo Classic, передайте параметр xacro
-        `use_gazebo_classic:=true` при генерации/включении xacro.
-    -->
-    <xacro:property name="use_gazebo_classic" value="false"/>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
 
-    <gazebo reference="imu_link">
-        <gravity>true</gravity>
-        <sensor name="imu_sensor" type="imu">
-            <always_on>true</always_on>
-            <update_rate>1000</update_rate>
-            <visualize>true</visualize>
-            <topic>__default_topic__</topic>
-            <xacro:if value="${use_gazebo_classic}">
-                <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
-                    <topicName>trunk_imu</topicName>
-                    <bodyName>imu_link</bodyName>
-                    <updateRateHZ>1000.0</updateRateHZ>
-                    <gaussianNoise>0.0</gaussianNoise>
-                    <xyzOffset>0 0 0</xyzOffset>
-                    <rpyOffset>0 0 0</rpyOffset>
-                    <frameName>imu_link</frameName>
-                </plugin>
-            </xacro:if>
-            <!-- Для Gazebo Harmonic (ros_gz) используйте мост `ros_gz`/`parameter_bridge` для публикации IMU -->
-            <pose>0 0 0 0 0 0</pose>
-        </sensor>
-    </gazebo>
+    <xacro:macro  name="robot_gazebo_sensors" params="robot_name">
 
-    <!-- Lidar 2D -->
-    <gazebo reference="front_laser">
-        <sensor name="front_laser_sensor" type="ray">
-            <always_on>true</always_on>
-            <visualize>false</visualize>
-            <pose>0 0 0 0 0 0</pose>
-            <update_rate>5</update_rate>
-            <ray>
-                <scan>
-                    <horizontal>
-                        <samples>360</samples>
-                        <resolution>1.000000</resolution>
-                        <min_angle>0.000000</min_angle>
-                        <max_angle>6.280000</max_angle>
-                    </horizontal>
-                </scan>
-                <range>
-                    <min>0.100000</min>
-                    <max>35.0</max>
-                    <resolution>0.015000</resolution>
-                </range>
-                <noise>
-                    <type>gaussian</type>
-                    <mean>0.0</mean>
-                    <stddev>0.01</stddev>
-                </noise>
-            </ray>
-            <xacro:if value="${use_gazebo_classic}">
-                <plugin name="gazebo_ros_front_laserscan" filename="libgazebo_ros_ray_sensor.so">
-                    <ros>
-                        <remapping>~/out:=scan</remapping>
-                    </ros>
-                    <output_type>sensor_msgs/LaserScan</output_type>
-                    <frame_name>front_laser</frame_name>
-                </plugin>
-            </xacro:if>
-            <!-- В Gazebo Harmonic: настройте ros_gz parameter_bridge для выдачи LaserScan -->
-        </sensor>
-    </gazebo>
-
-    <!-- Плагин одометрия (classic) -->
-    <gazebo>
-        <xacro:if value="${use_gazebo_classic}">
-            <plugin name="p3d_ground_truth" filename="libgazebo_ros_p3d.so">
-                <!-- <robotNamespace>${g_robot_name}</robotNamespace> -->
-                <body_name>base_link</body_name>
-                <topic_name>odom</topic_name>
-                <frame_name>odom</frame_name>
-                <update_rate>100.0</update_rate>
+        <gazebo>
+            <plugin name="gz_ros2_control::GazeboSimROS2ControlPlugin" filename="libgz_ros2_control-system.so">
+                <ros>
+                    <namespace>/${robot_name}</namespace>
+                </ros>
+                <!-- <parameters>$(find go2_description)/config/gaz_ros2_ctl_use_sim.yaml</parameters> -->
+                <parameters>$(find go2_description)/config/ros_control.yaml</parameters>
             </plugin>
-        </xacro:if>
-        <!-- Для Harmonic используйте bridge/ros_gz для публикации одометрии / ground truth -->
-    </gazebo>
+        </gazebo>
 
-    <gazebo reference="base_link">
-        <turnGravityOff>false</turnGravityOff>
-    </gazebo>
 
-    <gazebo reference="trunk">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
-        <kp value="1000000.0" />
-        <kd value="1.0" />
-    </gazebo>
+        <ros2_control name="${robot_name}_GazeboSystem" type="system">
+            <hardware>
+                <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+            </hardware>
+            
+            <joint name="lf_hip_joint">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+                <state_interface name="effort"/>
+            </joint>
+            <joint name="lf_upper_leg_joint">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+                <state_interface name="effort"/>
+            </joint>
+            <joint name="lf_lower_leg_joint">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+                <state_interface name="effort"/>
+            </joint>
+            
+            <joint name="rf_hip_joint">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+                <state_interface name="effort"/>
+            </joint>
+            <joint name="rf_upper_leg_joint">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+                <state_interface name="effort"/>
+            </joint>
+            <joint name="rf_lower_leg_joint">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+                <state_interface name="effort"/>
+            </joint>
 
-    <gazebo reference="stick_link">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
-    </gazebo>
+            <joint name="lh_hip_joint">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+                <state_interface name="effort"/>
+            </joint>
+            <joint name="lh_upper_leg_joint">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+                <state_interface name="effort"/>
+            </joint>
+            <joint name="lh_lower_leg_joint">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+                <state_interface name="effort"/>
+            </joint>
 
-    <gazebo reference="imu_link">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
-    </gazebo>
+            <joint name="rh_hip_joint">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+                <state_interface name="effort"/>
+            </joint>
+            <joint name="rh_upper_leg_joint">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+                <state_interface name="effort"/>
+            </joint>
+            <joint name="rh_lower_leg_joint">
+                <command_interface name="position"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+                <state_interface name="effort"/>
+            </joint>
+        </ros2_control>
+        <gazebo reference="imu_link">
+            <!--<material>Gazebo/Black</material>-->
+            <gravity>false</gravity>
+            <sensor name="imu_sensor" type="imu">
+                <always_on>true</always_on>
+                <update_rate>100</update_rate>
+                <visualize>false</visualize>
+                <topic>/${robot_name}/imu_plugin/out</topic>
+                    <plugin filename="libgz-sim-imu-system.so" name="gz::sim::systems::Imu">
+                </plugin>
+                <pose>0 0 0 0 0 0</pose>
+                <gz_frame_id>imu_link</gz_frame_id> <!-- Добавьте этот тег для указания кадра -->
+            </sensor>
+        </gazebo>
 
-    <!-- FL leg -->
-    <gazebo reference="FL_hip">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
+        <gazebo reference="laser_frame">
+            <!--<material>Gazebo/Black</material>-->
 
-    </gazebo>
-    <gazebo reference="FL_thigh">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
-        <self_collide>1</self_collide>
-        <kp value="1000000.0" />
-        <kd value="1.0" />
-    </gazebo>
-    <gazebo reference="FL_calf">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
-        <self_collide>1</self_collide>
-    </gazebo>
-    <gazebo reference="FL_foot">
-        <mu1>0.6</mu1>
-        <mu2>0.6</mu2>
-        <self_collide>1</self_collide>
-        <kp value="1000000.0" />
-        <kd value="1.0" />
-    </gazebo>
+            <sensor name="laser" type="gpu_lidar">
+                <pose> 0 0 0 0 0 0 </pose>
+                <visualize>false</visualize>
+                <update_rate>10</update_rate>
+                <lidar>
+                    <scan>
+                        <horizontal>
+                            <samples>360</samples>
+                            <min_angle>-3.14</min_angle>
+                            <max_angle>3.14</max_angle>
+                        </horizontal>
+                    </scan>
+                    <range>
+                        <min>0.05</min>
+                        <max>12</max>
+                    </range>
+                </lidar>
+                <topic>/${robot_name}/scan</topic>
+                <gz_frame_id>laser_frame</gz_frame_id>
 
-    <!-- FR leg -->
-    <gazebo reference="FR_hip">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
-    </gazebo>
-    <gazebo reference="FR_thigh">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
-        <self_collide>1</self_collide>
-        <kp value="1000000.0" />
-        <kd value="1.0" />
-    </gazebo>
-    <gazebo reference="FR_calf">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
-        <self_collide>1</self_collide>
-    </gazebo>
-    <gazebo reference="FR_foot">
-        <mu1>0.6</mu1>
-        <mu2>0.6</mu2>
-        <self_collide>1</self_collide>
-        <kp value="1000000.0" />
-        <kd value="1.0" />
-    </gazebo>
+            </sensor>
 
-    <!-- RL leg -->
-    <gazebo reference="RL_hip">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
-    </gazebo>
-    <gazebo reference="RL_thigh">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
-        <self_collide>1</self_collide>
-        <kp value="1000000.0" />
-        <kd value="1.0" />
-    </gazebo>
-    <gazebo reference="RL_calf">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
-        <self_collide>1</self_collide>
-    </gazebo>
-    <gazebo reference="RL_foot">
-        <mu1>0.6</mu1>
-        <mu2>0.6</mu2>
-        <self_collide>1</self_collide>
-        <kp value="1000000.0" />
-        <kd value="1.0" />
-    </gazebo>
+        </gazebo>
 
-    <!-- RR leg -->
-    <gazebo reference="RR_hip">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
-    </gazebo>
-    <gazebo reference="RR_thigh">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
-        <self_collide>1</self_collide>
-        <kp value="1000000.0" />
-        <kd value="1.0" />
-    </gazebo>
-    <gazebo reference="RR_calf">
-        <mu1>0.2</mu1>
-        <mu2>0.2</mu2>
-        <self_collide>1</self_collide>
-    </gazebo>
-    <gazebo reference="RR_foot">
-        <mu1>0.6</mu1>
-        <mu2>0.6</mu2>
-        <self_collide>1</self_collide>
-        <kp value="1000000.0" />
-        <kd value="1.0" />
-    </gazebo>
+        <gazebo reference="camera_face">
+            <!-- <material>Gazebo/Black</material> -->
 
+            <sensor name="camera" type="camera">
+                <pose> 0 0 0 0 0 0 </pose>
+                <visualize>true</visualize>
+                <update_rate>10</update_rate>
+                <camera>
+                    <camera_info_topic>/${robot_name}/color/camera_info</camera_info_topic>
+                    <horizontal_fov>1.089</horizontal_fov>
+                    <image>
+                        <format>R8G8B8</format>
+                        <width>640</width>
+                        <height>480</height>
+                    </image>
+                    <clip>
+                        <near>0.05</near>
+                        <far>8.0</far>
+                    </clip>
+                </camera>
+                <topic>/${robot_name}/color/image_raw</topic>
+                <gz_frame_id>camera_face</gz_frame_id>
+            </sensor>
+        </gazebo>
+
+
+        <gazebo reference="trunk">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+            <kp>10000.0</kp>
+            <kd>1.0</kd>
+        </gazebo>
+
+        <!-- <gazebo reference="stick_link">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+        </gazebo> -->
+
+        <!-- <gazebo reference="imu_link">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+        </gazebo> -->
+
+        <!-- FL leg -->
+        <gazebo reference="lf_hip_link">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+
+        </gazebo>
+        <gazebo reference="lf_upper_leg_link">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+            <self_collide>1</self_collide>
+            <kp>10000.0</kp>
+            <kd>1.0</kd>
+        </gazebo>
+        <gazebo reference="lf_lower_leg_link">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+            <self_collide>1</self_collide>
+        </gazebo>
+        <gazebo reference="lf_foot_link">
+            <mu1>0.6</mu1>
+            <mu2>0.6</mu2>
+            <self_collide>1</self_collide>
+            <kp>10000.0</kp>
+            <kd>1.0</kd>
+        </gazebo>
+
+        <!-- FR leg -->
+        <gazebo reference="rf_hip">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+        </gazebo>
+        <gazebo reference="rf_upper_leg_link">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+            <self_collide>1</self_collide>
+            <kp>10000.0</kp>
+            <kd>1.0</kd>
+        </gazebo>
+        <gazebo reference="rf_lower_leg_link">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+            <self_collide>1</self_collide>
+        </gazebo>
+        <gazebo reference="rf_foot_link">
+            <mu1>0.6</mu1>
+            <mu2>0.6</mu2>
+            <self_collide>1</self_collide>
+            <kp>10000.0</kp>
+            <kd>1.0</kd>
+        </gazebo>
+
+        <!-- RL leg -->
+        <gazebo reference="lh_hip">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+        </gazebo>
+        <gazebo reference="lh_upper_leg_link">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+            <self_collide>1</self_collide>
+            <kp>10000.0</kp>
+            <kd>1.0</kd>
+        </gazebo>
+        <gazebo reference="lh_lower_leg_link">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+            <self_collide>1</self_collide>
+        </gazebo>
+        <gazebo reference="lh_foot_link">
+            <mu1>0.6</mu1>
+            <mu2>0.6</mu2>
+            <self_collide>1</self_collide>
+            <kp>10000.0</kp>
+            <kd>1.0</kd>
+        </gazebo>
+
+        <!-- RR leg -->
+        <gazebo reference="rh_hip">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+        </gazebo>
+        <gazebo reference="rh_upper_leg_link">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+            <self_collide>1</self_collide>
+            <kp>10000.0</kp>
+            <kd>1.0</kd>
+        </gazebo>
+        <gazebo reference="rh_lower_leg_link">
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
+            <self_collide>1</self_collide>
+        </gazebo>
+        <gazebo reference="rh_foot_link">
+            <mu1>0.6</mu1>
+            <mu2>0.6</mu2>
+            <self_collide>1</self_collide>
+            <kp>10000.0</kp>
+            <kd>1.0</kd>
+        </gazebo>
+    </xacro:macro >
 </robot>

@@ -1,0 +1,56 @@
+[2.089s] Invoking command in '/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_navigation': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/ros2_navigation build --build-base /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/build install --record /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/install.log --single-version-externally-managed install_data
+[2.534s] running egg_info
+[2.534s] creating ../../build/ros2_navigation/ros2_navigation.egg-info
+[2.576s] writing ../../build/ros2_navigation/ros2_navigation.egg-info/PKG-INFO
+[2.577s] writing dependency_links to ../../build/ros2_navigation/ros2_navigation.egg-info/dependency_links.txt
+[2.577s] writing requirements to ../../build/ros2_navigation/ros2_navigation.egg-info/requires.txt
+[2.577s] writing top-level names to ../../build/ros2_navigation/ros2_navigation.egg-info/top_level.txt
+[2.577s] writing manifest file '../../build/ros2_navigation/ros2_navigation.egg-info/SOURCES.txt'
+[2.668s] reading manifest file '../../build/ros2_navigation/ros2_navigation.egg-info/SOURCES.txt'
+[2.669s] writing manifest file '../../build/ros2_navigation/ros2_navigation.egg-info/SOURCES.txt'
+[2.670s] running build
+[2.670s] running build_py
+[2.670s] creating /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/build
+[2.670s] creating /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/build/lib
+[2.670s] creating /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/build/lib/ros2_navigation
+[2.670s] copying ros2_navigation/__init__.py -> /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/build/lib/ros2_navigation
+[2.670s] running install
+[2.679s] running install_lib
+[2.712s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages/ros2_navigation
+[2.712s] copying /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/build/lib/ros2_navigation/__init__.py -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages/ros2_navigation
+[2.712s] byte-compiling /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages/ros2_navigation/__init__.py to __init__.cpython-312.pyc
+[2.713s] running install_data
+[2.713s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ament_index
+[2.713s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ament_index/resource_index
+[2.713s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ament_index/resource_index/packages
+[2.713s] copying resource/ros2_navigation -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ament_index/resource_index/packages
+[2.713s] copying package.xml -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation
+[2.714s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/params
+[2.714s] copying params/navigation2.yaml -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/params
+[2.714s] copying params/navigation.yaml -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/params
+[2.714s] copying params/slam.yaml -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/params
+[2.714s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/launch
+[2.714s] copying launch/navigation2.launch.py -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/launch
+[2.715s] copying launch/navigation_slam.launch.py -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/launch
+[2.715s] copying launch/navigation.launch.py -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/launch
+[2.715s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/rviz
+[2.715s] copying rviz/navigation2.rviz -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/rviz
+[2.715s] copying rviz/navigation.rviz -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/rviz
+[2.716s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/xml
+[2.716s] copying xml/go1_bt.xml -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/xml
+[2.716s] copying xml/bb.xml -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/xml
+[2.716s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/maps
+[2.716s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/maps/train_001
+[2.716s] copying maps/train_001/map.yaml -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/maps/train_001
+[2.717s] copying maps/train_001/map.pgm -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/maps/train_001
+[2.717s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/maps/playground
+[2.717s] copying maps/playground/playground.pgm -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/maps/playground
+[2.717s] copying maps/playground/playground.yaml -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/maps/playground
+[2.717s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/maps/map_001
+[2.717s] copying maps/map_001/map.yaml -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/maps/map_001
+[2.717s] copying maps/map_001/map.pgm -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/share/ros2_navigation/maps/map_001
+[2.718s] running install_egg_info
+[2.753s] Copying ../../build/ros2_navigation/ros2_navigation.egg-info to /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages/ros2_navigation-0.0.0-py3.12.egg-info
+[2.754s] running install_scripts
+[2.966s] writing list of installed files to '/home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/install.log'
+[3.024s] Invoked command in '/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_navigation' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/ros2_navigation build --build-base /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/build install --record /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/install.log --single-version-externally-managed install_data

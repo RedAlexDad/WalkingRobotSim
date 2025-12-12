@@ -1,0 +1,19 @@
+[1.998s] Invoking command in '/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_navigation': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/ros2_navigation build --build-base /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/build install --record /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/install.log --single-version-externally-managed install_data
+[2.404s] running egg_info
+[2.439s] writing ../../build/ros2_navigation/ros2_navigation.egg-info/PKG-INFO
+[2.439s] writing dependency_links to ../../build/ros2_navigation/ros2_navigation.egg-info/dependency_links.txt
+[2.440s] writing requirements to ../../build/ros2_navigation/ros2_navigation.egg-info/requires.txt
+[2.440s] writing top-level names to ../../build/ros2_navigation/ros2_navigation.egg-info/top_level.txt
+[2.507s] reading manifest file '../../build/ros2_navigation/ros2_navigation.egg-info/SOURCES.txt'
+[2.508s] writing manifest file '../../build/ros2_navigation/ros2_navigation.egg-info/SOURCES.txt'
+[2.509s] running build
+[2.509s] running build_py
+[2.509s] running install
+[2.516s] running install_lib
+[2.552s] running install_data
+[2.553s] running install_egg_info
+[2.590s] removing '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages/ros2_navigation-0.0.0-py3.12.egg-info' (and everything under it)
+[2.590s] Copying ../../build/ros2_navigation/ros2_navigation.egg-info to /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages/ros2_navigation-0.0.0-py3.12.egg-info
+[2.591s] running install_scripts
+[2.797s] writing list of installed files to '/home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/install.log'
+[2.866s] Invoked command in '/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_navigation' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/ros2_navigation build --build-base /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/build install --record /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_navigation/install.log --single-version-externally-managed install_data

@@ -1,0 +1,681 @@
+[0.043s] Invoking command in '/home/redalexdad/GitHub/WalkingRobotSim/build/unitree_guide2': CMAKE_PREFIX_PATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_bringup:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs:/home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_gazebo:/home/redalexdad/GitHub/WalkingRobotSim/install/go2_description:/home/redalexdad/GitHub/WalkingRobotSim/install/go1_description:/usr/local/libtorch:/opt/unitree_robotics:/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_yolo_recognition:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_odometry:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com LD_LIBRARY_PATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs/lib:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/lib:/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib:/usr/local/cuda-12.9/lib64 PYTHONPATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_yolo_recognition/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_odometry/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages /usr/bin/cmake /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2 -DCMAKE_INSTALL_PREFIX=/home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2
+[0.354s] -- The C compiler identification is GNU 13.3.0
+[0.355s] -- The CXX compiler identification is GNU 13.3.0
+[0.355s] -- Detecting C compiler ABI info
+[0.357s] -- Detecting C compiler ABI info - done
+[0.366s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.366s] -- Detecting C compile features
+[0.366s] -- Detecting C compile features - done
+[0.380s] -- Detecting CXX compiler ABI info
+[0.517s] -- Detecting CXX compiler ABI info - done
+[0.526s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.527s] -- Detecting CXX compile features
+[0.527s] -- Detecting CXX compile features - done
+[0.536s] -- Found ament_cmake: 2.5.4 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[0.746s] -- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+[0.956s] -- Found rclpy: 7.1.6 (/opt/ros/jazzy/share/rclpy/cmake)
+[0.963s] -- Found ament_lint_auto: 0.17.3 (/opt/ros/jazzy/share/ament_lint_auto/cmake)
+[1.144s] -- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.83.0/BoostConfig.cmake (found version "1.83.0")  
+[1.151s] -- Found controller_manager: 4.39.2 (/opt/ros/jazzy/share/controller_manager/cmake)
+[1.259s] -- Found rosidl_generator_c: 4.6.6 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)
+[1.287s] -- Found rosidl_generator_cpp: 4.6.6 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)
+[1.317s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[1.350s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[1.477s] -- Found rmw_implementation_cmake: 7.3.2 (/opt/ros/jazzy/share/rmw_implementation_cmake/cmake)
+[1.485s] -- Found rmw_fastrtps_cpp: 8.4.3 (/opt/ros/jazzy/share/rmw_fastrtps_cpp/cmake)
+[1.657s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.13")  
+[1.696s] -- Found FastRTPS: /opt/ros/jazzy/include (Required is at least version "2.13") 
+[1.744s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[2.600s] -- Found joint_trajectory_controller: 4.34.0 (/opt/ros/jazzy/share/joint_trajectory_controller/cmake)
+[2.679s] -- Found eigen3_cmake_module: 0.3.0 (/opt/ros/jazzy/share/eigen3_cmake_module/cmake)
+[2.681s] -- Found Eigen3: TRUE (found version "3.4.0") 
+[2.681s] -- Ensuring Eigen3 include directory is part of orocos-kdl CMake target
+[2.824s] -- Found robot_state_publisher: 3.3.3 (/opt/ros/jazzy/share/robot_state_publisher/cmake)
+[2.839s] -- Found nav_msgs: 5.3.6 (/opt/ros/jazzy/share/nav_msgs/cmake)
+[2.868s] -- Found ros2_unitree_legged_msgs: 0.4.0 (/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake)
+[2.894s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[2.894s] -- Configured cppcheck include dirs: /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include
+[2.895s] -- Configured cppcheck exclude dirs and/or files: 
+[2.898s] -- Added test 'lint_cmake' to check CMake code style
+[2.908s] -- Added test 'uncrustify' to check C / C++ code style
+[2.908s] -- Configured uncrustify additional arguments: 
+[2.910s] -- Added test 'xmllint' to check XML markup files
+[2.913s] -- Configuring done (2.9s)
+[2.936s] -- Generating done (0.0s)
+[2.942s] -- Build files have been written to: /home/redalexdad/GitHub/WalkingRobotSim/build/unitree_guide2
+[2.964s] Invoked command in '/home/redalexdad/GitHub/WalkingRobotSim/build/unitree_guide2' returned '0': CMAKE_PREFIX_PATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_bringup:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs:/home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_gazebo:/home/redalexdad/GitHub/WalkingRobotSim/install/go2_description:/home/redalexdad/GitHub/WalkingRobotSim/install/go1_description:/usr/local/libtorch:/opt/unitree_robotics:/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_yolo_recognition:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_odometry:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com LD_LIBRARY_PATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs/lib:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/lib:/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib:/usr/local/cuda-12.9/lib64 PYTHONPATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_yolo_recognition/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_odometry/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages /usr/bin/cmake /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2 -DCMAKE_INSTALL_PREFIX=/home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2
+[2.966s] Invoking command in '/home/redalexdad/GitHub/WalkingRobotSim/build/unitree_guide2': CMAKE_PREFIX_PATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_bringup:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs:/home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_gazebo:/home/redalexdad/GitHub/WalkingRobotSim/install/go2_description:/home/redalexdad/GitHub/WalkingRobotSim/install/go1_description:/usr/local/libtorch:/opt/unitree_robotics:/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_yolo_recognition:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_odometry:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com LD_LIBRARY_PATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs/lib:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/lib:/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib:/usr/local/cuda-12.9/lib64 PYTHONPATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_yolo_recognition/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_odometry/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages /usr/bin/cmake --build /home/redalexdad/GitHub/WalkingRobotSim/build/unitree_guide2 -- -j16 -l16
+[3.072s] [  3%] Building CXX object CMakeFiles/junior_ctrl.dir/src/main.cpp.o
+[3.073s] [ 11%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_BalanceTest.cpp.o
+[3.073s] [ 11%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_FreeStand.cpp.o
+[3.075s] [ 14%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_FixedStand.cpp.o
+[3.078s] [ 22%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/FSM.cpp.o
+[3.079s] [ 22%] Building CXX object CMakeFiles/junior_ctrl.dir/src/Gait/FeetEndCal.cpp.o
+[3.081s] [ 25%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_Trotting.cpp.o
+[3.081s] [ 29%] Building CXX object CMakeFiles/junior_ctrl.dir/src/Gait/GaitGenerator.cpp.o
+[3.081s] [ 33%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_Passive.cpp.o
+[3.082s] [ 37%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_StepTest.cpp.o
+[3.084s] [ 40%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/FSMState.cpp.o
+[3.084s] [ 48%] Building CXX object CMakeFiles/junior_ctrl.dir/src/common/LowPassFilter.cpp.o
+[3.084s] [ 48%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_SwingTest.cpp.o
+[3.089s] [ 51%] Building CXX object CMakeFiles/junior_ctrl.dir/src/Gait/WaveGenerator.cpp.o
+[3.089s] [ 55%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_move_base.cpp.o
+[3.095s] [ 59%] Building CXX object CMakeFiles/junior_ctrl.dir/src/common/unitreeLeg.cpp.o
+[3.552s] [ 62%] Building CXX object CMakeFiles/junior_ctrl.dir/src/common/unitreeRobot.cpp.o
+[6.056s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[6.056s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:22,
+[6.056s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h:16,
+[6.056s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/FSM/FSMState.cpp:4:
+[6.056s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[6.057s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[6.057s]    51 |     virtual void *run(void *arg) { return NULL; }
+[6.057s]       |                       ~~~~~~^~~
+[6.140s] [ 66%] Building CXX object CMakeFiles/junior_ctrl.dir/src/control/BalanceCtrl.cpp.o
+[6.306s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[6.307s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:22,
+[6.307s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h:16,
+[6.307s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/State_Trotting.h:21,
+[6.307s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/FSM/State_Trotting.cpp:4:
+[6.307s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[6.307s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[6.307s]    51 |     virtual void *run(void *arg) { return NULL; }
+[6.307s]       |                       ~~~~~~^~~
+[6.360s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[6.360s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:22,
+[6.360s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h:16,
+[6.360s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/State_Trotting.h:21,
+[6.360s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/State_move_base.h:49,
+[6.360s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/FSM/State_move_base.cpp:54:
+[6.360s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[6.361s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[6.361s]    51 |     virtual void *run(void *arg) { return NULL; }
+[6.361s]       |                       ~~~~~~^~~
+[6.374s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[6.374s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:22,
+[6.374s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h:16,
+[6.374s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/State_Passive.h:12,
+[6.374s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/FSM/State_Passive.cpp:4:
+[6.375s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[6.375s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[6.375s]    51 |     virtual void *run(void *arg) { return NULL; }
+[6.375s]       |                       ~~~~~~^~~
+[6.400s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[6.400s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:22,
+[6.400s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h:16,
+[6.400s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/State_StepTest.h:14,
+[6.400s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/FSM/State_StepTest.cpp:4:
+[6.400s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[6.401s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[6.401s]    51 |     virtual void *run(void *arg) { return NULL; }
+[6.401s]       |                       ~~~~~~^~~
+[6.414s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[6.414s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:22,
+[6.414s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h:16,
+[6.414s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/State_BalanceTest.h:13,
+[6.414s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/FSM/State_BalanceTest.cpp:4:
+[6.414s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[6.414s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[6.415s]    51 |     virtual void *run(void *arg) { return NULL; }
+[6.415s]       |                       ~~~~~~^~~
+[6.420s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[6.420s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:22,
+[6.420s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h:16,
+[6.420s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:22,
+[6.421s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/FSM/FSM.cpp:4:
+[6.421s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[6.421s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[6.421s]    51 |     virtual void *run(void *arg) { return NULL; }
+[6.421s]       |                       ~~~~~~^~~
+[6.494s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[6.494s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:22,
+[6.494s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/Gait/FeetEndCal.h:7,
+[6.494s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/Gait/FeetEndCal.cpp:4:
+[6.494s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[6.494s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[6.495s]    51 |     virtual void *run(void *arg) { return NULL; }
+[6.495s]       |                       ~~~~~~^~~
+[6.599s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[6.599s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:22,
+[6.600s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h:16,
+[6.600s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/State_SwingTest.h:15,
+[6.600s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/FSM/State_SwingTest.cpp:4:
+[6.600s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[6.600s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[6.600s]    51 |     virtual void *run(void *arg) { return NULL; }
+[6.600s]       |                       ~~~~~~^~~
+[6.630s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[6.630s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:22,
+[6.630s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h:16,
+[6.630s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:22,
+[6.630s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/ControlFrame.h:16,
+[6.630s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/main.cpp:9:
+[6.631s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[6.631s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[6.631s]    51 |     virtual void *run(void *arg) { return NULL; }
+[6.631s]       |                       ~~~~~~^~~
+[6.675s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[6.675s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/common/unitreeRobot.h:28,
+[6.675s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/common/unitreeRobot.cpp:4:
+[6.675s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[6.675s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[6.675s]    51 |     virtual void *run(void *arg) { return NULL; }
+[6.675s]       |                       ~~~~~~^~~
+[6.820s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[6.820s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:22,
+[6.820s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h:16,
+[6.820s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/State_FreeStand.h:14,
+[6.820s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/FSM/State_FreeStand.cpp:4:
+[6.821s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[6.821s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[6.821s]    51 |     virtual void *run(void *arg) { return NULL; }
+[6.821s]       |                       ~~~~~~^~~
+[6.889s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[6.889s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:22,
+[6.889s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h:16,
+[6.889s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/State_FixedStand.h:14,
+[6.889s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/FSM/State_FixedStand.cpp:5:
+[6.889s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[6.890s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[6.890s]    51 |     virtual void *run(void *arg) { return NULL; }
+[6.890s]       |                       ~~~~~~^~~
+[6.903s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[6.903s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:22,
+[6.903s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/Gait/FeetEndCal.h:7,
+[6.903s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/Gait/GaitGenerator.h:8,
+[6.903s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/Gait/GaitGenerator.cpp:4:
+[6.903s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[6.904s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[6.904s]    51 |     virtual void *run(void *arg) { return NULL; }
+[6.904s]       |                       ~~~~~~^~~
+[7.047s] [ 70%] Building CXX object CMakeFiles/junior_ctrl.dir/src/control/ControlFrame.cpp.o
+[8.915s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[8.916s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/common/unitreeRobot.h:28,
+[8.916s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/BalanceCtrl.h:24,
+[8.916s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/control/BalanceCtrl.cpp:4:
+[8.916s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[8.916s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[8.917s]    51 |     virtual void *run(void *arg) { return NULL; }
+[8.917s]       |                       ~~~~~~^~~
+[9.045s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/BalanceCtrl.h: In constructor ‘BalanceCtrl::BalanceCtrl(double, Mat3, Mat6, double, double)’:
+[9.045s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/BalanceCtrl.h:52:12: warning: ‘BalanceCtrl::_mass’ will be initialized after [-Wreorder]
+[9.045s]    52 |     double _mass, _alpha, _beta, _fricRatio;
+[9.045s]       |            ^~~~~
+[9.046s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/BalanceCtrl.h:47:10: warning:   ‘Mat3 BalanceCtrl::_Ib’ [-Wreorder]
+[9.046s]    47 |     Mat3 _Ib;
+[9.046s]       |          ^~~
+[9.049s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/control/BalanceCtrl.cpp:8:1: warning:   when initialized here [-Wreorder]
+[9.049s]     8 | BalanceCtrl::BalanceCtrl(double mass, Mat3 Ib, Mat6 S, double alpha, double beta)
+[9.050s]       | ^~~~~~~~~~~
+[9.050s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/BalanceCtrl.h:47:10: warning: ‘BalanceCtrl::_Ib’ will be initialized after [-Wreorder]
+[9.050s]    47 |     Mat3 _Ib;
+[9.050s]       |          ^~~
+[9.050s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/BalanceCtrl.h:46:10: warning:   ‘Mat6 BalanceCtrl::_S’ [-Wreorder]
+[9.053s]    46 |     Mat6 _S;
+[9.054s]       |          ^~
+[9.054s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/control/BalanceCtrl.cpp:8:1: warning:   when initialized here [-Wreorder]
+[9.054s]     8 | BalanceCtrl::BalanceCtrl(double mass, Mat3 Ib, Mat6 S, double alpha, double beta)
+[9.054s]       | ^~~~~~~~~~~
+[9.476s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/control/BalanceCtrl.cpp: In member function ‘void BalanceCtrl::calMatrixA(Vec34, RotMat, VecInt4)’:
+[9.476s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/control/BalanceCtrl.cpp:66:68: warning: unused parameter ‘contact’ [-Wunused-parameter]
+[9.477s]    66 | void BalanceCtrl::calMatrixA(Vec34 feetPos2B, RotMat rotM, VecInt4 contact)
+[9.477s]       |                                                            ~~~~~~~~^~~~~~~
+[9.678s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/control/BalanceCtrl.cpp: In member function ‘void BalanceCtrl::solveQP()’:
+[9.678s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/control/BalanceCtrl.cpp:172:12: warning: unused variable ‘value’ [-Wunused-variable]
+[9.678s]   172 |     double value = solve_quadprog(G, g0, CE, ce0, CI, ci0, x);
+[9.678s]       |            ^~~~~
+[9.854s] [ 74%] Building CXX object CMakeFiles/junior_ctrl.dir/src/control/Estimator.cpp.o
+[10.085s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[10.086s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:22,
+[10.086s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h:16,
+[10.086s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:22,
+[10.086s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/ControlFrame.h:16,
+[10.086s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/control/ControlFrame.cpp:4:
+[10.086s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[10.087s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[10.087s]    51 |     virtual void *run(void *arg) { return NULL; }
+[10.087s]       |                       ~~~~~~^~~
+[10.523s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h: In destructor ‘CtrlComponents::~CtrlComponents()’:
+[10.524s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:49:9: warning: deleting object of abstract class type ‘IOInterface’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.524s]    49 |         delete ioInter;
+[10.524s]       |         ^~~~~~~~~~~~~~
+[10.531s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h: In constructor ‘FSMState::FSMState(CtrlComponents*, FSMStateName, std::string)’:
+[10.532s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h:39:21: warning: ‘FSMState::_ctrlComp’ will be initialized after [-Wreorder]
+[10.532s]    39 |     CtrlComponents *_ctrlComp;
+[10.532s]       |                     ^~~~~~~~~
+[10.532s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSMState.h:35:18: warning:   ‘FSMStateName FSMState::_stateName’ [-Wreorder]
+[10.532s]    35 |     FSMStateName _stateName;
+[10.532s]       |                  ^~~~~~~~~~
+[10.532s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/FSM/FSMState.cpp:6:1: warning:   when initialized here [-Wreorder]
+[10.533s]     6 | FSMState::FSMState(CtrlComponents *ctrlComp, FSMStateName stateName, std::string stateNameString)
+[10.533s]       | ^~~~~~~~
+[10.621s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h: In destructor ‘CtrlComponents::~CtrlComponents()’:
+[10.621s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:49:9: warning: deleting object of abstract class type ‘IOInterface’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.621s]    49 |         delete ioInter;
+[10.621s]       |         ^~~~~~~~~~~~~~
+[10.680s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h: In member function ‘void FSMStateList::deletePtr()’:
+[10.680s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:60:9: warning: deleting object of abstract class type ‘FSMState’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.680s]    60 |         delete invalid;
+[10.680s]       |         ^~~~~~~~~~~~~~
+[10.684s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:61:9: warning: deleting object of polymorphic class type ‘State_Passive’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.684s]    61 |         delete passive;
+[10.684s]       |         ^~~~~~~~~~~~~~
+[10.685s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:62:9: warning: deleting object of polymorphic class type ‘State_FixedStand’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.685s]    62 |         delete fixedStand;
+[10.685s]       |         ^~~~~~~~~~~~~~~~~
+[10.685s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:63:9: warning: deleting object of polymorphic class type ‘State_FreeStand’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.685s]    63 |         delete freeStand;
+[10.685s]       |         ^~~~~~~~~~~~~~~~
+[10.685s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:64:9: warning: deleting object of polymorphic class type ‘State_Trotting’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.685s]    64 |         delete trotting;
+[10.686s]       |         ^~~~~~~~~~~~~~~
+[10.686s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:65:9: warning: deleting object of polymorphic class type ‘State_BalanceTest’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.686s]    65 |         delete balanceTest;
+[10.686s]       |         ^~~~~~~~~~~~~~~~~~
+[10.686s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:66:9: warning: deleting object of polymorphic class type ‘State_SwingTest’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.686s]    66 |         delete swingTest;
+[10.686s]       |         ^~~~~~~~~~~~~~~~
+[10.686s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:67:9: warning: deleting object of polymorphic class type ‘State_StepTest’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.686s]    67 |         delete stepTest;
+[10.687s]       |         ^~~~~~~~~~~~~~~
+[10.687s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:72:9: warning: deleting object of polymorphic class type ‘State_move_base’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.687s]    72 |         delete moveBase;
+[10.687s]       |         ^~~~~~~~~~~~~~~
+[10.725s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h: In destructor ‘CtrlComponents::~CtrlComponents()’:
+[10.726s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:49:9: warning: deleting object of abstract class type ‘IOInterface’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.726s]    49 |         delete ioInter;
+[10.726s]       |         ^~~~~~~~~~~~~~
+[10.742s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h: In destructor ‘CtrlComponents::~CtrlComponents()’:
+[10.743s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:49:9: warning: deleting object of abstract class type ‘IOInterface’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.743s]    49 |         delete ioInter;
+[10.743s]       |         ^~~~~~~~~~~~~~
+[10.747s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/State_Trotting.h: In constructor ‘State_Trotting::State_Trotting(CtrlComponents*)’:
+[10.747s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/State_Trotting.h:79:14: warning: ‘State_Trotting::_contact’ will be initialized after [-Wreorder]
+[10.747s]    79 |     VecInt4 *_contact;
+[10.747s]       |              ^~~~~~~~
+[10.747s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/State_Trotting.h:46:21: warning:   ‘QuadrupedRobot* State_Trotting::_robModel’ [-Wreorder]
+[10.748s]    46 |     QuadrupedRobot *_robModel;
+[10.748s]       |                     ^~~~~~~~~
+[10.748s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/FSM/State_Trotting.cpp:7:1: warning:   when initialized here [-Wreorder]
+[10.748s]     7 | State_Trotting::State_Trotting(CtrlComponents *ctrlComp)
+[10.748s]       | ^~~~~~~~~~~~~~
+[10.749s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/Gait/FeetEndCal.h: In constructor ‘FeetEndCal::FeetEndCal(CtrlComponents*)’:
+[10.749s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/Gait/FeetEndCal.h:19:16: warning: ‘FeetEndCal::_est’ will be initialized after [-Wreorder]
+[10.749s]    19 |     Estimator *_est;
+[10.749s]       |                ^~~~
+[10.749s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/Gait/FeetEndCal.h:18:20: warning:   ‘LowlevelState* FeetEndCal::_lowState’ [-Wreorder]
+[10.750s]    18 |     LowlevelState *_lowState;
+[10.750s]       |                    ^~~~~~~~~
+[10.750s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/Gait/FeetEndCal.cpp:6:1: warning:   when initialized here [-Wreorder]
+[10.750s]     6 | FeetEndCal::FeetEndCal(CtrlComponents *ctrlComp)
+[10.751s]       | ^~~~~~~~~~
+[10.760s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h: In destructor ‘CtrlComponents::~CtrlComponents()’:
+[10.760s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:49:9: warning: deleting object of abstract class type ‘IOInterface’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.760s]    49 |         delete ioInter;
+[10.760s]       |         ^~~~~~~~~~~~~~
+[10.803s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h: In destructor ‘CtrlComponents::~CtrlComponents()’:
+[10.806s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:49:9: warning: deleting object of abstract class type ‘IOInterface’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.806s]    49 |         delete ioInter;
+[10.806s]       |         ^~~~~~~~~~~~~~
+[10.985s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h: In destructor ‘CtrlComponents::~CtrlComponents()’:
+[10.985s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:49:9: warning: deleting object of abstract class type ‘IOInterface’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[10.985s]    49 |         delete ioInter;
+[10.985s]       |         ^~~~~~~~~~~~~~
+[11.089s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h: In destructor ‘CtrlComponents::~CtrlComponents()’:
+[11.090s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:49:9: warning: deleting object of abstract class type ‘IOInterface’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.090s]    49 |         delete ioInter;
+[11.090s]       |         ^~~~~~~~~~~~~~
+[11.166s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h: In destructor ‘CtrlComponents::~CtrlComponents()’:
+[11.167s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:49:9: warning: deleting object of abstract class type ‘IOInterface’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.167s]    49 |         delete ioInter;
+[11.167s]       |         ^~~~~~~~~~~~~~
+[11.173s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/Gait/GaitGenerator.h: In constructor ‘GaitGenerator::GaitGenerator(CtrlComponents*)’:
+[11.173s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/Gait/GaitGenerator.h:39:14: warning: ‘GaitGenerator::_contact’ will be initialized after [-Wreorder]
+[11.173s]    39 |     VecInt4 *_contact;
+[11.174s]       |              ^~~~~~~~
+[11.174s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/Gait/GaitGenerator.h:33:21: warning:   ‘QuadrupedRobot* GaitGenerator::_robModel’ [-Wreorder]
+[11.174s]    33 |     QuadrupedRobot *_robModel;
+[11.174s]       |                     ^~~~~~~~~
+[11.174s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/Gait/GaitGenerator.cpp:6:1: warning:   when initialized here [-Wreorder]
+[11.174s]     6 | GaitGenerator::GaitGenerator(CtrlComponents *ctrlComp)
+[11.174s]       | ^~~~~~~~~~~~~
+[11.571s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h: In destructor ‘CtrlComponents::~CtrlComponents()’:
+[11.571s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:49:9: warning: deleting object of abstract class type ‘IOInterface’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.571s]    49 |         delete ioInter;
+[11.571s]       |         ^~~~~~~~~~~~~~
+[11.571s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h: In destructor ‘CtrlComponents::~CtrlComponents()’:
+[11.572s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:49:9: warning: deleting object of abstract class type ‘IOInterface’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.572s]    49 |         delete ioInter;
+[11.572s]       |         ^~~~~~~~~~~~~~
+[11.619s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h: In destructor ‘CtrlComponents::~CtrlComponents()’:
+[11.619s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:49:9: warning: deleting object of abstract class type ‘IOInterface’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.620s]    49 |         delete ioInter;
+[11.620s]       |         ^~~~~~~~~~~~~~
+[11.630s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h: In member function ‘void FSMStateList::deletePtr()’:
+[11.630s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:60:9: warning: deleting object of abstract class type ‘FSMState’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.630s]    60 |         delete invalid;
+[11.630s]       |         ^~~~~~~~~~~~~~
+[11.631s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:61:9: warning: deleting object of polymorphic class type ‘State_Passive’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.631s]    61 |         delete passive;
+[11.631s]       |         ^~~~~~~~~~~~~~
+[11.633s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:62:9: warning: deleting object of polymorphic class type ‘State_FixedStand’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.633s]    62 |         delete fixedStand;
+[11.633s]       |         ^~~~~~~~~~~~~~~~~
+[11.633s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:63:9: warning: deleting object of polymorphic class type ‘State_FreeStand’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.633s]    63 |         delete freeStand;
+[11.633s]       |         ^~~~~~~~~~~~~~~~
+[11.633s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:64:9: warning: deleting object of polymorphic class type ‘State_Trotting’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.633s]    64 |         delete trotting;
+[11.634s]       |         ^~~~~~~~~~~~~~~
+[11.639s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:65:9: warning: deleting object of polymorphic class type ‘State_BalanceTest’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.639s]    65 |         delete balanceTest;
+[11.639s]       |         ^~~~~~~~~~~~~~~~~~
+[11.639s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:66:9: warning: deleting object of polymorphic class type ‘State_SwingTest’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.639s]    66 |         delete swingTest;
+[11.639s]       |         ^~~~~~~~~~~~~~~~
+[11.639s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:67:9: warning: deleting object of polymorphic class type ‘State_StepTest’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.640s]    67 |         delete stepTest;
+[11.640s]       |         ^~~~~~~~~~~~~~~
+[11.640s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:72:9: warning: deleting object of polymorphic class type ‘State_move_base’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.640s]    72 |         delete moveBase;
+[11.640s]       |         ^~~~~~~~~~~~~~~
+[11.793s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h: In destructor ‘CtrlComponents::~CtrlComponents()’:
+[11.793s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:49:9: warning: deleting object of abstract class type ‘IOInterface’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[11.793s]    49 |         delete ioInter;
+[11.793s]       |         ^~~~~~~~~~~~~~
+[12.794s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/main.cpp: In function ‘void ShutDown(int)’:
+[12.794s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/main.cpp:31:19: warning: unused parameter ‘sig’ [-Wunused-parameter]
+[12.794s]    31 | void ShutDown(int sig)
+[12.794s]       |               ~~~~^~~
+[14.265s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[14.265s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/common/unitreeRobot.h:28,
+[14.266s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/Estimator.h:20,
+[14.266s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/control/Estimator.cpp:4:
+[14.266s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[14.266s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[14.266s]    51 |     virtual void *run(void *arg) { return NULL; }
+[14.266s]       |                       ~~~~~~^~~
+[14.568s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h: In destructor ‘CtrlComponents::~CtrlComponents()’:
+[14.568s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/CtrlComponents.h:49:9: warning: deleting object of abstract class type ‘IOInterface’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[14.568s]    49 |         delete ioInter;
+[14.568s]       |         ^~~~~~~~~~~~~~
+[14.621s] [ 77%] Building CXX object CMakeFiles/junior_ctrl.dir/src/interface/IOSDK.cpp.o
+[14.625s] [ 81%] Building CXX object CMakeFiles/junior_ctrl.dir/src/interface/IOROS.cpp.o
+[14.678s] [ 85%] Building CXX object CMakeFiles/junior_ctrl.dir/src/interface/KeyBoard.cpp.o
+[14.682s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h: In member function ‘void FSMStateList::deletePtr()’:
+[14.682s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:60:9: warning: deleting object of abstract class type ‘FSMState’ which has non-virtual destructor will cause undefined behavior [-Wdelete-non-virtual-dtor]
+[14.682s]    60 |         delete invalid;
+[14.682s]       |         ^~~~~~~~~~~~~~
+[14.682s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:61:9: warning: deleting object of polymorphic class type ‘State_Passive’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[14.683s]    61 |         delete passive;
+[14.683s]       |         ^~~~~~~~~~~~~~
+[14.683s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:62:9: warning: deleting object of polymorphic class type ‘State_FixedStand’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[14.683s]    62 |         delete fixedStand;
+[14.683s]       |         ^~~~~~~~~~~~~~~~~
+[14.683s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:63:9: warning: deleting object of polymorphic class type ‘State_FreeStand’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[14.683s]    63 |         delete freeStand;
+[14.683s]       |         ^~~~~~~~~~~~~~~~
+[14.683s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:64:9: warning: deleting object of polymorphic class type ‘State_Trotting’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[14.683s]    64 |         delete trotting;
+[14.684s]       |         ^~~~~~~~~~~~~~~
+[14.684s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:65:9: warning: deleting object of polymorphic class type ‘State_BalanceTest’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[14.684s]    65 |         delete balanceTest;
+[14.684s]       |         ^~~~~~~~~~~~~~~~~~
+[14.684s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:66:9: warning: deleting object of polymorphic class type ‘State_SwingTest’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[14.684s]    66 |         delete swingTest;
+[14.684s]       |         ^~~~~~~~~~~~~~~~
+[14.684s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:67:9: warning: deleting object of polymorphic class type ‘State_StepTest’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[14.684s]    67 |         delete stepTest;
+[14.684s]       |         ^~~~~~~~~~~~~~~
+[14.685s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/FSM/FSM.h:72:9: warning: deleting object of polymorphic class type ‘State_move_base’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+[14.685s]    72 |         delete moveBase;
+[14.685s]       |         ^~~~~~~~~~~~~~~
+[14.823s] [ 88%] Building CXX object CMakeFiles/junior_ctrl.dir/src/interface/WirelessHandle.cpp.o
+[14.833s] [ 92%] Building CXX object CMakeFiles/junior_ctrl.dir/src/quadProgpp/Array.cc.o
+[14.885s] [ 96%] Building CXX object CMakeFiles/junior_ctrl.dir/src/quadProgpp/QuadProg++.cc.o
+[15.831s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/KeyBoard.h:14,
+[15.831s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/interface/KeyBoard.cpp:4:
+[15.831s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[15.831s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[15.832s]    51 |     virtual void *run(void *arg) { return NULL; }
+[15.832s]       |                       ~~~~~~^~~
+[16.669s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc: In function ‘double quadprogpp::solve_quadprog(Matrix<double>&, Vector<double>&, const Matrix<double>&, const Vector<double>&, const Matrix<double>&, const Vector<double>&, Vector<double>&)’:
+[16.669s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:85:27: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.670s]    85 |     register unsigned int i, j, k, l; /* indices */
+[16.670s]       |                           ^
+[16.671s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:85:30: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.671s]    85 |     register unsigned int i, j, k, l; /* indices */
+[16.671s]       |                              ^
+[16.671s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:85:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.671s]    85 |     register unsigned int i, j, k, l; /* indices */
+[16.672s]       |                                 ^
+[16.672s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:85:36: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.672s]    85 |     register unsigned int i, j, k, l; /* indices */
+[16.672s]       |                                    ^
+[16.672s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:122:16: warning: address requested for ‘i’, which is declared ‘register’ [-Wextra]
+[16.672s]   122 |       c1 += G[i][i];
+[16.672s]       |                ^
+[16.673s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:145:22: warning: address requested for ‘j’, which is declared ‘register’ [-Wextra]
+[16.673s]   145 |         J[i][j] = z[j];
+[16.673s]       |                      ^
+[16.673s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:194:12: warning: address requested for ‘k’, which is declared ‘register’ [-Wextra]
+[16.673s]   194 |         x[k] += t2 * z[k];
+[16.673s]       |            ^
+[16.674s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:353:12: warning: address requested for ‘l’, which is declared ‘register’ [-Wextra]
+[16.675s]   353 |       iai[l] = l;
+[16.675s]       |            ^
+[16.675s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc: In function ‘void quadprogpp::compute_d(Vector<double>&, const Matrix<double>&, const Vector<double>&)’:
+[16.676s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:451:18: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.676s]   451 |     register int i, j, n = d.size();
+[16.676s]       |                  ^
+[16.676s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:451:21: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.676s]   451 |     register int i, j, n = d.size();
+[16.677s]       |                     ^
+[16.677s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:451:24: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.677s]   451 |     register int i, j, n = d.size();
+[16.677s]       |                        ^
+[16.677s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:452:21: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.678s]   452 |     register double sum;
+[16.678s]       |                     ^~~
+[16.678s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc: In function ‘void quadprogpp::update_z(Vector<double>&, const Matrix<double>&, const Vector<double>&, int)’:
+[16.678s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:466:18: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.678s]   466 |     register int i, j, n = z.size();
+[16.679s]       |                  ^
+[16.679s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:466:21: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.679s]   466 |     register int i, j, n = z.size();
+[16.679s]       |                     ^
+[16.679s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:466:24: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.679s]   466 |     register int i, j, n = z.size();
+[16.680s]       |                        ^
+[16.680s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc: In function ‘void quadprogpp::update_r(const Matrix<double>&, Vector<double>&, const Vector<double>&, int)’:
+[16.680s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:479:18: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.680s]   479 |     register int i, j;
+[16.680s]       |                  ^
+[16.680s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:479:21: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.681s]   479 |     register int i, j;
+[16.681s]       |                     ^
+[16.681s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:480:21: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.681s]   480 |     register double sum;
+[16.681s]       |                     ^~~
+[16.681s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc: In function ‘bool quadprogpp::add_constraint(Matrix<double>&, Matrix<double>&, Vector<double>&, unsigned int&, double&)’:
+[16.681s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:498:27: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.681s]   498 |     register unsigned int i, j, k;
+[16.682s]       |                           ^
+[16.682s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:498:30: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.682s]   498 |     register unsigned int i, j, k;
+[16.682s]       |                              ^
+[16.682s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:498:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.682s]   498 |     register unsigned int i, j, k;
+[16.682s]       |                                 ^
+[16.682s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:516:15: warning: address requested for ‘j’, which is declared ‘register’ [-Wextra]
+[16.682s]   516 |       ss = d[j];
+[16.683s]       |               ^
+[16.683s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:534:17: warning: address requested for ‘k’, which is declared ‘register’ [-Wextra]
+[16.683s]   534 |         t1 = J[k][j - 1];
+[16.683s]       |                 ^
+[16.683s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:546:10: warning: address requested for ‘i’, which is declared ‘register’ [-Wextra]
+[16.683s]   546 |       R[i][iq - 1] = d[i];
+[16.683s]       |          ^
+[16.683s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc: In function ‘void quadprogpp::delete_constraint(Matrix<double>&, Matrix<double>&, Vector<int>&, Vector<double>&, unsigned int, int, unsigned int&, int)’:
+[16.684s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:568:27: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.684s]   568 |     register unsigned int i, j, k, qq = 0; // just to prevent warnings from smart compilers
+[16.684s]       |                           ^
+[16.684s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:568:30: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.684s]   568 |     register unsigned int i, j, k, qq = 0; // just to prevent warnings from smart compilers
+[16.684s]       |                              ^
+[16.684s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:568:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.684s]   568 |     register unsigned int i, j, k, qq = 0; // just to prevent warnings from smart compilers
+[16.685s]       |                                 ^
+[16.685s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:568:36: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.685s]   568 |     register unsigned int i, j, k, qq = 0; // just to prevent warnings from smart compilers
+[16.685s]       |                                    ^~
+[16.685s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:574:14: warning: address requested for ‘i’, which is declared ‘register’ [-Wextra]
+[16.685s]   574 |       if (A[i] == l)
+[16.685s]       |              ^
+[16.685s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:593:12: warning: address requested for ‘j’, which is declared ‘register’ [-Wextra]
+[16.686s]   593 |         R[j][i] = R[j][i + 1];
+[16.686s]       |            ^
+[16.686s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:640:17: warning: address requested for ‘k’, which is declared ‘register’ [-Wextra]
+[16.686s]   640 |         t1 = J[k][j];
+[16.686s]       |                 ^
+[16.686s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc: In function ‘double quadprogpp::distance(double, double)’:
+[16.686s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:650:21: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.686s]   650 |     register double a1, b1, t;
+[16.686s]       |                     ^~
+[16.687s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:650:25: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.687s]   650 |     register double a1, b1, t;
+[16.687s]       |                         ^~
+[16.687s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:650:29: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.687s]   650 |     register double a1, b1, t;
+[16.687s]       |                             ^
+[16.687s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc: In function ‘double quadprogpp::scalar_product(const Vector<double>&, const Vector<double>&)’:
+[16.688s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:668:18: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.688s]   668 |     register int i, n = x.size();
+[16.688s]       |                  ^
+[16.688s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:668:21: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.688s]   668 |     register int i, n = x.size();
+[16.688s]       |                     ^
+[16.688s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:669:21: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.688s]   669 |     register double sum;
+[16.688s]       |                     ^~~
+[16.689s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc: In function ‘void quadprogpp::cholesky_decomposition(Matrix<double>&)’:
+[16.689s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:679:18: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.689s]   679 |     register int i, j, k, n = A.nrows();
+[16.689s]       |                  ^
+[16.689s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:679:21: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.689s]   679 |     register int i, j, k, n = A.nrows();
+[16.689s]       |                     ^
+[16.689s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:679:24: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.690s]   679 |     register int i, j, k, n = A.nrows();
+[16.690s]       |                        ^
+[16.690s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:679:27: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.690s]   679 |     register int i, j, k, n = A.nrows();
+[16.690s]       |                           ^
+[16.690s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:680:21: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.690s]   680 |     register double sum;
+[16.690s]       |                     ^~~
+[16.691s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc: In function ‘void quadprogpp::forward_elimination(const Matrix<double>&, Vector<double>&, const Vector<double>&)’:
+[16.691s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:723:18: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.691s]   723 |     register int i, j, n = L.nrows();
+[16.691s]       |                  ^
+[16.691s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:723:21: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.691s]   723 |     register int i, j, n = L.nrows();
+[16.691s]       |                     ^
+[16.691s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:723:24: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.691s]   723 |     register int i, j, n = L.nrows();
+[16.692s]       |                        ^
+[16.692s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc: In function ‘void quadprogpp::backward_elimination(const Matrix<double>&, Vector<double>&, const Vector<double>&)’:
+[16.692s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:737:18: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.692s]   737 |     register int i, j, n = U.nrows();
+[16.692s]       |                  ^
+[16.692s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:737:21: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.692s]   737 |     register int i, j, n = U.nrows();
+[16.692s]       |                     ^
+[16.693s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/quadProgpp/QuadProg++.cc:737:24: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+[16.693s]   737 |     register int i, j, n = U.nrows();
+[16.693s]       |                        ^
+[17.004s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/interface/KeyBoard.cpp: In member function ‘virtual void* KeyBoard::run(void*)’:
+[17.004s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/interface/KeyBoard.cpp:109:27: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[17.004s]   109 | void *KeyBoard::run(void *arg)
+[17.004s]       |                     ~~~~~~^~~
+[17.493s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/Estimator.h: In constructor ‘Estimator::Estimator(QuadrupedRobot*, LowlevelState*, VecInt4*, Vec4*, double, Vec18, std::string)’:
+[17.493s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/Estimator.h:103:21: warning: ‘Estimator::_robModel’ will be initialized after [-Wreorder]
+[17.493s]   103 |     QuadrupedRobot *_robModel;
+[17.493s]       |                     ^~~~~~~~~
+[17.493s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/Estimator.h:102:20: warning:   ‘LowlevelState* Estimator::_lowState’ [-Wreorder]
+[17.494s]   102 |     LowlevelState *_lowState;
+[17.494s]       |                    ^~~~~~~~~
+[17.494s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/control/Estimator.cpp:8:1: warning:   when initialized here [-Wreorder]
+[17.494s]     8 | Estimator::Estimator(QuadrupedRobot *robotModel, LowlevelState *lowState,
+[17.494s]       | ^~~~~~~~~
+[17.494s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/Estimator.h:105:14: warning: ‘Estimator::_contact’ will be initialized after [-Wreorder]
+[17.494s]   105 |     VecInt4 *_contact;
+[17.494s]       |              ^~~~~~~~
+[17.494s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/Estimator.h:104:11: warning:   ‘Vec4* Estimator::_phase’ [-Wreorder]
+[17.494s]   104 |     Vec4 *_phase;
+[17.494s]       |           ^~~~~~
+[17.495s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/control/Estimator.cpp:8:1: warning:   when initialized here [-Wreorder]
+[17.495s]     8 | Estimator::Estimator(QuadrupedRobot *robotModel, LowlevelState *lowState,
+[17.495s]       | ^~~~~~~~~
+[17.495s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/Estimator.h:106:12: warning: ‘Estimator::_dt’ will be initialized after [-Wreorder]
+[17.495s]   106 |     double _dt;
+[17.495s]       |            ^~~
+[17.495s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/Estimator.h:84:11: warning:   ‘Vec18 Estimator::_Qdig’ [-Wreorder]
+[17.495s]    84 |     Vec18 _Qdig;                            // adjustable process noise covariance
+[17.495s]       |           ^~~~~
+[17.495s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/control/Estimator.cpp:8:1: warning:   when initialized here [-Wreorder]
+[17.496s]     8 | Estimator::Estimator(QuadrupedRobot *robotModel, LowlevelState *lowState,
+[17.496s]       | ^~~~~~~~~
+[17.496s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/Estimator.h: In constructor ‘Estimator::Estimator(QuadrupedRobot*, LowlevelState*, VecInt4*, Vec4*, double)’:
+[17.496s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/Estimator.h:103:21: warning: ‘Estimator::_robModel’ will be initialized after [-Wreorder]
+[17.496s]   103 |     QuadrupedRobot *_robModel;
+[17.496s]       |                     ^~~~~~~~~
+[17.497s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/Estimator.h:102:20: warning:   ‘LowlevelState* Estimator::_lowState’ [-Wreorder]
+[17.497s]   102 |     LowlevelState *_lowState;
+[17.497s]       |                    ^~~~~~~~~
+[17.497s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/control/Estimator.cpp:18:1: warning:   when initialized here [-Wreorder]
+[17.497s]    18 | Estimator::Estimator(QuadrupedRobot *robotModel, LowlevelState *lowState,
+[17.497s]       | ^~~~~~~~~
+[17.497s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/Estimator.h:105:14: warning: ‘Estimator::_contact’ will be initialized after [-Wreorder]
+[17.497s]   105 |     VecInt4 *_contact;
+[17.497s]       |              ^~~~~~~~
+[17.497s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/control/Estimator.h:104:11: warning:   ‘Vec4* Estimator::_phase’ [-Wreorder]
+[17.497s]   104 |     Vec4 *_phase;
+[17.498s]       |           ^~~~~~
+[17.498s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/control/Estimator.cpp:18:1: warning:   when initialized here [-Wreorder]
+[17.498s]    18 | Estimator::Estimator(QuadrupedRobot *robotModel, LowlevelState *lowState,
+[17.498s]       | ^~~~~~~~~
+[18.984s] In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/message/LowlevelState.h:10,
+[18.984s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/IOInterface.h:8,
+[18.984s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/IOROS.h:69,
+[18.984s]                  from /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/interface/IOROS.cpp:239:
+[18.984s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h: In member function ‘virtual void* CmdPanel::run(void*)’:
+[18.984s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include/interface/CmdPanel.h:51:29: warning: unused parameter ‘arg’ [-Wunused-parameter]
+[18.985s]    51 |     virtual void *run(void *arg) { return NULL; }
+[18.985s]       |                       ~~~~~~^~~
+[19.211s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/interface/IOROS.cpp: In static member function ‘static void IOROS::RosShutDown(int)’:
+[19.212s] /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/src/interface/IOROS.cpp:248:29: warning: unused parameter ‘sig’ [-Wunused-parameter]
+[19.212s]   248 | void IOROS::RosShutDown(int sig)
+[19.212s]       |                         ~~~~^~~
+[35.866s] [100%] Linking CXX executable junior_ctrl
+[36.187s] [100%] Built target junior_ctrl
+[36.216s] Invoked command in '/home/redalexdad/GitHub/WalkingRobotSim/build/unitree_guide2' returned '0': CMAKE_PREFIX_PATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_bringup:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs:/home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_gazebo:/home/redalexdad/GitHub/WalkingRobotSim/install/go2_description:/home/redalexdad/GitHub/WalkingRobotSim/install/go1_description:/usr/local/libtorch:/opt/unitree_robotics:/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_yolo_recognition:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_odometry:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com LD_LIBRARY_PATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs/lib:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/lib:/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib:/usr/local/cuda-12.9/lib64 PYTHONPATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_yolo_recognition/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_odometry/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages /usr/bin/cmake --build /home/redalexdad/GitHub/WalkingRobotSim/build/unitree_guide2 -- -j16 -l16
+[36.218s] Invoking command in '/home/redalexdad/GitHub/WalkingRobotSim/build/unitree_guide2': CMAKE_PREFIX_PATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_bringup:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs:/home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_gazebo:/home/redalexdad/GitHub/WalkingRobotSim/install/go2_description:/home/redalexdad/GitHub/WalkingRobotSim/install/go1_description:/usr/local/libtorch:/opt/unitree_robotics:/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_yolo_recognition:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_odometry:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com LD_LIBRARY_PATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs/lib:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/lib:/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib:/usr/local/cuda-12.9/lib64 PYTHONPATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_yolo_recognition/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_odometry/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages /usr/bin/cmake --install /home/redalexdad/GitHub/WalkingRobotSim/build/unitree_guide2
+[36.236s] -- Install configuration: ""
+[36.236s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/lib/unitree_guide2/junior_ctrl
+[36.240s] -- Set non-toolchain portion of runtime path of "/home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/lib/unitree_guide2/junior_ctrl" to ""
+[36.240s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/ament_index/resource_index/package_run_dependencies/unitree_guide2
+[36.240s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/ament_index/resource_index/parent_prefix_path/unitree_guide2
+[36.241s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/environment/ament_prefix_path.sh
+[36.241s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/environment/ament_prefix_path.dsv
+[36.241s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/environment/path.sh
+[36.242s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/environment/path.dsv
+[36.242s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/local_setup.bash
+[36.242s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/local_setup.sh
+[36.243s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/local_setup.zsh
+[36.243s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/local_setup.dsv
+[36.243s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/package.dsv
+[36.243s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/ament_index/resource_index/packages/unitree_guide2
+[36.244s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/cmake/unitree_guide2Config.cmake
+[36.244s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/cmake/unitree_guide2Config-version.cmake
+[36.244s] -- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/package.xml
+[36.246s] Invoked command in '/home/redalexdad/GitHub/WalkingRobotSim/build/unitree_guide2' returned '0': CMAKE_PREFIX_PATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_bringup:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs:/home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_gazebo:/home/redalexdad/GitHub/WalkingRobotSim/install/go2_description:/home/redalexdad/GitHub/WalkingRobotSim/install/go1_description:/usr/local/libtorch:/opt/unitree_robotics:/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_yolo_recognition:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_odometry:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com LD_LIBRARY_PATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs/lib:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_control/lib:/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib:/usr/local/cuda-12.9/lib64 PYTHONPATH=/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_yolo_recognition/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/yolo_msgs/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_odometry/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_navigation/lib/python3.12/site-packages:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages /usr/bin/cmake --install /home/redalexdad/GitHub/WalkingRobotSim/build/unitree_guide2

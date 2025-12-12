@@ -1,0 +1,44 @@
+[2.212s] Invoking command in '/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_cartography': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/redalexdad/GitHub/WalkingRobotSim/build/ros2_cartography/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/ros2_cartography build --build-base /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_cartography/build install --record /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_cartography/install.log --single-version-externally-managed install_data
+[2.645s] running egg_info
+[2.646s] creating ../../build/ros2_cartography/ros2_cartography.egg-info
+[2.682s] writing ../../build/ros2_cartography/ros2_cartography.egg-info/PKG-INFO
+[2.682s] writing dependency_links to ../../build/ros2_cartography/ros2_cartography.egg-info/dependency_links.txt
+[2.683s] writing requirements to ../../build/ros2_cartography/ros2_cartography.egg-info/requires.txt
+[2.683s] writing top-level names to ../../build/ros2_cartography/ros2_cartography.egg-info/top_level.txt
+[2.683s] writing manifest file '../../build/ros2_cartography/ros2_cartography.egg-info/SOURCES.txt'
+[2.753s] reading manifest file '../../build/ros2_cartography/ros2_cartography.egg-info/SOURCES.txt'
+[2.754s] writing manifest file '../../build/ros2_cartography/ros2_cartography.egg-info/SOURCES.txt'
+[2.755s] running build
+[2.755s] running build_py
+[2.755s] creating /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_cartography/build
+[2.755s] creating /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_cartography/build/lib
+[2.755s] creating /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_cartography/build/lib/ros2_cartography
+[2.755s] copying ros2_cartography/__init__.py -> /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_cartography/build/lib/ros2_cartography
+[2.756s] running install
+[2.763s] running install_lib
+[2.797s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/lib/python3.12/site-packages/ros2_cartography
+[2.797s] copying /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_cartography/build/lib/ros2_cartography/__init__.py -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/lib/python3.12/site-packages/ros2_cartography
+[2.798s] byte-compiling /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/lib/python3.12/site-packages/ros2_cartography/__init__.py to __init__.cpython-312.pyc
+[2.798s] running install_data
+[2.799s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ament_index
+[2.799s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ament_index/resource_index
+[2.799s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ament_index/resource_index/packages
+[2.799s] copying resource/ros2_cartography -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ament_index/resource_index/packages
+[2.800s] copying package.xml -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ros2_cartography
+[2.800s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ros2_cartography/launch
+[2.800s] copying launch/rtabmap.launch.py -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ros2_cartography/launch
+[2.800s] copying launch/cartography.launch.py -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ros2_cartography/launch
+[2.800s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ros2_cartography/params
+[2.800s] copying params/slam_params_async.yaml -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ros2_cartography/params
+[2.801s] copying params/slam_toolbox.yaml -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ros2_cartography/params
+[2.801s] copying params/rtabmap.yaml -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ros2_cartography/params
+[2.801s] copying params/slam.yaml -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ros2_cartography/params
+[2.801s] creating /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ros2_cartography/rviz
+[2.801s] copying rviz/cartography.rviz -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ros2_cartography/rviz
+[2.801s] copying rviz/slam.rviz -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ros2_cartography/rviz
+[2.801s] copying rviz/rtabmap.rviz -> /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/share/ros2_cartography/rviz
+[2.802s] running install_egg_info
+[2.838s] Copying ../../build/ros2_cartography/ros2_cartography.egg-info to /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/lib/python3.12/site-packages/ros2_cartography-0.0.0-py3.12.egg-info
+[2.841s] running install_scripts
+[3.050s] writing list of installed files to '/home/redalexdad/GitHub/WalkingRobotSim/build/ros2_cartography/install.log'
+[3.097s] Invoked command in '/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_cartography' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/redalexdad/GitHub/WalkingRobotSim/build/ros2_cartography/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_cartography/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/ros2_cartography build --build-base /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_cartography/build install --record /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_cartography/install.log --single-version-externally-managed install_data

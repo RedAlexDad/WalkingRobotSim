@@ -1,0 +1,1 @@
+#pragma message("#include \"ros2_unitree_legged_control_parameters.hpp\" is deprecated. Use #include <ros2_unitree_legged_control/ros2_unitree_legged_control_parameters.hpp> instead.")

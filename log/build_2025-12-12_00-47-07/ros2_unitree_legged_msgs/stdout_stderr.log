@@ -1,0 +1,560 @@
+-- The C compiler identification is GNU 13.3.0
+-- The CXX compiler identification is GNU 13.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found ament_cmake: 2.5.4 (/opt/ros/jazzy/share/ament_cmake/cmake)
+-- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+-- Found rosidl_default_generators: 1.6.0 (/opt/ros/jazzy/share/rosidl_default_generators/cmake)
+-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+-- Found rosidl_adapter: 4.6.6 (/opt/ros/jazzy/share/rosidl_adapter/cmake)
+-- Found ament_cmake_ros: 0.12.0 (/opt/ros/jazzy/share/ament_cmake_ros/cmake)
+-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+-- Found python_cmake_module: 0.11.1 (/opt/ros/jazzy/share/python_cmake_module/cmake)
+-- Found PythonExtra: /usr/bin/python3  
+-- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter Development NumPy Development.Module Development.Embed 
+-- Configuring done (4.6s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/redalexdad/GitHub/WalkingRobotSim/build/ros2_unitree_legged_msgs
+[  1%] Generating type hashes for ROS interfaces
+[  1%] Built target ament_cmake_python_copy_ros2_unitree_legged_msgs
+running egg_info
+creating ros2_unitree_legged_msgs.egg-info
+writing ros2_unitree_legged_msgs.egg-info/PKG-INFO
+writing dependency_links to ros2_unitree_legged_msgs.egg-info/dependency_links.txt
+writing top-level names to ros2_unitree_legged_msgs.egg-info/top_level.txt
+writing manifest file 'ros2_unitree_legged_msgs.egg-info/SOURCES.txt'
+reading manifest file 'ros2_unitree_legged_msgs.egg-info/SOURCES.txt'
+writing manifest file 'ros2_unitree_legged_msgs.egg-info/SOURCES.txt'
+[  1%] Built target ament_cmake_python_build_ros2_unitree_legged_msgs_egg
+[  1%] Built target ros2_unitree_legged_msgs__rosidl_generator_type_description
+[  2%] Generating C code for ROS interfaces
+[  2%] Generating C++ code for ROS interfaces
+[  2%] Built target ros2_unitree_legged_msgs__cpp
+[  2%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/motor_state__functions.c.o
+[  3%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/bms_cmd__functions.c.o
+[  4%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/motor_cmd__type_support.c.o
+[  5%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/motor_state__description.c.o
+[  6%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/motor_cmd__functions.c.o
+[  7%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/motor_state__type_support.c.o
+[  7%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/motor_cmd__description.c.o
+[  8%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/bms_state__description.c.o
+[  9%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/bms_state__type_support.c.o
+[  9%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/bms_cmd__type_support.c.o
+[ 10%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/cartesian__description.c.o
+[ 10%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/bms_state__functions.c.o
+[ 11%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/bms_cmd__description.c.o
+[ 12%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/imu__description.c.o
+[ 13%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/cartesian__functions.c.o
+[ 14%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/cartesian__type_support.c.o
+[ 15%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/led__description.c.o
+[ 15%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/imu__functions.c.o
+[ 16%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/imu__type_support.c.o
+[ 17%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/led__functions.c.o
+[ 18%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/low_cmd__functions.c.o
+[ 18%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/led__type_support.c.o
+[ 19%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/low_cmd__description.c.o
+[ 20%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/low_cmd__type_support.c.o
+[ 20%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/low_state__description.c.o
+[ 21%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/low_state__functions.c.o
+[ 22%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/high_cmd__description.c.o
+[ 22%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/high_cmd__functions.c.o
+[ 23%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/low_state__type_support.c.o
+[ 24%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/high_cmd__type_support.c.o
+[ 25%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/high_state__description.c.o
+[ 26%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/high_state__functions.c.o
+[ 26%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_c.dir/rosidl_generator_c/ros2_unitree_legged_msgs/msg/detail/high_state__type_support.c.o
+[ 27%] Linking C shared library libros2_unitree_legged_msgs__rosidl_generator_c.so
+[ 27%] Built target ros2_unitree_legged_msgs__rosidl_generator_c
+[ 27%] Generating C++ type support dispatch for ROS interfaces
+[ 28%] Generating C introspection for ROS interfaces
+[ 28%] Generating C type support for eProsima Fast-RTPS
+[ 29%] Generating C++ introspection for ROS interfaces
+[ 30%] Generating C type support dispatch for ROS interfaces
+[ 31%] Generating C++ type support for eProsima Fast-RTPS
+[ 32%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros2_unitree_legged_msgs/msg/imu__type_support.cpp.o
+[ 32%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros2_unitree_legged_msgs/msg/bms_state__type_support.cpp.o
+[ 34%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros2_unitree_legged_msgs/msg/cartesian__type_support.cpp.o
+[ 35%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros2_unitree_legged_msgs/msg/bms_cmd__type_support.cpp.o
+[ 35%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros2_unitree_legged_msgs/msg/motor_cmd__type_support.cpp.o
+[ 35%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros2_unitree_legged_msgs/msg/led__type_support.cpp.o
+[ 36%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros2_unitree_legged_msgs/msg/high_state__type_support.cpp.o
+[ 36%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros2_unitree_legged_msgs/msg/motor_state__type_support.cpp.o
+[ 38%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros2_unitree_legged_msgs/msg/low_cmd__type_support.cpp.o
+[ 37%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros2_unitree_legged_msgs/msg/low_state__type_support.cpp.o
+[ 39%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/ros2_unitree_legged_msgs/msg/high_cmd__type_support.cpp.o
+[ 39%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros2_unitree_legged_msgs/msg/motor_cmd__type_support.cpp.o
+[ 40%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros2_unitree_legged_msgs/msg/motor_state__type_support.cpp.o
+[ 41%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros2_unitree_legged_msgs/msg/bms_cmd__type_support.cpp.o
+[ 42%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros2_unitree_legged_msgs/msg/bms_state__type_support.cpp.o
+[ 42%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros2_unitree_legged_msgs/msg/cartesian__type_support.cpp.o
+[ 43%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros2_unitree_legged_msgs/msg/imu__type_support.cpp.o
+[ 44%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros2_unitree_legged_msgs/msg/led__type_support.cpp.o
+[ 45%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros2_unitree_legged_msgs/msg/low_cmd__type_support.cpp.o
+[ 46%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros2_unitree_legged_msgs/msg/high_cmd__type_support.cpp.o
+[ 46%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros2_unitree_legged_msgs/msg/low_state__type_support.cpp.o
+[ 47%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/ros2_unitree_legged_msgs/msg/high_state__type_support.cpp.o
+[ 48%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros2_unitree_legged_msgs/msg/detail/motor_cmd__type_support.cpp.o
+[ 49%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros2_unitree_legged_msgs/msg/detail/motor_state__type_support.cpp.o
+[ 50%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros2_unitree_legged_msgs/msg/detail/bms_state__type_support.cpp.o
+[ 51%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros2_unitree_legged_msgs/msg/detail/cartesian__type_support.cpp.o
+[ 52%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros2_unitree_legged_msgs/msg/detail/imu__type_support.cpp.o
+[ 52%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros2_unitree_legged_msgs/msg/detail/bms_cmd__type_support.cpp.o
+[ 52%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros2_unitree_legged_msgs/msg/detail/led__type_support.cpp.o
+[ 53%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros2_unitree_legged_msgs/msg/detail/motor_cmd__type_support.c.o
+[ 54%] Linking CXX shared library libros2_unitree_legged_msgs__rosidl_typesupport_cpp.so
+[ 55%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros2_unitree_legged_msgs/msg/detail/motor_state__type_support.c.o
+[ 56%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros2_unitree_legged_msgs/msg/detail/low_cmd__type_support.cpp.o
+[ 57%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros2_unitree_legged_msgs/msg/detail/bms_cmd__type_support.c.o
+[ 58%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros2_unitree_legged_msgs/msg/detail/low_state__type_support.cpp.o
+[ 59%] Linking CXX shared library libros2_unitree_legged_msgs__rosidl_typesupport_c.so
+[ 60%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros2_unitree_legged_msgs/msg/detail/motor_cmd__type_support_c.cpp.o
+[ 60%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros2_unitree_legged_msgs/msg/detail/dds_fastrtps/motor_cmd__type_support.cpp.o
+[ 60%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros2_unitree_legged_msgs/msg/detail/bms_state__type_support.c.o
+[ 61%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros2_unitree_legged_msgs/msg/detail/cartesian__type_support.c.o
+[ 62%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros2_unitree_legged_msgs/msg/detail/imu__type_support.c.o
+[ 62%] Built target ros2_unitree_legged_msgs__rosidl_typesupport_cpp
+[ 62%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros2_unitree_legged_msgs/msg/detail/motor_state__type_support_c.cpp.o
+[ 62%] Built target ros2_unitree_legged_msgs__rosidl_typesupport_c
+[ 63%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros2_unitree_legged_msgs/msg/detail/led__type_support.c.o
+[ 63%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros2_unitree_legged_msgs/msg/detail/low_cmd__type_support.c.o
+[ 64%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros2_unitree_legged_msgs/msg/detail/high_cmd__type_support.cpp.o
+[ 65%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros2_unitree_legged_msgs/msg/detail/dds_fastrtps/motor_state__type_support.cpp.o
+[ 66%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros2_unitree_legged_msgs/msg/detail/bms_cmd__type_support_c.cpp.o
+[ 67%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros2_unitree_legged_msgs/msg/detail/low_state__type_support.c.o
+[ 67%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/ros2_unitree_legged_msgs/msg/detail/high_state__type_support.cpp.o
+[ 68%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros2_unitree_legged_msgs/msg/detail/high_cmd__type_support.c.o
+[ 69%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros2_unitree_legged_msgs/msg/detail/bms_state__type_support_c.cpp.o
+[ 70%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/ros2_unitree_legged_msgs/msg/detail/high_state__type_support.c.o
+[ 71%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros2_unitree_legged_msgs/msg/detail/cartesian__type_support_c.cpp.o
+[ 71%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros2_unitree_legged_msgs/msg/detail/imu__type_support_c.cpp.o
+[ 71%] Linking C shared library libros2_unitree_legged_msgs__rosidl_typesupport_introspection_c.so
+[ 72%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros2_unitree_legged_msgs/msg/detail/led__type_support_c.cpp.o
+[ 73%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros2_unitree_legged_msgs/msg/detail/low_cmd__type_support_c.cpp.o
+[ 74%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros2_unitree_legged_msgs/msg/detail/dds_fastrtps/bms_cmd__type_support.cpp.o
+[ 74%] Built target ros2_unitree_legged_msgs__rosidl_typesupport_introspection_c
+[ 75%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros2_unitree_legged_msgs/msg/detail/dds_fastrtps/bms_state__type_support.cpp.o
+[ 75%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros2_unitree_legged_msgs/msg/detail/dds_fastrtps/cartesian__type_support.cpp.o
+[ 76%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros2_unitree_legged_msgs/msg/detail/low_state__type_support_c.cpp.o
+[ 76%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros2_unitree_legged_msgs/msg/detail/high_cmd__type_support_c.cpp.o
+[ 77%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/ros2_unitree_legged_msgs/msg/detail/high_state__type_support_c.cpp.o
+[ 78%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros2_unitree_legged_msgs/msg/detail/dds_fastrtps/imu__type_support.cpp.o
+[ 79%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros2_unitree_legged_msgs/msg/detail/dds_fastrtps/led__type_support.cpp.o
+[ 80%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros2_unitree_legged_msgs/msg/detail/dds_fastrtps/high_cmd__type_support.cpp.o
+[ 80%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros2_unitree_legged_msgs/msg/detail/dds_fastrtps/low_state__type_support.cpp.o
+[ 81%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros2_unitree_legged_msgs/msg/detail/dds_fastrtps/low_cmd__type_support.cpp.o
+[ 82%] Building CXX object CMakeFiles/ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/ros2_unitree_legged_msgs/msg/detail/dds_fastrtps/high_state__type_support.cpp.o
+[ 83%] Linking CXX shared library libros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp.so
+[ 83%] Built target ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp
+[ 84%] Linking CXX shared library libros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c.so
+[ 84%] Built target ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c
+[ 85%] Linking CXX shared library libros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp.so
+[ 85%] Built target ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp
+[ 85%] Built target ros2_unitree_legged_msgs
+[ 86%] Generating Python code for ROS interfaces
+[ 86%] Built target ros2_unitree_legged_msgs__py
+[ 89%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_py.dir/rosidl_generator_py/ros2_unitree_legged_msgs/msg/_imu_s.c.o
+[ 89%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_py.dir/rosidl_generator_py/ros2_unitree_legged_msgs/msg/_motor_cmd_s.c.o
+[ 89%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_py.dir/rosidl_generator_py/ros2_unitree_legged_msgs/msg/_bms_state_s.c.o
+[ 89%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_py.dir/rosidl_generator_py/ros2_unitree_legged_msgs/msg/_led_s.c.o
+[ 89%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_py.dir/rosidl_generator_py/ros2_unitree_legged_msgs/msg/_bms_cmd_s.c.o
+[ 90%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_py.dir/rosidl_generator_py/ros2_unitree_legged_msgs/msg/_motor_state_s.c.o
+[ 91%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_py.dir/rosidl_generator_py/ros2_unitree_legged_msgs/msg/_cartesian_s.c.o
+[ 92%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_py.dir/rosidl_generator_py/ros2_unitree_legged_msgs/msg/_low_cmd_s.c.o
+[ 92%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_py.dir/rosidl_generator_py/ros2_unitree_legged_msgs/msg/_high_state_s.c.o
+[ 93%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_py.dir/rosidl_generator_py/ros2_unitree_legged_msgs/msg/_low_state_s.c.o
+[ 94%] Building C object CMakeFiles/ros2_unitree_legged_msgs__rosidl_generator_py.dir/rosidl_generator_py/ros2_unitree_legged_msgs/msg/_high_cmd_s.c.o
+[ 95%] Linking C shared library libros2_unitree_legged_msgs__rosidl_generator_py.so
+[ 95%] Built target ros2_unitree_legged_msgs__rosidl_generator_py
+[ 97%] Building C object CMakeFiles/ros2_unitree_legged_msgs_s__rosidl_typesupport_fastrtps_c.dir/rosidl_generator_py/ros2_unitree_legged_msgs/_ros2_unitree_legged_msgs_s.ep.rosidl_typesupport_fastrtps_c.c.o
+[ 97%] Building C object CMakeFiles/ros2_unitree_legged_msgs_s__rosidl_typesupport_c.dir/rosidl_generator_py/ros2_unitree_legged_msgs/_ros2_unitree_legged_msgs_s.ep.rosidl_typesupport_c.c.o
+[ 97%] Building C object CMakeFiles/ros2_unitree_legged_msgs_s__rosidl_typesupport_introspection_c.dir/rosidl_generator_py/ros2_unitree_legged_msgs/_ros2_unitree_legged_msgs_s.ep.rosidl_typesupport_introspection_c.c.o
+[ 98%] Linking C shared module rosidl_generator_py/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs_s__rosidl_typesupport_introspection_c.so
+[ 99%] Linking C shared module rosidl_generator_py/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs_s__rosidl_typesupport_fastrtps_c.so
+[100%] Linking C shared module rosidl_generator_py/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs_s__rosidl_typesupport_c.so
+[100%] Built target ros2_unitree_legged_msgs_s__rosidl_typesupport_introspection_c
+[100%] Built target ros2_unitree_legged_msgs_s__rosidl_typesupport_fastrtps_c
+[100%] Built target ros2_unitree_legged_msgs_s__rosidl_typesupport_c
+-- Install configuration: ""
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ament_index/resource_index/rosidl_interfaces/ros2_unitree_legged_msgs
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/MotorCmd.json
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/MotorState.json
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/BmsCmd.json
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/BmsState.json
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/Cartesian.json
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/IMU.json
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/LED.json
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/LowCmd.json
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/LowState.json
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/HighCmd.json
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/HighState.json
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/motor_cmd.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/low_cmd.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/imu.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/bms_state.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/rosidl_generator_c__visibility_control.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/high_state.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/high_cmd.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__functions.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__description.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__struct.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__functions.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__type_support.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__struct.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__struct.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__type_support.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__functions.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__struct.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__functions.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__struct.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__functions.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__functions.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__functions.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__struct.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__functions.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__functions.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__functions.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__functions.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__struct.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__type_support.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__description.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__description.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__functions.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__struct.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__type_support.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__type_support.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__functions.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__type_support.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__functions.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__description.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__description.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__functions.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__type_support.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__description.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__functions.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__description.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__description.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__functions.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__type_support.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__functions.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__description.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__type_support.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__functions.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__functions.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__struct.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__description.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__type_support.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__description.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__struct.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__struct.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__functions.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__type_support.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__functions.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/led.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/low_state.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/cartesian.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/bms_cmd.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/motor_state.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/environment/library_path.sh
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/environment/library_path.dsv
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_generator_c.so
+-- Set non-toolchain portion of runtime path of "/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_generator_c.so" to ""
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/rosidl_typesupport_fastrtps_c__visibility_control.h
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__rosidl_typesupport_fastrtps_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__rosidl_typesupport_fastrtps_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__rosidl_typesupport_fastrtps_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__rosidl_typesupport_fastrtps_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__rosidl_typesupport_fastrtps_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__rosidl_typesupport_fastrtps_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__rosidl_typesupport_fastrtps_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__rosidl_typesupport_fastrtps_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__rosidl_typesupport_fastrtps_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__rosidl_typesupport_fastrtps_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__rosidl_typesupport_fastrtps_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c.so
+-- Set non-toolchain portion of runtime path of "/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_c.so" to ""
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/rosidl_typesupport_introspection_c__visibility_control.h
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__rosidl_typesupport_introspection_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__rosidl_typesupport_introspection_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__rosidl_typesupport_introspection_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__rosidl_typesupport_introspection_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__rosidl_typesupport_introspection_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__rosidl_typesupport_introspection_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__rosidl_typesupport_introspection_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__rosidl_typesupport_introspection_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__rosidl_typesupport_introspection_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__type_support.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__rosidl_typesupport_introspection_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__rosidl_typesupport_introspection_c.h
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_typesupport_introspection_c.so
+-- Set non-toolchain portion of runtime path of "/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_typesupport_introspection_c.so" to ""
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_typesupport_c.so
+-- Set non-toolchain portion of runtime path of "/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_typesupport_c.so" to ""
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/cartesian.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/rosidl_generator_cpp__visibility_control.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/high_cmd.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/bms_cmd.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/motor_state.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/motor_cmd.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/high_state.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/led.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/bms_state.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/imu.hpp
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__builder.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__traits.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__struct.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__traits.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__traits.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__builder.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__struct.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__type_support.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__type_support.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__builder.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__struct.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__traits.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__builder.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__type_support.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__builder.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__traits.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__traits.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__struct.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__builder.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__builder.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__builder.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__traits.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__traits.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__builder.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__struct.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__struct.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__struct.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__type_support.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__builder.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__struct.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__type_support.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__type_support.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__type_support.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__traits.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__traits.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__type_support.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__type_support.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__type_support.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__traits.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__struct.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__struct.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__builder.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__struct.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__type_support.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/low_state.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/low_cmd.hpp
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__rosidl_typesupport_fastrtps_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__rosidl_typesupport_fastrtps_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__rosidl_typesupport_fastrtps_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__rosidl_typesupport_fastrtps_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__rosidl_typesupport_fastrtps_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__rosidl_typesupport_fastrtps_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__rosidl_typesupport_fastrtps_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__rosidl_typesupport_fastrtps_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/dds_fastrtps
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__rosidl_typesupport_fastrtps_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__rosidl_typesupport_fastrtps_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__rosidl_typesupport_fastrtps_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp.so
+-- Set non-toolchain portion of runtime path of "/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cpp.so" to ""
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg
+-- Up-to-date: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__type_support.cpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__type_support.cpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__type_support.cpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__type_support.cpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__rosidl_typesupport_introspection_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/cartesian__rosidl_typesupport_introspection_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__rosidl_typesupport_introspection_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_state__rosidl_typesupport_introspection_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__rosidl_typesupport_introspection_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_cmd__type_support.cpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__rosidl_typesupport_introspection_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__rosidl_typesupport_introspection_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__type_support.cpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__type_support.cpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/motor_cmd__type_support.cpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_cmd__rosidl_typesupport_introspection_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_state__type_support.cpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/led__rosidl_typesupport_introspection_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/bms_state__rosidl_typesupport_introspection_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/imu__type_support.cpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/high_cmd__type_support.cpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/include/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs/msg/detail/low_state__rosidl_typesupport_introspection_cpp.hpp
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp.so
+-- Set non-toolchain portion of runtime path of "/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_typesupport_introspection_cpp.so" to ""
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_typesupport_cpp.so
+-- Set non-toolchain portion of runtime path of "/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_typesupport_cpp.so" to ""
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/environment/pythonpath.sh
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/environment/pythonpath.dsv
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs-0.4.0-py3.12.egg-info
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs-0.4.0-py3.12.egg-info/PKG-INFO
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs-0.4.0-py3.12.egg-info/SOURCES.txt
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs-0.4.0-py3.12.egg-info/top_level.txt
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs-0.4.0-py3.12.egg-info/dependency_links.txt
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_bms_state.py
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_low_state_s.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_cartesian_s.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/__init__.py
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_high_state_s.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_low_state.py
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_imu_s.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_imu.py
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_high_cmd.py
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_high_state.py
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_bms_cmd.py
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_low_cmd.py
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_bms_state_s.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_motor_cmd_s.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_high_cmd_s.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_led_s.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_motor_cmd.py
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_cartesian.py
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_led.py
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_motor_state.py
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_motor_state_s.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_low_cmd_s.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_bms_cmd_s.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/__init__.py
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/_ros2_unitree_legged_msgs_s.ep.rosidl_typesupport_introspection_c.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs_s__rosidl_typesupport_fastrtps_c.so
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/_ros2_unitree_legged_msgs_s.ep.rosidl_typesupport_fastrtps_c.c
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs_s__rosidl_typesupport_introspection_c.so
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs_s__rosidl_typesupport_c.so
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/_ros2_unitree_legged_msgs_s.ep.rosidl_typesupport_c.c
+Listing '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs'...
+Compiling '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/__init__.py'...
+Listing '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg'...
+Compiling '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/__init__.py'...
+Compiling '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_bms_cmd.py'...
+Compiling '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_bms_state.py'...
+Compiling '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_cartesian.py'...
+Compiling '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_high_cmd.py'...
+Compiling '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_high_state.py'...
+Compiling '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_imu.py'...
+Compiling '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_led.py'...
+Compiling '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_low_cmd.py'...
+Compiling '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_low_state.py'...
+Compiling '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_motor_cmd.py'...
+Compiling '/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/msg/_motor_state.py'...
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs_s__rosidl_typesupport_fastrtps_c.so
+-- Set non-toolchain portion of runtime path of "/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs_s__rosidl_typesupport_fastrtps_c.so" to ""
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs_s__rosidl_typesupport_introspection_c.so
+-- Set non-toolchain portion of runtime path of "/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs_s__rosidl_typesupport_introspection_c.so" to ""
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs_s__rosidl_typesupport_c.so
+-- Set non-toolchain portion of runtime path of "/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/python3.12/site-packages/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs_s__rosidl_typesupport_c.so" to ""
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_generator_py.so
+-- Set non-toolchain portion of runtime path of "/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/lib/libros2_unitree_legged_msgs__rosidl_generator_py.so" to ""
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/MotorCmd.idl
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/MotorState.idl
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/BmsCmd.idl
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/BmsState.idl
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/Cartesian.idl
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/IMU.idl
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/LED.idl
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/LowCmd.idl
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/LowState.idl
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/HighCmd.idl
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/HighState.idl
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/MotorCmd.msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/MotorState.msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/BmsCmd.msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/BmsState.msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/Cartesian.msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/IMU.msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/LED.msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/LowCmd.msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/LowState.msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/HighCmd.msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/msg/HighState.msg
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ament_index/resource_index/package_run_dependencies/ros2_unitree_legged_msgs
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ament_index/resource_index/parent_prefix_path/ros2_unitree_legged_msgs
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/environment/ament_prefix_path.sh
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/environment/ament_prefix_path.dsv
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/environment/path.sh
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/environment/path.dsv
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/local_setup.bash
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/local_setup.sh
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/local_setup.zsh
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/local_setup.dsv
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/package.dsv
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ament_index/resource_index/packages/ros2_unitree_legged_msgs
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/export_ros2_unitree_legged_msgs__rosidl_generator_cExport.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/export_ros2_unitree_legged_msgs__rosidl_generator_cExport-noconfig.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/export_ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cExport.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/export_ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cExport-noconfig.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cExport.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cExport-noconfig.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/ros2_unitree_legged_msgs__rosidl_typesupport_cExport.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/ros2_unitree_legged_msgs__rosidl_typesupport_cExport-noconfig.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/export_ros2_unitree_legged_msgs__rosidl_generator_cppExport.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/export_ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cppExport.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/export_ros2_unitree_legged_msgs__rosidl_typesupport_fastrtps_cppExport-noconfig.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cppExport.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/ros2_unitree_legged_msgs__rosidl_typesupport_introspection_cppExport-noconfig.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/ros2_unitree_legged_msgs__rosidl_typesupport_cppExport.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/ros2_unitree_legged_msgs__rosidl_typesupport_cppExport-noconfig.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/export_ros2_unitree_legged_msgs__rosidl_generator_pyExport.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/export_ros2_unitree_legged_msgs__rosidl_generator_pyExport-noconfig.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/rosidl_cmake-extras.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/ament_cmake_export_include_directories-extras.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/ament_cmake_export_libraries-extras.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/ament_cmake_export_targets-extras.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/rosidl_cmake_export_typesupport_targets-extras.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/ament_cmake_export_dependencies-extras.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/rosidl_cmake_export_typesupport_libraries-extras.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/ros2_unitree_legged_msgsConfig.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake/ros2_unitree_legged_msgsConfig-version.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/package.xml

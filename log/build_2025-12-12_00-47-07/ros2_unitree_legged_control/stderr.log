@@ -1,0 +1,67 @@
+In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/include/ros2_unitree_legged_control/ros2_unitree_legged_control.hpp:30,
+                 from /home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp:21:
+/home/redalexdad/GitHub/WalkingRobotSim/build/ros2_unitree_legged_control/include/ros2_unitree_legged_control_parameters.hpp:1:184: note: ‘#pragma message: #include "ros2_unitree_legged_control_parameters.hpp" is deprecated. Use #include <ros2_unitree_legged_control/ros2_unitree_legged_control_parameters.hpp> instead.’
+    1 | #pragma message("#include \"ros2_unitree_legged_control_parameters.hpp\" is deprecated. Use #include <ros2_unitree_legged_control/ros2_unitree_legged_control_parameters.hpp> instead.")
+      |                                                                                                                                                                                        ^
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp: In constructor ‘ros2_unitree_legged_control::UnitreeLeggedController::UnitreeLeggedController()’:
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp:32:111: warning: ‘control_toolbox::Pid::Pid(double, double, double, double, double, bool)’ is deprecated: Use constructor with AntiWindupStrategy only. [-Wdeprecated-declarations]
+   32 |         joints_command_subscriber_(nullptr), rt_controller_state_publisher_(nullptr), state_publisher_(nullptr)
+      |                                                                                                               ^
+In file included from /home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/include/ros2_unitree_legged_control/ros2_unitree_legged_control.hpp:32:
+/opt/ros/jazzy/include/control_toolbox/control_toolbox/pid.hpp:445:3: note: declared here
+  445 |   Pid(
+      |   ^~~
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp: In member function ‘virtual controller_interface::CallbackReturn ros2_unitree_legged_control::UnitreeLeggedController::on_configure(const rclcpp_lifecycle::State&)’:
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp:123:38: warning: unused parameter ‘previous_state’ [-Wunused-parameter]
+  123 |       const rclcpp_lifecycle::State &previous_state)
+      |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp: In member function ‘virtual controller_interface::CallbackReturn ros2_unitree_legged_control::UnitreeLeggedController::on_activate(const rclcpp_lifecycle::State&)’:
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp:192:54: warning: ‘double hardware_interface::LoanedStateInterface::get_value() const’ is deprecated: Use std::optional<T> get_optional() instead to retrieve the value. This method will be removed by the ROS 2 Kilted Kaiju release. [-Wdeprecated-declarations]
+  192 |     double init_pose = state_interfaces_[0].get_value();
+      |                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+In file included from /opt/ros/jazzy/include/controller_interface/controller_interface/controller_interface_base.hpp:30,
+                 from /opt/ros/jazzy/include/controller_interface/controller_interface/controller_interface.hpp:21,
+                 from /home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/include/ros2_unitree_legged_control/ros2_unitree_legged_control.hpp:20:
+/opt/ros/jazzy/include/hardware_interface/hardware_interface/loaned_state_interface.hpp:94:10: note: declared here
+   94 |   double get_value() const
+      |          ^~~~~~~~~
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp:169:38: warning: unused parameter ‘previous_state’ [-Wunused-parameter]
+  169 |       const rclcpp_lifecycle::State &previous_state)
+      |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp: In member function ‘virtual controller_interface::return_type ros2_unitree_legged_control::UnitreeLeggedController::update(const rclcpp::Time&, const rclcpp::Duration&)’:
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp:259:48: warning: ‘double hardware_interface::LoanedStateInterface::get_value() const’ is deprecated: Use std::optional<T> get_optional() instead to retrieve the value. This method will be removed by the ROS 2 Kilted Kaiju release. [-Wdeprecated-declarations]
+  259 |     currentPos = state_interfaces_[0].get_value(); // Position state interface
+      |                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+/opt/ros/jazzy/include/hardware_interface/hardware_interface/loaned_state_interface.hpp:94:10: note: declared here
+   94 |   double get_value() const
+      |          ^~~~~~~~~
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp:273:37: warning: ignoring return value of ‘bool hardware_interface::LoanedCommandInterface::set_value(const T&, unsigned int) [with T = double]’, declared with attribute ‘nodiscard’ [-Wunused-result]
+  273 |     command_interfaces_[0].set_value(calcTorque); // Send effort to joint
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~
+In file included from /opt/ros/jazzy/include/controller_interface/controller_interface/controller_interface_base.hpp:29:
+/opt/ros/jazzy/include/hardware_interface/hardware_interface/loaned_command_interface.hpp:113:22: note: declared here
+  113 |   [[nodiscard]] bool set_value(const T & value, unsigned int max_tries = 10)
+      |                      ^~~~~~~~~
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp:277:62: warning: ‘double hardware_interface::LoanedStateInterface::get_value() const’ is deprecated: Use std::optional<T> get_optional() instead to retrieve the value. This method will be removed by the ROS 2 Kilted Kaiju release. [-Wdeprecated-declarations]
+  277 |     lastState.tau_est = (float)state_interfaces_[1].get_value(); // May cause issues? -> Possibly causing issues. Also check (float) conversion issues
+      |                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+/opt/ros/jazzy/include/hardware_interface/hardware_interface/loaned_state_interface.hpp:94:10: note: declared here
+   94 |   double get_value() const
+      |          ^~~~~~~~~
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp:216:27: warning: unused parameter ‘time’ [-Wunused-parameter]
+  216 |       const rclcpp::Time &time, const rclcpp::Duration &period)
+      |       ~~~~~~~~~~~~~~~~~~~~^~~~
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp: In member function ‘void ros2_unitree_legged_control::UnitreeLeggedController::getGains(double&, double&, double&, double&, double&)’:
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp:316:29: warning: ‘void control_toolbox::Pid::getGains(double&, double&, double&, double&, double&, bool&)’ is deprecated: Use get_gains() instead [-Wdeprecated-declarations]
+  316 |     pid_controller_.getGains(p, i, d, i_max, i_min, dummy);
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/opt/ros/jazzy/include/control_toolbox/control_toolbox/pid.hpp:606:50: note: declared here
+  606 |   [[deprecated("Use get_gains() instead")]] void getGains(
+      |                                                  ^~~~~~~~
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp: In member function ‘void ros2_unitree_legged_control::UnitreeLeggedController::getGains(double&, double&, double&, double&, double&, bool&)’:
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_unitree_legged_controller/src/ros2_unitree_legged_control.cpp:321:29: warning: ‘void control_toolbox::Pid::getGains(double&, double&, double&, double&, double&, bool&)’ is deprecated: Use get_gains() instead [-Wdeprecated-declarations]
+  321 |     pid_controller_.getGains(p, i, d, i_max, i_min, antiwindup);
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/opt/ros/jazzy/include/control_toolbox/control_toolbox/pid.hpp:606:50: note: declared here
+  606 |   [[deprecated("Use get_gains() instead")]] void getGains(
+      |                                                  ^~~~~~~~

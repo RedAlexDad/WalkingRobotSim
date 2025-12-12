@@ -1,0 +1,90 @@
+-- The C compiler identification is GNU 13.3.0
+-- The CXX compiler identification is GNU 13.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found ament_cmake: 2.5.4 (/opt/ros/jazzy/share/ament_cmake/cmake)
+-- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+-- Found rclpy: 7.1.6 (/opt/ros/jazzy/share/rclpy/cmake)
+-- Found ament_lint_auto: 0.17.3 (/opt/ros/jazzy/share/ament_lint_auto/cmake)
+-- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.83.0/BoostConfig.cmake (found version "1.83.0")  
+-- Found controller_manager: 4.39.2 (/opt/ros/jazzy/share/controller_manager/cmake)
+-- Found rosidl_generator_c: 4.6.6 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)
+-- Found rosidl_generator_cpp: 4.6.6 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)
+-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+-- Found rmw_implementation_cmake: 7.3.2 (/opt/ros/jazzy/share/rmw_implementation_cmake/cmake)
+-- Found rmw_fastrtps_cpp: 8.4.3 (/opt/ros/jazzy/share/rmw_fastrtps_cpp/cmake)
+-- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.13")  
+-- Found FastRTPS: /opt/ros/jazzy/include (Required is at least version "2.13") 
+-- Using RMW implementation 'rmw_fastrtps_cpp' as default
+-- Found joint_trajectory_controller: 4.34.0 (/opt/ros/jazzy/share/joint_trajectory_controller/cmake)
+-- Found eigen3_cmake_module: 0.3.0 (/opt/ros/jazzy/share/eigen3_cmake_module/cmake)
+-- Found Eigen3: TRUE (found version "3.4.0") 
+-- Ensuring Eigen3 include directory is part of orocos-kdl CMake target
+-- Found robot_state_publisher: 3.3.3 (/opt/ros/jazzy/share/robot_state_publisher/cmake)
+-- Found nav_msgs: 5.3.6 (/opt/ros/jazzy/share/nav_msgs/cmake)
+-- Found ros2_unitree_legged_msgs: 0.4.0 (/home/redalexdad/GitHub/WalkingRobotSim/install/ros2_unitree_legged_msgs/share/ros2_unitree_legged_msgs/cmake)
+-- Added test 'cppcheck' to perform static code analysis on C / C++ code
+-- Configured cppcheck include dirs: /home/redalexdad/GitHub/WalkingRobotSim/src/unitree_guide2/include
+-- Configured cppcheck exclude dirs and/or files: 
+-- Added test 'lint_cmake' to check CMake code style
+-- Added test 'uncrustify' to check C / C++ code style
+-- Configured uncrustify additional arguments: 
+-- Added test 'xmllint' to check XML markup files
+-- Configuring done (2.9s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/redalexdad/GitHub/WalkingRobotSim/build/unitree_guide2
+[  3%] Building CXX object CMakeFiles/junior_ctrl.dir/src/main.cpp.o
+[ 11%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_BalanceTest.cpp.o
+[ 11%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_FreeStand.cpp.o
+[ 14%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_FixedStand.cpp.o
+[ 22%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/FSM.cpp.o
+[ 22%] Building CXX object CMakeFiles/junior_ctrl.dir/src/Gait/FeetEndCal.cpp.o
+[ 25%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_Trotting.cpp.o
+[ 29%] Building CXX object CMakeFiles/junior_ctrl.dir/src/Gait/GaitGenerator.cpp.o
+[ 33%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_Passive.cpp.o
+[ 37%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_StepTest.cpp.o
+[ 40%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/FSMState.cpp.o
+[ 48%] Building CXX object CMakeFiles/junior_ctrl.dir/src/common/LowPassFilter.cpp.o
+[ 48%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_SwingTest.cpp.o
+[ 51%] Building CXX object CMakeFiles/junior_ctrl.dir/src/Gait/WaveGenerator.cpp.o
+[ 55%] Building CXX object CMakeFiles/junior_ctrl.dir/src/FSM/State_move_base.cpp.o
+[ 59%] Building CXX object CMakeFiles/junior_ctrl.dir/src/common/unitreeLeg.cpp.o
+[ 62%] Building CXX object CMakeFiles/junior_ctrl.dir/src/common/unitreeRobot.cpp.o
+[ 66%] Building CXX object CMakeFiles/junior_ctrl.dir/src/control/BalanceCtrl.cpp.o
+[ 70%] Building CXX object CMakeFiles/junior_ctrl.dir/src/control/ControlFrame.cpp.o
+[ 74%] Building CXX object CMakeFiles/junior_ctrl.dir/src/control/Estimator.cpp.o
+[ 77%] Building CXX object CMakeFiles/junior_ctrl.dir/src/interface/IOSDK.cpp.o
+[ 81%] Building CXX object CMakeFiles/junior_ctrl.dir/src/interface/IOROS.cpp.o
+[ 85%] Building CXX object CMakeFiles/junior_ctrl.dir/src/interface/KeyBoard.cpp.o
+[ 88%] Building CXX object CMakeFiles/junior_ctrl.dir/src/interface/WirelessHandle.cpp.o
+[ 92%] Building CXX object CMakeFiles/junior_ctrl.dir/src/quadProgpp/Array.cc.o
+[ 96%] Building CXX object CMakeFiles/junior_ctrl.dir/src/quadProgpp/QuadProg++.cc.o
+[100%] Linking CXX executable junior_ctrl
+[100%] Built target junior_ctrl
+-- Install configuration: ""
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/lib/unitree_guide2/junior_ctrl
+-- Set non-toolchain portion of runtime path of "/home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/lib/unitree_guide2/junior_ctrl" to ""
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/ament_index/resource_index/package_run_dependencies/unitree_guide2
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/ament_index/resource_index/parent_prefix_path/unitree_guide2
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/environment/ament_prefix_path.sh
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/environment/ament_prefix_path.dsv
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/environment/path.sh
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/environment/path.dsv
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/local_setup.bash
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/local_setup.sh
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/local_setup.zsh
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/local_setup.dsv
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/package.dsv
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/ament_index/resource_index/packages/unitree_guide2
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/cmake/unitree_guide2Config.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/cmake/unitree_guide2Config-version.cmake
+-- Installing: /home/redalexdad/GitHub/WalkingRobotSim/install/unitree_guide2/share/unitree_guide2/package.xml
