@@ -31,6 +31,7 @@
   <depend>teleop_twist_keyboard</depend>
   <depend>ros_gz_image</depend>
   <depend>ros_gz_bridge</depend>
+  <depend>ros_gz_sim</depend>
   <depend>opennav_docking</depend>
   <depend>robot_localization</depend>
   <depend>gz_ros2_control</depend>

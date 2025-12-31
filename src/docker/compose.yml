@@ -11,15 +11,7 @@ x-basic: &basic
     XDG_RUNTIME_DIR:
   volumes:
     - /tmp/.X11-unix:/tmp/.X11-unix:rw
-    - $HOME/.Xauthority:/root/.Xauthority
-
-x-server: &server
-  ipc: host
-  stdin_open: true
-  network_mode: host
-  tty: true
-  privileged: true
-
+    - ${HOME}/.Xauthority:/root/.Xauthority
 
 x-gui_env: &env_gui
   DISPLAY:
@@ -27,29 +19,12 @@ x-gui_env: &env_gui
   QT_X11_NO_MITSHM: "1"
   XDG_RUNTIME_DIR:
 
-x-gpu: &nvidia
-  <<: *basic
-  deploy:
-    resources:
-      reservations:
-        devices:
-          - driver: nvidia
-            count: all
-            capabilities:
-              - gpu
-              - graphics
-              - utility # nvidia-smi
-              - compute # CUDA. Required to avoid "CUDA version: N/A"
-              - video # NVDEC/NVENC
-
 services:
-
   simulator:
     <<: *basic
-    image: go2_simulator
-    container_name: simulator
-    #command: bash
-    command: bash -c "source install/setup.bash && ros2 launch gazebo_sim launch.py use_sim_time:=true" 
+    image: walking_robot_sim:latest
+    container_name: walking_robot_sim
+    command: bash -c "tail -f /dev/null" 
     environment:
       <<: *env_gui
       RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
@@ -62,8 +37,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
       args:
-        ROS_DISTRO: jazzy
-        BASE_IMG: ros:jazzy
+        BASE_IMG: osrf/ros:jazzy-desktop
     volumes:
       - ./cyclonedds.xml:/cyclonedds.xml
       - ./../:/root/ws/src/

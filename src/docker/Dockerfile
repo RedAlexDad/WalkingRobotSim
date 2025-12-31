@@ -1,4 +1,4 @@
-ARG BASE_IMG
+ARG BASE_IMG=osrf/ros:jazzy-desktop
 FROM ${BASE_IMG}
 
 # Кэширование apt-get
@@ -32,6 +32,7 @@ RUN  --mount=type=cache,target=/var/cache/apt,sharing=locked \
   ros-jazzy-ros2-controllers \
   ros-jazzy-ros-gz-image \
   ros-jazzy-ros-gz-bridge \
+  ros-jazzy-ros-gz-sim \
   ros-jazzy-opennav-docking \
   ros-jazzy-apriltag-ros \
   ros-jazzy-apriltag-msgs \
@@ -41,6 +42,7 @@ RUN  --mount=type=cache,target=/var/cache/apt,sharing=locked \
   ros-jazzy-nav2-simple-commander \
   ros-jazzy-tf2-ros \
   ros-jazzy-tf2 \
+  ros-jazzy-robot-localization \
   tmux \
   tmuxinator \
   python3-colcon-common-extensions \
@@ -69,4 +71,3 @@ RUN --mount=type=cache,target=/root/.ccache \
 RUN sed -i '/exec "\$@"/i umask 002' /ros_entrypoint.sh
 ENV WORKSPACE_DIR=/root/ws
 RUN sed -i '/exec "\$@"/i source "$WORKSPACE_DIR/install/setup.bash"' /ros_entrypoint.sh
-

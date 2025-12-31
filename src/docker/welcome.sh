@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -e
+
+echo
+echo "╔════════════════════════════════════════════════════════════╗"
+echo "║  🤖 WalkingRobotSim v2.6 - ROS Jazzy готов!                ║"
+echo "╠════════════════════════════════════════════════════════════╣"
+echo "║ ✅ ROS автоматически sourced                               ║"
+echo "║ ✅ Workspace готов к использованию                         ║"
+echo "║                                                            ║"
+echo "║ 📋 ОСНОВНЫЕ КОМАНДЫ:                                       ║"
+echo "║                                                            ║"
+echo "║ ros2 launch gazebo_sim launch.py gui:=false                ║"
+echo "║   → Запустить Gazebo симуляцию                             ║"
+echo "║                                                            ║"
+echo "║ ros2 run teleop_twist_keyboard teleop_twist_keyboard \\    ║"
+echo "║   --ros-args -r /cmd_vel:=/robot1/cmd_vel                  ║"
+echo "║   → Управление движением                                   ║"
+echo "║                                                            ║"
+echo "║ 🎮 РЕЖИМЫ РОБОТА:                                          ║"
+echo "║                                                            ║"
+echo "║ ros2 topic pub /robot1/robot_mode \\                       ║"
+echo "║   quadropted_msgs/msg/RobotModeCommand \\                  ║"
+echo "║   \"{mode: STAND, robot_id: 1}\"                           ║"
+echo "║                                                            ║"
+echo "║ ros2 topic pub /robot1/robot_mode \\                       ║"
+echo "║   quadropted_msgs/msg/RobotModeCommand \\                  ║"
+echo "║   \"{mode: TROT, robot_id: 1}\"                            ║"
+echo "║                                                            ║"
+echo "║ 💡 exit — выйти из контейнера                              ║"
+echo "╚════════════════════════════════════════════════════════════╝"
+echo

@@ -1,3 +1,4 @@
 {
-    "makefile.extensionOutputFolder": "./.vscode"
+    "makefile.extensionOutputFolder": "./.vscode",
+    "cmake.sourceDirectory": "/home/redalexdad/GitHub/WalkingRobotSim/build/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs__py"
 }
