@@ -16,6 +16,7 @@ NC='\033[0m' # No Color
 CONTAINER_NAME="walking_robot_sim"
 IMAGE_NAME="walking_robot_sim:latest"
 DOCKER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROS_DISTRO="jazzy"  # Фиксированная версия для Gazebo Harmonic
 
 # Helper functions
 info() {
@@ -79,11 +80,49 @@ cmd_logs() {
 
 cmd_shell() {
     info "Подключение к контейнеру $CONTAINER_NAME..."
-    docker exec -it $CONTAINER_NAME bash
+    docker exec -it $CONTAINER_NAME bash -c "
+        echo 'alias sim=\"ros2 launch gazebo_sim launch.py use_sim_time:=true gui:=true\"' >> ~/.bashrc && 
+        echo 'alias teleop=\"ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel\"' >> ~/.bashrc && 
+        echo 'alias topics=\"ros2 topic list\"' >> ~/.bashrc && 
+        echo 'alias nodes=\"ros2 node list\"' >> ~/.bashrc && 
+        echo 'alias help=\"echo \\\"Доступные команды: sim, teleop, topics, nodes\\\"\"' >> ~/.bashrc && 
+        source /opt/ros/jazzy/setup.bash && 
+        source /root/ws/install/setup.bash && 
+        export PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\[\033[01;31m\](ROS Jazzy)\[\033[00m\]\$ ' && 
+        echo '🤖 ROS Jazzy окружение настроено!' && 
+        echo '🚀 Доступные команды:' && 
+        echo '   sim          - Запуск Gazebo симуляции' && 
+        echo '   teleop       - Управление роботом' && 
+        echo '   topics       - Список топиков' && 
+        echo '   nodes        - Список узлов' && 
+        echo '   help         - Эта справка' && 
+        echo '' && 
+        echo '💡 Если алиасы не работают, используйте полные команды:' && 
+        echo '   ros2 launch gazebo_sim launch.py use_sim_time:=true gui:=true' && 
+        echo '   ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel' && 
+        echo '   ros2 topic list' && 
+        echo '   ros2 node list' && 
+        source ~/.bashrc && 
+        exec bash
+    "
 }
 
 cmd_exec() {
-    docker exec -it $CONTAINER_NAME bash -c "$*"
+    docker exec -it $CONTAINER_NAME bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && $*"
+}
+
+cmd_test() {
+    info "Проверка алиасов в контейнере..."
+    docker exec -it $CONTAINER_NAME bash -c "
+        source /opt/ros/jazzy/setup.bash && 
+        source /root/ws/install/setup.bash && 
+        source ~/.bashrc && 
+        echo '🔍 Проверка алиасов:' && 
+        alias topics && 
+        echo '📋 Топики (первые 3):' && 
+        topics | head -3 && 
+        echo '✓ Алиасы работают!'
+    "
 }
 
 # ════════════════════════════════════════════════════════════
@@ -91,18 +130,18 @@ cmd_exec() {
 # ════════════════════════════════════════════════════════════
 
 cmd_gazebo() {
-    info "Запуск Gazebo симуляции..."
+    info "Запуск Gazebo симуляции (ROS Jazzy + Gazebo Harmonic)..."
     docker exec -it $CONTAINER_NAME bash -c "
-        source /opt/ros/jazzy/setup.bash
+        source /opt/ros/${ROS_DISTRO}/setup.bash
         source /root/ws/install/setup.bash 2>/dev/null || true
         ros2 launch gazebo_sim launch.py use_sim_time:=true gui:=true
     "
 }
 
 cmd_teleop() {
-    info "Запуск управления роботом (teleop_twist_keyboard)..."
+    info "Запуск управления роботом (ROS Jazzy)..."
     docker exec -it $CONTAINER_NAME bash -c "
-        source /opt/ros/jazzy/setup.bash
+        source /opt/ros/${ROS_DISTRO}/setup.bash
         source /root/ws/install/setup.bash 2>/dev/null || true
         ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel
     "
@@ -122,7 +161,18 @@ cmd_clean() {
     cd "$DOCKER_DIR"
     docker compose down -v --remove-orphans
     docker system prune -f
+    docker volume prune -f
     success "Очистка завершена"
+}
+
+cmd_backup() {
+    local backup_file="walking_robot_backup_$(date +%Y%m%d_%H%M%S).tar.gz"
+    info "Создание бэкапа: $backup_file"
+    cd "$DOCKER_DIR"
+    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+        -v $(pwd):/backup alpine tar czf /backup/"$backup_file" \
+        /var/lib/docker/volumes/gazebo_logs /var/lib/docker/volumes/gazebo_data
+    success "Бэкап создан: $backup_file"
 }
 
 # ════════════════════════════════════════════════════════════
@@ -130,7 +180,8 @@ cmd_clean() {
 # ════════════════════════════════════════════════════════════
 
 cmd_help() {
-    echo "Walking Robot Simulation Manager - Simple Architecture"
+    echo "Walking Robot Simulation Manager - Simple Architecture v3.0"
+    echo "Версия ROS: Jazzy (с Gazebo Harmonic)"
     echo ""
     echo "Основные команды:"
     echo "  build       Сборка Docker образа"
@@ -138,9 +189,11 @@ cmd_help() {
     echo "  down        Остановка контейнера"
     echo "  restart     Перезапуск контейнера"
     echo "  logs        Просмотр логов"
-    echo "  shell       Доступ к shell контейнера"
-    echo "  exec <cmd>  Выполнение команды в контейнере"
+    echo "  logs-save   Сохранение логов в файл"
+    echo "  shell       Доступ к shell контейнера (с настроенным ROS)"
+    echo "  exec <cmd>  Выполнение команды в контейнере (с настроенным ROS)"
     echo "  status      Статус контейнера"
+    echo "  backup      Создание бэкапа данных"
     echo "  clean       Очистка Docker"
     echo ""
     echo "Специализированные команды:"
@@ -150,7 +203,22 @@ cmd_help() {
     echo "Примеры использования:"
     echo "  ./manage.sh build && ./manage.sh up"
     echo "  ./manage.sh gazebo"
+    echo "  ./manage.sh teleop"
     echo "  ./manage.sh exec 'ros2 topic list'"
+    echo "  ./manage.sh logs-save"
+    echo "  ./manage.sh backup"
+    echo ""
+    echo "Внутри контейнера (./manage.sh shell):"
+    echo "  sim          - Запуск Gazebo симуляции"
+    echo "  teleop       - Управление роботом"
+    echo "  topics       - Список ROS топиков"
+    echo "  nodes        - Список ROS узлов"
+    echo "  help         - Справка по командам"
+    echo ""
+    echo "Технологии:"
+    echo "  • ROS 2 Jazzy"
+    echo "  • Gazebo Harmonic"
+    echo "  • Docker + Docker Compose"
 }
 
 # ════════════════════════════════════════════════════════════
@@ -180,8 +248,14 @@ case "${1:-help}" in
     logs)
         cmd_logs
         ;;
+    logs-save)
+        cmd_logs_save
+        ;;
     shell)
         cmd_shell
+        ;;
+    test)
+        cmd_test
         ;;
     exec)
         if [ -z "${2:-}" ]; then
@@ -200,6 +274,9 @@ case "${1:-help}" in
         ;;
     status)
         cmd_status
+        ;;
+    backup)
+        cmd_backup
         ;;
     clean)
         cmd_clean
