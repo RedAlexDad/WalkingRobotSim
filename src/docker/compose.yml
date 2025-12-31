@@ -45,7 +45,7 @@ x-gpu: &nvidia
 services:
 
   simulator:
-    <<: *nvidia
+    <<: *basic
     image: go2_simulator
     container_name: simulator
     #command: bash
