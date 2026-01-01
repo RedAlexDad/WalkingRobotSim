@@ -81,6 +81,27 @@ jobs:
         docker compose up -d
         sleep 45
         
+    - name: Wait for simulation to be ready
+      run: |
+        cd src/docker
+        local max_attempts=30
+        local attempt=0
+        
+        while [ $attempt -lt $max_attempts ]; do
+          if docker compose exec -T simulator bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && ros2 node list | grep -q ." 2>/dev/null; then
+            echo "Simulation is ready (${attempt} seconds)"
+            break
+          fi
+          attempt=$((attempt + 1))
+          sleep 1
+          echo -n "."
+        done
+        
+        if [ $attempt -eq $max_attempts ]; then
+          echo "Simulation may not be fully ready, but continuing with tests..."
+        fi
+        echo ""
+        
     - name: Check ROS nodes
       run: |
         cd src/docker
