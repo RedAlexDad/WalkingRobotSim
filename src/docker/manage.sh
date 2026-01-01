@@ -58,9 +58,25 @@ cmd_up() {
     cd "$DOCKER_DIR"
     docker compose up -d
     
-    info "Ожидание инициализации контейнера (30 сек)..."
-    sleep 30
+    info "Ожидание инициализации ROS окружения..."
+    local max_attempts=30
+    local attempt=0
     
+    while [ $attempt -lt $max_attempts ]; do
+        if docker exec $CONTAINER_NAME bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && ros2 node list" >/dev/null 2>&1; then
+            success "ROS окружение готово (${attempt} сек)"
+            break
+        fi
+        attempt=$((attempt + 1))
+        sleep 1
+        echo -n "."
+    done
+    
+    if [ $attempt -eq $max_attempts ]; then
+        warning "ROS окружение может быть не готово, но продолжаем..."
+    fi
+    
+    echo ""
     info "Статус контейнера:"
     docker ps --filter "name=$CONTAINER_NAME" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
     
@@ -92,7 +108,7 @@ cmd_shell() {
         echo 'alias teleop=\"ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel\"' >> ~/.bashrc && 
         echo 'alias topics=\"ros2 topic list\"' >> ~/.bashrc && 
         echo 'alias nodes=\"ros2 node list\"' >> ~/.bashrc && 
-        echo 'alias help=\"echo \\\"Доступные команды: sim, teleop, topics, nodes\\\"\"' >> ~/.bashrc && 
+        echo 'alias help=\"echo \\\"Доступные команды: sim, teleop, topics, nodes, robot-walk, robot-up, robot-sit\\\"\"' >> ~/.bashrc && 
         source /opt/ros/jazzy/setup.bash && 
         source /root/ws/install/setup.bash && 
         export PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\[\033[01;31m\](ROS Jazzy)\[\033[00m\]\$ ' && 
