@@ -40,10 +40,17 @@ error() {
 # ════════════════════════════════════════════════════════════
 
 cmd_build() {
-    info "Сборка Docker образа..."
+    info "Сборка Docker образа с кэшированием по этапам..."
     cd "$DOCKER_DIR"
     docker compose build
     success "Образ собран"
+}
+
+cmd_build_stage() {
+    local stage=${2:-final}
+    info "Сборка этапа: $stage"
+    cd "$DOCKER_DIR"
+    ./build-stage.sh "$stage"
 }
 
 cmd_up() {
@@ -184,17 +191,18 @@ cmd_help() {
     echo "Версия ROS: Jazzy (с Gazebo Harmonic)"
     echo ""
     echo "Основные команды:"
-    echo "  build       Сборка Docker образа"
-    echo "  up          Запуск контейнера"
-    echo "  down        Остановка контейнера"
-    echo "  restart     Перезапуск контейнера"
-    echo "  logs        Просмотр логов"
-    echo "  logs-save   Сохранение логов в файл"
-    echo "  shell       Доступ к shell контейнера (с настроенным ROS)"
-    echo "  exec <cmd>  Выполнение команды в контейнере (с настроенным ROS)"
-    echo "  status      Статус контейнера"
-    echo "  backup      Создание бэкапа данных"
-    echo "  clean       Очистка Docker"
+    echo "  build           Сборка Docker образа с кэшированием по этапам"
+    echo "  build-stage <n>  Сборка конкретного этапа"
+    echo "  up              Запуск контейнера"
+    echo "  down            Остановка контейнера"
+    echo "  restart         Перезапуск контейнера"
+    echo "  logs            Просмотр логов"
+    echo "  logs-save       Сохранение логов в файл"
+    echo "  shell           Доступ к shell контейнера (с настроенным ROS)"
+    echo "  exec <cmd>      Выполнение команды в контейнере (с настроенным ROS)"
+    echo "  status          Статус контейнера"
+    echo "  backup          Создание бэкапа данных"
+    echo "  clean           Очистка Docker"
     echo ""
     echo "Специализированные команды:"
     echo "  gazebo      Запуск Gazebo симуляции"
@@ -202,11 +210,25 @@ cmd_help() {
     echo ""
     echo "Примеры использования:"
     echo "  ./manage.sh build && ./manage.sh up"
+    echo "  ./manage.sh build-stage ros-core       # Сборка только ROS core"
+    echo "  ./manage.sh build-stage ros-simulation  # Сборка до этапа simulation"
     echo "  ./manage.sh gazebo"
     echo "  ./manage.sh teleop"
     echo "  ./manage.sh exec 'ros2 topic list'"
     echo "  ./manage.sh logs-save"
     echo "  ./manage.sh backup"
+    echo ""
+    echo "Доступные этапы сборки:"
+    echo "  base-system    - Системные зависимости"
+    echo "  ros-core       - ROS Core пакеты"
+    echo "  ros-control    - ROS Control пакеты"
+    echo "  ros-simulation - Gazebo и simulation"
+    echo "  ros-navigation  - Navigation пакеты"
+    echo "  ros-vision     - Vision и sensor пакеты"
+    echo "  ros-tools      - Tools и утилиты"
+    echo "  python-deps   - Python зависимости"
+    echo "  workspace      - Сборка workspace"
+    echo "  final          - Финальный образ (по умолчанию)"
     echo ""
     echo "Внутри контейнера (./manage.sh shell):"
     echo "  sim          - Запуск Gazebo симуляции"
@@ -235,6 +257,9 @@ fi
 case "${1:-help}" in
     build)
         cmd_build
+        ;;
+    build-stage)
+        cmd_build_stage "$@"
         ;;
     up)
         cmd_up
