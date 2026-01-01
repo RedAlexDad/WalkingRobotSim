@@ -36,8 +36,19 @@ jobs:
         cd src/docker
         docker compose up -d
         sleep 30
-        docker compose exec -T simulator bash -c "source /opt/ros/jazzy/setup.bash && ros2 node list"
+        docker compose exec -T simulator bash -c "source /opt/ros/jazzy/setup.bash && ros2 node list" > test_results.txt 2>&1
+        docker compose logs simulator > container_logs.txt
         docker compose down
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-docker-build
+        path: |
+          src/docker/test_results.txt
+          src/docker/container_logs.txt
+        retention-days: 7
 
   simulation-test:
     runs-on: ubuntu-latest
@@ -78,7 +89,7 @@ jobs:
           source /root/ws/install/setup.bash
           echo '=== ROS Nodes ==='
           ros2 node list
-        "
+        " > ros_nodes.txt 2>&1
         
     - name: List all topics
       run: |
@@ -88,7 +99,7 @@ jobs:
           source /root/ws/install/setup.bash
           echo '=== All Available Topics ==='
           ros2 topic list
-        "
+        " > all_topics.txt 2>&1
         
     - name: Check robot topics
       run: |
@@ -98,7 +109,7 @@ jobs:
           source /root/ws/install/setup.bash
           echo '=== Robot-specific Topics ==='
           ros2 topic list | grep -E '(joint|cmd_vel|odom|scan)' || echo 'No robot topics found'
-        "
+        " > robot_topics.txt 2>&1
         
     - name: Test teleop functionality
       run: |
@@ -158,4 +169,16 @@ jobs:
         echo "✓ Teleoperation functionality tested"
         echo "✓ Lidar data streaming verified"
         echo "✓ Robot stability confirmed"
-        echo "=== All tests passed! ==="
+        echo "=== All tests passed! ===" > simulation_summary.txt
+        
+    - name: Upload simulation results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-simulation
+        path: |
+          src/docker/simulation_summary.txt
+          src/docker/ros_nodes.txt
+          src/docker/all_topics.txt
+          src/docker/robot_topics.txt
+        retention-days: 7
