@@ -1,372 +1,373 @@
-# 🚀 Docker Improvements для WalkingRobotSim v2.1
+# 🤖 Walking Robot Simulator
 
-## ⚡ Быстрый старт (5 минут)
+Полноценный симулятор ходячих роботов на базе ROS 2 Jazzy с Docker-контейнеризацией и CI/CD pipeline.
 
-### 1️⃣ Скопируйте файлы в ваш проект:
+---
 
-```bash
-# Из этого пакета скопируйте в ~/GitHub/WalkingRobotSim/src/:
+## 🚀 Быстрый старт
 
-# В директорию docker/:
-- compose_fixed.yml    → docker/compose.yml (заменить старый - исправлена ошибка!)
-- Dockerfile           → docker/Dockerfile (заменить старый)
+### Требования
+- Docker 20.10+ с BuildKit
+- Docker Compose
+- 8GB+ RAM, 4+ CPU cores
+- Linux (рекомендуется Ubuntu 22.04+)
 
-# В корень проекта:
-- .dockerignore        → ./.dockerignore
-- setup.sh             → ./setup.sh (chmod +x)
-- manage.sh            → ./manage.sh (chmod +x) ← НОВЫЙ управляющий скрипт!
-```
-
-### 2️⃣ Дайте права:
+### Установка и запуск
 
 ```bash
-chmod +x setup.sh manage.sh
-```
+# 1. Клонируйте репозиторий
+git clone https://github.com/RedAlexDad/WalkingRobotSim.git
+cd WalkingRobotSim
 
-### 3️⃣ Запустите setup:
+# 2. Сделайте скрипт исполняемым
+chmod +x test-workflows.sh
 
-```bash
-cd ~/GitHub/WalkingRobotSim/src
-bash setup.sh
-```
+# 3. Соберите Docker образ (15-30 минут первый раз)
+cd src/docker
+docker compose build
 
-### 4️⃣ Используйте manage.sh для управления:
+# 4. Запустите симулятор
+docker compose up -d
 
-```bash
-# Собрать образ (15-30 минут первый раз)
-./manage.sh build
-
-# Запустить контейнер
-./manage.sh up
-
-# Проверить статус
-./manage.sh status
-
-# Смотреть логи
-./manage.sh logs
-
-# Bash в контейнере
-./manage.sh shell
-
-# Остановить
-./manage.sh down
+# 5. Проверьте статус
+docker compose ps
 ```
 
 ---
 
-## 🔧 ЧТО БЫЛО ИСПРАВЛЕНО
+## 🏗️ Архитектура проекта
 
-### ❌ ОШИБКА в старом compose.yml:
-```yaml
-restart_policy:          # ← НЕПРАВИЛЬНО (для v3.9)
-  condition: on-failure
-  delay: 5s
-  max_attempts: 3
+### Структура директорий
+```
+WalkingRobotSim/
+├── src/                          # Исходный код
+│   ├── docker/                   # Docker конфигурация
+│   │   ├── compose.yml           # Основной compose файл
+│   │   ├── compose.multistage.yml # Multistage конфигурация
+│   │   └── Dockerfile            # 6-stage сборка
+│   ├── gazebo_sim/               # Симулятор Gazebo
+│   ├── go1_description/          # Описание робота Go1
+│   ├── go2_description/          # Описание робота Go2
+│   └── ...                       # Другие ROS пакеты
+├── .github/workflows/            # GitHub Actions CI/CD
+│   └── ci.yml                    # Автоматизированное тестирование
+├── test-workflows.sh             # Локальное тестирование
+└── README.md                     # Этот файл
 ```
 
-### ✅ ИСПРАВЛЕНО в compose_fixed.yml:
-```yaml
-restart: on-failure:3    # ← ПРАВИЛЬНО (для v3.9)
-```
-
-**Используйте `compose_fixed.yml` — он уже исправлен!**
+### Docker Multi-stage Build
+- **Stage 1:** Базовый образ с системными зависимостями
+- **Stage 2:** ROS Core пакеты  
+- **Stage 3:** ROS Control и Simulation
+- **Stage 4:** ROS Navigation и Vision
+- **Stage 5:** Python зависимости и инструменты
+- **Stage 6:** Финальный production-ready образ
 
 ---
 
-## 📋 КОМАНДЫ manage.sh
+## 🎮 Управление симулятором
+
+### Основные команды
+```bash
+# Запуск симулятора
+cd src/docker
+docker compose up -d
+
+# Остановка
+docker compose down
+
+# Просмотр логов
+docker compose logs -f
+
+# Вход в контейнер
+docker compose exec simulator bash
+
+# Пересборка образа
+docker compose build --no-cache
+
+# Проверка здоровья контейнера
+docker compose ps
+```
+
+### Управление роботом
+
+#### Режимы работы робота
+Робот поддерживает несколько режимов:
+
+- **REST** – Положение по умолчанию, робот не может двигаться
+- **STAND** – Режим, в котором робот может вращаться на месте  
+- **TROT** – Режим ходьбы
+
+Робот работает с 12 степенями свободы. Для включения вращения переключите режим в "STAND":
 
 ```bash
-./manage.sh up          # 🚀 Запустить контейнер
-./manage.sh down        # 🛑 Остановить и удалить
-./manage.sh start       # ▶️  Запустить существующий
-./manage.sh stop        # ⏸️  Остановить
-./manage.sh restart     # 🔄 Перезапустить
-./manage.sh status      # 📊 Показать статус
-./manage.sh logs        # 📋 Логи в реальном времени
-./manage.sh shell       # 🐚 Интерактивный bash
-./manage.sh build       # 🔨 Пересобрать образ
-./manage.sh rebuild     # 🔨 Пересобрать без кэша
-./manage.sh clean       # 🗑️  Очистить Docker ресурсы
-./manage.sh ps          # 📋 Список контейнеров
-./manage.sh stats       # 📈 Использование ресурсов
-./manage.sh inspect     # 🔍 Детальная информация
-./manage.sh pull-logs   # 💾 Сохранить логи в файл
-./manage.sh --help      # ❓ Справка
+ros2 topic pub /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand "{mode: 'STAND', robot_id: 1}"
 ```
+
+После переключения режимов управляйте роботом с помощью команд скорости:
+
+```bash
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel
+```
+
+#### Изменение поведения робота
+Робот может садиться и вставать с помощью сервиса `robot_behavior_command`:
+
+```bash
+ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehaviorCommand "{command: 'walk'}"
+```
+
+Возможные команды:
+- `walk` – Робот встает (REST) и может ходить (TROT)
+- `up` – Робот встает (REST) и блокирует движение
+- `sit` – Робот садится (STAND)
+
+#### Мультироботная симуляция
+Репозиторий поддерживает одновременную работу нескольких роботов. У каждого робота есть доступ к Nav2. В файле robot.config добавьте namespace робота и координаты спавна в мире.
+
+#### Переключение моделей роботов
+Можно переключаться между моделями роботов (go2, go1) в файле gazebo_multi_nav2_world.launch.py:
+- Для go2: используйте "go2_description"  
+- Для go1: используйте "go1_description"
 
 ---
 
-## 📊 Что улучшилось
+## 🔧 Локальное тестирование
 
-| Метрика | Было | Стало | Улучшение |
-|---------|------|-------|-----------|
-| **Сборка (с кэшем)** | 3-5 мин | 30-60 сек | **5-10x ⚡** |
-| **Размер образа** | 6-8 GB | 5-6 GB | **20-30% 📉** |
-| **Build context** | 700 MB | 30 MB | **23x меньше** |
-| **Health checks** | ❌ | ✅ | **Автоперезапуск** |
-| **Лимиты ресурсов** | ❌ | ✅ 4CPU/8GB | **Стабильность** |
-| **Логирование** | Неограниченно | 100MB max | **Безопасность** |
-| **Управление** | ❌ | ✅ 14 команд | **Удобство** |
+Используйте `test-workflows.sh` для локального тестирования перед пушем:
+
+```bash
+# Полный цикл тестирования
+./test-workflows.sh test
+
+# Только сборка
+./test-workflows.sh build
+
+# Очистка ресурсов
+./test-workflows.sh clean
+
+# Справка
+./test-workflows.sh help
+```
+
+### Что проверяет скрипт:
+- ✅ Наличие Docker и Docker Compose
+- ✅ Синтаксис YAML файлов
+- ✅ Структуру проекта
+- ✅ Сборку Docker образа
+- ✅ Запуск и здоровье контейнера
+- ✅ ROS 2 функциональность
 
 ---
 
-## 🔧 Ключевые улучшения
+## 🔄 CI/CD Pipeline
 
-### ✅ Multi-stage Build (6 stages)
-- Stage 1-3: Кэшируются (меняются редко)
-- Stage 4: Сборка кода (изменение кода = только эта часть перестраивается!)
-- Stage 5-6: Runtime (только нужное для production)
+Автоматизированное тестирование в GitHub Actions включает:
 
-**Результат:** Изменение кода → пересборка за 30-60 сек (вместо 3-5 мин)
+### Job: docker-build
+- Сборка Docker образа
+- Базовый тест контейнера
 
-### ✅ Health Checks
-```yaml
-healthcheck:
-  test: ["CMD", "bash", "-c", "ros2 topic list > /dev/null"]
-  interval: 30s
-  retries: 3
-```
-Контейнер автоматически перезапустится при проблеме ✓
+### Job: simulation-test
+- Запуск полной симуляции
+- Проверка ROS узлов
+- Вывод всех доступных топиков
+- Тест teleop функциональности
+- Проверка данных с лидара
+- Тест стабильности робота
 
-### ✅ Resource Limits
-```yaml
-deploy:
-  resources:
-    limits:
-      cpus: "4"
-      memory: 8G
-```
-Контейнер не может захватить всю систему ✓
-
-### ✅ Log Rotation
-```yaml
-logging:
-  options:
-    max-size: 100m    # Max 100 MB per file
-    max-file: "3"     # Keep 3 files (300 MB total)
-```
-Логи не заполнят диск ✓
-
-### ✅ .dockerignore (60+ паттернов)
-Исключает .git, __pycache__, build/, install/ и т.д.
-**Результат:** Build context 700 MB → 30 MB
-
-### ✅ manage.sh - управляющий скрипт
-14 команд для удобного управления Docker
-- Цветной вывод
-- Проверки здоровья
-- Статистика ресурсов
-- Сохранение логов
+### Триггеры
+- Push в ветки: `main`, `jazzy`
+- Pull Request в ветки: `main`, `jazzy`
 
 ---
 
-## 🎯 Типичный workflow
+## 🤖 Поддерживаемые роботы
 
-### Первый запуск
-```bash
-cd ~/GitHub/WalkingRobotSim/src
-cp compose_fixed.yml docker/compose.yml  # Исправленный файл!
-chmod +x setup.sh manage.sh
-bash setup.sh
-./manage.sh build        # 15-30 минут
-./manage.sh up
-./manage.sh status
-```
+### Unitree Go1
+- Четырехногий робот средней размерности
+- Полная модель URDF
+- Настроенные контроллеры
 
-### Разработка
-```bash
-# Изменили код
-vim src/gazebo_sim/src/main.py
-
-# Пересобрали (30-60 сек!)
-./manage.sh rebuild
-
-# Проверили
-./manage.sh shell
-> ros2 topic list
-> exit
-```
-
-### Мониторинг
-```bash
-./manage.sh logs         # Смотреть логи в реальном времени
-./manage.sh stats        # CPU/Memory usage
-./manage.sh inspect      # Вся информация
-```
-
-### Остановка
-```bash
-./manage.sh pull-logs    # Сохранить логи перед удалением
-./manage.sh down         # Остановить
-./manage.sh clean        # Очистить ненужное
-```
+### Unitree Go2  
+- Улучшенная версия Go1
+- Оптимизированная динамика
+- Расширенная сенсорика
 
 ---
 
-## ✅ Финальная проверка
+## 📊 Технические характеристики
 
-После запуска проверьте:
+### Docker образ
+- **Базовый образ:** `osrf/ros:jazzy-desktop`
+- **Размер:** 5-6 GB
+- **Сборка с кэшем:** 30-60 секунд
+- **Первая сборка:** 15-30 минут
 
-```bash
-# 1. Контейнер запущен и здоров
-./manage.sh status
-# STATUS должен быть "Up" и "healthy"
+### Системные требования
+- **CPU:** 4+ cores (рекомендуется 8)
+- **RAM:** 8GB+ (рекомендуется 16GB)
+- **Storage:** 20GB+ свободного места
+- **GPU:** Опционально для визуализации
 
-# 2. ROS работает
-./manage.sh shell
-> source /opt/ros/jazzy/setup.bash
-> ros2 node list
-> exit
-
-# 3. Размер образа (должен быть 5-6 GB)
-docker images | grep walking_robot_sim
-
-# 4. Использование ресурсов
-./manage.sh stats
-# CPUS должны быть ≤ 4
-# MemUsage должны быть ≤ 8G
-```
+### ROS 2 компоненты
+- **Версия:** Jazzy (совместим с Humble)
+- **DDS:** CycloneDDS
+- **Симулятор:** Gazebo 11
+- **Навигация:** Nav2
+- **Контроллеры:** ros2_control
 
 ---
 
-## 💡 Tips & Tricks
+## 🐛 Troubleshooting
 
-### Ускорить сборку в CI/CD
+### Проблемы с Docker
 ```bash
-export DOCKER_BUILDKIT=1
-./manage.sh build
+# Очистка Docker
+docker system prune -a
+
+# Пересборка без кэша
+docker compose build --no-cache
+
+# Проверка статуса
+docker compose ps
 ```
 
-### Сохранить кэш между машинами
+### Проблемы с ROS
 ```bash
-docker save walking_robot_sim:latest -o image.tar
-docker load -i image.tar
+# Проверка переменных окружения
+env | grep ROS
+
+# Перезапуск DDS
+export RMW_IMPLEMENTATION=rmw_cyclonedx_cpp
+
+# Диагностика узлов
+ros2 doctor
 ```
 
-### Отладить build
+### Проблемы с GUI
 ```bash
-./manage.sh build --progress=plain
-# или
-docker compose build --progress=plain
-```
-
-### Быстро очистить Docker
-```bash
-./manage.sh clean
-```
-
----
-
-## 📚 Файловая структура
-
-```
-~/GitHub/WalkingRobotSim/src/
-├── manage.sh                ← НОВЫЙ (управляющий скрипт)
-├── setup.sh                 ← инструкция первого запуска
-├── .env                     ← конфигурация (создается setup.sh)
-├── .dockerignore            ← исключить файлы из build
-├── docker/
-│   ├── compose.yml          ← ИСПРАВЛЕННЫЙ (restart: on-failure:3)
-│   ├── Dockerfile           ← 6-stage оптимизированный
-│   ├── cyclonedds.xml       ← ROS конфигурация
-│   └── docker_backup/       ← backup старых версий
-├── gazebo_sim/
-├── go1_description/
-├── go2_description/
-├── quadropted_controller/
-├── quadropted_msgs/
-└── ...
-```
-
----
-
-## 🎯 Что происходит при сборке
-
-### Первый раз (15-30 минут):
-```
-Stage 1: ros-base                    (5 мин) ← кэшируется
-Stage 2: ros-dependencies            (10 мин) ← кэшируется
-Stage 3: python-deps                 (2 мин) ← кэшируется
-Stage 4: workspace                   (10 мин) ← кэшируется
-Stage 5: runtime                     (1 мин) ← кэшируется
-Stage 6: final (production-ready)    (30 сек) ✓
-```
-
-### Следующие разы (30-60 сек):
-```
-Stage 1-3: ✓ CACHED (0 сек)
-Stage 4:   BUILD (только что изменилось) (30 сек)
-Stage 5-6: ✓ CACHED (0 сек)
-           TOTAL: 30 сек ⚡⚡⚡
-```
-
----
-
-## 🆘 Troubleshooting
-
-### Проблема: "Ошибка в конфигурации! additional properties 'restart_policy' not allowed"
-
-**Решение:** Используйте `compose_fixed.yml`
-```bash
-cp compose_fixed.yml docker/compose.yml
-```
-
-### Проблема: DISPLAY is not set
-```bash
+# Настройка DISPLAY
 export DISPLAY=:0
-./manage.sh restart
-```
-
-### Проблема: X11 connection error
-```bash
 xhost +local:root
-./manage.sh restart
-```
 
-### Проблема: Health check failing
-```bash
-./manage.sh logs | tail -50
-./manage.sh restart
-./manage.sh status
-```
-
-### Проблема: Build медленный
-```bash
-docker builder prune -a -f
-./manage.sh build
+# Перезапуск с GUI
+docker compose down
+docker compose up -d
 ```
 
 ---
 
-## 📞 Дополнительная информация
+## 📈 Мониторинг и отладка
 
-- **Версия:** 2.1 (исправлена ошибка compose.yml)
-- **ROS:** Jazzy (совместим с Humble, Iron с небольшими изменениями)
-- **Docker:** 20.10+ (BuildKit поддерживается)
-- **Статус:** Production-ready ✅
+### Просмотр логов
+```bash
+# Логи контейнера
+docker compose logs -f simulator
+
+# Логи ROS
+docker compose exec simulator tail -f /root/ws/logs/*.log
+```
+
+### Мониторинг ресурсов
+```bash
+# Статистика Docker
+docker stats
+
+# Использование памяти
+docker compose exec simulator free -h
+
+# Загрузка CPU
+docker compose exec simulator top
+```
+
+### Отладка сборки
+```bash
+# Детальный вывод сборки
+docker compose build --progress=plain
+
+# Проверка слоев
+docker history walking_robot_sim:latest
+```
 
 ---
 
-## 🎉 Готово!
+## 🤝 Вклад в проект
 
-Ваш Docker теперь:
-- ⚡ **В 5-10 раз быстрее** собирается
-- 📉 **На 20-30% меньше** весит
-- 🛡️ **Автоматически перезапускается** при проблемах
-- 📊 **Контролирует ресурсы** (4CPU/8GB limit)
-- 📝 **Логирует безопасно** (100MB max per file)
-- 🎮 **Легко управляется** (14 команд в manage.sh)
-- ✅ **Production-ready**
+### Ветки разработки
+- `main` - стабильная версия
+- `jazzy` - разработка под ROS 2 Jazzy
+- `humble` - поддержка ROS 2 Humble (ограничена)
 
-### Начните с:
+### Процесс внесения изменений
+1. Fork репозитория
+2. Создайте feature branch
+3. Внесите изменения
+4. Протестируйте локально: `./test-workflows.sh test`
+5. Создайте Pull Request
+
+---
+
+## 📚 Документация
+
+### Внутренние ресурсы
+- [`src/INSTRUCTIONS.md`](src/INSTRUCTIONS.md) - Детальные инструкции
+- [`src/QUICK_REF.md`](src/QUICK_REF.md) - Быстрые команды
+- [`src/docker/QUICK_START.md`](src/docker/QUICK_START.md) - Docker гайд
+
+### Внешние ресурсы
+- [ROS 2 Documentation](https://docs.ros.org/en/jazzy/)
+- [Gazebo Simulator](http://gazebosim.org/)
+- [Unitree Robots](https://www.unitree.com/)
+- [Docker Compose](https://docs.docker.com/compose/)
+
+---
+
+## � Благодарности и Credits
+
+Этот проект стал возможен благодаря работе и вкладу следующих авторов и проектов:
+
+### Основные источники вдохновения и кода
+- **mike4192** - [SpotMicro](https://github.com/mike4192/spotMicro) - Кинематика и управление четырехногими роботами
+- **Unitree Robotics** - [A1 ROS](https://github.com/unitreerobotics/a1_ros) - Официальная поддержка роботов Unitree
+- **QUADRUPED ROBOTICS** - [Quadruped](https://quadruped.de) - Алгоритмы ходьбы и навигации
+- **lnotspotl** - [GitHub](https://github.com/lnotspotl) - Оптимизация и улучшения симуляции
+- **anujjain-dev** - [Unitree-go2 ROS2](https://github.com/anujjain-dev/unitree-go2-ros2) - Адаптация под ROS 2 Jazzy
+
+### Использованные технологии
+- **ROS 2 Jazzy** - Робототехническая middleware
+- **Gazebo Sim** - Физический симулятор
+- **Nav2** - Стек навигации
+- **Docker** - Контейнеризация
+
+### Особая благодарность
+Сообществу разработчиков робототехники за открытые исходные коды, документацию и постоянную поддержку в развитии четырехногой робототехники.
+
+---
+
+## �📄 Лицензия
+
+Этот проект распространяется под лицензией MIT. Подробности в файле [LICENSE](LICENSE).
+
+---
+
+## 👥 Автор
+
+- **RedAlexDad** - Основная разработка и архитектура
+
+---
+
+## 📞 Поддержка
+
+### Связь
+- **GitHub Issues:** [Сообщить о проблеме](https://github.com/RedAlexDad/WalkingRobotSim/issues)
+- **Discussions:** [Вопросы и обсуждения](https://github.com/RedAlexDad/WalkingRobotSim/discussions)
+
+### Быстрая помощь
 ```bash
-cd ~/GitHub/WalkingRobotSim/src
-cp compose_fixed.yml docker/compose.yml
-chmod +x setup.sh manage.sh
-bash setup.sh
-./manage.sh build
-./manage.sh up
-./manage.sh status
-```
+# Проверить всё ли работает
+./test-workflows.sh test
 
-**Готово! 🚀**
+# Получить справку
+./test-workflows.sh help
+```

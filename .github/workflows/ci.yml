@@ -17,10 +17,19 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf "/usr/local/share/boost"
+        sudo apt-get clean
+        docker system prune -a -f
+        df -h
+        
     - name: Build Docker image
       run: |
         cd src/docker
-        docker build -t walking_robot_sim:test .
+        docker build --no-cache -t walking_robot_sim:test .
         
     - name: Test container
       run: |
@@ -41,10 +50,19 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf "/usr/local/share/boost"
+        sudo apt-get clean
+        docker system prune -a -f
+        df -h
+        
     - name: Build Docker image
       run: |
         cd src/docker
-        docker build -t walking_robot_sim:test .
+        docker build --no-cache -t walking_robot_sim:test .
         
     - name: Start simulation
       run: |
