@@ -1,4 +1,4 @@
-//! Simple publisher using rclrs 0.6.x with vendor messages
+//! Simple publisher using rclrs 0.6.x with test_msgs
 
 use anyhow::{Error, Result};
 use rclrs::*;
@@ -11,18 +11,18 @@ fn main() -> Result<(), Error> {
 
     let node = executor.create_node("simple_rust_publisher")?;
 
-    // Use vendor messages from rclrs - only example_interfaces available
-    let publisher = node.create_publisher::<rclrs::vendor::example_interfaces::msg::String>("rust_topic")?;
+    // Use test_msgs from rclrs vendor
+    let publisher = node.create_publisher::<rclrs::vendor::test_msgs::msg::Strings>("rust_topic")?;
 
-    let mut message = rclrs::vendor::example_interfaces::msg::String::default();
+    let mut message = rclrs::vendor::test_msgs::msg::Strings::default();
 
     let mut publish_count: u32 = 1;
 
     println!("✅ Publisher ready on topic: rust_topic");
 
     while context.ok() {
-        message.data = format!("Hello from Rust! Message #{}", publish_count);
-        println!("📤 Publishing: [{}]", message.data);
+        message.string_value = format!("Hello from Rust! Message #{}", publish_count);
+        println!("📤 Publishing: [{}]", message.string_value);
         publisher.publish(&message)?;
         publish_count += 1;
         std::thread::sleep(std::time::Duration::from_millis(1000));

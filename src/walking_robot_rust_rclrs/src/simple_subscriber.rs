@@ -1,4 +1,4 @@
-//! Simple subscriber using rclrs 0.6.x with vendor messages
+//! Simple subscriber using rclrs 0.6.x with test_msgs
 
 use anyhow::{Error, Result};
 use rclrs::*;
@@ -12,11 +12,11 @@ fn main() -> Result<(), Error> {
     let node = executor.create_node("simple_rust_subscriber")?;
 
     let worker = node.create_worker::<usize>(0);
-    let _subscription = worker.create_subscription::<rclrs::vendor::example_interfaces::msg::String, _>(
+    let _subscription = worker.create_subscription::<rclrs::vendor::test_msgs::msg::Strings, _>(
         "rust_topic",
-        move |num_messages: &mut usize, msg: rclrs::vendor::example_interfaces::msg::String| {
+        move |num_messages: &mut usize, msg: rclrs::vendor::test_msgs::msg::Strings| {
             *num_messages += 1;
-            println!("📨 #{} | I heard: '{}'", *num_messages, msg.data);
+            println!("📨 #{} | I heard: '{}'", *num_messages, msg.string_value);
         },
     )?;
 

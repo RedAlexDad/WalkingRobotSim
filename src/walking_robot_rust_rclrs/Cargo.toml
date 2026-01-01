@@ -18,3 +18,7 @@ path = "src/simple_publisher.rs"
 [[bin]]
 name = "simple_subscriber"
 path = "src/simple_subscriber.rs"
+
+[[bin]]
+name = "native_test"
+path = "src/native_test.rs"
