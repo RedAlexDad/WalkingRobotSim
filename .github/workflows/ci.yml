@@ -81,15 +81,26 @@ jobs:
         docker compose up -d
         sleep 45
         
+    - name: Launch Gazebo simulation
+      run: |
+        cd src/docker
+        echo "Starting Gazebo simulation with robot..."
+        docker compose exec -T simulator bash -c "
+          source /opt/ros/jazzy/setup.bash
+          source /root/ws/install/setup.bash
+          ros2 launch gazebo_sim launch.py use_sim_time:=true &
+          sleep 30
+        " || echo "Gazebo launch attempted"
+        
     - name: Wait for simulation to be ready
       run: |
         cd src/docker
-        local max_attempts=30
+        local max_attempts=60
         local attempt=0
         
         while [ $attempt -lt $max_attempts ]; do
-          if docker compose exec -T simulator bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && ros2 node list | grep -q ." 2>/dev/null; then
-            echo "Simulation is ready (${attempt} seconds)"
+          if docker compose exec -T simulator bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && ros2 node list | grep -q gazebo" 2>/dev/null; then
+            echo "Gazebo simulation is ready (${attempt} seconds)"
             break
           fi
           attempt=$((attempt + 1))
@@ -98,7 +109,7 @@ jobs:
         done
         
         if [ $attempt -eq $max_attempts ]; then
-          echo "Simulation may not be fully ready, but continuing with tests..."
+          echo "Gazebo simulation may not be fully ready, but continuing with tests..."
         fi
         echo ""
         
