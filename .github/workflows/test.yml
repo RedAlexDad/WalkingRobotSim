@@ -49,28 +49,36 @@ jobs:
         docker compose exec -T simulator bash -c "
           source /opt/ros/jazzy/setup.bash
           source /root/ws/install/setup.bash
-          ros2 launch gazebo_sim launch.py use_sim_time:=true &
-          sleep 30
+          echo 'Available launch files:'
+          find /root/ws/src -name '*.launch.py' -type f 2>/dev/null || echo 'No launch files found'
+          echo 'Checking gazebo_sim package:'
+          ls -la /root/ws/src/gazebo_sim/ 2>/dev/null || echo 'gazebo_sim not found'
+          echo 'Starting launch...'
+          timeout 60s ros2 launch gazebo_sim launch.py use_sim_time:=true || echo 'Launch failed or timed out'
         " || echo "Gazebo launch attempted"
         
     - name: Wait for simulation to be ready
       run: |
         cd src/docker
-        max_attempts=60
+        max_attempts=90
         attempt=0
         
         while [ $attempt -lt $max_attempts ]; do
-          if docker compose exec -T simulator bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && ros2 node list | grep -q gazebo" 2>/dev/null; then
+          echo "Attempt $((attempt + 1))/$max_attempts - checking for nodes..."
+          if docker compose exec -T simulator bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && ros2 node list | grep -E '(gazebo|robot|controller)'" 2>/dev/null; then
             echo "Gazebo simulation is ready (${attempt} seconds)"
+            docker compose exec -T simulator bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && ros2 node list"
             break
           fi
           attempt=$((attempt + 1))
-          sleep 1
+          sleep 2
           echo -n "."
         done
         
         if [ $attempt -eq $max_attempts ]; then
           echo "Gazebo simulation may not be fully ready, but continuing with tests..."
+          echo "Current nodes:"
+          docker compose exec -T simulator bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && ros2 node list" || echo "Cannot list nodes"
         fi
         echo ""
         

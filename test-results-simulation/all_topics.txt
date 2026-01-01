@@ -1,3 +1,0 @@
-=== All Available Topics ===
-/parameter_events
-/rosout
