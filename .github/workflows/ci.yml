@@ -140,7 +140,10 @@ jobs:
           source /opt/ros/jazzy/setup.bash
           source /root/ws/install/setup.bash
           echo '=== Robot-specific Topics ==='
-          ros2 topic list | grep -E '(joint|cmd_vel|odom|scan)' || echo 'No robot topics found'
+          ros2 topic list | grep -E '(joint_states|cmd_vel|odom|scan)' || echo 'No robot topics found'
+          echo ''
+          echo '=== Key robot topics found ==='
+          ros2 topic list | grep -E '/robot1/(joint_states|cmd_vel|odom|scan|robot_mode)' || echo 'Key robot topics not found'
         " > robot_topics.txt 2>&1
         
     - name: Test teleop functionality
@@ -149,9 +152,11 @@ jobs:
         docker compose exec -T simulator bash -c "
           source /opt/ros/jazzy/setup.bash
           source /root/ws/install/setup.bash
-          timeout 10s ros2 topic pub /cmd_vel geometry_msgs/msg/Twist '{linear: {x: 0.5}, angular: {z: 0.0}}' &
+          echo 'Testing teleop on /robot1/cmd_vel...'
+          timeout 10s ros2 topic pub /robot1/cmd_vel geometry_msgs/msg/Twist '{linear: {x: 0.5}, angular: {z: 0.0}}' &
           sleep 5
-          ros2 topic echo /odom --once
+          echo 'Checking odometry from /robot1/odom...'
+          timeout 5s ros2 topic echo /robot1/odom --once || echo 'Odometry timeout'
         " || echo "Teleop test completed"
         
     - name: Check lidar data
@@ -160,7 +165,8 @@ jobs:
         docker compose exec -T simulator bash -c "
           source /opt/ros/jazzy/setup.bash
           source /root/ws/install/setup.bash
-          timeout 15s ros2 topic echo /scan --once || echo 'Lidar data check timeout'
+          echo 'Checking lidar data from /robot1/scan...'
+          timeout 15s ros2 topic echo /robot1/scan --once || echo 'Lidar data check timeout'
         "
         
     - name: Test robot stability
@@ -177,14 +183,16 @@ jobs:
           fi
           
           # Check joint states topic availability
-          timeout 10s ros2 topic echo /joint_states --once || echo 'Joint states timeout - checking topic availability'
-          ros2 topic info /joint_states 2>/dev/null || echo 'Joint states topic not available'
+          echo 'Checking joint states from /robot1/joint_states...'
+          timeout 10s ros2 topic echo /robot1/joint_states --once || echo 'Joint states timeout - checking topic availability'
+          ros2 topic info /robot1/joint_states 2>/dev/null || echo 'Joint states topic not available'
           
           # Check robot mode topic
+          echo 'Checking robot mode from /robot1/robot_mode...'
           ros2 topic info /robot1/robot_mode 2>/dev/null || echo 'Robot mode topic not available'
           
           # Test basic movement for stability (non-blocking)
-          echo 'Testing movement command...'
+          echo 'Testing movement command on /robot1/cmd_vel...'
           timeout 5s ros2 topic pub /robot1/cmd_vel geometry_msgs/msg/Twist '{linear: {x: 0.1}, angular: {z: 0.0}}' || echo 'Movement command timeout'
           sleep 2
           
