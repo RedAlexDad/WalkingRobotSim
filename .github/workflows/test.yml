@@ -56,8 +56,8 @@ jobs:
     - name: Wait for simulation to be ready
       run: |
         cd src/docker
-        local max_attempts=60
-        local attempt=0
+        max_attempts=60
+        attempt=0
         
         while [ $attempt -lt $max_attempts ]; do
           if docker compose exec -T simulator bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && ros2 node list | grep -q gazebo" 2>/dev/null; then
@@ -175,15 +175,26 @@ jobs:
         docker compose down
         docker system prune -f
         echo "Simulation test completed successfully"
-        echo "=== Test Summary ==="
-        echo "✓ Docker image built successfully"
-        echo "✓ Container started and healthy"
-        echo "✓ ROS nodes are available"
-        echo "✓ Robot topics are published"
-        echo "✓ Teleoperation functionality tested"
-        echo "✓ Lidar data streaming verified"
-        echo "✓ Robot stability confirmed"
-        echo "=== All tests passed! ===" > simulation_summary.txt
+        echo "=== Test Summary ===" > simulation_summary.txt
+        echo "✓ Docker image built successfully" >> simulation_summary.txt
+        echo "✓ Container started and healthy" >> simulation_summary.txt
+        echo "✓ ROS nodes are available" >> simulation_summary.txt
+        echo "✓ Robot topics are published" >> simulation_summary.txt
+        echo "✓ Teleoperation functionality tested" >> simulation_summary.txt
+        echo "✓ Lidar data streaming verified" >> simulation_summary.txt
+        echo "✓ Robot stability confirmed" >> simulation_summary.txt
+        echo "=== All tests passed! ===" >> simulation_summary.txt
+        
+    - name: Create fallback artifacts if missing
+      run: |
+        cd src/docker
+        # Create empty files if they don't exist
+        for file in ros_nodes.txt all_topics.txt robot_topics.txt; do
+          if [ ! -f "$file" ]; then
+            echo "=== $file ===" > "$file"
+            echo "File not generated due to simulation issues" >> "$file"
+          fi
+        done
         
     - name: Upload simulation results
       uses: actions/upload-artifact@v4
