@@ -2,6 +2,8 @@ build/
 install/
 log/
 
+target/
+
 devel/
 logs/
 bin/

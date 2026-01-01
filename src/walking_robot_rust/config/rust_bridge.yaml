@@ -1,0 +1,18 @@
+# Configuration for Rust ROS2 bridge
+
+rust_bridge:
+  ros__parameters:
+    rust_binary_path: "target/release/simple_test"
+    publish_rate: 1.0  # Hz
+    log_level: "info"
+    
+    # Topic mappings
+    topics:
+      input: "/test_topic_in"
+      output: "/test_topic"
+      cmd_vel: "/cmd_vel"
+    
+    # Process settings
+    process:
+      timeout: 5.0  # seconds
+      restart_on_failure: true
