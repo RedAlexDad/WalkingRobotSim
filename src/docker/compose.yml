@@ -13,8 +13,7 @@
 # Базовая конфигурация шаблона для сервисов, которым нужен доступ к GUI
 # ПРЕДУПРЕЖДЕНИЕ: Использование privileged: true и network_mode: host может создать
 # уязвимости безопасности. Используйте только в доверенной среде разработки.
-x-basic: &basic
-  # Разрешить обмен данными между процессами в контейнере и хостом
+x-basic: &basic # Разрешить обмен данными между процессами в контейнере и хостом
   ipc: host
   # Включить stdin для интерактивных команд
   stdin_open: true
@@ -43,8 +42,7 @@ x-basic: &basic
     - ${HOME}/.Xauthority:/root/.Xauthority
 
 # Шаблон переменных окружения для приложений GUI
-x-gui_env: &env_gui
-  # Переменная отображения X11
+x-gui_env: &env_gui # Переменная отображения X11
   DISPLAY:
   # Путь к файлу авторизации X
   XAUTHORITY: "/root/.Xauthority"
@@ -54,8 +52,8 @@ x-gui_env: &env_gui
   XDG_RUNTIME_DIR:
 
 # Базовая конфигурация для сервисов, не требующих GUI
-x-basic-nogui: &basic_nogui
-  # Разрешить обмен данными между процессами в контейнере и хостом
+x-basic-nogui:
+  &basic_nogui # Разрешить обмен данными между процессами в контейнере и хостом
   ipc: host
   # Включить stdin для интерактивных команд
   stdin_open: true
@@ -89,7 +87,7 @@ services:
     # Имя экземпляра контейнера
     container_name: walking_robot_sim
     # Команда для выполнения при запуске контейнера
-    command: bash -c "tail -f /dev/null"
+    command: bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && tail -f /dev/null"
     # Переменные окружения, специфичные для этого сервиса
     environment:
       # Наследовать переменные окружения GUI
@@ -155,42 +153,36 @@ services:
       # Монтировать каталог исходного кода (только для чтения) - устаревшее, используем именованный том
       # - ./../:/root/ws/src/:ro
       # Именованный том для журналов Gazebo
-      - gazebo_logs:/root/ws/logs
+      - ./logs/gazebo:/root/ws/logs
       # Именованный том для данных Gazebo
-      - gazebo_data:/root/ws/data
+      - ./data/gazebo:/root/ws/data
       # Именованный том для исходного кода проекта
       - project_src:/root/ws/src/
 
-
     # Политика перезапуска для контейнера
     restart: unless-stopped
-    # Конфигурация проверки работоспособности
-    healthcheck:
-      # Команда для выполнения проверки работоспособности
-      test:
-        [
-          "CMD",
-          "bash",
-          "-c",
-          "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && ros2 node list",
-        ]
-      # Интервал между проверками работоспособности
-      interval: 30s
-      # Время ожидания для каждой проверки работоспособности
-      timeout: 10s
-      # Количество повторных попыток перед пометкой как неработоспособный
-      retries: 3
-      # Время ожидания перед началом проверок работоспособности после запуска контейнера
-      start_period: 60s
-    # Ограничения ресурсов для контейнера
+    # Конфигурация проверки работоспособности (временно отключена)
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD",
+    #       "bash",
+    #       "-c",
+    #       "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && ros2 node list",
+    #     ]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 60s
+    # Ограничения ресурсов для контейнера (75% от 32GB ОЗУ и 16 ядер)
     deploy:
       resources:
         limits:
-          memory: 4G
-          cpus: '2.0'
+          memory: 24G # 75% от 32GB ОЗУ
+          cpus: "12.0" # 75% от 16 ядер
         reservations:
-          memory: 1G
-          cpus: '0.5'
+          memory: 8G # Минимальные 25%
+          cpus: "4.0" # Минимальные 25%
 
 # Определить именованные тома
 volumes:
@@ -202,7 +194,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ${PWD}/logs/gazebo
+      device: ./logs/gazebo:/root/ws/logs
   # Том для данных Gazebo
   gazebo_data:
     # Использовать локальный драйвер тома

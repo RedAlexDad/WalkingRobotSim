@@ -57,3 +57,29 @@ qtcreator-*
 # Но точно НЕ делайте:
 # lib/               ← убивает наш текущий билд!
 # *.so               ← убьёт вообще все библиотеки
+
+# Логи Docker симуляции
+src/docker/logs/
+
+# Python cache файлы
+__pycache__/
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg

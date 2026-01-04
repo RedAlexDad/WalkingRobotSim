@@ -1,273 +1,199 @@
-# Walking Robot Simulation Manager
+# Unitree go2, go1 simulation in Gazebo Sim
 
-## 📋 Обзор
+This repository allows you to run dog robots in the GAZEBO simulator. The robot can walk, rotate with 12 degrees of freedom, and features a `robot_msgs` interface. The robot moves using inverse kinematics, and its odometry is based on direct kinematics. Additionally, all functionalities are developed in Python.
 
-Простая и надежная Docker конфигурация для запуска симуляции Walking Robot с использованием ROS 2 Jazzy и Gazebo Harmonic.
 
-## 🎯 Технологии
+## Run from docker 
 
-- **🤖 ROS 2 Jazzy** - Последняя LTS версия ROS
-- **🌍 Gazebo Harmonic** - Современный симулятор роботов
-- **🐳 Docker + Docker Compose** - Контейнеризация и оркестрация
-- **📦 Простая архитектура** - Одностадийный Dockerfile для надежности
+> **Note:** BUILDED AND TESTED WITH NVIDIA GPU.
 
-## 🚀 Быстрый старт
+### setup docker, docker compose and nvidia container toolkit
+[docker install](https://docs.docker.com/engine/install/ubuntu/)
 
-### 1. Сборка и запуск
-```bash
-./manage.sh build    # Сборка Docker образа
-./manage.sh up        # Запуск контейнера
-```
-
-### 2. Запуск симуляции
-```bash
-./manage.sh gazebo    # Запуск Gazebo с роботом
-./manage.sh teleop    # Управление роботом
-```
-
-### 3. Работа с контейнером
-```bash
-./manage.sh shell     # Вход в контейнер с настроенным ROS
-./manage.sh exec "ros2 topic list"  # Выполнение ROS команд
-```
-
-## 📁 Структура файлов
-
-```
-docker/
-├── Dockerfile              # Основной Dockerfile (ROS Jazzy)
-├── compose.yml             # Docker Compose конфигурация
-├── manage.sh               # Менеджер управления
-├── README.md               # Этот файл
-├── Dockerfile.multistage   # Старый многостадийный (архив)
-├── compose.multistage.yml  # Старый многостадийный (архив)
-└── manage.multistage.sh    # Старый менеджер (архив)
-```
-
-## 🛠️ Основные команды
-
-### Управление контейнером
-```bash
-./manage.sh build       # Сборка Docker образа
-./manage.sh up          # Запуск контейнера
-./manage.sh down        # Остановка контейнера
-./manage.sh restart     # Перезапуск контейнера
-./manage.sh status      # Статус контейнера
-./manage.sh clean       # Полная очистка Docker
-```
-
-### Работа с симуляцией
-```bash
-./manage.sh gazebo      # Запуск Gazebo симуляции
-./manage.sh teleop      # Управление роботом
-./manage.sh logs        # Просмотр логов
-./manage.sh logs-save   # Сохранение логов в файл
-```
-
-### Работа с контейнером
-```bash
-./manage.sh shell       # Вход в shell (с настроенным ROS)
-./manage.sh exec "cmd"  # Выполнение команды в контейнере
-./manage.sh backup      # Создание бэкапа данных
-```
-
-## 🤖 Работа внутри контейнера
-
-### Автоматически настроенные алиасы
-При входе в контейнер (`./manage.sh shell`) доступны следующие алиасы:
+[nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+### build docker :
 
 ```bash
-sim          # Запуск Gazebo симуляции
-teleop       # Управление роботом
-topics       # Список ROS топиков
-nodes        # Список ROS узлов
-help         # Справка по командам
+mkdir -p ~/go_sim/src
+cd ~/go_sim/src/docker
+docker compose -f compose.yml build simulator
+xhost +local:docker
+docker compose -f compose.yml up simulator
 ```
 
-### Полные команды (если алиасы не работают)
-```bash
-ros2 launch gazebo_sim launch.py use_sim_time:=true gui:=true
-ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel
-ros2 topic list
-ros2 node list
-```
 
-### Автоматическая настройка окружения
-При входе в контейнер автоматически выполняется:
-- `source /opt/ros/jazzy/setup.bash` - Настройка ROS Jazzy
-- `source /root/ws/install/setup.bash` - Настройка workspace
-- Настройка удобного prompt с индикатором `(ROS Jazzy)`
+## Run from source
 
-## 📊 Мониторинг и отладка
+> **Note:** BUILDED AND TESTED FROM ROS2 JAZZY, UBUNTU 22.04.
 
-### Проверка статуса
-```bash
-./manage.sh status      # Статус контейнера и ресурсы
-./manage.sh logs        # Логи в реальном времени
-./manage.sh logs-save   # Сохранение логов в файл
-```
-
-### Диагностика
-```bash
-./manage.sh exec "ros2 node list"           # Список активных узлов
-./manage.sh exec "ros2 topic list"           # Список топиков
-./manage.sh exec "ros2 doctor"               # Диагностика ROS
-./manage.sh exec "ros2 run gazebo_sim gazebo_sim --help"  # Помощь по пакету
-```
-
-## 🔧 Конфигурация
-
-### Dockerfile особенности
-- **Одностадийная архитектура** - простота и надежность
-- **Кэширование apt-get** - ускорение пересборки
-- **Health check** - автоматическая проверка работоспособности
-- **Метаданные** - информация о версии и описании
-
-### Compose.yml особенности
-- **network_mode: host** - прямая сетевая коммуникация
-- **Volumes** - разделение логов и данных
-- **Health check** - мониторинг состояния контейнера
-- **Restart policy** - автоматический перезапуск
-
-### Переменные окружения
-- `ROS_DISTRO=jazzy` - Версия ROS
-- `WORKSPACE_DIR=/root/ws` - Рабочая директория
-- `ROS_LOG_DIR=/root/ws/logs` - Директория логов
-- `GAZEBO_RESOURCE_PATH` - Пути к ресурсам Gazebo
-- `GZ_SIM_RESOURCE_PATH` - Пути к моделям
-
-## 🚨 Устранение неисправностей
-
-### Проблема: Контейнер не запускается
-```bash
-# Проверка Docker
-docker --version
-docker-compose --version
-
-# Очистка и пересборка
-./manage.sh clean
-./manage.sh build
-./manage.sh up
-```
-
-### Проблема: ROS команды не работают
-```bash
-# Проверка настройки ROS
-./manage.sh exec "echo $ROS_DISTRO"
-./manage.sh exec "which ros2"
-
-# Проверка workspace
-./manage.sh exec "ls -la /root/ws/install"
-./manage.sh exec "source /root/ws/install/setup.bash && ros2 node list"
-```
-
-### Проблема: Симуляция не запускается
-```bash
-# Проверка launch файлов
-./manage.sh exec "find /root/ws/install -name '*.launch.py'"
-
-# Запуск с отладкой
-./manage.sh exec "ros2 launch gazebo_sim launch.py use_sim_time:=true gui:=true --verbose"
-```
-
-### Проблема: Алиасы не работают
-```bash
-# Используйте полные команды
-./manage.sh exec "ros2 launch gazebo_sim launch.py use_sim_time:=true gui:=true"
-
-# Или войдите в контейнер
-./manage.sh shell
-# И используйте алиасы там
-```
-
-## 📦 Резервное копирование
-
-### Создание бэкапа
-```bash
-./manage.sh backup      # Автоматическое создание бэкапа
-```
-
-### Ручное резервирование
-```bash
-# Экспорт контейнера
-docker export walking_robot_sim > walking_robot_backup.tar
-
-# Копирование данных
-docker cp walking_robot_sim:/root/ws/logs ./logs_backup/
-```
-
-## 🔄 Обновление и обслуживание
-
-### Обновление образов
-```bash
-# Полная пересборка без кэша
-docker compose build --no-cache
-
-# Обновление пакетов в контейнере
-./manage.sh exec "apt update && apt upgrade -y"
-```
-
-### Очистка системы
-```bash
-# Очистка Docker
-./manage.sh clean
-
-# Очистка неиспользуемых ресурсов
-docker system prune -a
-docker volume prune
-```
-
-## 📈 Производительность
-
-### Оптимизация сборки
-- Используйте кэширование apt-get
-- Переиспользуйте слои Docker
-- Используйте `cache_from` в compose.yml
-
-### Мониторинг ресурсов
-```bash
-# Использование ресурсов
-./manage.sh status
-
-# Детальная статистика
-docker stats walking_robot_sim
-```
-
-## 🤝 Поддержка
-
-### Полезные ресурсы
-- [ROS 2 Jazzy Documentation](https://docs.ros.org/en/jazzy/)
-- [Gazebo Harmonic Documentation](https://gazebosim.org/docs/harmonic/)
-- [Docker Documentation](https://docs.docker.com/)
-
-### Сообщество
-- GitHub Issues: [WalkingRobotSim](https://github.com/RedAlexDad/WalkingRobotSim/issues)
-- ROS Discourse: [https://discourse.ros.org/](https://discourse.ros.org/)
-
-## 📝 История изменений
-
-### v3.0 - Текущая версия
-- ✅ Переход на простую архитектуру
-- ✅ Поддержка только ROS Jazzy + Gazebo Harmonic
-- ✅ Автоматическая настройка ROS в контейнере
-- ✅ Удобные алиасы для запуска симуляции
-- ✅ Улучшенный менеджер управления
-
-### Предыдущие версии
-- v2.x - Многостадийная архитектура (сохранена в архивных файлах)
-- v1.x - Базовая конфигурация
-
-## 🎯 Лучшие практики
-
-1. **Всегда используйте `./manage.sh`** для управления контейнером
-2. **Проверяйте статус** перед запуском симуляции
-3. **Используйте алиасы** для быстрой работы
-4. **Создавайте бэкапы** перед важными изменениями
-5. **Следите за ресурсами** при длительной работе
+> **Note:** Before launching, ensure that you install all dependencies and build the project using `colcon build`.
 
 ---
 
-**Разработано для Walking Robot Simulation**  
-**Технологический стек: ROS 2 Jazzy + Gazebo Harmonic + Docker**  
-**Версия: 3.0**  
-**Последнее обновление: 2026-01-01**
+## Setup and Installation
+
+### Clone the Repository and Build
+
+```bash
+mkdir -p ~/go_sim/src
+cd ~/go_sim/src
+git clone https://github.com/abutalipovvv/go_sim_py.git .
+cd ..
+colcon build --symlink-install
+```
+
+### Install Dependencies
+
+```bash
+cd ~/go_sim
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y
+```
+
+## Environment Configuration
+
+### Export Gazebo Models Path
+
+Before running the simulation, export the path to your Gazebo models:
+
+```bash
+export GZ_SIM_RESOURCE_PATH=~/go_sim/src/gazebo_sim/models
+```
+(Replace with the correct path to your models.)
+
+### Configure CycloneDDS
+
+To support multiple topics, configure CycloneDDS by creating a configuration file (e.g., cyclonedds.xml) with the following content:
+
+```bash
+<CycloneDDS>
+  <Domain>
+    <General>
+      <Interfaces>
+        <NetworkInterface name="lo" multicast="true" />
+      </Interfaces>
+      <DontRoute>true</DontRoute>
+    </General>
+    <Discovery>
+      <ParticipantIndex>auto</ParticipantIndex>
+      <MaxAutoParticipantIndex>100</MaxAutoParticipantIndex>
+    </Discovery>
+  </Domain>
+</CycloneDDS>
+```
+Then, set the environment variable to point to this file:
+
+```bash
+export CYCLONEDDS_URI=file://path_to_cyclonedds.xml
+```
+
+(Replace `path_to_cyclonedds.xml` with the actual file path.)
+
+## Running the Simulation
+
+```bash
+#Navigate to the project directory:
+
+cd ~/go_sim
+
+#Source the environment setup:
+
+source install/local_setup.bash
+
+#Launch the simulation:
+
+ros2 launch gazebo_sim launch.py
+```
+
+## Controlling the Robot
+
+### Moving the Robot
+
+The robot moves by publishing velocity commands to the `<robot_namespace>/cmd_vel` topic. By default, the robot is named robot1.
+
+Example using `teleop_twist_keyboard`:
+
+```bash
+source install/local_setup.bash
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel
+```
+
+
+![](./media/robot_move.gif)
+
+Robot Modes
+
+The robot supports several modes:
+
+    REST – Default position in which the robot cannot move.
+    STAND – Mode in which the robot can rotate in place.
+    TROT – Walking mode.
+
+The robot operates with 12 degrees of freedom. To enable rotation, switch the mode to "STAND" by publishing to the robot_mode topic.
+
+Example (for a robot with namespace `robot1`):
+
+```bash
+ros2 topic pub /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand "{mode: 'STAND', robot_id: 1}"
+```
+
+After switching modes, control the robot using velocity commands:
+
+```bash
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel
+```
+
+
+![](./media/move1.gif)
+
+### Changing Robot Behavior
+
+The robot can sit and stand using the `robot_behavior_command` service.
+
+Example command:
+
+```bash
+ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehaviorCommand "{command: 'walk'}"
+```
+
+Possible commands:
+
+    walk – The robot stands up (REST) and can walk (TROT).
+    up – The robot stands up (REST) and locks movement.
+    sit – The robot sits down (STAND).
+
+![](./media/sitUp.gif)
+
+## Multi-Robot Setup and Model Switching
+
+### Changing Robot Models
+
+You can change between robot models (e.g., go2, go1) in gazebo_multi_nav2_world.launch.py file 102 str:
+
+![](./media/switch.png)
+
+for go2: use "go2_description" 
+for go1: use "go1_description"
+
+Running Multiple Robots Simultaneously
+![](./media/go1multi.png)
+![](./media/go2multi.png)
+### The repository supports simultaneous operation of multiple robots. Each robot has access to nav2. In the robot.config file, add the robot’s namespace and spawn coordinates in the world.
+![](./media/robot_config.png)
+
+### NAV2 work demonstration: 
+![](./media/robot-nav2.gif)
+
+
+## Credits, thaks for all
+
+    mike4192: (SpotMicro)[https://github.com/mike4192/spotMicro]
+    Unitree Robotics: (A1 ROS)[https://github.com/unitreerobotics/a1_ros]
+    QUADRUPED ROBOTICS: (Quadruped)[https://quadruped.de]
+    lnotspotl: (GitHub)[https://github.com/lnotspotl]
+    anujjain-dev: (Unitree-go2 ROS2)[https://github.com/anujjain-dev/unitree-go2-ros2]
+
+## TODO
+
+    Add Gazebo Classic support (physics and inertial parameters for URDF).
+    Perform odometry calibration 

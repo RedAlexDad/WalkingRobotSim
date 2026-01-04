@@ -145,6 +145,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     ros-${ROS_DISTRO}-tf-transformations \
     ros-${ROS_DISTRO}-teleop-twist-keyboard \
     ros-${ROS_DISTRO}-opennav-docking \
+    # Тестирование и бенчмарки
+    ros-${ROS_DISTRO}-ament-cmake-gtest \
+    ros-${ROS_DISTRO}-ament-cmake-gmock \
+    ros-${ROS_DISTRO}-ament-cmake-pytest \
+    libbenchmark-dev \
+    libbenchmark-tools \
     tmux \
     tmuxinator \
     python3-colcon-common-extensions \
