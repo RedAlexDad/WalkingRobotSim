@@ -1,0 +1,22 @@
+# Obsidian workspace state (local UI state, open tabs)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+
+# Obsidian community plugins (reinstall as needed)
+.obsidian/plugins/
+
+# Obsidian cache
+.obsidian/.cache/
+
+# Trash
+.trash/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*~
