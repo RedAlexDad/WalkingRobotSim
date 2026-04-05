@@ -78,7 +78,11 @@ add_executable(robot_controller_node src/nodes/robot_controller_node.cpp)
 ament_target_dependencies(robot_controller_node rclcpp std_msgs sensor_msgs tf2_ros quadropted_msgs Eigen3)
 target_link_libraries(robot_controller_node ${PROJECT_NAME})
 
-install(TARGETS odometry_node robot_controller_node DESTINATION lib/${PROJECT_NAME})
+add_executable(cmd_vel_pub src/nodes/cmd_vel_pub.cpp)
+ament_target_dependencies(cmd_vel_pub rclcpp geometry_msgs quadropted_msgs)
+target_link_libraries(cmd_vel_pub ${PROJECT_NAME})
+
+install(TARGETS odometry_node robot_controller_node cmd_vel_pub DESTINATION lib/${PROJECT_NAME})
 
 # ════════════════════════════════════════════════════════════
 # Тесты
