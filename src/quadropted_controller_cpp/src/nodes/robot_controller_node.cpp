@@ -138,7 +138,7 @@ private:
         }
     }
 
-    Eigen::Matrix3d step_trot(State& state, const Command& cmd) {
+    Eigen::MatrixXd step_trot(State& state, const Command& cmd) {
         // Auto-rest: если нет движения — стоим
         bool needs_trot = true;
         if (std::abs(cmd.velocity[0]) < 1e-9 && std::abs(cmd.velocity[1]) < 1e-9 &&
@@ -199,7 +199,7 @@ private:
         return new_foot_locations;
     }
 
-    Eigen::Matrix3d step_rest(State& state, const Command& cmd) {
+    Eigen::MatrixXd step_rest(State& state, const Command& cmd) {
         (void)state;
         Eigen::MatrixXd result = default_stance_;
         result.row(2).setConstant(cmd.robot_height);
