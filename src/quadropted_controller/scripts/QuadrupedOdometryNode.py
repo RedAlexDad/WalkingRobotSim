@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""
+Узел одометрии четвероногого робота (декомпозированная версия).
+"""
+
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
@@ -16,6 +20,9 @@ from ForwardKinematics import ForwardKinematics
 from std_msgs.msg import Float64MultiArray
 from visualization_msgs.msg import Marker, MarkerArray
 from collections import deque
+
+from QuadrupedOdometry import OdometryState, update_odometry
+
 
 class DogOdometry(Node):
     def __init__(self):
@@ -62,29 +69,17 @@ class DogOdometry(Node):
         if self.verbose:
             self.get_logger().info(f"Clock Topic: {clock_topic}")
 
-        # Инициализация переменных одометрии
-        self.x = 0.0
-        self.y = 0.0
-        self.theta = 0.0
-        self.linear_velocity_x = 0.0
-        self.linear_velocity_y = 0.0
-        self.angular_velocity = 0.0
-        # Параметры фильтра скользящего среднего
-        self.filter_window_size = 14  # OKNOIOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO~~~~!!!!!!!!!!!!
-        self.delta_x_queue = deque(maxlen=self.filter_window_size)
-        self.delta_y_queue = deque(maxlen=self.filter_window_size)
-        
+        # Состояние одометрии (декомпозированное)
+        self.odom_state = OdometryState(filter_window_size=14)
+
         self.last_position_time = self.get_clock().now()
 
-        self.gazebo_clock = Time()
-        self.encoder_pos = 0
-
-        # Коэффициент для коррекции скорости (может потребоваться калибровка)
+        # Коэффициент для коррекции скорости
         self.VELOCITY_COEFFICIENT = 11.66
 
-        # Размеры тела и ног (может потребоваться корректировка)
-        body_dimensions = [0.3762, 0.0935]  # [длина, ширина]
-        leg_dimensions = [0.0, 0.0955, 0.213, 0.213]  # [l1, l2, l3, l4]
+        # Размеры тела и ног
+        body_dimensions = [0.3762, 0.0935]
+        leg_dimensions = [0.0, 0.0955, 0.213, 0.213]
 
         # Инициализация Forward Kinematics
         self.fk_solver = ForwardKinematics(body_dimensions, leg_dimensions)
@@ -131,7 +126,7 @@ class DogOdometry(Node):
 
         self.foot_contacts_sub = self.create_subscription(
             RobotFootContact,
-            'foot_contact',  # Убедитесь, что это правильный топик
+            'foot_contact',
             self.foot_contacts_callback,
             qos_best_effort
         )
@@ -172,13 +167,10 @@ class DogOdometry(Node):
             if self.verbose:
                 self.get_logger().info("Subscribed to encoder_value topic with BEST_EFFORT QoS.")
 
-        # Паблишер маркеров для визуализации лап
+        # Паблишер маркеров
         self.marker_pub = self.create_publisher(MarkerArray, 'foot_markers', qos_reliable)
 
-        # Инициализация предыдущих позиций лап
-        self.prev_foot_positions = [None, None, None, None]
-
-        # Таймер для обновления одометрии
+        # Таймер
         timer_period = 1.0 / publish_rate
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
@@ -188,192 +180,117 @@ class DogOdometry(Node):
         self.MAX_LINEAR_VELOCITY_Y = 0.012
         self.MAX_ANGULAR_VELOCITY = 1.0
 
-        self.imu_angular_velocity = 0.0
-
-        # Переменные для контактов лап и суставов
-        self.foot_contacts = [False, False, False, False]  # [FR, FL, RR, RL]
-        self.joint_positions = [0.0] * 12  # 3 угла на каждую ногу (4 ноги * 3 угла)
-        self.foot_positions = [(0.0, 0.0, 0.0)] * 4  # Позиции лап [FR, FL, RR, RL]
+    # ================================================================
+    # Callbacks
+    # ================================================================
 
     def velocity_callback(self, msg):
-        # Предполагается, что msg.cmd_vel.linear.x уже масштабирован корректно
-        self.linear_velocity_x = msg.cmd_vel.linear.x
-        self.linear_velocity_y = msg.cmd_vel.linear.y
+        self.odom_state.linear_velocity_x = msg.cmd_vel.linear.x
+        self.odom_state.linear_velocity_y = msg.cmd_vel.linear.y
         if self.verbose:
             self.get_logger().info(
-                f"Robot Velocity - Linear X: {self.linear_velocity_x:.6f} m/s, "
-                f"Linear Y: {self.linear_velocity_y:.6f} m/s"
+                f"Robot Velocity - Linear X: {self.odom_state.linear_velocity_x:.6f} m/s, "
+                f"Linear Y: {self.odom_state.linear_velocity_y:.6f} m/s"
             )
 
     def joint_states_callback(self, msg):
-        # Предполагается, что имена суставов в порядке FR_hip_joint, FR_thigh_joint, FR_calf_joint, ...
         if len(msg.data) != 12:
             self.get_logger().error(f"Unexpected number of joint angles: {len(msg.data)}. Expected 12.")
             return
-        self.joint_positions = list(msg.data)
+        self.odom_state.joint_positions = list(msg.data)
         if self.verbose:
-            self.get_logger().info(f"Joint Positions: {self.joint_positions}")
+            self.get_logger().info(f"Joint Positions: {self.odom_state.joint_positions}")
 
     def foot_contacts_callback(self, msg):
         if self.verbose:
             self.get_logger().info(f"Received foot_contacts message: {msg}")
 
-        # Проверка длины списка contacts
         if len(msg.contacts) != 4:
             self.get_logger().error(f"Unexpected number of contacts: {len(msg.contacts)}. Expected 4.")
-            self.foot_contacts = [False, False, False, False]
+            self.odom_state.foot_contacts = [False, False, False, False]
             return
 
-        self.foot_contacts = list(msg.contacts)
+        self.odom_state.foot_contacts = list(msg.contacts)
         if self.verbose:
-            self.get_logger().info(f"Foot Contacts: {self.foot_contacts}")
+            self.get_logger().info(f"Foot Contacts: {self.odom_state.foot_contacts}")
 
     def imu_callback(self, msg):
         orientation_q = msg.orientation
         orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
         (roll, pitch, yaw) = tf_transformations.euler_from_quaternion(orientation_list)
 
-        self.theta = yaw  # Устанавливаем theta только из IMU
-        self.imu_angular_velocity = -msg.angular_velocity.z
+        self.odom_state.theta = yaw
+        self.odom_state.imu_angular_velocity = -msg.angular_velocity.z
 
         if self.verbose:
-            self.get_logger().info(f"IMU Yaw: {self.theta:.6f} rad")
-            self.get_logger().info(f"IMU Angular Velocity: {self.imu_angular_velocity:.6f} rad/s")
+            self.get_logger().info(f"IMU Yaw: {self.odom_state.theta:.6f} rad")
+            self.get_logger().info(f"IMU Angular Velocity: {self.odom_state.imu_angular_velocity:.6f} rad/s")
 
     def clock_callback(self, msg):
-        self.gazebo_clock = msg.clock
+        self.odom_state.gazebo_clock_sec = msg.clock.sec
+        self.odom_state.gazebo_clock_nanosec = msg.clock.nanosec
         if self.verbose:
-            self.get_logger().info(f"Received Gazebo Clock: {self.gazebo_clock.sec}.{self.gazebo_clock.nanosec}")
+            self.get_logger().info(f"Received Gazebo Clock: {self.odom_state.gazebo_clock_sec}.{self.odom_state.gazebo_clock_nanosec}")
 
     def encoder_callback(self, msg):
-        self.encoder_pos = msg.data
+        self.odom_state.encoder_pos = msg.data
         if self.verbose:
-            self.get_logger().info(f"Received Encoder Position: {self.encoder_pos}")
+            self.get_logger().info(f"Received Encoder Position: {self.odom_state.encoder_pos}")
 
-    def normalize_angle(self, angle):
-        """
-        Нормализует угол до диапазона [-pi, pi].
-        :param angle: Угол в радианах.
-        :return: Нормализованный угол.
-        """
-        return math.atan2(math.sin(angle), math.cos(angle))
+    # ================================================================
+    # Core logic
+    # ================================================================
 
     def calculate_foot_positions(self):
-        """
-        Вычисляет позиции всех лап на основе текущих углов суставов.
-        """
-        # Список углов суставов: [FR_hip, FR_thigh, FR_calf, FL_hip, FL_thigh, FL_calf,
-        #                           RR_hip, RR_thigh, RR_calf, RL_hip, RL_thigh, RL_calf]
-        if len(self.joint_positions) != 12:
-            self.get_logger().error(f"Incorrect number of joint positions: {len(self.joint_positions)}. Expected 12.")
+        """Вычислить позиции лап через FK."""
+        if len(self.odom_state.joint_positions) != 12:
+            self.get_logger().error(f"Incorrect number of joint positions: {len(self.odom_state.joint_positions)}. Expected 12.")
             return
 
         try:
-            foot_positions = self.fk_solver.forward_kinematics_all_legs(self.joint_positions)
-            self.foot_positions = foot_positions
+            foot_positions = self.fk_solver.forward_kinematics_all_legs(self.odom_state.joint_positions)
+            self.odom_state.foot_positions = foot_positions
         except Exception as e:
             self.get_logger().error(f"Error in forward kinematics: {e}")
-            self.foot_positions = [(0.0, 0.0, 0.0)] * 4
+            self.odom_state.foot_positions = [(0.0, 0.0, 0.0)] * 4
             return
 
         if self.verbose:
-            for i, pos in enumerate(self.foot_positions):
+            for i, pos in enumerate(self.odom_state.foot_positions):
                 leg = ['FR', 'FL', 'RR', 'RL'][i]
                 self.get_logger().info(f"{leg} Foot Position: x={pos[0]:.4f}, y={pos[1]:.4f}, z={pos[2]:.4f}")
 
-    def update_odometry(self):
+    def update_odometry_step(self):
+        """Обновить одометрию (делегирование к чистой функции)."""
         current_time = self.get_clock().now()
         dt = (current_time - self.last_position_time).nanoseconds / 1e9
         if dt <= 0.0:
             return
 
+        update_odometry(self.odom_state, dt)
+
         if self.verbose:
-            self.get_logger().info(f"Foot contacts during update_odometry: {self.foot_contacts}")
+            self.get_logger().info(f"Odometry updated: x={self.odom_state.x:.6f}, y={self.odom_state.y:.6f}, theta={self.odom_state.theta:.6f}")
 
-        delta_x_total, delta_y_total = 0.0, 0.0
-        contact_count = 0
-
-        for i in range(4):  # Для каждой лапы
-            if self.foot_contacts[i]:  # Если лапа на земле
-                # Используем позицию лапы относительно base_link
-                foot_rel_x, foot_rel_y = self.foot_positions[i][0], self.foot_positions[i][1]
-
-                if self.prev_foot_positions[i] is not None:
-                    delta_x = foot_rel_x - self.prev_foot_positions[i][0]
-                    delta_y = foot_rel_y - self.prev_foot_positions[i][1]
-
-                    # Смещение робота является противоположным изменению позиций лап
-                    delta_x_total += delta_x
-                    delta_y_total += -delta_y
-                    contact_count += 0.65
-
-                    if self.verbose:
-                        leg = ['FR', 'FL', 'RR', 'RL'][i]
-                        self.get_logger().info(f"{leg} foot movement: Δx={delta_x:.6f}, Δy={delta_y:.6f}")
-                else:
-                    # Если это первая запись, просто сохраните текущие позиции лап
-                    if self.verbose:
-                        leg = ['FR', 'FL', 'RR', 'RL'][i]
-                        self.get_logger().info(f"{leg} foot first contact position: x={foot_rel_x:.6f}, y={foot_rel_y:.6f}")
-
-                # Обновляем предыдущие позиции лап
-                self.prev_foot_positions[i] = (foot_rel_x, foot_rel_y)
-
-        if contact_count > 0:
-            # Усредняем смещения
-            delta_x = delta_x_total / contact_count
-            delta_y = delta_y_total / contact_count
-
-            # Добавляем смещения в очереди
-            self.delta_x_queue.append(delta_x)
-            self.delta_y_queue.append(delta_y)
-
-            # Вычисляем среднее значение смещений
-            avg_delta_x = sum(self.delta_x_queue) / len(self.delta_x_queue)
-            avg_delta_y = sum(self.delta_y_queue) / len(self.delta_y_queue)
-
-            # Обновляем позицию робота с учётом ориентации
-            self.x += (avg_delta_x * math.cos(self.theta) - avg_delta_y * math.sin(self.theta))
-            self.y += (avg_delta_x * math.sin(self.theta) + avg_delta_y * math.cos(self.theta))
-
-            if self.verbose:
-                self.get_logger().info(f"Odometry updated based on foot contacts: Δx={avg_delta_x:.6f}, Δy={avg_delta_y:.6f}")
-        else:
-            # Если ни одна лапа не на земле, обновляем одометрию на основе команд скорости
-            delta_x = self.linear_velocity_x * dt
-            delta_y = self.linear_velocity_y * dt
-
-            # Добавляем смещения в очереди
-            self.delta_x_queue.append(delta_x)
-            self.delta_y_queue.append(delta_y)
-
-            # Вычисляем среднее значение смещений
-            avg_delta_x = sum(self.delta_x_queue) / len(self.delta_x_queue)
-            avg_delta_y = sum(self.delta_y_queue) / len(self.delta_y_queue)
-
-            self.x += (avg_delta_x * math.cos(self.theta) - avg_delta_y * math.sin(self.theta))
-            self.y += (avg_delta_x * math.sin(self.theta) + avg_delta_y * math.cos(self.theta))
-
-            if self.verbose:
-                self.get_logger().info(f"No feet in contact. Odometry updated based on velocity commands: Δx={avg_delta_x:.6f}, Δy={avg_delta_y:.6f}")
-
-        # Не обновляем theta здесь, оно устанавливается только из IMU
         self.last_position_time = current_time
 
     def publish_odometry(self):
+        """Опубликовать сообщение Odometry и TF."""
         odom = Odometry()
         if self.is_gazebo:
-            odom.header.stamp = self.gazebo_clock
+            stamp = Time(sec=self.odom_state.gazebo_clock_sec, nanosec=self.odom_state.gazebo_clock_nanosec)
         else:
-            odom.header.stamp = self.get_clock().now().to_msg()
+            stamp = self.get_clock().now().to_msg()
+
+        odom.header.stamp = stamp
         odom.header.frame_id = self.odom_frame_id
         odom.child_frame_id = self.base_frame_id
 
-        odom.pose.pose.position.x = self.x
-        odom.pose.pose.position.y = self.y
+        odom.pose.pose.position.x = self.odom_state.x
+        odom.pose.pose.position.y = self.odom_state.y
         odom.pose.pose.position.z = 0.0
 
-        quaternion = tf_transformations.quaternion_from_euler(0, 0, self.theta)
+        quaternion = tf_transformations.quaternion_from_euler(0, 0, self.odom_state.theta)
         odom.pose.pose.orientation = Quaternion(
             x=quaternion[0],
             y=quaternion[1],
@@ -381,24 +298,20 @@ class DogOdometry(Node):
             w=quaternion[3]
         )
 
-        # Обновление twist.twist на основе команд скорости
-        odom.twist.twist.linear.x = self.linear_velocity_x
-        odom.twist.twist.linear.y = self.linear_velocity_y
-        odom.twist.twist.angular.z = self.imu_angular_velocity  # Устанавливаем угловую скорость на основе IMU
+        odom.twist.twist.linear.x = self.odom_state.linear_velocity_x
+        odom.twist.twist.linear.y = self.odom_state.linear_velocity_y
+        odom.twist.twist.angular.z = self.odom_state.imu_angular_velocity
 
         self.odom_pub.publish(odom)
 
         if self.enable_odom_tf:
             t = TransformStamped()
-            if self.is_gazebo:
-                t.header.stamp = self.gazebo_clock
-            else:
-                t.header.stamp = self.get_clock().now().to_msg()
+            t.header.stamp = stamp
             t.header.frame_id = self.odom_frame_id
             t.child_frame_id = self.base_frame_id
 
-            t.transform.translation.x = self.x
-            t.transform.translation.y = self.y
+            t.transform.translation.x = self.odom_state.x
+            t.transform.translation.y = self.odom_state.y
             t.transform.translation.z = 0.0
             t.transform.rotation = Quaternion(
                 x=quaternion[0],
@@ -410,8 +323,9 @@ class DogOdometry(Node):
             self.tf_broadcaster.sendTransform(t)
 
     def publish_markers(self):
+        """Опубликовать маркеры для визуализации лап."""
         marker_array = MarkerArray()
-        for i, pos in enumerate(self.foot_positions):
+        for i, pos in enumerate(self.odom_state.foot_positions):
             marker = Marker()
             marker.header.frame_id = self.base_frame_id
             marker.header.stamp = self.get_clock().now().to_msg()
@@ -437,20 +351,18 @@ class DogOdometry(Node):
         self.marker_pub.publish(marker_array)
 
     def timer_callback(self):
-        # Расчет позиций лап
         self.calculate_foot_positions()
-
-        # Обновление одометрии на основе позиций лап и контактов
-        self.update_odometry()
-
-        # Публикация одометрии
+        self.update_odometry_step()
         self.publish_odometry()
-
-        # Публикация маркеров
         self.publish_markers()
 
         if self.verbose:
-            self.get_logger().info(f"Position Updated: x={self.x:.6f} m, y={self.y:.6f} m, theta={self.theta:.6f} rad")
+            self.get_logger().info(
+                f"Position Updated: x={self.odom_state.x:.6f} m, "
+                f"y={self.odom_state.y:.6f} m, "
+                f"theta={self.odom_state.theta:.6f} rad"
+            )
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -467,6 +379,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
