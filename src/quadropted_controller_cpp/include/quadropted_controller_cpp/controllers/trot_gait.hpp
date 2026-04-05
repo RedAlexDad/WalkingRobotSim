@@ -1,6 +1,7 @@
 #pragma once
 #include "quadropted_controller_cpp/controllers/gait_controller.hpp"
 #include "quadropted_controller_cpp/controllers/trot_swing.hpp"
+#include "quadropted_controller_cpp/controllers/pid_controller.hpp"
 
 namespace quadropted {
 
@@ -9,9 +10,16 @@ public:
     TrotGaitController(double stance_time, double swing_time, double time_step, bool use_imu, Eigen::MatrixXd default_stance);
     Eigen::MatrixXd step(int ticks, const Eigen::MatrixXd& current, const Eigen::Vector3d& cmd_vel) const;
     bool use_imu() const { return use_imu_; }
-    const TrotSwingController& swing_controller() const { return swing_; }
+    TrotSwingController& swing_controller() { return swing_; }
+    PIDController& pid_controller() { return pid_; }
+    double time_step() const { return time_step_; }
+    int stance_ticks() const { return GaitController::stance_ticks(); }
+    int swing_ticks() const { return GaitController::swing_ticks(); }
+    int phase_length() const { return GaitController::phase_length(); }
 private:
-    bool use_imu_; TrotSwingController swing_;
+    bool use_imu_;
+    TrotSwingController swing_;
+    PIDController pid_;
 };
 
 }
