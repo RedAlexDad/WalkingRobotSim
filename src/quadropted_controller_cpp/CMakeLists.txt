@@ -17,6 +17,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(quadropted_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
@@ -25,23 +26,30 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 # ════════════════════════════════════════════════════════════
 
 add_library(${PROJECT_NAME} SHARED
-  src/rotation_matrices.cpp
-  src/homogeneous_transforms.cpp
-  src/forward_kinematics.cpp
-  src/inverse_kinematics.cpp
-  src/odometry_state.cpp
-  src/odometry_update.cpp
-  src/message_builders.cpp
-  src/pid_controller.cpp
-  src/gait_controller.cpp
-  src/rest_controller.cpp
-  src/stand_controller.cpp
-  src/trot_stance.cpp
-  src/trot_swing.cpp
-  src/trot_gait.cpp
-  src/crawl_stance.cpp
-  src/crawl_swing.cpp
-  src/crawl_gait.cpp
+  # Utils
+  src/utils/math_utils.cpp
+  src/utils/rotation_matrices.cpp
+  src/utils/homogeneous_transforms.cpp
+  src/utils/message_builders.cpp
+  # Kinematics
+  src/kinematics/forward_kinematics.cpp
+  src/kinematics/inverse_kinematics.cpp
+  # Odometry
+  src/odometry/odometry_state.cpp
+  src/odometry/odometry_update.cpp
+  # States
+  src/states/state_command.cpp
+  # Controllers
+  src/controllers/pid_controller.cpp
+  src/controllers/gait_controller.cpp
+  src/controllers/rest_controller.cpp
+  src/controllers/stand_controller.cpp
+  src/controllers/trot_stance.cpp
+  src/controllers/trot_swing.cpp
+  src/controllers/trot_gait.cpp
+  src/controllers/crawl_stance.cpp
+  src/controllers/crawl_swing.cpp
+  src/controllers/crawl_gait.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -62,25 +70,21 @@ install(TARGETS ${PROJECT_NAME}
 # Исполняемые файлы (ROS 2 узлы)
 # ════════════════════════════════════════════════════════════
 
-add_executable(odometry_node src/odometry_node.cpp)
-ament_target_dependencies(odometry_node rclcpp nav_msgs sensor_msgs geometry_msgs tf2_ros quadropted_msgs Eigen3)
+add_executable(odometry_node src/nodes/odometry_node.cpp)
+ament_target_dependencies(odometry_node visualization_msgs rclcpp nav_msgs sensor_msgs geometry_msgs tf2_ros quadropted_msgs Eigen3)
 target_link_libraries(odometry_node ${PROJECT_NAME})
 
-add_executable(robot_controller_node src/robot_controller_node.cpp)
+add_executable(robot_controller_node src/nodes/robot_controller_node.cpp)
 ament_target_dependencies(robot_controller_node rclcpp std_msgs sensor_msgs tf2_ros quadropted_msgs Eigen3)
 target_link_libraries(robot_controller_node ${PROJECT_NAME})
 
-install(TARGETS
-  odometry_node
-  robot_controller_node
-  DESTINATION lib/${PROJECT_NAME})
+install(TARGETS odometry_node robot_controller_node DESTINATION lib/${PROJECT_NAME})
 
 # ════════════════════════════════════════════════════════════
 # Тесты
 # ════════════════════════════════════════════════════════════
 
 if(BUILD_TESTING)
-  find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_cmake_gmock REQUIRED)
 
   ament_add_gmock(test_rotation_matrices test/test_rotation_matrices.cpp)
@@ -118,5 +122,5 @@ install(DIRECTORY launch/ DESTINATION share/${PROJECT_NAME}/launch)
 ament_export_include_directories(include)
 ament_export_libraries(${PROJECT_NAME})
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-ament_export_dependencies(rclcpp geometry_msgs nav_msgs sensor_msgs tf2_ros tf2 quadropted_msgs Eigen3)
+ament_export_dependencies(visualization_msgs rclcpp geometry_msgs nav_msgs sensor_msgs tf2_ros tf2 quadropted_msgs Eigen3)
 ament_package()
