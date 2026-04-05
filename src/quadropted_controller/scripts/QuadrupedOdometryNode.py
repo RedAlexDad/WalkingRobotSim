@@ -39,7 +39,7 @@ class DogOdometry(
     """ROS-узел одометрии. Логика делегирована миксинам из QuadrupedOdometry.*"""
 
     def __init__(self):
-        super().__init__('dog_odometry')
+        super().__init__("dog_odometry")
 
         # --- Конфигурация ---
         self.config: NodeConfig = declare_parameters(self)
@@ -67,38 +67,38 @@ class DogOdometry(
 
         # --- Publishers ---
         self.odom_pub = self.create_publisher(
-            Odometry, 'odom', self.config.qos_reliable
+            Odometry, "odom", self.config.qos_reliable
         )
         self.marker_pub = self.create_publisher(
-            MarkerArray, 'foot_markers', self.config.qos_reliable
+            MarkerArray, "foot_markers", self.config.qos_reliable
         )
 
         # --- Subscriptions ---
         if self.has_imu_heading:
             self.imu_sub = self.create_subscription(
                 Imu,
-                'imu_plugin/out',
+                "imu_plugin/out",
                 self.imu_callback,
                 self.config.qos_reliable,
             )
 
         self.velocity_sub = self.create_subscription(
             RobotVelocity,
-            'robot_velocity',
+            "robot_velocity",
             self.velocity_callback,
             self.config.qos_reliable,
         )
 
         self.joint_states_sub = self.create_subscription(
             Float64MultiArray,
-            'joint_group_controller/commands',
+            "joint_group_controller/commands",
             self.joint_states_callback,
             self.config.qos_reliable,
         )
 
         self.foot_contacts_sub = self.create_subscription(
             RobotFootContact,
-            'foot_contact',
+            "foot_contact",
             self.foot_contacts_callback,
             self.config.qos_best_effort,
         )
@@ -116,14 +116,12 @@ class DogOdometry(
                 self.config.qos_reliable,
             )
             if self.verbose:
-                self.get_logger().info(
-                    "Subscribed to /clock topic with RELIABLE QoS."
-                )
+                self.get_logger().info("Subscribed to /clock topic with RELIABLE QoS.")
         else:
             encoder_qos = self.config.qos_best_effort
             self.encoder_sub = self.create_subscription(
                 Int64,
-                'encoder_value',
+                "encoder_value",
                 self.encoder_callback,
                 encoder_qos,
             )
@@ -155,5 +153,5 @@ def main(args=None):
             rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

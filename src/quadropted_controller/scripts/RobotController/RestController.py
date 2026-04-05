@@ -5,6 +5,7 @@ import numpy as np
 from RoboticsUtilities.rotation_matrices import rotxyz
 from .PIDController import PID_controller
 
+
 class RestController:
     def __init__(self, default_stance):
         self.def_stance = default_stance
@@ -17,12 +18,11 @@ class RestController:
         self.pid_controller.reset()
 
     def updateStateCommand(self, msg, state, command):
-        
+
         state.body_local_position[0] = msg.axes[2] * 0.08
         state.body_local_position[1] = msg.axes[5] * 0.08
         state.body_local_position[2] = msg.axes[1] * 0.08
 
-        
         state.body_local_orientation[0] = msg.axes[0] * 0.8
         state.body_local_orientation[1] = msg.axes[4] * 0.6
         state.body_local_orientation[2] = msg.axes[3] * 0.6
@@ -31,7 +31,9 @@ class RestController:
             if msg.buttons[7]:
                 self.use_imu = not self.use_imu
                 self.use_button = False
-                print(f"Rest Controller - Использование компенсации крена/тангажа: {self.use_imu}")
+                print(
+                    f"Rest Controller - Использование компенсации крена/тангажа: {self.use_imu}"
+                )
 
         if not self.use_button:
             if not msg.buttons[7]:
@@ -44,7 +46,6 @@ class RestController:
     def step(self, state, command):
         temp = self.default_stance
         temp[2] = [command.robot_height] * 4
-
 
         if self.use_imu:
             compensation = self.pid_controller.run(state.imu_roll, state.imu_pitch)
