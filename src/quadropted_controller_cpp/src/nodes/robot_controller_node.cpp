@@ -147,13 +147,13 @@ private:
         }
 
         if (!needs_trot) {
-            Eigen::Matrix3d result = default_stance_;
+            Eigen::MatrixXd result = default_stance_;
             result.row(2).setConstant(cmd.robot_height);
             return result;
         }
 
         Eigen::VectorXi contacts = trot_gait_->contacts(state.ticks);
-        Eigen::Matrix3d new_foot_locations = Eigen::Matrix3d::Zero();
+        Eigen::MatrixXd new_foot_locations = Eigen::Matrix3d::Zero();
 
         for (int leg = 0; leg < 4; ++leg) {
             if (contacts(leg) == 1) {
@@ -200,14 +200,14 @@ private:
 
     Eigen::Matrix3d step_rest(State& state, const Command& cmd) {
         (void)state;
-        Eigen::Matrix3d result = default_stance_;
+        Eigen::MatrixXd result = default_stance_;
         result.row(2).setConstant(cmd.robot_height);
         return result;
     }
 
     void control_loop() {
         // Run controller
-        Eigen::Matrix3d leg_positions;
+        Eigen::MatrixXd leg_positions;
         if (use_trot_) {
             leg_positions = step_trot(state_, command_);
         } else {
@@ -243,7 +243,7 @@ private:
     bool controller_change_needed_ = false;
     bool use_trot_ = false;
 
-    Eigen::Matrix3d default_stance_;
+    Eigen::MatrixXd default_stance_;
     State state_;
     Command command_;
 
