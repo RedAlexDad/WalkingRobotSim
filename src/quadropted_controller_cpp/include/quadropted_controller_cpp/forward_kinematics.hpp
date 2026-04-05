@@ -10,10 +10,10 @@ struct LegBasePositions {
         double hl = body_length * 0.5;
         double hw = body_width * 0.5;
         switch (leg_index) {
-            case 0: return { hl, -hw};  // FR
-            case 1: return { hl,  hw};  // FL
-            case 2: return {-hl, -hw};  // RR
-            case 3: return {-hl,  hw};  // RL
+            case 0: return { hl,  hw};  // FR
+            case 1: return { hl, -hw};  // FL
+            case 2: return {-hl,  hw};  // RR
+            case 3: return {-hl, -hw};  // RL
             default: return {0, 0};
         }
     }

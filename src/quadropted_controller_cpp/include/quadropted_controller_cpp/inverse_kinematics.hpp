@@ -25,8 +25,8 @@ inline Eigen::MatrixXd compute_local_positions(
         Eigen::Vector3d{-hl,  hw, 0}
     };
 
-    Eigen::Matrix4d leg_h;
-    leg_h.block<3, 4>(0, 0) = leg_positions.transpose();
+    Eigen::Matrix4d leg_h = Eigen::Matrix4d::Zero();
+    leg_h.topLeftCorner(3, 4) = leg_positions;
     leg_h.row(3).setOnes();
 
     Eigen::MatrixXd result(4, 3);
@@ -49,14 +49,14 @@ inline std::array<double, 3> compute_joint_angles_for_leg(
     static constexpr double LEG_SIGNS[] = {1.0, -1.0, 1.0, -1.0};
 
     double f_sq = x * x + y * y - l2 * l2;
-    double F = std::sqrt(std::max(f_sq, 0.0));  // Защита от NaN
+    double F = std::sqrt(std::max(f_sq, 0.0));
     double G = F - l1;
     double H = std::sqrt(G * G + z * z);
 
     double theta1 = -std::atan2(y, x) - std::atan2(F, l2 * LEG_SIGNS[leg_index]);
 
     double D = (H * H - l3 * l3 - l4 * l4) / (2.0 * l3 * l4);
-    D = std::max(-1.0, std::min(1.0, D));  // Clip для защиты от NaN
+    D = std::max(-1.0, std::min(1.0, D));
 
     double theta4 = -std::atan2(std::sqrt(1.0 - D * D), D);
     double theta3 = std::atan2(z, G) - std::atan2(l4 * std::sin(theta4), l3 + l4 * std::cos(theta4));
@@ -64,7 +64,6 @@ inline std::array<double, 3> compute_joint_angles_for_leg(
     return {theta1, theta3, theta4};
 }
 
-/// Все 4 ноги
 inline std::vector<double> compute_all_joint_angles(
     const Eigen::MatrixXd& positions, double l1, double l2, double l3, double l4)
 {
@@ -107,6 +106,5 @@ private:
     ForwardKinematics fk_;
     double body_length_, body_width_, l1_, l2_, l3_, l4_;
 };
-
 
 } // namespace quadropted

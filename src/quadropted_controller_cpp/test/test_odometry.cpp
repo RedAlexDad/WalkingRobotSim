@@ -3,7 +3,8 @@
 #include "quadropted_controller_cpp/odometry_update.hpp"
 
 TEST(Odometry, append_delta_and_average) {
-    quadropted::OdometryState state(5);
+    quadropted::OdometryState state;  // пустой, не инициализированный
+    state.filter_window_size = 5;
     for (double v : {0.1, 0.2, 0.3, 0.4, 0.5})
         state.append_delta(v, v * 2);
 

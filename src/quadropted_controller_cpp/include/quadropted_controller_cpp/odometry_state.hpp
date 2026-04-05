@@ -32,10 +32,7 @@ struct OdometryState {
     int encoder_pos = 0;
 
     OdometryState() = default;
-    explicit OdometryState(int window) : filter_window_size(window) {
-        delta_x_queue.resize(window, 0);
-        delta_y_queue.resize(window, 0);
-    }
+    explicit OdometryState(int window) : filter_window_size(window), delta_x_queue(window, 0), delta_y_queue(window, 0) {}
 
     void append_delta(double dx, double dy) {
         if (static_cast<int>(delta_x_queue.size()) >= filter_window_size) {
