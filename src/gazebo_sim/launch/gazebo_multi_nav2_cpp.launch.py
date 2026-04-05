@@ -181,7 +181,7 @@ def generate_launch_description():
             parameters=[{'debug_mode': True}],
             namespace=namespace,
             output='screen',
-            arguments=['--ros-args', '--log-level', 'robot_controller_cpp:=DEBUG'],
+            
             remappings=remappings
         )
 
