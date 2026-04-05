@@ -37,6 +37,7 @@ WalkingRobotSim/
     docker/                   # Docker инфраструктура
       Dockerfile              # 10-этапная сборка
       compose.yml             # Docker Compose
+      manage.sh               # Скрипт управления
     gazebo_sim/               # Пакет симуляции
       launch/                 # Launch-файлы
       config/                 # Конфигурации (Nav2, EKF, robots)
@@ -46,20 +47,24 @@ WalkingRobotSim/
       models/                 # Gazebo модели
     quadropted_controller/    # Пакет управления (Python)
       scripts/
-        robot_controller_gazebo.py     # Главный узел
-        QuadrupedOdometryNode.py       # Узел одометрии
+        robot_controller_gazebo.py     # Главный узел (60 Гц)
+        QuadrupedOdometryNode.py       # Узел одометрии (50 Гц)
         cmd_vel_pub.py                 # Twist -> RobotVelocity
         RobotController/               # Контроллеры
-          RobotController.py           # Главный контроллер
+          RobotController.py           # Главный контроллер (state machine)
           GaitController.py            # Базовый класс походки
-          TrotGaitController.py        # Рысь
-          CrawlGaitController.py       # Ползание
-          StandController.py           # Стойка
-          RestController.py            # Покой
-          PIDController.py             # PID компенсация
+          TrotGaitController.py        # Рысь (диагональные пары)
+          CrawlGaitController.py       # Ползание (последовательные ноги)
+          StandController.py           # Стойка (вращение на месте)
+          RestController.py            # Покой (неподвижность)
+          PIDController.py             # PID компенсация крена/тангажа
+          StateCommand.py              # Data classes State/Command
         ForwardKinematics/             # Прямая кинематика
+          robot_FK.py
         InverseKinematics/             # Обратная кинематика
+          robot_IK.py
         RoboticsUtilities/             # Трансформации
+          Transformations.py
     quadropted_msgs/          # Кастомные сообщения/сервисы
       msg/                    # 4 сообщения
       srv/                    # 1 сервис
@@ -83,12 +88,13 @@ WalkingRobotSim/
 
 Основной пакет управления на Python. Содержит:
 
-- RobotControllerNode -- главный узел (60 Гц)
-- QuadrupedOdometryNode -- оценка положения по контакту стоп
-- RobotController -- конечный автомат режимов
-- Gait Controllers -- Trot, Crawl, Stand, Rest
-- Inverse/Forward Kinematics -- расчёт углов и позиций стоп
-- PID Controller -- компенсация крена/тангажа
+- **RobotControllerNode** -- главный узел (60 Гц). Создаёт Robot (state machine), вычисляет IK, публикует углы сочленений. Инициализируется в режиме TROT.
+- **QuadrupedOdometryNode (DogOdometry)** -- оценка положения по контакту стоп + FK (50 Гц). Публикует Odometry, TF, маркеры стоп.
+- **RobotVelocityHandler** -- мост Twist -> RobotVelocity с экспоненциальным масштабированием.
+- **RobotController** -- конечный автомат с 4 состояниями (REST, TROT, CRAWL, STAND).
+- **Gait Controllers** -- Trot, Crawl, Stand, Rest.
+- **Inverse/Forward Kinematics** -- расчёт углов и позиций стоп.
+- **PID Controller** -- компенсация крена/тангажа по IMU.
 
 ### quadropted_msgs
 
@@ -96,7 +102,7 @@ WalkingRobotSim/
 
 - RobotModeCommand -- переключение режимов (REST/TROT/CRAWL/STAND)
 - RobotVelocity -- команда скорости с robot_id
-- RobotFootContact -- состояния контакта стоп
+- RobotFootContact -- состояния контакта стоп (bool[4])
 - RobotGaitCommand -- команда походки
 - RobotBehaviorCommand -- сервис sit/up/walk
 
@@ -117,13 +123,15 @@ RobotController -- это конечный автомат с 4 состояни�
 - CRAWL -- ползание (последовательное движение ног)
 - STAND -- стойка (вращение на месте)
 
-### Цикл управления
+**Инициализация по умолчанию:** TROT (не REST)
 
-1. RobotControllerNode работает на частоте 60 Гц
-2. На каждом такте вызывается текущий контроллер
-3. Контроллер вычисляет позиции стоп (3x4 матрица)
-4. Обратная кинематика преобразует позиции стоп в 12 углов сочленений
-5. Углы публикуются в joint_group_controller/commands
+### Цикл управления (60 Гц)
+
+1. Timer вызывает `control_loop()`
+2. `robot.run()` -- текущий контроллер вычисляет позиции стоп (3x4)
+3. `robot.change_controller()` -- обработка событий переключения
+4. IK преобразует позиции стоп в 12 углов сочленений
+5. Углы публикуются в `joint_group_controller/commands`
 6. Gazebo применяет углы к модели робота
 
 ### Обратная кинематика
@@ -135,14 +143,15 @@ RobotController -- это конечный автомат с 4 состояни�
 
 Алгоритм использует теорему косинусов для вычисления углов по позиции стопы.
 
-### Одометрия
+### Одометрия (DogOdometry, 50 Гц)
 
-QuadrupedOdometryNode оценивает положение робота:
 1. FK вычисляет позиции всех 4 стоп по 12 углам
 2. Определяются стопы на земле (из foot_contact)
-3. Смещения стоп на земле усредняются (скользящее окно 14)
+3. Смещения стоп на земле усредняются скользящим окном (14)
 4. Усреднённые смещения интегрируются в глобальную позицию
 5. Курс берётся из IMU (yaw из кватерниона)
+6. Fallback: если нет контакта -- используется команда скорости
+7. Публикуется Odometry + TF + маркеры стоп для RViz
 
 ---
 
@@ -161,12 +170,15 @@ QuadrupedOdometryNode оценивает положение робота:
 - Скорость X: до 0.035 м/с
 - Скорость Y: до 0.012 м/с
 - Yaw: до 0.5 рад/с
+- AutoRest: при нулевой скорости -- автоматический отдых
+- IMU компенсация: PID roll/pitch (kp=0.15, ki=0.02, kd=0.002)
 
 ### CRAWL
 
 Ползание. Ноги двигаются последовательно:
 - 8 фаз цикла
 - Каждая нога поднимается по очереди
+- Боковое смещение тела для стабильности (0.06 м)
 - Скорость X: до 0.011 м/с
 - Yaw: до 0.15 рад/с
 
@@ -183,13 +195,13 @@ QuadrupedOdometryNode оценивает положение робота:
 ## 5. Поток данных
 
 ```
-Teleop/Nav2 --/cmd_vel--> cmd_vel_handler --/robot_velocity--> RobotController
-                                                                        |
-/robot_mode ----------------------------------------------------------->|
-                                                                        v
+Teleop/Nav2 --/cmd_vel--> RobotVelocityHandler --/robot_velocity--> RobotController
+                                                                            |
+/robot_mode --------------------------------------------------------------->|
+                                                                            v
 RobotController --> Joint Angles --> /joint_group_controller/commands
                                               |
-                                    Joint angles --> FK --> OdometryNode --> /odom
+                                    Joint angles --> FK --> OdometryNode --> /odom + TF + markers
                                               |
                                     Foot contacts <-- TrotGaitController
                                               |

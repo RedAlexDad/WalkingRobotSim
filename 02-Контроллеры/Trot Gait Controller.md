@@ -45,12 +45,12 @@ RL:       1       1       1       0
 
 **Ключевые методы:**
 
-- `raibert_touchdown_location(leg_index, command)` — вычисляет точку приземления по эвристике Raibert:
+- `raibert_touchdown_location(leg_index, command)` -- вычисляет точку приземления по эвристике Raibert:
   ```
   touchdown = rotation(default_stance) + velocity * phase_length * time_step
   ```
-- `swing_height(swing_phase)` — профиль высоты подъёма ноги (треугольный, макс = z_leg_lift)
-- `next_foot_location(swing_prop, leg_index, state, command)` — следующая позиция ноги в фазе переноса
+- `swing_height(swing_phase)` -- профиль высоты подъёма ноги (треугольный, макс = z_leg_lift)
+- `next_foot_location(swing_prop, leg_index, state, command)` -- следующая позиция ноги в фазе переноса
 
 ### TrotStanceController
 
@@ -58,10 +58,10 @@ RL:       1       1       1       0
 
 **Ключевые методы:**
 
-- `position_delta(leg_index, state, command)` — вычисляет смещение ноги в фазе опоры:
+- `position_delta(leg_index, state, command)` -- вычисляет смещение ноги в фазе опоры:
   - X/Y: движение против направления скорости (тело движется вперёд)
   - Z: P-регулятор к целевой высоте
-- `next_foot_location(leg_index, state, command)` — следующая позиция ноги в фазе опоры
+- `next_foot_location(leg_index, state, command)` -- следующая позиция ноги в фазе опоры
 
 ## PID компенсация
 
@@ -82,4 +82,9 @@ PID_controller(kp=0.15, ki=0.02, kd=0.002)
 | `foot_contact` | `RobotFootContact` | Состояния контакта 4 ног |
 | `controller_velocity` | `geometry_msgs/Twist` | Скорость для ros2_control |
 
-**Примечание:** `foot_contact` публикуется на каждом шаге `step()` с текущими режимами контакта ног. При autoRest (все ноги на земле) публикуется `[True, True, True, True]`.
+## Новые возможности
+
+- `updateStateCommand(msg, state, command)` -- обработка ввода с геймпада (axes + buttons)
+- Кнопка 7 геймпада -- вкл/выкл IMU компенсацию
+- Кнопка 6 геймпада -- вкл/выкл AutoRest
+- Публикация `foot_contact` на каждом шаге

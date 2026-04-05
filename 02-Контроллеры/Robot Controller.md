@@ -14,13 +14,11 @@ Robot(node, body, legs, imu, robot_id)
 ```
 
 **Параметры:**
-- `node` — ROS 2 Node (для создания подписок/сервисов)
-- `body` — [длина, ширина] тела = [0.3762, 0.0935]
-- `legs` — [l1, l2, l3, l4] = [0.0, 0.0955, 0.213, 0.213]
-- `imu` — использовать ли IMU компенсацию
-- `robot_id` — идентификатор робота для мультиробота
-
-**Стартовый режим:** TROT — при инициализации устанавливается `self.command.trot_event = True` и вызывается `change_controller()`.
+- `node` -- ROS 2 Node (для создания подписок/сервисов)
+- `body` -- [длина, ширина] тела = [0.3762, 0.0935]
+- `legs` -- [l1, l2, l3, l4] = [0.0, 0.0955, 0.213, 0.213]
+- `imu` -- использовать ли IMU компенсацию
+- `robot_id` -- идентификатор робота для мультиробота
 
 ### Внутренние контроллеры
 
@@ -55,8 +53,6 @@ Z: [0, 0, 0, 0]
 | `robot_mode` | `RobotModeCommand` | `mode_callback` |
 | `robot_velocity` | `RobotVelocity` | `velocity_callback` |
 
-**Фильтрация:** Все callback'и проверяют `msg.robot_id == self.robot_id` перед обработкой. Логирование только при `self.node.verbose == True`.
-
 ### Сервис
 
 | Сервис | Тип | Callback |
@@ -73,15 +69,21 @@ class BehaviorState(Enum):
     STAND = 3   # Стойка
 ```
 
+### Инициализация по умолчанию
+
+При создании `Robot` автоматически:
+1. Устанавливает `trot_event = True`
+2. Вызывает `change_controller()` -- переключается на TROT
+
 ### Логика переключения контроллеров
 
 Метод `change_controller()` обрабатывает события:
 
-1. **TROT + REST** → Сначала REST, затем TROT (для команды 'walk')
-2. **TROT** → TrotGaitController (сброс ticks)
-3. **CRAWL** → CrawlGaitController (first_cycle=True, сброс ticks)
-4. **STAND** → StandController (body_local_position[2] = 0.005)
-5. **REST** → RestController (сброс PID)
+1. **TROT + REST** (оба True) -- Сначала REST, затем TROT (для команды 'walk')
+2. **TROT** -- TrotGaitController (сброс ticks)
+3. **CRAWL** -- CrawlGaitController (first_cycle=True, сброс ticks)
+4. **STAND** -- StandController (body_local_position[2] = 0.005)
+5. **REST** -- RestController (сброс PID)
 
 ### Сервис поведения
 
@@ -89,24 +91,25 @@ class BehaviorState(Enum):
 |---|---|
 | `sit` | STAND режим, body_local_position[2] = -0.15 |
 | `up` | REST режим, body_local_position[2] = 0.0 |
-| `walk` | REST → TROT переход, body_local_position[2] = 0.0 |
+| `walk` | REST + TROT переход, body_local_position[2] = 0.0 |
 
 ### Метод `run()`
 
-Вызывает `currentController.run(state, command)` и возвращает позиции стоп (3×4 матрица).
+Вызывает `currentController.run(state, command)` и возвращает позиции стоп (3x4 матрица).
 
 ### State и Command
 
-**State** — текущее состояние робота:
-- `foot_locations` — позиции стоп (3×4)
-- `body_local_position` — [x, y, z] тела
-- `body_local_orientation` — [roll, pitch, yaw]
-- `imu_roll`, `imu_pitch` — данные IMU
-- `ticks` — счётчик тактов походки
-- `behavior_state` — текущий режим
+**State** -- текущее состояние робота:
+- `foot_locations` -- позиции стоп (3x4)
+- `body_local_position` -- [x, y, z] тела
+- `body_local_orientation` -- [roll, pitch, yaw]
+- `imu_roll`, `imu_pitch` -- данные IMU
+- `ticks` -- счётчик тактов походки
+- `behavior_state` -- текущий режим
+- `robot_height` -- высота тела
 
-**Command** — команды управления:
-- `velocity` — [x, y, z] скорость
-- `yaw_rate` — [roll, pitch, yaw] угловая скорость
-- `robot_height` — высота тела
-- `rest_event`, `trot_event`, `crawl_event`, `stand_event` — флаги событий
+**Command** -- команды управления:
+- `velocity` -- [x, y, z] скорость
+- `yaw_rate` -- [roll, pitch, yaw] угловая скорость
+- `robot_height` -- высота тела
+- `rest_event`, `trot_event`, `crawl_event`, `stand_event` -- флаги событий

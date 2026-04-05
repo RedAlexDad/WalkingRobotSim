@@ -9,8 +9,7 @@
 ### docker
 - Dockerfile -- 10-этапная сборка
 - compose.yml -- контейнер с GUI, host network, privileged
-
-  - Makefile -- все команды управления (make build, make up, make test и т.д.)
+- manage.sh -- скрипт управления
 
 ### gazebo_sim
 - launch/ -- launch-файлы (gazebo_multi_nav2_world.launch.py)
@@ -19,8 +18,8 @@
 - maps/ -- карты навигации
 
 ### quadropted_controller
-- robot_controller_gazebo.py -- главный узел (60 Гц)
-- QuadrupedOdometryNode.py -- одометрия по контакту стоп
+- robot_controller_gazebo.py -- главный узел (60 Гц, инициализация в TROT)
+- QuadrupedOdometryNode.py -- одометрия по контакту стоп (50 Гц, маркеры RViz)
 - cmd_vel_pub.py -- Twist -> RobotVelocity адаптер
 - RobotController/ -- контроллеры походки
 - InverseKinematics/ -- обратная кинематика
@@ -39,16 +38,19 @@
 
 ### REST
 - Покой, робот неподвижен
-- PID компенсация крена/тангажа
+- PID компенсация крена/тангажа (kp=0.75, ki=2.29, kd=0.0)
 
 ### TROT
 - Рысь, диагональные пары ног
 - 4 фазы цикла
 - X: до 0.035 м/с, Y: до 0.012 м/с, Yaw: до 0.5 рад/с
+- AutoRest: автоматический отдых при нулевой скорости
+- IMU PID: kp=0.15, ki=0.02, kd=0.002
 
 ### CRAWL
 - Ползание, последовательные ноги
 - 8 фаз цикла
+- Боковое смещение тела: 0.06 м
 - X: до 0.011 м/с, Yaw: до 0.15 рад/с
 
 ### STAND
@@ -66,6 +68,7 @@
 - /robot1/odom -- одометрия (nav_msgs/msg/Odometry)
 - /robot1/imu/data -- данные IMU (sensor_msgs/msg/Imu)
 - /robot1/foot_contact -- контакты стоп (quadropted_msgs/msg/RobotFootContact)
+- /robot1/foot_markers -- маркеры стоп (visualization_msgs/msg/MarkerArray)
 
 ---
 
@@ -86,10 +89,10 @@ ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehavi
 ## Граф ROS2
 
 ```
-Teleop/Nav2 -> /cmd_vel -> cmd_vel_handler -> /robot_velocity -> RobotController
+Teleop/Nav2 -> /cmd_vel -> RobotVelocityHandler -> /robot_velocity -> RobotController
 /robot_mode --------------------------------------------------------> RobotController
 RobotController -> Joint Angles -> /joint_group_controller/commands -> Gazebo
-Joint angles -> FK -> OdometryNode -> /odom -> EKF -> Nav2
+Joint angles -> FK -> OdometryNode -> /odom + TF + markers -> EKF -> Nav2
 Foot contacts <- TrotGaitController
 ```
 
