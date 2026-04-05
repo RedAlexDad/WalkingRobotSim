@@ -366,19 +366,17 @@ class DogOdometry(Node):
 
 def main(args=None):
     rclpy.init(args=args)
+    node = None
     try:
         node = DogOdometry()
-    except Exception as e:
-        print(f"Exception during node initialization: {e}")
-        rclpy.shutdown()
-        return
-    try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
     finally:
-        node.destroy_node()
-        rclpy.shutdown()
+        if node is not None:
+            node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':
