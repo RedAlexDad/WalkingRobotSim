@@ -265,8 +265,8 @@ def generate_launch_description():
         )
 
         cmd_vel_pub = Node(
-            package='quadropted_controller_cpp',
-            executable='cmd_vel_pub',
+            package='quadropted_controller',
+            executable='cmd_vel_pub.py',
             namespace=namespace,
             name='cmd_vel_pub',
             output='screen',
