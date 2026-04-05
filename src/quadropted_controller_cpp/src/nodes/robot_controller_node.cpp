@@ -27,6 +27,7 @@ public:
         // Default stance
         double dx = body[0] * 0.5 + 0.02;
         double dy = body[1] * 0.5 + legs[1];
+        default_stance_.resize(3, 4);
         default_stance_ <<  dx,  dx, -dx, -dx,
                            -dy,  dy, -dy,  dy,
                             0,   0,   0,   0;
