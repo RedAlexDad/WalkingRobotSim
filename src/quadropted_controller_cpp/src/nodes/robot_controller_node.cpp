@@ -1,6 +1,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
+#include <sensor_msgs/msg/imu.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <quadropted_msgs/msg/robot_velocity.hpp>
 #include <quadropted_msgs/msg/robot_mode_command.hpp>
@@ -18,7 +19,9 @@ class RobotControllerNode : public rclcpp::Node {
 public:
     RobotControllerNode() : Node("robot_controller_cpp"), rate_(60), state_(0.25) {
         declare_parameter("verbose", false);
+        declare_parameter("debug_mode", false);
         verbose_ = get_parameter("verbose").as_bool();
+        debug_mode_ = get_parameter("debug_mode").as_bool();
 
         // Геометрия робота
         double body[] = {0.3762, 0.0935};
@@ -59,10 +62,25 @@ public:
                 if (msg->robot_id == 1) {
                     command_.velocity = {msg->cmd_vel.linear.x, msg->cmd_vel.linear.y, msg->cmd_vel.linear.z};
                     command_.yaw_rate = {msg->cmd_vel.angular.x, msg->cmd_vel.angular.y, msg->cmd_vel.angular.z};
-                    if (verbose_)
-                        RCLCPP_INFO(get_logger(), "Velocity: vx=%.3f vy=%.3f yaw=%.3f",
-                                   command_.velocity[0], command_.velocity[1], command_.yaw_rate[2]);
+                    if (debug_mode_)
+                        RCLCPP_DEBUG(get_logger(), "[DEBUG] Velocity: vx=%.4f vy=%.4f vz=%.4f yaw=%.4f",
+                                   command_.velocity[0], command_.velocity[1], command_.velocity[2], command_.yaw_rate[2]);
                 }
+            });
+
+        // IMU subscription — обновляем roll/pitch для компенсации
+        imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
+            "imu", 10,
+            [this](const sensor_msgs::msg::Imu::SharedPtr msg) {
+                // Конвертируем quaternion в euler angles
+                double w = msg->orientation.w;
+                double x = msg->orientation.x;
+                double y = msg->orientation.y;
+                double z = msg->orientation.z;
+                state_.imu_roll = std::atan2(2.0*(w*x + y*z), 1.0 - 2.0*(x*x + y*y));
+                state_.imu_pitch = std::asin(2.0*(w*y - z*x));
+                if (debug_mode_)
+                    RCLCPP_DEBUG(get_logger(), "[DEBUG] IMU: roll=%.4f pitch=%.4f", state_.imu_roll, state_.imu_pitch);
             });
 
         mode_sub_ = create_subscription<quadropted_msgs::msg::RobotModeCommand>(
@@ -93,6 +111,8 @@ public:
             std::bind(&RobotControllerNode::control_loop, this));
 
         RCLCPP_INFO(get_logger(), "Robot Controller Node (C++) started at %d Hz", rate_);
+        if (debug_mode_)
+            RCLCPP_INFO(get_logger(), "DEBUG mode enabled");
     }
 
 private:
@@ -150,6 +170,8 @@ private:
         if (!needs_trot) {
             Eigen::MatrixXd result = default_stance_;
             result.row(2).setConstant(cmd.robot_height);
+            if (debug_mode_)
+                RCLCPP_DEBUG(get_logger(), "[DEBUG] TROT resting: Z=%.3f", cmd.robot_height);
             return result;
         }
 
@@ -193,9 +215,18 @@ private:
             auto comp = trot_gait_->pid_controller().run(state.imu_roll, state.imu_pitch, this->now().seconds());
             Eigen::Matrix3d rot = rotxyz(-comp[0], -comp[1], 0);
             new_foot_locations = rot * new_foot_locations;
+            if (debug_mode_)
+                RCLCPP_DEBUG(get_logger(), "[DEBUG] IMU comp: roll=%.3f pitch=%.3f comp_x=%.3f comp_y=%.3f",
+                           state.imu_roll, state.imu_pitch, -comp[0], -comp[1]);
         }
 
         state.ticks++;
+
+        if (debug_mode_)
+            RCLCPP_DEBUG(get_logger(), "[DEBUG] TROT step: ticks=%d contacts=[%d,%d,%d,%d] Z=[%.3f,%.3f,%.3f,%.3f]",
+                       state.ticks, contacts(0), contacts(1), contacts(2), contacts(3),
+                       new_foot_locations(2,0), new_foot_locations(2,1), new_foot_locations(2,2), new_foot_locations(2,3));
+
         return new_foot_locations;
     }
 
@@ -203,6 +234,8 @@ private:
         (void)state;
         Eigen::MatrixXd result = default_stance_;
         result.row(2).setConstant(cmd.robot_height);
+        if (debug_mode_)
+            RCLCPP_DEBUG(get_logger(), "[DEBUG] REST: Z=%.3f", cmd.robot_height);
         return result;
     }
 
@@ -230,6 +263,12 @@ private:
                 state_.body_local_position[0], state_.body_local_position[1], state_.body_local_position[2],
                 state_.body_local_orientation[0], state_.body_local_orientation[1], state_.body_local_orientation[2]);
 
+            if (debug_mode_) {
+                // Выводим только первые 3 угла (передняя правая нога)
+                RCLCPP_DEBUG(get_logger(), "[DEBUG] IK output[0-2]: %.4f %.4f %.4f",
+                           joint_angles[0], joint_angles[1], joint_angles[2]);
+            }
+
             auto msg = std::make_unique<std_msgs::msg::Float64MultiArray>();
             msg->data.assign(joint_angles.begin(), joint_angles.end());
             joint_pub_->publish(std::move(msg));
@@ -241,6 +280,7 @@ private:
     // Members
     int rate_;
     bool verbose_;
+    bool debug_mode_;
     bool controller_change_needed_ = false;
     bool use_trot_ = false;
 
@@ -254,6 +294,7 @@ private:
 
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr joint_pub_;
     rclcpp::Subscription<quadropted_msgs::msg::RobotVelocity>::SharedPtr velocity_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
     rclcpp::Subscription<quadropted_msgs::msg::RobotModeCommand>::SharedPtr mode_sub_;
     rclcpp::TimerBase::SharedPtr timer_;
 };
