@@ -5,8 +5,8 @@ from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray  
 from quadropted_msgs.msg import RobotModeCommand, RobotVelocity  
 from quadropted_msgs.srv import RobotBehaviorCommand
-from InverseKinematics import robot_IK
-from RobotController import RobotController
+from InverseKinematics import InverseKinematics
+from RobotController import Robot
 import numpy as np  
 
 USE_IMU = True
@@ -30,8 +30,8 @@ class RobotControllerNode(Node):
         self.robot_id = self.get_parameter('robot_id').get_parameter_value().integer_value
 
         
-        self.robot = RobotController.Robot(self, body, legs, USE_IMU, self.robot_id)
-        self.inverseKinematics = robot_IK.InverseKinematics(body, legs)
+        self.robot = Robot(self, body, legs, USE_IMU, self.robot_id)
+        self.inverseKinematics = InverseKinematics(body, legs)
 
         
         self.joint_command_publisher = self.create_publisher(Float64MultiArray, "joint_group_controller/commands", 10)

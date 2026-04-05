@@ -5,7 +5,7 @@ Trot Stance Controller — управление фазой опоры ноги �
 """
 
 import numpy as np
-from RoboticsUtilities.Transformations import rotxyz
+from RoboticsUtilities.rotation_matrices import rotxyz
 
 
 class TrotStanceController:

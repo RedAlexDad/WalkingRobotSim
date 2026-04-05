@@ -5,7 +5,7 @@ Trot Swing Controller — управление фазой подъёма ног�
 """
 
 import numpy as np
-from RoboticsUtilities.Transformations import rotz
+from RoboticsUtilities.rotation_matrices import rotz
 
 
 class TrotSwingController:

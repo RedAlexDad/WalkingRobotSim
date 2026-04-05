@@ -4,8 +4,8 @@ import numpy as np
 import tf_transformations  # Используем tf2 вместо tf
 from .StateCommand import State, Command, BehaviorState
 from .RestController import RestController
-from .TrotGaitController import TrotGaitController
-from .CrawlGaitController import CrawlGaitController
+from .trot_gait.trot_gait import TrotGaitController
+from .crawl_gait.crawl_gait import CrawlGaitController
 from .StandController import StandController
 from geometry_msgs.msg import Twist
 from quadropted_msgs.msg import RobotModeCommand, RobotVelocity

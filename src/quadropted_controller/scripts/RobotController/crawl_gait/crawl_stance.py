@@ -5,7 +5,7 @@ Crawl Stance Controller — управление фазой опоры ноги 
 """
 
 import numpy as np
-from RoboticsUtilities.Transformations import rotz
+from RoboticsUtilities.rotation_matrices import rotz
 
 
 class CrawlStanceController:

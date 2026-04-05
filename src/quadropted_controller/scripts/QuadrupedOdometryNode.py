@@ -12,7 +12,7 @@ import tf2_ros
 import math
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 from quadropted_msgs.msg import RobotVelocity, RobotFootContact
-from ForwardKinematics import robot_FK
+from ForwardKinematics import ForwardKinematics
 from std_msgs.msg import Float64MultiArray
 from visualization_msgs.msg import Marker, MarkerArray
 from collections import deque
@@ -87,7 +87,7 @@ class DogOdometry(Node):
         leg_dimensions = [0.0, 0.0955, 0.213, 0.213]  # [l1, l2, l3, l4]
 
         # Инициализация Forward Kinematics
-        self.fk_solver = robot_FK.ForwardKinematics(body_dimensions, leg_dimensions)
+        self.fk_solver = ForwardKinematics(body_dimensions, leg_dimensions)
 
         # QoS профили
         qos_reliable = QoSProfile(
