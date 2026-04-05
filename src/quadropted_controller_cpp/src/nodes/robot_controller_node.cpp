@@ -154,7 +154,7 @@ private:
         }
 
         Eigen::VectorXi contacts = trot_gait_->contacts(state.ticks);
-        Eigen::MatrixXd new_foot_locations = Eigen::Matrix3d::Zero();
+        Eigen::MatrixXd new_foot_locations = Eigen::MatrixXd::Zero(3, 4);
 
         for (int leg = 0; leg < 4; ++leg) {
             if (contacts(leg) == 1) {
