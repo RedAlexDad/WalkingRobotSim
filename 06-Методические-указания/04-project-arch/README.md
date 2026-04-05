@@ -37,7 +37,6 @@ WalkingRobotSim/
     docker/                   # Docker инфраструктура
       Dockerfile              # 10-этапная сборка
       compose.yml             # Docker Compose
-      manage.sh               # Скрипт управления
     gazebo_sim/               # Пакет симуляции
       launch/                 # Launch-файлы
       config/                 # Конфигурации (Nav2, EKF, robots)

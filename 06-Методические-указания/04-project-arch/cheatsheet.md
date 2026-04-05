@@ -9,7 +9,8 @@
 ### docker
 - Dockerfile -- 10-этапная сборка
 - compose.yml -- контейнер с GUI, host network, privileged
-- manage.sh -- скрипт управления
+
+  - Makefile -- все команды управления (make build, make up, make test и т.д.)
 
 ### gazebo_sim
 - launch/ -- launch-файлы (gazebo_multi_nav2_world.launch.py)
