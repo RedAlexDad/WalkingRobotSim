@@ -750,6 +750,7 @@ help:
 	@printf "  ${GREEN}${BOLD}make test-benchmark${NC}     Замер производительности\n"
 	@printf "  ${GREEN}${BOLD}make test-all${NC}           Оба теста подряд\n"
 	@printf "  ${GREEN}${BOLD}make test-cross${NC}        Кросс-языковой тест Python vs C++\n"
+	@printf "  ${GREEN}${BOLD}make bench-cpp${NC}         C++ vs Python benchmark\n"
 	@echo ""
 	@printf "${BOLD}Прочее:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make setup${NC}            Начальная настройка проекта\n"
@@ -767,7 +768,7 @@ help:
 # ТЕСТЫ
 # ════════════════════════════════════════════════════════════
 
-.PHONY: test-correctness test-benchmark test-cross test-all
+.PHONY: test-correctness test-benchmark test-cross bench-cpp test-all
 
 ## Проверка корректности — сравнение результатов old vs new (34 теста)
 test-correctness:
@@ -791,6 +792,11 @@ test-all: test-correctness test-benchmark
 test-cross:
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Кросс-языковой тест: Python vs C++...${NC}\n"
 	@python3 $(PROJECT_ROOT)/src/tests/test_python_vs_cpp.py
+
+## C++ vs Python benchmark — замер производительности
+bench-cpp:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}C++ vs Python Benchmark...${NC}\n"
+	@python3 $(PROJECT_ROOT)/src/tests/benchmark_cpp_vs_python.py
 
 # ════════════════════════════════════════════════════════════
 # DEFAULT TARGET
