@@ -81,3 +81,5 @@ PID_controller(kp=0.15, ki=0.02, kd=0.002)
 |---|---|---|
 | `foot_contact` | `RobotFootContact` | Состояния контакта 4 ног |
 | `controller_velocity` | `geometry_msgs/Twist` | Скорость для ros2_control |
+
+**Примечание:** `foot_contact` публикуется на каждом шаге `step()` с текущими режимами контакта ног. При autoRest (все ноги на земле) публикуется `[True, True, True, True]`.

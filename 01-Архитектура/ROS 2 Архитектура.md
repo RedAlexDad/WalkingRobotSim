@@ -20,6 +20,9 @@
 ### cmd_vel_handler
 - **Файл:** `src/quadropted_controller/scripts/cmd_vel_pub.py`
 - **Описание:** Мост между стандартным `geometry_msgs/Twist` и кастомным `RobotVelocity`. Применяет экспоненциальное масштабирование и лимиты скорости.
+- **Функция `multiply_and_limit`:** Экспоненциальное масштабирование: `scale_factor * (1 - exp(-100 * adjusted_value))`, где `adjusted_value = abs(value) * 0.035`
+- **Лимиты:** Linear X через экспоненту (0.035), Linear Y через экспоненту (0.012), Angular Z прямой лимит [-1, 1]
+- **Таймер движения:** `motion_start_time` — отслеживает начало ненулевой скорости, логирует elapsed time при остановке
 
 ## Топики (Topics)
 

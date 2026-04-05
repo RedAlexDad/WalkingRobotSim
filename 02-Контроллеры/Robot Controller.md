@@ -20,6 +20,8 @@ Robot(node, body, legs, imu, robot_id)
 - `imu` — использовать ли IMU компенсацию
 - `robot_id` — идентификатор робота для мультиробота
 
+**Стартовый режим:** TROT — при инициализации устанавливается `self.command.trot_event = True` и вызывается `change_controller()`.
+
 ### Внутренние контроллеры
 
 | Контроллер | Класс | Назначение |
@@ -52,6 +54,8 @@ Z: [0, 0, 0, 0]
 |---|---|---|
 | `robot_mode` | `RobotModeCommand` | `mode_callback` |
 | `robot_velocity` | `RobotVelocity` | `velocity_callback` |
+
+**Фильтрация:** Все callback'и проверяют `msg.robot_id == self.robot_id` перед обработкой. Логирование только при `self.node.verbose == True`.
 
 ### Сервис
 
