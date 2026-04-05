@@ -4,6 +4,7 @@ import rclpy
 from rclpy.time import Time
 import numpy as np
 
+
 class PID_controller:
     def __init__(self, kp, ki, kd):
         self.kp = kp
@@ -25,11 +26,11 @@ class PID_controller:
         t_now = self.get_time_in_seconds()
         if self.last_time is None:
             self.last_time = t_now
-            return np.array([0.0, 0.0])  
+            return np.array([0.0, 0.0])
 
         step = t_now - self.last_time
 
-        if step < 1e-6:  
+        if step < 1e-6:
             return np.array([0.0, 0.0])
 
         self.I_term += error * step
