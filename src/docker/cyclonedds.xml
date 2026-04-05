@@ -6,9 +6,9 @@
       </Interfaces>
       <DontRoute>true</DontRoute>
     </General>
-      <Discovery>
-        <ParticipantIndex>auto</ParticipantIndex>
-        <MaxAutoParticipantIndex>100</MaxAutoParticipantIndex>
+    <Discovery>
+      <ParticipantIndex>auto</ParticipantIndex>
+      <MaxAutoParticipantIndex>100</MaxAutoParticipantIndex>
     </Discovery>
   </Domain>
 </CycloneDDS>

@@ -124,25 +124,15 @@ services:
         ROS_DISTRO: jazzy
       # Источники кэша для ускорения сборки
       cache_from:
-        # Слой базовой системы
         - walking_robot_sim:base-system
-        # Слой ядра ROS
         - walking_robot_sim:ros-core
-        # Слой управления ROS
         - walking_robot_sim:ros-control
-        # Слой симуляции ROS
         - walking_robot_sim:ros-simulation
-        # Слой навигации ROS
         - walking_robot_sim:ros-navigation
-        # Слой зрения ROS
         - walking_robot_sim:ros-vision
-        # Слой инструментов ROS
         - walking_robot_sim:ros-tools
-        # Слой зависимостей Python
         - walking_robot_sim:python-deps
-        # Слой рабочей области
         - walking_robot_sim:workspace
-        # Последний слой
         - walking_robot_sim:latest
       # Целевая стадия сборки для создания
       target: final
@@ -150,12 +140,10 @@ services:
     volumes:
       # Монтировать файл конфигурации CycloneDDS
       - ./cyclonedds.xml:/cyclonedds.xml:ro
-      # Монтировать каталог исходного кода (только для чтения) - устаревшее, используем именованный том
-      # - ./../:/root/ws/src/:ro
-      # Именованный том для журналов Gazebo
-      - ./logs/gazebo:/root/ws/logs
-      # Именованный том для данных Gazebo
-      - ./data/gazebo:/root/ws/data
+      # Логи ROS (относительно корня проекта)
+      - ../../logs/gazebo:/root/ws/logs
+      # Данные Gazebo (относительно корня проекта)
+      - ../../data/gazebo:/root/ws/data
       # Именованный том для исходного кода проекта
       - project_src:/root/ws/src/
 
@@ -181,29 +169,11 @@ services:
           memory: 24G # 75% от 32GB ОЗУ
           cpus: "12.0" # 75% от 16 ядер
         reservations:
-          memory: 8G # Минимальные 25%
-          cpus: "4.0" # Минимальные 25%
+          memory: 12G # Минимальные 37.5% — гарантия при нагрузке
+          cpus: "8.0" # Минимальные 50% — стабильность EKF и Gazebo
 
 # Определить именованные тома
 volumes:
-  # Том для журналов Gazebo
-  gazebo_logs:
-    # Использовать локальный драйвер тома
-    driver: local
-    # Настройки тома для оптимизации производительности
-    driver_opts:
-      type: none
-      o: bind
-      device: ./logs/gazebo:/root/ws/logs
-  # Том для данных Gazebo
-  gazebo_data:
-    # Использовать локальный драйвер тома
-    driver: local
-    # Настройки тома для оптимизации производительности
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/data/gazebo
   # Том для исходного кода проекта
   project_src:
     # Использовать локальный драйвер тома

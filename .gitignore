@@ -59,7 +59,7 @@ qtcreator-*
 # *.so               ← убьёт вообще все библиотеки
 
 # Логи Docker симуляции
-src/docker/logs/
+logs/
 
 # Python cache файлы
 __pycache__/
