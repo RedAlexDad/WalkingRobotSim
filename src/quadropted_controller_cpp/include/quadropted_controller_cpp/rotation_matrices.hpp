@@ -1,38 +1,28 @@
 #pragma once
-#include <Eigen/Dense>
 #include <cmath>
+#include <Eigen/Dense>
 
 namespace quadropted {
 
-// ════════════════════════════════════════════════════════════
-// Матрицы вращения 3x3
-// ════════════════════════════════════════════════════════════
-
 inline Eigen::Matrix3d rotx(double alpha) {
-    double c = std::cos(alpha), s = std::sin(alpha);
-    Eigen::Matrix3d m;
-    m << 1, 0, 0,
-         0, c, -s,
-         0, s,  c;
-    return m;
+    return (Eigen::Matrix3d() <<
+        1, 0, 0,
+        0, std::cos(alpha), -std::sin(alpha),
+        0, std::sin(alpha), std::cos(alpha)).finished();
 }
 
 inline Eigen::Matrix3d roty(double beta) {
-    double c = std::cos(beta), s = std::sin(beta);
-    Eigen::Matrix3d m;
-    m <<  c, 0, s,
-          0, 1, 0,
-         -s, 0, c;
-    return m;
+    return (Eigen::Matrix3d() <<
+        std::cos(beta), 0, std::sin(beta),
+        0, 1, 0,
+        -std::sin(beta), 0, std::cos(beta)).finished();
 }
 
 inline Eigen::Matrix3d rotz(double gamma) {
-    double c = std::cos(gamma), s = std::sin(gamma);
-    Eigen::Matrix3d m;
-    m << c, -s, 0,
-         s,  c, 0,
-         0,  0, 1;
-    return m;
+    return (Eigen::Matrix3d() <<
+        std::cos(gamma), -std::sin(gamma), 0,
+        std::sin(gamma), std::cos(gamma), 0,
+        0, 0, 1).finished();
 }
 
 /// Аналитическая формула Rx*Ry*Rz — быстрее 3 матриц + 2 dot
@@ -48,4 +38,4 @@ inline Eigen::Matrix3d rotxyz(double alpha, double beta, double gamma) {
     return m;
 }
 
-} // namespace quadropted
+}

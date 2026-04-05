@@ -21,18 +21,12 @@ struct Command {
 
 class RestController {
 public:
-    explicit RestController(Eigen::MatrixXd default_stance)
-        : default_stance_(std::move(default_stance)),
-          pid_(0.15, 0.02, 0.002) {}
+    explicit RestController(Eigen::MatrixXd default_stance);
 
-    Eigen::MatrixXd step(const StandState& state, const Command& cmd) {
-        Eigen::MatrixXd result = default_stance_;
-        result.row(2).setConstant(cmd.robot_height);
-        return result;
-    }
+    Eigen::MatrixXd step(const StandState& state, const Command& cmd);
 
-    const Eigen::MatrixXd& default_stance() const { return default_stance_; }
-    PIDController& pid() { return pid_; }
+    const Eigen::MatrixXd& default_stance() const;
+    PIDController& pid();
 
 private:
     Eigen::MatrixXd default_stance_;
@@ -41,16 +35,11 @@ private:
 
 class StandController {
 public:
-    explicit StandController(Eigen::MatrixXd default_stance)
-        : default_stance_(std::move(default_stance)) {}
+    explicit StandController(Eigen::MatrixXd default_stance);
 
-    const Eigen::MatrixXd& default_stance() const { return default_stance_; }
+    const Eigen::MatrixXd& default_stance() const;
 
-    Eigen::MatrixXd run(StandState& state, Command& cmd) {
-        Eigen::MatrixXd result = default_stance_;
-        result.row(2).setConstant(cmd.robot_height);
-        return result;
-    }
+    Eigen::MatrixXd run(StandState& state, Command& cmd);
 
 private:
     Eigen::MatrixXd default_stance_;
