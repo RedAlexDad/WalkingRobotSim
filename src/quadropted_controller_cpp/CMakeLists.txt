@@ -113,6 +113,8 @@ if(BUILD_TESTING)
   target_link_libraries(test_gait ${PROJECT_NAME})
 
   ament_add_gmock(test_message_builders test/test_message_builders.cpp)
+  ament_add_gmock(test_cross_validation test/test_cross_validation.cpp)
+  target_link_libraries(test_cross_validation ${PROJECT_NAME})
   target_link_libraries(test_message_builders ${PROJECT_NAME})
 endif()
 

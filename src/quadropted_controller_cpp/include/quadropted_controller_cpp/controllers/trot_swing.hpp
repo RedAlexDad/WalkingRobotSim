@@ -10,6 +10,7 @@ public:
     Eigen::Vector3d raibert_touchdown_location(int leg_index, const Eigen::Vector3d& cmd_vel) const;
     double swing_height(double swing_prop) const;
     Eigen::Vector3d next_foot_location(double swing_prop, int leg_index, const Eigen::MatrixXd& current, const Eigen::Vector3d& cmd_vel) const;
+    int swing_ticks() const { return swing_ticks_; }
 private:
     int swing_ticks_; double time_step_, z_leg_lift_; Eigen::MatrixXd default_stance_;
 };
