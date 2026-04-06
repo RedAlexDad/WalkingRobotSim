@@ -78,20 +78,84 @@ state_.foot_locations = leg_positions;  // Обновляем после каж�
 2. **Foot locations**: добавлено `state_.foot_locations = leg_positions;` после каждого шага
 3. **Startup grace**: добавлена 2-секундная задержка при старте для стабилизации
 
-## Тестирование
+## Реальные логи DEBUG: сравнение Python vs C++
 
-### Debug логирование (одинаковый формат для обеих версий)
+### Стойка (REST, vx=0)
 
-**Python:** `robot_controller_gazebo.py`
-```python
-DEBUG_JOINTS = True
-# [DEBUG] cmd: vx=0.0000 vy=0.0000 vz=0.0000 yaw=0.0000 | pos: x=0.0000 y=0.0000 z=0.0000 | joints[0-2]: 0.0000 0.8615 -1.8826
+**Python:**
+```
+[robot_controller_gazebo.py-10] [INFO] [1775461901.127198959] [robot1.quadruped_controller]: [DEBUG] cmd: vx=0.0000 vy=0.0000 vz=0.0000 yaw=0.0000 | pos: x=0.0000 y=0.0000 z=0.0000 | joints[0-2]: 0.0000 0.8615 -1.8826
+[robot_controller_gazebo.py-10] [INFO] [1775461902.769182868] [robot1.quadruped_controller]: [DEBUG] cmd: vx=0.0000 vy=0.0000 vz=0.0000 yaw=0.0000 | pos: x=0.0000 y=0.0000 z=0.0000 | joints[0-2]: 0.0000 0.8615 -1.8826
+[robot_controller_gazebo.py-10] [INFO] [1775461904.370505747] [robot1.quadruped_controller]: [DEBUG] cmd: vx=0.0000 vy=0.0000 vz=0.0000 yaw=0.0000 | pos: x=0.0000 y=0.0000 z=0.0000 | joints[0-2]: 0.0000 0.8615 -1.8826
 ```
 
-**C++:** `robot_controller_node.cpp`
+**C++ (до исправления):**
+```
+[robot_controller_node-10] [INFO] [1775462001.653524034] [robot1.robot_controller_cpp]: [DEBUG] cmd: vx=0.0000 vy=0.0000 vz=0.0000 yaw=0.0000 | pos: x=0.0000 y=0.0000 z=0.0000 | joints[0-2]: -0.0000 -0.0470 -3.0477
+[robot_controller_node-10] [INFO] [1775462002.613441077] [robot1.robot_controller_cpp]: [DEBUG] cmd: vx=0.0000 vy=0.0000 vz=0.0000 yaw=0.0000 | pos: x=0.0000 y=0.0000 z=0.0000 | joints[0-2]: -0.0000 -0.0470 -3.0477
+[robot_controller_node-10] [INFO] [1775462003.573485025] [robot1.robot_controller_cpp]: [DEBUG] cmd: vx=0.0000 vy=0.0000 vz=0.0000 yaw=0.0000 | pos: x=0.0000 y=0.0000 z=0.0000 | joints[0-2]: -0.0000 -0.0470 -3.0477
+```
+
+**Расхождение:**
+```
+joint[0] (hip):   Python= 0.0000  vs  C++=-0.0000  →  ✅ совпадает
+joint[1] (thigh): Python= 0.8615  vs  C++=-0.0470  →  ❌ разница 0.91 рад (52°)
+joint[2] (calf):  Python=-1.8826  vs  C++=-3.0477  →  ❌ разница 1.17 рад (67°)
+```
+
+### Ходьба (TROT, vx=0.03)
+
+**Python:**
+```
+[robot_controller_gazebo.py-10] [INFO] [1775461909.267054112] [robot1.quadruped_controller]: [DEBUG] cmd: vx=0.0299 vy=-0.0000 vz=0.0000 yaw=0.0000 | pos: x=0.0000 y=0.0000 z=0.0000 | joints[0-2]: 0.0000 0.8829 -1.8847
+[robot_controller_gazebo.py-10] [INFO] [1775461910.889358790] [robot1.quadruped_controller]: [DEBUG] cmd: vx=0.0299 vy=-0.0000 vz=0.0000 yaw=0.0000 | pos: x=0.0000 y=0.0000 z=0.0000 | joints[0-2]: 0.0000 1.4229 -2.5358
+[robot_controller_gazebo.py-10] [INFO] [1775461912.481427511] [robot1.quadruped_controller]: [DEBUG] cmd: vx=-0.0000 vy=-0.0000 vz=0.0000 yaw=-1.0000 | pos: x=0.0000 y=0.0000 z=0.0000 | joints[0-2]: 0.1811 0.7859 -1.9404
+```
+
+**C++:**
+```
+[robot_controller_node-10] [INFO] [1775462016.053822796] [robot1.robot_controller_cpp]: [DEBUG] cmd: vx=0.0299 vy=0.0000 vz=0.0000 yaw=0.0000 | pos: x=0.0000 y=0.0000 z=0.0000 | joints[0-2]: 0.0000 1.3005 -2.0070
+[robot_controller_node-10] [INFO] [1775462017.015207096] [robot1.robot_controller_cpp]: [DEBUG] cmd: vx=0.0299 vy=0.0000 vz=0.0000 yaw=0.0000 | pos: x=0.0000 y=0.0000 z=0.0000 | joints[0-2]: -0.0000 3.0078 -2.8740
+[robot_controller_node-10] [INFO] [1775462017.973402658] [robot1.robot_controller_cpp]: [DEBUG] cmd: vx=0.0299 vy=0.0000 vz=0.0000 yaw=0.0000 | pos: x=0.0000 y=0.0000 z=0.0000 | joints[0-2]: 0.0000 1.3569 -2.6730
+```
+
+**Расхождение (пик при vx=0.03):**
+```
+joint[0] (hip):   Python= 0.0000  vs  C++= 0.0000  →  ✅ совпадает
+joint[1] (thigh): Python= 1.4229  vs  C++= 3.0078  →  ❌ разница 1.59 рад (91°)
+joint[2] (calf):  Python=-2.5358  vs  C++=-2.8740  →  ❌ разница 0.34 рад (19°)
+```
+
+### Код debug логирования
+
+**Python:** `src/quadropted_controller/scripts/robot_controller_gazebo.py`
+```python
+DEBUG_JOINTS = True  # Флаг включения debug логов
+
+# В control_loop():
+if DEBUG_JOINTS:
+    self._debug_tick_count += 1
+    if self._debug_tick_count % 60 == 0:
+        self.get_logger().info(
+            f"[DEBUG] cmd: vx={cmd.velocity[0]:.4f} vy={cmd.velocity[1]:.4f} "
+            f"vz={cmd.velocity[2]:.4f} yaw={cmd.yaw_rate[2]:.4f} | "
+            f"pos: x={dx:.4f} y={dy:.4f} z={dz:.4f} | "
+            f"joints[0-2]: {joint_angles[0]:.4f} {joint_angles[1]:.4f} {joint_angles[2]:.4f}"
+        )
+```
+
+**C++:** `src/quadropted_controller_cpp/src/nodes/robot_controller_node.cpp`
 ```cpp
-// DEBUG: выводим каждые 60 тиков (раз в секунду)
-// [DEBUG] cmd: vx=0.0000 vy=0.0000 vz=0.0000 yaw=0.0000 | pos: x=0.0000 y=0.0000 z=0.0000 | joints[0-2]: -0.0000 -0.0470 -3.0477
+// В control_loop():
+if (state_.ticks % 60 == 0) {
+    RCLCPP_INFO(get_logger(),
+        "[DEBUG] cmd: vx=%.4f vy=%.4f vz=%.4f yaw=%.4f | "
+        "pos: x=%.4f y=%.4f z=%.4f | "
+        "joints[0-2]: %.4f %.4f %.4f",
+        command_.velocity[0], command_.velocity[1], command_.velocity[2], command_.yaw_rate[2],
+        state_.body_local_position[0], state_.body_local_position[1], state_.body_local_position[2],
+        joint_angles[0], joint_angles[1], joint_angles[2]);
+}
 ```
 
 ### Unit тесты
