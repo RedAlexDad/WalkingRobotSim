@@ -124,6 +124,10 @@ if(BUILD_TESTING)
   # IK with roll tests — проверка влияния крена на углы суставов
   ament_add_gmock(test_ik_with_roll test/test_ik_with_roll.cpp)
   target_link_libraries(test_ik_with_roll ${PROJECT_NAME})
+
+  # step_trot cross-validation tests
+  ament_add_gmock(test_step_trot test/test_step_trot.cpp)
+  target_link_libraries(test_step_trot ${PROJECT_NAME})
 endif()
 
 # ════════════════════════════════════════════════════════════
