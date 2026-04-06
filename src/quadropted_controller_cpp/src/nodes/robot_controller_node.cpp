@@ -40,9 +40,9 @@ public:
         state_.behavior_state = BehaviorState::REST;
 
         // Контроллеры
-        // FIX: timing как в Python — stance_time=0.55, swing_time=0.45
-        // time_step=0.02 → stance_ticks=27, swing_ticks=22
-        trot_gait_ = std::make_unique<TrotGaitController>(0.55, 0.45, 0.02, false, default_stance_);
+        // FIX: вернуть оригинальные timing как в Python RobotController.py
+        // stance_time=0.04, swing_time=0.18 → stance_ticks=2, swing_ticks=9
+        trot_gait_ = std::make_unique<TrotGaitController>(0.04, 0.18, 0.02, false, default_stance_);
         crawl_gait_ = std::make_unique<CrawlGaitController>(0.55, 0.45, 0.02, default_stance_);
         rest_ctrl_ = std::make_unique<RestController>(default_stance_);
         use_trot_ = false;
