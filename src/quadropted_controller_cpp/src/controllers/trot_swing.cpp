@@ -45,16 +45,23 @@ Eigen::Vector3d TrotSwingController::next_foot_location(
     double time_left = time_step_ * swing_ticks_ * (1.0 - swing_prop);
     if (time_left < 1e-6) return touchdown;
 
-    Eigen::Vector3d velocity = (touchdown - foot_location) / time_left;
-    velocity.z() = 0.0;  // XY mask — Z контролируется swing_height
+    // Как в Python: velocity * XY_MASK — Z игнорируется
+    Eigen::Vector3d velocity;
+    velocity.x() = (touchdown.x() - foot_location.x()) / time_left;
+    velocity.y() = (touchdown.y() - foot_location.y()) / time_left;
+    velocity.z() = 0.0;
 
     Eigen::Vector3d delta_foot = velocity * time_step_;
 
-    // FIX: Используем swing_h для Z, без cmd_vel.z() — как в Python версии
+    // Как в Python: foot_location * XY_MASK + z_vector + delta_foot
+    // z_vector = [0, 0, swing_height + robot_height]
+    // robot_height = default_stance_[2, 0] = -0.25
+    double robot_height = default_stance_(2, 0);  // -0.25
+
     Eigen::Vector3d result;
     result.x() = foot_location.x();
     result.y() = foot_location.y();
-    result.z() = swing_h;
+    result.z() = swing_h + robot_height;  // swing_height + robot_height
     result += delta_foot;
 
     return result;
