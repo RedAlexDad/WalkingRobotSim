@@ -39,7 +39,7 @@ public:
         state_.behavior_state = BehaviorState::REST;
 
         // Контроллеры
-        trot_gait_ = std::make_unique<TrotGaitController>(0.04, 0.18, 0.02, true, default_stance_);
+        trot_gait_ = std::make_unique<TrotGaitController>(0.04, 0.18, 0.02, false, default_stance_);
         rest_ctrl_ = std::make_unique<RestController>(default_stance_);
         use_trot_ = false;
 
