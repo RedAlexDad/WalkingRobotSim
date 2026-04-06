@@ -1,4 +1,5 @@
 #include "quadropted_controller_cpp/controllers/trot_stance.hpp"
+#include "quadropted_controller_cpp/utils/rotation_matrices.hpp"
 
 namespace quadropted {
 
@@ -35,9 +36,12 @@ Eigen::Vector3d TrotStanceController::next_foot_location(
     Eigen::Vector3d foot_location = state_foot.col(leg_index);
     Eigen::Vector3d delta_pos = position_delta(leg_index, state_foot, cmd_vel, robot_height);
 
-    // Применяем небольшое вращение (yaw_rate)
-    double yaw_delta = -cmd_vel.z() * time_step_;
-    Eigen::Matrix3d delta_ori = rotz(yaw_delta);
+    // FIX: rotxyz(roll, pitch, yaw) — как в Python trot_stance.py
+    // cmd_vel = [roll_rate, pitch_rate, yaw_rate]
+    Eigen::Matrix3d delta_ori = rotxyz(
+        -cmd_vel.x() * time_step_,
+        -cmd_vel.y() * time_step_,
+        -cmd_vel.z() * time_step_);
 
     return delta_ori * foot_location + delta_pos;
 }

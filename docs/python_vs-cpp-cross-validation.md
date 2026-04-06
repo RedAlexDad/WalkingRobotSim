@@ -171,7 +171,49 @@ if (state_.ticks % 60 == 0) {
 | `test_gait` | 2 | ✅ PASS |
 | `test_message_builders` | 2 | ✅ PASS |
 | `test_cross_validation` | 18 | ✅ PASS |
-| **Итого** | **38** | **✅ 100%** |
+| `test_base_link_roll` | 10 | ✅ PASS (НОВЫЕ) |
+| `test_ik_with_roll` | 8 (C++) + 8 (Python) | ✅ PASS (НОВЫЕ) |
+| **Итого** | **68** | **✅ 100%** |
+
+### Новые тесты (Фаза 1)
+
+#### `test_base_link_roll.cpp` — 10 тестов
+| Тест | Описание |
+|------|----------|
+| `rotxyz_zero_is_identity` | rotxyz(0,0,0) = identity |
+| `rotx_45_degrees` | rotx(π/4) корректность |
+| `rotxyz_only_roll_45` | rotxyz(π/4,0,0) = rotx(π/4) |
+| `rotxyz_matches_python_multiple_angles` | 10 наборов углов vs Python |
+| `R_legs_matrix_correct` | R_legs = rotxyz(π/2,-π/2,0) |
+| `rotxyz_orthogonal` | R * R^T = I |
+| `rotxyz_determinant_is_one` | det(R) = 1 |
+| `roll_45_transforms_y_axis` | Проверка трансформации оси Y |
+| `roll_45_transforms_z_axis` | Проверка трансформации оси Z |
+| `rotxyz_negative_roll_45` | rotxyz(-π/4,0,0) корректность |
+
+#### `test_ik_with_roll.cpp` — 8 тестов
+| Тест | Описание |
+|------|----------|
+| `zero_roll_default_stance` | IK с roll=0 для стойки |
+| `roll_45_degrees_affects_joint_angles` | Roll 45° меняет углы |
+| `matches_python_zero_orientation` | Совпадение с Python при roll=0 |
+| `fk_ik_roundtrip_zero_roll` | FK → IK roundtrip |
+| `roll_45_angles_in_valid_range` | Углы в допустимом диапазоне |
+| `left_right_symmetry_zero_roll` | Симметрия левых/правых ног |
+| `negative_roll_45` | Отрицательный крен |
+| `matches_python_small_angles` | Малые углы ориентации |
+
+#### `test_ik_with_roll.py` — 8 тестов
+| Тест | Описание |
+|------|----------|
+| `test_ik_zero_roll_default_stance` | IK с roll=0 для стойки |
+| `test_ik_roll_45_degrees_affects_angles` | Roll 45° меняет углы |
+| `test_ik_roll_45_angles_in_valid_range` | Углы в допустимом диапазоне |
+| `test_ik_negative_roll_45` | Отрицательный крен |
+| `test_ik_left_right_symmetry_zero_roll` | Симметрия левых/правых ног |
+| `test_fk_ik_roundtrip_zero_roll` | FK → IK roundtrip |
+| `test_ik_small_orientation_angles` | Малые углы ориентации |
+| `test_ik_roll_varies_smoothly` | Плавное изменение roll |
 
 ## Заключение
 
@@ -180,7 +222,11 @@ if (state_.ticks % 60 == 0) {
 
 ### TODO
 
+- [x] Добавить модульные тесты base_link roll (10 C++ тестов)
+- [x] Добавить модульные тесты IK с roll (8 C++ + 8 Python тестов)
 - [ ] Проверить совпадение углов после исправления IK dz параметра
 - [ ] Добавить автоматический cross-validation тест (Python vs C++ output comparison)
 - [ ] Отладить Trot controller при движении (расхождение при vx > 0)
 - [ ] Добавить IMU compensation (сейчас отключён для совместимости)
+- [ ] Исправить расхождение step_trot между Python и C++
+- [ ] Обновить body_local_orientation из IMU в реальном времени

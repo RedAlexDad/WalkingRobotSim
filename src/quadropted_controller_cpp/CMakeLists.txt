@@ -116,6 +116,14 @@ if(BUILD_TESTING)
   ament_add_gmock(test_cross_validation test/test_cross_validation.cpp)
   target_link_libraries(test_cross_validation ${PROJECT_NAME})
   target_link_libraries(test_message_builders ${PROJECT_NAME})
+
+  # Base link roll tests — критические тесты для проверки крена
+  ament_add_gmock(test_base_link_roll test/test_base_link_roll.cpp)
+  target_link_libraries(test_base_link_roll ${PROJECT_NAME})
+
+  # IK with roll tests — проверка влияния крена на углы суставов
+  ament_add_gmock(test_ik_with_roll test/test_ik_with_roll.cpp)
+  target_link_libraries(test_ik_with_roll ${PROJECT_NAME})
 endif()
 
 # ════════════════════════════════════════════════════════════
