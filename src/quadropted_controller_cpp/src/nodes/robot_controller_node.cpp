@@ -192,7 +192,7 @@ private:
                 Eigen::Vector3d velocity;
                 velocity.x() = -(step_dist_x / 4.0) / (trot_gait_->time_step() * trot_gait_->stance_ticks());
                 velocity.y() = -(step_dist_y / 4.0) / (trot_gait_->time_step() * trot_gait_->stance_ticks());
-                velocity.z() = (cmd.robot_height - z) / trot_gait_->time_step();
+                velocity.z() = (1.0 / 0.02) * (cmd.robot_height - z);  // FIX: z_error_constant=0.02 как в Python
                 // Ограничиваем Z velocity чтобы не было резких скачков
                 if (velocity.z() > 2.0) velocity.z() = 2.0;
                 if (velocity.z() < -2.0) velocity.z() = -2.0;
