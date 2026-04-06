@@ -178,7 +178,6 @@ def generate_launch_description():
             package='quadropted_controller_cpp',
             executable='robot_controller_node',
             name='robot_controller_cpp',
-            parameters=[{'debug_mode': True}],
             namespace=namespace,
             output='screen',
             

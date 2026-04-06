@@ -19,9 +19,9 @@ class RobotControllerNode : public rclcpp::Node {
 public:
     RobotControllerNode() : Node("robot_controller_cpp"), rate_(60), state_(0.25) {
         declare_parameter("verbose", false);
-        declare_parameter("debug_mode", false);
+        // debug_mode removed
         verbose_ = get_parameter("verbose").as_bool();
-        debug_mode_ = get_parameter("debug_mode").as_bool();
+        // debug_mode removed
 
         // Геометрия робота
         double body[] = {0.3762, 0.0935};
@@ -62,7 +62,7 @@ public:
                 if (msg->robot_id == 1) {
                     command_.velocity = {msg->cmd_vel.linear.x, msg->cmd_vel.linear.y, msg->cmd_vel.linear.z};
                     command_.yaw_rate = {msg->cmd_vel.angular.x, msg->cmd_vel.angular.y, msg->cmd_vel.angular.z};
-                    if (debug_mode_)
+                    if (false)
                         RCLCPP_DEBUG(get_logger(), "[DEBUG] Velocity: vx=%.4f vy=%.4f vz=%.4f yaw=%.4f",
                                    command_.velocity[0], command_.velocity[1], command_.velocity[2], command_.yaw_rate[2]);
                 }
@@ -79,7 +79,7 @@ public:
                 double z = msg->orientation.z;
                 state_.imu_roll = std::atan2(2.0*(w*x + y*z), 1.0 - 2.0*(x*x + y*y));
                 state_.imu_pitch = std::asin(2.0*(w*y - z*x));
-                if (debug_mode_)
+                if (false)
                     RCLCPP_DEBUG(get_logger(), "[DEBUG] IMU: roll=%.4f pitch=%.4f", state_.imu_roll, state_.imu_pitch);
             });
 
@@ -111,8 +111,6 @@ public:
             std::bind(&RobotControllerNode::control_loop, this));
 
         RCLCPP_INFO(get_logger(), "Robot Controller Node (C++) started at %d Hz", rate_);
-        if (debug_mode_)
-            RCLCPP_INFO(get_logger(), "DEBUG mode enabled");
     }
 
 private:
@@ -160,6 +158,7 @@ private:
 
     Eigen::MatrixXd step_trot(State& state, const Command& cmd) {
         // Auto-rest: если нет движения — стоим
+        state.ticks++;  // Инкрементируем в начале, как в Python
         bool needs_trot = true;
         if (std::abs(cmd.velocity[0]) < 1e-9 && std::abs(cmd.velocity[1]) < 1e-9 &&
             std::abs(cmd.yaw_rate[2]) < 1e-9) {
@@ -170,7 +169,7 @@ private:
         if (!needs_trot) {
             Eigen::MatrixXd result = default_stance_;
             result.row(2).setConstant(cmd.robot_height);
-            if (debug_mode_)
+            if (false)
                 RCLCPP_DEBUG(get_logger(), "[DEBUG] TROT resting: Z=%.3f", cmd.robot_height);
             return result;
         }
@@ -191,6 +190,9 @@ private:
                 velocity.x() = -(step_dist_x / 4.0) / (trot_gait_->time_step() * trot_gait_->stance_ticks());
                 velocity.y() = -(step_dist_y / 4.0) / (trot_gait_->time_step() * trot_gait_->stance_ticks());
                 velocity.z() = (cmd.robot_height - z) / 0.02;
+                // Ограничиваем Z velocity чтобы не было резких скачков
+                if (velocity.z() > 2.0) velocity.z() = 2.0;
+                if (velocity.z() < -2.0) velocity.z() = -2.0;
 
                 Eigen::Vector3d delta_pos = velocity * trot_gait_->time_step();
                 Eigen::Matrix3d delta_ori = rotxyz(
@@ -215,14 +217,13 @@ private:
             auto comp = trot_gait_->pid_controller().run(state.imu_roll, state.imu_pitch, this->now().seconds());
             Eigen::Matrix3d rot = rotxyz(-comp[0], -comp[1], 0);
             new_foot_locations = rot * new_foot_locations;
-            if (debug_mode_)
+            if (false)
                 RCLCPP_DEBUG(get_logger(), "[DEBUG] IMU comp: roll=%.3f pitch=%.3f comp_x=%.3f comp_y=%.3f",
                            state.imu_roll, state.imu_pitch, -comp[0], -comp[1]);
         }
 
-        state.ticks++;
 
-        if (debug_mode_)
+        if (false)
             RCLCPP_DEBUG(get_logger(), "[DEBUG] TROT step: ticks=%d contacts=[%d,%d,%d,%d] Z=[%.3f,%.3f,%.3f,%.3f]",
                        state.ticks, contacts(0), contacts(1), contacts(2), contacts(3),
                        new_foot_locations(2,0), new_foot_locations(2,1), new_foot_locations(2,2), new_foot_locations(2,3));
@@ -234,7 +235,7 @@ private:
         (void)state;
         Eigen::MatrixXd result = default_stance_;
         result.row(2).setConstant(cmd.robot_height);
-        if (debug_mode_)
+        if (false)
             RCLCPP_DEBUG(get_logger(), "[DEBUG] REST: Z=%.3f", cmd.robot_height);
         return result;
     }
@@ -256,22 +257,33 @@ private:
             controller_change_needed_ = false;
         }
 
-        // IK
+        // IK debug — проверяем размеры
+        if (state_.ticks < 5) {
+            RCLCPP_INFO(get_logger(), "[IK DEBUG] leg_positions: %dx%d, dx=%.3f dy=%.3f dz=%.3f",
+                       (int)leg_positions.rows(), (int)leg_positions.cols(),
+                       state_.body_local_position[0], state_.body_local_position[1], state_.robot_height);
+        }
+
         try {
             auto joint_angles = ik_->inverse_kinematics(
                 leg_positions,
-                state_.body_local_position[0], state_.body_local_position[1], state_.body_local_position[2],
+                state_.body_local_position[0], state_.body_local_position[1], state_.robot_height,
                 state_.body_local_orientation[0], state_.body_local_orientation[1], state_.body_local_orientation[2]);
-
-            if (debug_mode_) {
-                // Выводим только первые 3 угла (передняя правая нога)
-                RCLCPP_DEBUG(get_logger(), "[DEBUG] IK output[0-2]: %.4f %.4f %.4f",
-                           joint_angles[0], joint_angles[1], joint_angles[2]);
-            }
 
             auto msg = std::make_unique<std_msgs::msg::Float64MultiArray>();
             msg->data.assign(joint_angles.begin(), joint_angles.end());
             joint_pub_->publish(std::move(msg));
+
+            // DEBUG: выводим каждые 60 тиков (раз в секунду)
+            if (state_.ticks % 60 == 0) {
+                RCLCPP_INFO(get_logger(),
+                    "[DEBUG] cmd: vx=%.4f vy=%.4f vz=%.4f yaw=%.4f | "
+                    "pos: x=%.4f y=%.4f z=%.4f | "
+                    "joints[0-2]: %.4f %.4f %.4f",
+                    command_.velocity[0], command_.velocity[1], command_.velocity[2], command_.yaw_rate[2],
+                    state_.body_local_position[0], state_.body_local_position[1], state_.body_local_position[2],
+                    joint_angles[0], joint_angles[1], joint_angles[2]);
+            }
         } catch (const std::exception& e) {
             RCLCPP_ERROR(get_logger(), "IK error: %s", e.what());
         }
@@ -280,7 +292,7 @@ private:
     // Members
     int rate_;
     bool verbose_;
-    bool debug_mode_;
+    bool debug_mode_ = false; // removed
     bool controller_change_needed_ = false;
     bool use_trot_ = false;
 
