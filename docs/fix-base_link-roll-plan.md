@@ -21,6 +21,21 @@
 1. IK dz параметр: `state_.robot_height` → `state_.body_local_position[2]`
 2. Foot locations: добавлено `state_.foot_locations = leg_positions;`
 3. Startup grace: 2-секундная задержка при старте
+4. **rotxyz вместо rotz** в trot_stance.cpp — полное соответствие Python
+5. **robot_height = -0.25** в state_command.hpp — исправлен знак
+
+### ✅ Что уже сделано (2026-04-07)
+- Фаза 1: Модульные тесты для base_link roll ✅
+  - test_base_link_roll.cpp — 10 C++ тестов
+  - test_ik_with_roll.cpp — 8 C++ тестов  
+  - test_ik_with_roll.py — 8 Python тестов (все прошли)
+- Фаза 2: Исправление step_trot ✅
+  - trot_stance.cpp: исправлен rotxyz
+  - state_command.hpp: robot_height = -0.25
+  - test_step_trot.py — 8 Python тестов (все прошли)
+  - test_step_trot.cpp — 8 C++ тестов
+- Фаза 3: Dynamic cross-validation ✅
+  - test_dynamic_cross_validation.py — 4 динамических теста (все прошли)
 
 ### 🔍 Найденные проблемы
 
