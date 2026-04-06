@@ -34,7 +34,7 @@ double TrotSwingController::swing_height(double swing_prop) const {
 
 Eigen::Vector3d TrotSwingController::next_foot_location(
     double swing_prop, int leg_index, const Eigen::MatrixXd& current,
-    const Eigen::Vector3d& cmd_vel) const
+    const Eigen::Vector3d& cmd_vel, double robot_height) const
 {
     assert(swing_prop >= 0.0 && swing_prop <= 1.0);
 
@@ -55,13 +55,10 @@ Eigen::Vector3d TrotSwingController::next_foot_location(
 
     // Как в Python: foot_location * XY_MASK + z_vector + delta_foot
     // z_vector = [0, 0, swing_height + robot_height]
-    // robot_height = default_stance_[2, 0] = -0.25
-    double robot_height = default_stance_(2, 0);  // -0.25
-
     Eigen::Vector3d result;
     result.x() = foot_location.x();
     result.y() = foot_location.y();
-    result.z() = swing_h + robot_height;  // swing_height + robot_height
+    result.z() = swing_h + robot_height;  // FIX: используем переданный robot_height
     result += delta_foot;
 
     return result;

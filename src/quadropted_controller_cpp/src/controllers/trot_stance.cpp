@@ -14,8 +14,7 @@ Eigen::Vector3d TrotStanceController::position_delta(
     int leg_index, const Eigen::MatrixXd& state_foot, const Eigen::Vector3d& cmd_vel,
     double robot_height) const
 {
-    (void)leg_index;
-    double z = state_foot(2, 0);
+    double z = state_foot(2, leg_index);  // FIX: использовать leg_index вместо 0
 
     double step_dist_x = cmd_vel.x() * (static_cast<double>(phase_length_) / swing_ticks_);
     double step_dist_y = cmd_vel.y() * (static_cast<double>(phase_length_) / swing_ticks_);

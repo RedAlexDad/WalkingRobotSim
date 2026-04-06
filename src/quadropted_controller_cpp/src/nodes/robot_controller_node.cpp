@@ -177,42 +177,20 @@ private:
             return result;
         }
 
-        Eigen::VectorXi contacts = trot_gait_->contacts(state.ticks);
-        Eigen::MatrixXd new_foot_locations = Eigen::MatrixXd::Zero(3, 4);
+        // Use TrotGaitController's step method for unified stance/swing logic
+        Eigen::MatrixXd new_foot_locations = trot_gait_->step(
+            state.ticks,
+            state.foot_locations,
+            Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]},
+            cmd.robot_height);
 
-        for (int leg = 0; leg < 4; ++leg) {
-            if (contacts(leg) == 1) {
-                // Stance phase
-                Eigen::Vector3d foot_loc = state.foot_locations.col(leg);
-                double z = foot_loc.z();
-
-                double step_dist_x = cmd.velocity[0] * (double)trot_gait_->phase_length() / trot_gait_->swing_ticks();
-                double step_dist_y = cmd.velocity[1] * (double)trot_gait_->phase_length() / trot_gait_->swing_ticks();
-
-                Eigen::Vector3d velocity;
-                velocity.x() = -(step_dist_x / 4.0) / (trot_gait_->time_step() * trot_gait_->stance_ticks());
-                velocity.y() = -(step_dist_y / 4.0) / (trot_gait_->time_step() * trot_gait_->stance_ticks());
-                velocity.z() = (1.0 / 0.02) * (cmd.robot_height - z);  // FIX: z_error_constant=0.02 как в Python
-                // Ограничиваем Z velocity чтобы не было резких скачков
-                if (velocity.z() > 2.0) velocity.z() = 2.0;
-                if (velocity.z() < -2.0) velocity.z() = -2.0;
-
-                Eigen::Vector3d delta_pos = velocity * trot_gait_->time_step();
-                Eigen::Matrix3d delta_ori = rotxyz(
-                    -cmd.yaw_rate[0] * trot_gait_->time_step(),
-                    -cmd.yaw_rate[1] * trot_gait_->time_step(),
-                    -cmd.yaw_rate[2] * trot_gait_->time_step());
-
-                new_foot_locations.col(leg) = delta_ori * foot_loc + delta_pos;
-            } else {
-                // Swing phase
-                int sub_ticks = trot_gait_->subphase_ticks(state.ticks);
-                double swing_prop = static_cast<double>(sub_ticks) / trot_gait_->swing_ticks();
-
-                new_foot_locations.col(leg) = trot_gait_->swing_controller().next_foot_location(
-                    swing_prop, leg, state.foot_locations,
-                    Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]});
-            }
+        // DEBUG: показываем foot locations
+        if (state.ticks % 60 == 0) {
+            RCLCPP_INFO(get_logger(), "[DEBUG] foot_locs: FR=(%.4f,%.4f,%.4f) FL=(%.4f,%.4f,%.4f) RR=(%.4f,%.4f,%.4f) RL=(%.4f,%.4f,%.4f)",
+                       state.foot_locations(0,0), state.foot_locations(1,0), state.foot_locations(2,0),
+                       state.foot_locations(0,1), state.foot_locations(1,1), state.foot_locations(2,1),
+                       state.foot_locations(0,2), state.foot_locations(1,2), state.foot_locations(2,2),
+                       state.foot_locations(0,3), state.foot_locations(1,3), state.foot_locations(2,3));
         }
 
         // IMU compensation
@@ -228,6 +206,7 @@ private:
 
         // DEBUG: каждые 60 тиков
         if (state.ticks % 60 == 0) {
+            Eigen::VectorXi contacts = trot_gait_->contacts(state.ticks);
             RCLCPP_INFO(get_logger(), "[DEBUG] TROT step: ticks=%d contacts=[%d,%d,%d,%d]",
                        state.ticks, contacts(0), contacts(1), contacts(2), contacts(3));
         }
@@ -265,7 +244,7 @@ private:
                 double swing_prop = static_cast<double>(sub_ticks) / crawl_gait_->swing_ticks();
                 new_foot_locations.col(leg) = trot_gait_->swing_controller().next_foot_location(
                     swing_prop, leg, state.foot_locations,
-                    Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]});
+                    Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]}, cmd.robot_height);
             }
         }
 
