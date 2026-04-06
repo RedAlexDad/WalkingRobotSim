@@ -11,10 +11,6 @@ Eigen::Vector3d TrotSwingController::raibert_touchdown_location(
     int leg_index, const Eigen::Vector3d& cmd_vel) const
 {
     double scale_factor = 1.0;
-    // phase_length * time_step = stance_ticks * time_step + swing_ticks * time_step
-    // Но в Python используется self.phase_length * self.time_step
-    // phase_length = stance_ticks + swing_ticks (для trot: 2+9+2+9=22)
-    // Для упрощения используем swing_ticks_ как приближение
     double total_time = swing_ticks_ * time_step_;
     Eigen::Vector3d delta_pos;
     delta_pos << cmd_vel.x() * total_time * scale_factor,
@@ -47,15 +43,21 @@ Eigen::Vector3d TrotSwingController::next_foot_location(
     Eigen::Vector3d touchdown = raibert_touchdown_location(leg_index, cmd_vel);
 
     double time_left = time_step_ * swing_ticks_ * (1.0 - swing_prop);
+    if (time_left < 1e-6) return touchdown;
+
     Eigen::Vector3d velocity = (touchdown - foot_location) / time_left;
-    velocity.z() = 0.0;  // XY mask
+    velocity.z() = 0.0;  // XY mask — Z контролируется swing_height
 
     Eigen::Vector3d delta_foot = velocity * time_step_;
 
-    Eigen::Vector3d z_vector;
-    z_vector << 0.0, 0.0, swing_h + cmd_vel.z();  // cmd_vel.z() здесь как robot_height
+    // FIX: Используем swing_h для Z, без cmd_vel.z() — как в Python версии
+    Eigen::Vector3d result;
+    result.x() = foot_location.x();
+    result.y() = foot_location.y();
+    result.z() = swing_h;
+    result += delta_foot;
 
-    return Eigen::Vector3d(foot_location.x(), foot_location.y(), 0.0) + z_vector + delta_foot;
+    return result;
 }
 
 } // namespace quadropted
