@@ -40,14 +40,23 @@ def compute_all_joint_angles(positions, l1, l2, l3, l4):
     """
     Вычислить углы суставов для всех 4 ног.
 
-    :param positions: Массив локальных позиций (4x3)
+    :param positions: Массив локальных позиций
+        - (4, 3) для старого формата (строки = ноги)
+        - (3, 4) для нового формата (столбцы = ноги)
     :return: Список из 12 углов (3 на ногу)
     """
+    is_new_format = positions.shape == (3, 4)
+
     angles = []
     for i in range(4):
-        x = positions[i][0]
-        y = positions[i][1]
-        z = positions[i][2]
+        if is_new_format:
+            x = positions[0, i]
+            y = positions[1, i]
+            z = positions[2, i]
+        else:
+            x = positions[i, 0]
+            y = positions[i, 1]
+            z = positions[i, 2]
 
         theta1, theta3, theta4 = compute_joint_angles_for_leg(
             x, y, z, i, l1, l2, l3, l4
