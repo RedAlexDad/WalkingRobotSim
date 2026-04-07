@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Benchmark производительности — замер времени выполнения Python функций.
-Запускается отдельно от C++ бенчмарка.
+Сравнение old vs new (script) модулей.
 
 Запуск:
     cd /home/redalexdad/GitHub/WalkingRobotSim
@@ -17,94 +17,136 @@ TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 PYTHON_SCRIPTS = os.path.abspath(
     os.path.join(TESTS_DIR, "..", "quadropted_controller", "scripts")
 )
+OLD_DIR = os.path.abspath(os.path.join(TESTS_DIR, "..", "tests", "old"))
 
 ITERATIONS = 5000
 
 
-def benchmark_python():
-    """Замерить время Python функций."""
-    sys.path.insert(0, PYTHON_SCRIPTS)
-    from ForwardKinematics.forward_kinematics import ForwardKinematics
-    from RoboticsUtilities.rotation_matrices import rotxyz
-    from RoboticsUtilities.homogeneous_transforms import (
-        homog_transform,
-        homog_transform_inverse,
-    )
-    from InverseKinematics.local_positions import compute_local_positions
-    from InverseKinematics.joint_angles import compute_all_joint_angles
-    from QuadrupedOdometry.odometry_state import OdometryState
-    from QuadrupedOdometry.odometry_update import update_odometry
-
+def benchmark_old():
+    """Замерить время old Python функций."""
     import importlib.util
 
-    def _load(rel):
-        p = os.path.join(PYTHON_SCRIPTS, rel)
+    sys.path.insert(0, OLD_DIR)
+
+    def load_old(rel):
+        p = os.path.join(OLD_DIR, rel)
         spec = importlib.util.spec_from_file_location("m", p)
         m = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(m)
         return m
 
-    GaitController = _load("RobotController/GaitController.py").GaitController
+    FK_old_mod = load_old("ForwardKinematics/robot_FK.py")
+    IK_old_mod = load_old("InverseKinematics/robot_IK.py")
+    Trans_old_mod = load_old("RoboticsUtilities/Transformations.py")
+
     import numpy as np
 
-    fk = ForwardKinematics([0.3762, 0.0935], [0.0, 0.0955, 0.213, 0.213])
+    fk_old = FK_old_mod.ForwardKinematics([0.3762, 0.0935], [0.0, 0.0955, 0.213, 0.213])
+    ik_old = IK_old_mod.InverseKinematics([0.3762, 0.0935], [0.0, 0.0955, 0.213, 0.213])
     angles = [0, 0.3, -0.6] * 4
-    positions = [
-        [0.2, -0.12, -0.2],
-        [0.2, 0.12, -0.2],
-        [-0.2, -0.12, -0.2],
-        [-0.2, 0.12, -0.2],
-    ]
-    lp = np.array([[0.2, 0.2, -0.2, -0.2], [-0.1, 0.1, -0.1, 0.1], [0, 0, 0, 0]])
-    cp = np.array([[1, 1, 1, 0], [1, 0, 1, 1], [1, 0, 1, 1], [1, 1, 1, 0]])
-    gc = GaitController(0.04, 0.18, 0.02, cp, np.zeros((3, 4)))
-
-    state = OdometryState()
-    state.linear_velocity_x = 0.02
-    state.linear_velocity_y = 0.01
-    state.theta = 0.1
-    state.foot_contacts = [False] * 4
 
     results = {}
 
-    t = timeit.timeit(lambda: rotxyz(0.1, -0.05, 0.02), number=ITERATIONS)
+    t = timeit.timeit(lambda: Trans_old_mod.rotxyz(0.1, -0.05, 0.02), number=ITERATIONS)
     results["rotxyz"] = t / ITERATIONS * 1000
 
-    def ht_test():
-        m = homog_transform(0.1, 0.2, 0.3, 0.4, 0.5, 0.6)
-        return homog_transform_inverse(m.copy())
-
-    t = timeit.timeit(ht_test, number=ITERATIONS)
-    results["homog_transform_inverse"] = t / ITERATIONS * 1000
-
-    t = timeit.timeit(lambda: fk.forward_kinematics_all_legs(angles), number=ITERATIONS)
+    t = timeit.timeit(
+        lambda: fk_old.forward_kinematics_all_legs(angles), number=ITERATIONS
+    )
     results["FK"] = t / ITERATIONS * 1000
 
-    t = timeit.timeit(
-        lambda: compute_all_joint_angles(positions, 0.0, 0.0955, 0.213, 0.213),
-        number=ITERATIONS,
-    )
+    dx = 0.3762 * 0.5 + 0.02
+    dy = 0.0935 * 0.5 + 0.0955
+    stance = np.array([[dx, dx, -dx, -dx], [-dy, dy, -dy, dy], [0, 0, 0, 0]])
+
+    def ik_test():
+        return ik_old.inverse_kinematics(stance, 0, 0, 0.25, 0, 0, 0)
+
+    t = timeit.timeit(ik_test, number=ITERATIONS)
     results["IK"] = t / ITERATIONS * 1000
 
-    t = timeit.timeit(
-        lambda: compute_local_positions(lp, 0.3762, 0.0935, 0.01, 0, 0, 0, 0, 0),
-        number=ITERATIONS,
-    )
+    def local_pos_test():
+        return ik_old.get_local_positions(stance, 0, 0, 0.25, 0, 0, 0)
+
+    t = timeit.timeit(local_pos_test, number=ITERATIONS)
     results["local_positions"] = t / ITERATIONS * 1000
 
-    t = timeit.timeit(lambda: gc.phase_ticks, number=ITERATIONS)
-    results["GaitController.phase_ticks"] = t / ITERATIONS * 1000
+    return results
 
-    def odometry_test():
-        s = OdometryState()
-        s.linear_velocity_x = 0.02
-        s.linear_velocity_y = 0.01
-        s.theta = 0.1
-        s.foot_contacts = [False] * 4
-        update_odometry(s, 0.02)
 
-    t = timeit.timeit(odometry_test, number=ITERATIONS)
-    results["update_odometry"] = t / ITERATIONS * 1000
+def benchmark_new():
+    """Замерить время new (script) Python функций."""
+    import subprocess
+
+    # Запустить бенчмарк в отдельном процессе с PYTHONPATH
+    env = os.environ.copy()
+    env["PYTHONPATH"] = PYTHON_SCRIPTS
+
+    script = (
+        '''
+import sys
+sys.path.insert(0, "'''
+        + PYTHON_SCRIPTS
+        + """")
+import timeit
+import importlib.util
+
+ITERATIONS = 5000
+
+from ForwardKinematics.forward_kinematics import ForwardKinematics
+from RoboticsUtilities.rotation_matrices import rotxyz
+from RoboticsUtilities.homogeneous_transforms import homog_transform, homog_transform_inverse
+from InverseKinematics.local_positions import compute_local_positions
+from InverseKinematics.joint_angles import compute_all_joint_angles
+
+import numpy as np
+
+fk = ForwardKinematics([0.3762, 0.0935], [0.0, 0.0955, 0.213, 0.213])
+angles = [0, 0.3, -0.6] * 4
+positions = [[0.2, -0.12, -0.2], [0.2, 0.12, -0.2], [-0.2, -0.12, -0.2], [-0.2, 0.12, -0.2]]
+lp = np.array([[0.2, 0.2, -0.2, -0.2], [-0.1, 0.1, -0.1, 0.1], [0, 0, 0, 0]])
+
+results = {}
+
+t = timeit.timeit(lambda: rotxyz(0.1, -0.05, 0.02), number=ITERATIONS)
+results["rotxyz"] = t / ITERATIONS * 1000
+
+def ht_test():
+    m = homog_transform(0.1, 0.2, 0.3, 0.4, 0.5, 0.6)
+    return homog_transform_inverse(m.copy())
+t = timeit.timeit(ht_test, number=ITERATIONS)
+results["homog_transform_inverse"] = t / ITERATIONS * 1000
+
+t = timeit.timeit(lambda: fk.forward_kinematics_all_legs(angles), number=ITERATIONS)
+results["FK"] = t / ITERATIONS * 1000
+
+t = timeit.timeit(lambda: compute_all_joint_angles(positions, 0.0, 0.0955, 0.213, 0.213), number=ITERATIONS)
+results["IK"] = t / ITERATIONS * 1000
+
+t = timeit.timeit(lambda: compute_local_positions(lp, 0.3762, 0.0935, 0.01, 0, 0, 0, 0, 0), number=ITERATIONS)
+results["local_positions"] = t / ITERATIONS * 1000
+
+for k, v in results.items():
+    print(f"{k}:{v}")
+"""
+    )
+
+    result = subprocess.run(
+        ["python3", "-c", script],
+        capture_output=True,
+        text=True,
+        cwd=PYTHON_SCRIPTS,
+        env=env,
+    )
+
+    results = {}
+    if result.returncode == 0:
+        for line in result.stdout.strip().split("\n"):
+            if ":" in line:
+                k, v = line.split(":")
+                results[k] = float(v)
+    else:
+        print(f"ERROR: {result.stderr}")
 
     return results
 
@@ -114,19 +156,41 @@ def main():
     print(f"Python Benchmark ({ITERATIONS} итераций)")
     print("=" * 70)
 
-    results = benchmark_python()
+    print("\n[1] Замер old модулей...")
+    old_results = benchmark_old()
 
-    print()
-    print(f"{'Функция':<35} {'Время (мс)':>15}")
-    print("-" * 52)
+    print("[2] Замер new (script) модулей...")
+    new_results = benchmark_new()
 
-    total = 0
-    for func, ms in sorted(results.items(), key=lambda x: x[1]):
-        print(f"{func:<35} {ms:>15.4f}")
-        total += ms
+    print("\n" + "=" * 70)
+    print("Сводная таблица (время в мс)")
+    print("=" * 70)
+    print(f"{'Функция':<25} {'Old':>10} {'New':>10} {'Раз':>10} {'x быстрее':>12}")
+    print("-" * 70)
 
-    print("-" * 52)
-    print(f"{'ИТОГО':<35} {total:>15.4f}")
+    all_keys = sorted(set(old_results.keys()) | set(new_results.keys()))
+    total_old = 0
+    total_new = 0
+
+    for key in all_keys:
+        old_t = old_results.get(key, 0)
+        new_t = new_results.get(key, 0)
+        if old_t > 0 and new_t > 0:
+            ratio = old_t / new_t
+            diff = old_t - new_t
+            speedup = f"{ratio:.2f}x" if ratio >= 1 else f"{1 / ratio:.2f}x slower"
+        else:
+            diff = 0
+            speedup = "N/A"
+        print(f"{key:<25} {old_t:>10.4f} {new_t:>10.4f} {diff:>+10.4f} {speedup:>12}")
+        total_old += old_t
+        total_new += new_t
+
+    print("-" * 70)
+    total_ratio = total_old / total_new if total_new > 0 else 0
+    print(
+        f"{'ИТОГО':<25} {total_old:>10.4f} {total_new:>10.4f} {total_old - total_new:>+10.4f} {total_ratio:.2f}x быстрее"
+    )
     print("=" * 70)
 
     return 0
