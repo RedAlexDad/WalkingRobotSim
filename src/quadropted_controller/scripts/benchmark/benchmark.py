@@ -3,16 +3,28 @@
 Python Quadruped Controller Benchmark
 Сравнение с C++ версией - использует существующие классы из проекта
 Запускать внутри Docker контейнера с ROS2
+
+Usage:
+  python3 benchmark.py              # Только Python benchmark (make benchmark-python)
+  python3 benchmark.py --combined     # Python + C++ сводная таблица (make benchmark)
 """
 
 import time
 import sys
 import os
+import argparse
 
 # Add source path
 sys.path.insert(0, "/root/ws/src/quadropted_controller/scripts")
 
 import numpy as np
+
+# Parse arguments
+parser = argparse.ArgumentParser(description="Python Quadruped Controller Benchmark")
+parser.add_argument(
+    "--combined", action="store_true", help="Run combined Python + C++ benchmark"
+)
+args = parser.parse_args()
 
 # Для красивой таблицы
 try:
@@ -281,27 +293,54 @@ print(f"   step (все 4 ноги) : {bench_trot_step:7.2f} μs/вызов")
 # СВОДНАЯ ТАБЛИЦА
 # ============================================================================
 
+
+def run_cpp_benchmark():
+    """Запустить C++ бенчмарк и получить реальные результаты"""
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            [
+                "bash",
+                "-c",
+                "source /opt/ros/jazzy/setup.bash && /root/ws/build/quadropted_controller_cpp/benchmark 2>&1",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+        cpp_results = {}
+        in_json = False
+        for line in result.stdout.split("\n"):
+            if "=== BENCHMARK_JSON_START ===" in line:
+                in_json = True
+                continue
+            if "=== BENCHMARK_JSON_END ===" in line:
+                in_json = False
+                continue
+            if in_json and ":" in line:
+                parts = line.strip().split(":")
+                if len(parts) == 2:
+                    name = parts[0].strip()
+                    try:
+                        value = float(parts[1].strip())
+                        cpp_results[name] = value
+                    except:
+                        pass
+        return cpp_results
+    except Exception as e:
+        print(f"  [WARN] Не удалось запустить C++ бенчмарк: {e}")
+        return {}
+
+
 print("\n" + "=" * 70)
 print(" СВОДНАЯ ТАБЛИЦА ПРОИЗВОДИТЕЛЬНОСТИ (Python vs C++)")
 print("=" * 70)
 
-# Результаты C++ бенчмарка (получены при запуске C++ benchmark)
-cpp_results = {
-    "GaitController.contacts()": 0.013,
-    "GaitController.subphase_ticks()": 0.003,
-    "TrotSwingController.swing_height()": 0.002,
-    "TrotSwingController.next_foot_location()": 0.029,
-    "TrotSwingController.raibert_touchdown()": 0.019,
-    "TrotStanceController.position_delta()": 0.005,
-    "TrotStanceController.next_foot_location()": 0.047,
-    "StandController.run()": 0.025,
-    "ForwardKinematics.forward_kinematics_per_leg()": 0.28,
-    "ForwardKinematics.forward_kinematics_all_legs()": 1.13,
-    "RestController.step()": 0.015,
-    "InverseKinematics.inverse_kinematics()": 0.69,
-    "PIDController.run()": 0.002,
-    "Trot Step (full cycle)": 0.69,
-}
+print("\n[Сводная] Запуск C++ бенчмарка для получения реальных данных...")
+cpp_results = run_cpp_benchmark()
+print(f"  [OK] Получено {len(cpp_results)} результатов от C++")
 
 results = [
     ("GaitController.contacts()", bench_gait_contacts),
@@ -320,39 +359,78 @@ results = [
     ("Trot Step (full cycle)", bench_trot_step),
 ]
 
-# Построение таблицы
-table_data = []
-for name, py_time in results:
-    cpp_time = cpp_results.get(name, 0)
-    if cpp_time > 0 and py_time > 0:
-        ratio = py_time / cpp_time
-        if ratio < 1:
-            diff = f"C++ быстрее в {1 / ratio:.1f}x"
+# Если запущен с --combined - показываем сводную таблицу Python vs C++
+if args.combined:
+    print("\n" + "=" * 70)
+    print(" СВОДНАЯ ТАБЛИЦА ПРОИЗВОДИТЕЛЬНОСТИ (Python vs C++)")
+    print("=" * 70)
+
+    print("\n[Сводная] Запуск C++ бенчмарка для получения реальных данных...")
+    cpp_results = run_cpp_benchmark()
+    print(f"  [OK] Получено {len(cpp_results)} результатов от C++")
+
+    # Построение таблицы
+    table_data = []
+    for name, py_time in results:
+        cpp_time = cpp_results.get(name, 0)
+        if cpp_time > 0 and py_time > 0:
+            ratio = py_time / cpp_time
+            if ratio < 1:
+                diff = f"C++ быстрее в {1 / ratio:.1f}x"
+            else:
+                diff = f"Python медленнее в {ratio:.1f}x"
+        elif py_time == 0:
+            diff = "N/A (Python: skipped)"
         else:
-            diff = f"Python медленнее в {ratio:.1f}x"
-    elif py_time == 0:
-        diff = "N/A (Python: skipped)"
-    else:
-        diff = "N/A"
-    table_data.append([name, f"{py_time:.2f}", f"{cpp_time:.3f}", diff])
+            diff = "N/A"
+        table_data.append([name, f"{py_time:.2f}", f"{cpp_time:.3f}", diff])
 
-if HAS_TABULATE:
-    print(
-        "\n"
-        + tabulate(
-            table_data,
-            headers=["Функция", "Python (μs)", "C++ (μs)", "Разница"],
-            tablefmt="grid",
-            maxcolwidths=[40, 12, 12, 25],
+    if HAS_TABULATE:
+        print(
+            "\n"
+            + tabulate(
+                table_data,
+                headers=["Функция", "Python (μs)", "C++ (μs)", "Разница"],
+                tablefmt="grid",
+                maxcolwidths=[40, 12, 12, 25],
+            )
         )
-    )
-else:
-    print(f"\n{'Функция':<50} {'Python (μs)':<12} {'C++ (μs)':<12} {'Разница':<30}")
-    print("-" * 105)
-    for row in table_data:
-        print(f"{row[0]:<50} {row[1]:>12} {row[2]:>12} {row[3]:<30}")
+    else:
+        print(f"\n{'Функция':<50} {'Python (μs)':<12} {'C++ (μs)':<12} {'Разница':<30}")
+        print("-" * 105)
+        for row in table_data:
+            print(f"{row[0]:<50} {row[1]:>12} {row[2]:>12} {row[3]:<30}")
 
-print("\n" + "=" * 70)
-print("Анализ: Python значительно медленнее C++ во всех операциях")
-print("Средняя разница: ~100-1000x в зависимости от операции")
-print("=" * 70)
+    print("\n" + "=" * 70)
+    print("Анализ: Python значительно медленнее C++ во всех операциях")
+    print("Средняя разница: ~100-1000x в зависимости от операции")
+    print("=" * 70)
+else:
+    # Только Python таблица (без C++)
+    print("\n" + "=" * 70)
+    print(" ТАБЛИЦА ПРОИЗВОДИТЕЛЬНОСТИ (Python)")
+    print("=" * 70)
+
+    table_data = []
+    for name, py_time in results:
+        table_data.append([name, f"{py_time:.2f}"])
+
+    if HAS_TABULATE:
+        print(
+            "\n"
+            + tabulate(
+                table_data,
+                headers=["Функция", "Время (μs)"],
+                tablefmt="grid",
+                maxcolwidths=[50, 15],
+            )
+        )
+    else:
+        print(f"\n{'Функция':<50} {'Время (μs)':<15}")
+        print("-" * 65)
+        for row in table_data:
+            print(f"{row[0]:<50} {row[1]:>15}")
+
+    print("\n" + "=" * 70)
+    print("Для сравнения с C++ запустите: python3 benchmark.py --combined")
+    print("=" * 70)
