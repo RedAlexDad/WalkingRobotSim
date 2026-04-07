@@ -131,6 +131,13 @@ if(BUILD_TESTING)
 endif()
 
 # ════════════════════════════════════════════════════════════
+# Benchmark (standalone, no ROS dependencies)
+# ════════════════════════════════════════════════════════════
+
+add_executable(benchmark benchmark/benchmark.cpp)
+target_link_libraries(benchmark ${PROJECT_NAME})
+
+# ════════════════════════════════════════════════════════════
 # Установка
 # ════════════════════════════════════════════════════════════
 

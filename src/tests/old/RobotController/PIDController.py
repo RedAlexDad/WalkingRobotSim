@@ -4,7 +4,6 @@ import rclpy
 from rclpy.time import Time
 import numpy as np
 
-
 class PID_controller:
     def __init__(self, kp, ki, kd):
         self.kp = kp
@@ -20,20 +19,17 @@ class PID_controller:
         self.last_error = np.array([0.0, 0.0])
         self.last_time = None
 
-    def run(self, roll, pitch, dt=None):
+    def run(self, roll, pitch):
         error = self.desired_roll_pitch - np.array([roll, pitch])
 
-        if dt is not None:
-            step = dt
-            t_now = None
-        else:
-            t_now = self.get_time_in_seconds()
-            if self.last_time is None:
-                self.last_time = t_now
-                return np.array([0.0, 0.0])
-            step = t_now - self.last_time
+        t_now = self.get_time_in_seconds()
+        if self.last_time is None:
+            self.last_time = t_now
+            return np.array([0.0, 0.0])  
 
-        if step < 1e-6:
+        step = t_now - self.last_time
+
+        if step < 1e-6:  
             return np.array([0.0, 0.0])
 
         self.I_term += error * step
@@ -46,8 +42,7 @@ class PID_controller:
 
         self.D_term = (error - self.last_error) / step
 
-        if dt is None:
-            self.last_time = t_now
+        self.last_time = t_now
         self.last_error = error
 
         P_ret = self.kp * error
