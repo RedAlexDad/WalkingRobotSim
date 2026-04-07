@@ -310,6 +310,37 @@ Python в TrotGaitController имеет аналогичную логику че
 
 ---
 
+### 🔴 Ошибка #12: CRAWL→TROT — переход не работает
+
+**Файл:** `src/quadropted_controller_cpp/src/nodes/robot_controller_node.cpp`
+
+**Симптом:** При переключении из CRAWL в TROT робот **продолжает ходить CRAWL**, хотя в логах пишет "Switched to TROT controller".
+
+**Причина:**
+```cpp
+} else if (command_.trot_event) {
+    if (state_.behavior_state == BehaviorState::REST) {
+        // переключается ТОЛЬКО из REST!
+    }
+    command_.trot_event = false;  // ← сброс без действий из CRAWL
+}
+```
+
+Из CRAWL внутреннее условие `== REST` не выполняется → `use_trot_` остаётся `false`, `use_crawl_` остаётся `true`.
+
+**Исправление:** Добавить ветку `CRAWL → TROT`:
+```cpp
+} else if (state_.behavior_state == BehaviorState::CRAWL) {
+    state_.behavior_state = BehaviorState::TROT;
+    use_trot_ = true;
+    use_crawl_ = false;
+    trot_gait_->pid_controller().reset(...);
+    state_.ticks = 0;
+}
+```
+
+---
+
 ## Декомпозиция проблемы (чек-лист)
 
 ### 1. REST контроллер
@@ -335,9 +366,9 @@ Python в TrotGaitController имеет аналогичную логику че
 - [x] **4.2** Добавить `stance_ticks_` в `TrotSwingController` для yaw rotation ✅
 - [x] **4.3** Исправить `raibert_touchdown_location()`: delta_pos = phase_length × dt, theta = stance_ticks × dt ✅
 
-### 6. Плавное возвращение к стойке
-- [x] **6.1** Заменить мгновенный скачок на Lerp (alpha=0.1) в `step_trot()` ✅
-- [x] **6.2** То же в `step_crawl()` ✅
+### 7. Переключение режимов
+- [x] **7.1** Добавить переход CRAWL→TROT в `change_controller()` ✅
+- [x] **7.2** Проверить обратный переход TROT→CRAWL ✅ (работает через crawl_event)
 
 ---
 
@@ -366,6 +397,7 @@ Python в TrotGaitController имеет аналогичную логику че
 - [x] **Исправление 5.1:** REST — опускать корпус при переключении (`body_local_position[2] = -0.15`)
 - [x] **Исправление 5.2:** CRAWL — ограничить скорость (`max_vx = 0.011`, `max_yaw = 0.15`)
 - [x] **Исправление 5.3:** TROT/CRAWL — плавное возвращение к стойке (Lerp alpha=0.1)
+- [x] **Исправление 5.4:** CRAWL→TROT — переход не работал (только из REST)
 
 ### Фаза 5: Верификация ✅ ЗАВЕРШЕНА
 - [x] **5.1** REST: робот опускается, лежит на земле, IMU компенсация работает ✅
@@ -426,6 +458,11 @@ Python в TrotGaitController имеет аналогичную логику че
 - При нажатии пробела: `has_command == false` → мгновенный возврат в `default_stance`
 - Исправлено: Lerp alpha=0.1 — плавный переход за ~20 шагов (0.4с)
 
+### Гипотеза 12: CRAWL→TROT — переход не работает ✅ ПОДТВЕРЖДЕНА, ИСПРАВЛЕНА
+- `change_controller()` обрабатывал `trot_event` только из REST
+- Из CRAWL: `use_trot_` оставался `false`, робот продолжал CRAWL
+- Исправлено: добавлена ветка `state_.behavior_state == CRAWL` → полный переход
+
 ---
 
 ## Изменённые файлы
@@ -434,7 +471,7 @@ Python в TrotGaitController имеет аналогичную логику че
 |------|-----------|--------|
 | `src/quadropted_controller_cpp/src/controllers/rest_controller.cpp` | +IMU компенсация (rotxyz + PID) | #1 |
 | `src/quadropted_controller_cpp/include/.../rest_controller.hpp` | +`use_imu_`, +`pid_last_time_`, +`reset()` | #1 |
-| `src/quadropted_controller_cpp/src/nodes/robot_controller_node.cpp` | +REST lying, CRAWL speed clamp, crawl swing, smooth return | #2, #8, #10, #11 |
+| `src/quadropted_controller_cpp/src/nodes/robot_controller_node.cpp` | +REST lying, CRAWL speed clamp, crawl swing, smooth return, CRAWL→TROT fix | #2, #8, #10, #11, #12 |
 | `src/quadropted_controller_cpp/src/controllers/crawl_swing.cpp` | +robot_height в Z, убран hardcoded, +shifted_left | #4, #5 |
 | `src/quadropted_controller_cpp/include/.../crawl_swing.hpp` | +phase_length, stance_ticks, body_shift_y, robot_height | #4, #5 |
 | `src/quadropted_controller_cpp/src/controllers/crawl_gait.cpp` | +stance_ member, инициализация swing и stance | #3 |
@@ -484,12 +521,13 @@ Running main() from gmock_main.cc
 | **TROT: Raibert delta_pos** | `swing_ticks × dt` = 0.18s (-18%) | `phase_length × dt` = 0.22s ✅ |
 | **TROT: Raibert theta** | `swing_ticks × dt` = 0.18s (×4.5) | `stance_ticks × dt` = 0.04s ✅ |
 | **TROT/CRAWL: стоп** | Мгновенный скачок в default_stance | Плавный Lerp за ~20 шагов ✅ |
+| **CRAWL→TROT: переход** | Робот продолжал CRAWL | Полный переход с reset ✅ |
 
 ---
 
 ## Статус
 
-**Все 11 ошибок найдены и исправлены.** ✅
+**Все 12 ошибок найдены и исправлены.** ✅
 
 ### Коммиты на ветке `fix/rest-crawl-cpp-issues`:
 
@@ -503,14 +541,15 @@ Running main() from gmock_main.cc
 | `bf6a233` | #10 | REST — опускание корпуса при переключении |
 | `8a2cea3` | #8 | CRAWL — ограничение скорости |
 | `3336cc7` | #11 | TROT/CRAWL — плавное возвращение к стойке |
+| `401c1e4` | #12 | CRAWL→TROT — переход не работал |
 
-### Итого исправлено: 11 ошибок
+### Итого исправлено: 12 ошибок
 
 | Режим | Ошибки | Исправлено |
 |-------|--------|------------|
 | REST | #1, #6, #10 | ✅ 3/3 |
-| TROT | #7, #11 | ✅ 2/2 |
-| CRAWL | #2, #3, #4, #5, #8, #9, #11 | ✅ 7/7 |
+| TROT | #7, #11, #12 | ✅ 3/3 |
+| CRAWL | #2, #3, #4, #5, #8, #9, #11, #12 | ✅ 8/8 |
 
 ---
 
