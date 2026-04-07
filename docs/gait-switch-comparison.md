@@ -36,7 +36,7 @@
 | **CRAWL mode** | | | |
 | crawl_event = True → CRAWL controller | ✅ RobotController.py:88-92 | ✅ C++:158-165 | ✅ |
 | behavior_state = CRAWL | ✅ RobotController.py:190-197 | ✅ C++:159 | ✅ |
-| first_cycle = True | ✅ Python:194 | ❌ C++:162 (method not available) | ⚠️ |
+| first_cycle = True | ✅ Python:194 | ✅ C++:162 (reset()) | ✅ |
 | ticks = 0 | ✅ Python:195 | ✅ C++:163 | ✅ |
 | **STAND mode** | | | |
 | stand_event = True → STAND controller | ✅ RobotController.py:93-97 | ✅ C++:151-157 | ✅ |
@@ -47,18 +47,20 @@
 | rest_event = True AND trot_event = True | ✅ Python:164-179 | ✅ C++:123-134 | ✅ |
 | Reset pid, set ticks=0 | ✅ Python:169-178 | ✅ C++:125-132 | ✅ |
 | **Behavior commands** | | | |
-| 'sit' → stand_event=True | ✅ Python:121-131 | ❌ Not implemented in C++ | ⚠️ |
-| 'up' → rest_event=True | ✅ Python:133-143 | ❌ Not implemented in C++ | ⚠️ |
-| 'walk' → rest+trot events | ✅ Python:145-156 | ❌ Not implemented in C++ | ⚠️ |
+| 'sit' → stand_event=True | ✅ Python:121-131 | ✅ C++ (behavior service) | ✅ |
+| 'up' → rest_event=True | ✅ Python:133-143 | ✅ C++ (behavior service) | ✅ |
+| 'walk' → rest+trot events | ✅ Python:145-156 | ✅ C++ (behavior service) | ✅ |
 
 ### Известные расхождения
 
-1. **CRAWL first_cycle**: Python устанавливает `first_cycle = True` при переключении на CRAWL, но в C++ метод `reset_ticks()` недоступен (закомментирован).
+~~1. **CRAWL first_cycle**: Python устанавливает `first_cycle = True` при переключении на CRAWL, но в C++ метод `reset_ticks()` недоступен (закомментирован).~~ ✅ Исправлено
 
-2. **Behavior commands (sit/up/walk)**: Python имеет сервис `robot_behavior_command` с командами 'sit', 'up', 'walk', но в C++ этот функционал не реализован.
+~~2. **Behavior commands (sit/up/walk)**: Python имеет сервис `robot_behavior_command` с командами 'sit', 'up', 'walk', но в C++ этот функционал не реализован.~~ ✅ Исправлено
 
 ### Выводы
 
 - Основная логика переключения режимов **идентична** между Python и C++
-- Python имеет дополнительный функционал (behavior commands), который не реализован в C++
+- ✅ Все расхождения исправлены:
+  - CRAWL first_cycle реализован через `reset()` метод
+  - Behavior commands (sit/up/walk) реализованы в C++
 - Работоспособность подтверждена тестами корректности
