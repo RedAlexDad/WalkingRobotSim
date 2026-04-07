@@ -292,7 +292,7 @@ phase_ticks: [2, 9, 2, 9]
 | contacts() | 26.05 | 0.01 | **Python в 2605x медленнее** |
 | subphase_ticks() | 25.81 | 0.003 | **Python в 7591x медленнее** |
 | **TrotSwingController** | | | |
-| swing_height() | 0.18 | 0.002 | Python в **0.9x быстрее** (сопоставимо) |
+| swing_height() | 0.18 | 0.002 | Python в **90x медленнее** |
 | next_foot_location() | 19.08 | 0.03 | Python в **636x медленнее** |
 | raibert_touchdown() | 10.98 | 0.02 | Python в **549x медленнее** |
 | **TrotStanceController** | | | |
@@ -316,7 +316,7 @@ phase_ticks: [2, 9, 2, 9]
 
 1. **GaitController (2600x-7600x)**: Python значительно медленнее из-за numpy overhead и Python GIL. C++ просто вычисляет индекс массива.
 
-2. **TrotSwingController (500x-600x)**: Большая разница из-за numpy broadcast операций и динамической типизации.
+2. **TrotSwingController (90x-600x)**: Большая разница из-за numpy broadcast операций и динамической типизации. Даже простая функция swing_height() медленнее в 90x.
 
 3. **TrotStanceController (300x-2500x)**: Аналогично - numpy операции vs Eigen vectorized.
 
@@ -331,7 +331,7 @@ phase_ticks: [2, 9, 2, 9]
 ### Выводы
 
 Python значительно медленнее C++ для всех операций контроллера:
-- **Минимальная разница**: swing_height() - 0.9x (сопоставимо)
+- **Минимальная разница**: swing_height() - 90x (все ещё значительно)
 - **Максимальная разница**: subphase_ticks() - 7591x
 - **Средняя разница**: ~500-1000x для большинства операций
 
