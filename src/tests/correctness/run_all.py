@@ -9,6 +9,7 @@ import os
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_FILES = [
+    "test_all_modules.py",
     "test_old_vs_new.py",
     "test_step_trot.py",
     "test_ik_with_roll.py",
