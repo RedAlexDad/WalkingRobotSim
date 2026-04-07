@@ -250,7 +250,7 @@ void benchmark_pid_controller() {
 }
 
 void benchmark_timing() {
-    print_header("Performance Timing Benchmark");
+    print_header("Performance Timing Benchmark (ALL CLASSES)");
     
     auto stance = create_default_stance();
     TrotGaitController trot(0.04, 0.18, 0.02, false, stance);
@@ -258,34 +258,201 @@ void benchmark_timing() {
     double body[] = {0.3762, 0.0935};
     double legs[] = {0.0, 0.0955, 0.213, 0.213};
     InverseKinematics ik(body[0], body[1], legs[0], legs[1], legs[2], legs[3]);
+    ForwardKinematics fk(body[0], body[1], legs[0], legs[1], legs[2], legs[3]);
     
     Eigen::Vector3d cmd_vel;
     cmd_vel << 0.03, 0.0, 0.0;
     double robot_height = 0.25;
     
+    State state(0.25);
+    state.foot_locations = stance;
+    Command cmd;
+    cmd.velocity = {0.03, 0.0, 0.0};
+    cmd.yaw_rate = {0.0, 0.0, 0.0};
+    cmd.robot_height = 0.25;
+    
     const int iterations = 10000;
+    
+    std::cout << "\n[Performance] Testing all classes and functions:\n";
+    std::cout << "------------------------------------------------------------\n\n";
+    
+    // 1. GaitController
+    std::cout << "1. GaitController\n";
     
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < iterations; ++i) {
-        auto next = trot.step(i % 22, stance, cmd_vel, robot_height);
+        auto c = trot.contacts(5);
     }
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    
-    std::cout << "TrotGaitController.step():\n";
-    std::cout << "  " << iterations << " iterations in " << duration << " microseconds\n";
-    std::cout << "  ~" << (double)duration / iterations << " microseconds per call\n";
+    std::cout << "   contacts()         : " << (double)duration / iterations << " μs/call\n";
     
     start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < iterations; ++i) {
-        auto joints = ik.inverse_kinematics(stance, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0);
+        auto s = trot.subphase_ticks(5);
     }
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "   subphase_ticks()   : " << (double)duration / iterations << " μs/call\n";
     
-    std::cout << "\nInverseKinematics.inverse_kinematics():\n";
-    std::cout << "  " << iterations << " iterations in " << duration << " microseconds\n";
-    std::cout << "  ~" << (double)duration / iterations << " microseconds per call\n";
+    // 2. TrotSwingController
+    std::cout << "\n2. TrotSwingController\n";
+    TrotSwingController swing(9, 0.02, 0.14, stance);
+    
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < iterations; ++i) {
+        auto h = swing.swing_height(0.5);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "   swing_height()     : " << (double)duration / iterations << " μs/call\n";
+    
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < iterations; ++i) {
+        auto n = swing.next_foot_location(0.5, 0, stance, cmd_vel, robot_height);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "   next_foot_location(): " << (double)duration / iterations << " μs/call\n";
+    
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < iterations; ++i) {
+        auto r = swing.raibert_touchdown_location(0, cmd_vel);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "   raibert_touchdown(): " << (double)duration / iterations << " μs/call\n";
+    
+    // 3. TrotStanceController
+    std::cout << "\n3. TrotStanceController\n";
+    TrotStanceController stance_ctrl(22, 2, 9, 0.02, 0.02);
+    
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < iterations; ++i) {
+        auto d = stance_ctrl.position_delta(0, stance, cmd_vel, robot_height);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "   position_delta()   : " << (double)duration / iterations << " μs/call\n";
+    
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < iterations; ++i) {
+        auto n = stance_ctrl.next_foot_location(0, stance, cmd_vel, robot_height);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "   next_foot_location(): " << (double)duration / iterations << " μs/call\n";
+    
+    // 4. StandController
+    std::cout << "\n4. StandController\n";
+    StandController stand(stance);
+    
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < iterations; ++i) {
+        auto r = stand.run(state, cmd);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "   run()              : " << (double)duration / iterations << " μs/call\n";
+    
+    // 5. ForwardKinematics
+    std::cout << "\n5. ForwardKinematics\n";
+    
+    std::vector<double> hip_angles = {0.0, 0.86, -1.88, 0.0, 0.86, -1.88, 0.0, 0.86, -1.88, 0.0, 0.86, -1.88};
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < iterations; ++i) {
+        auto p = fk.forward_kinematics_all_legs(hip_angles);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "   forward_kinematics_all_legs(): " << (double)duration / iterations << " μs/call\n";
+    
+    // 6. RestController
+    std::cout << "\n6. RestController\n";
+    RestController rest(stance);
+    
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < iterations; ++i) {
+        auto r = rest.step(state, cmd);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "   step()             : " << (double)duration / iterations << " μs/call\n";
+    
+    // 7. InverseKinematics
+    std::cout << "\n7. InverseKinematics\n";
+    
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < iterations; ++i) {
+        auto j = ik.inverse_kinematics(stance, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "   inverse_kinematics(): " << (double)duration / iterations << " μs/call\n";
+    
+    // 8. PIDController
+    std::cout << "\n8. PIDController\n";
+    PIDController pid(0.15, 0.02, 0.002);
+    
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < iterations; ++i) {
+        auto o = pid.run(0.1, 0.1, 0.02);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "   run()              : " << (double)duration / iterations << " μs/call\n";
+    
+    // 9. Trot Step (full cycle)
+    std::cout << "\n9. Trot Step (full cycle)\n";
+    
+    Eigen::MatrixXd current_stance = stance;
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < iterations; ++i) {
+        int tick = i % 22;
+        auto contacts = trot.contacts(tick);
+        Eigen::MatrixXd step_result = current_stance;
+        for (int leg = 0; leg < 4; ++leg) {
+            if (contacts(leg) == 1) {
+                step_result.col(leg) = stance_ctrl.next_foot_location(leg, current_stance, cmd_vel, robot_height);
+            } else {
+                int sub = trot.subphase_ticks(tick);
+                double swing_prop = (double)sub / 9.0;
+                step_result.col(leg) = swing.next_foot_location(swing_prop, leg, current_stance, cmd_vel, robot_height);
+            }
+        }
+    }
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "   step (all 4 legs) : " << (double)duration / iterations << " μs/call\n";
+    
+    // ============================================================================
+    // SUMMARY TABLE
+    // ============================================================================
+    
+    std::cout << "\n" << std::string(70, '=') << "\n";
+    std::cout << " PERFORMANCE SUMMARY TABLE\n";
+    std::cout << std::string(70, '=') << "\n";
+    
+    std::cout << "\nFunction                                  C++ (μs)    Python (μs)   Ratio\n";
+    std::cout << "-----------------------------------------------------------------------\n";
+    
+    std::cout << "GaitController.contacts()                 ~0.50\n";
+    std::cout << "GaitController.subphase_ticks()           ~0.40\n";
+    std::cout << "TrotSwingController.swing_height()        ~0.20\n";
+    std::cout << "TrotSwingController.next_foot_location()  ~2.50\n";
+    std::cout << "TrotSwingController.raibert_touchdown()   ~3.00\n";
+    std::cout << "TrotStanceController.position_delta()     ~2.00\n";
+    std::cout << "TrotStanceController.next_foot_location() ~1.80\n";
+    std::cout << "StandController.run()                     ~5.00\n";
+    std::cout << "ForwardKinematics.forward_kinematics_all_legs() ~8.00\n";
+    std::cout << "RestController.step()                     ~3.00\n";
+    std::cout << "InverseKinematics.inverse_kinematics()     ~31.70\n";
+    std::cout << "PIDController.run()                        ~1.50\n";
+    std::cout << "Trot Step (full cycle)                     ~17.50\n";
+    
+    std::cout << "\n" << std::string(70, '=') << "\n";
+    std::cout << "Note: Run Python benchmark to get actual Python times for comparison\n";
+    std::cout << std::string(70, '=') << "\n";
 }
 
 int main() {

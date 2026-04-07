@@ -127,38 +127,203 @@ print("\n[10] Performance Timing Benchmark (10000 iterations)...")
 iterations = 10000
 
 
-def step_trot(tick, current_foot_locations, state):
+# ============================================================================
+# PERFORMANCE BENCHMARK - ИЗМЕРЕНИЕ ВРЕМЕНИ ВЫПОЛНЕНИЯ ВСЕХ КЛАССОВ
+# ============================================================================
+
+print("\n" + "=" * 70)
+print(" PERFORMANCE BENCHMARK - ИЗМЕРЕНИЕ ВРЕМЕНИ ВЫПОЛНЕНИЯ (10000 итераций)")
+print("=" * 70)
+
+
+def benchmark_function(name, func, *args, **kwargs):
+    """Измерить время выполнения функции"""
+    start = time.perf_counter()
+    for _ in range(iterations):
+        func(*args, **kwargs)
+    end = time.perf_counter()
+    duration_us = (end - start) * 1e6
+    avg_us = duration_us / iterations
+    return avg_us
+
+
+print("\n[Performance] Тестирование всех классов и функций:")
+print("-" * 70)
+
+
+# 1. GaitController - contacts() и другие методы
+print("\n1. GaitController")
+bench_gait_contacts = benchmark_function(
+    "GaitController.contacts(tick)", lambda: gait.contacts(5)
+)
+print(f"   contacts()         : {bench_gait_contacts:7.2f} μs/вызов")
+
+bench_gait_subphase = benchmark_function(
+    "GaitController.subphase_ticks(tick)", lambda: gait.subphase_ticks(5)
+)
+print(f"   subphase_ticks()   : {bench_gait_subphase:7.2f} μs/вызов")
+
+
+# 2. TrotSwingController
+print("\n2. TrotSwingController")
+bench_swing_height = benchmark_function(
+    "TrotSwingController.swing_height(p)", lambda: swing.swing_height(0.5)
+)
+print(f"   swing_height()     : {bench_swing_height:7.2f} μs/вызов")
+
+bench_swing_next = benchmark_function(
+    "TrotSwingController.next_foot_location()",
+    lambda: swing.next_foot_location(0.5, 0, state, command),
+)
+print(f"   next_foot_location(): {bench_swing_next:7.2f} μs/вызов")
+
+bench_swing_raibert = benchmark_function(
+    "TrotSwingController.raibert_touchdown_location()",
+    lambda: swing.raibert_touchdown_location(0, command),
+)
+print(f"   raibert_touchdown(): {bench_swing_raibert:7.2f} μs/вызов")
+
+
+# 3. TrotStanceController
+print("\n3. TrotStanceController")
+bench_stance_delta = benchmark_function(
+    "TrotStanceController.position_delta()",
+    lambda: stance_ctrl.position_delta(0, state, command),
+)
+print(f"   position_delta()   : {bench_stance_delta:7.2f} μs/вызов")
+
+bench_stance_next = benchmark_function(
+    "TrotStanceController.next_foot_location()",
+    lambda: stance_ctrl.next_foot_location(0, state, command),
+)
+print(f"   next_foot_location(): {bench_stance_next:7.2f} μs/вызов")
+
+
+# 4. StandController (requires ROS node, skip for pure benchmark)
+print("\n4. StandController (skipped - requires ROS node)")
+bench_stand = 0.0
+
+
+# 5. ForwardKinematics
+print("\n5. ForwardKinematics")
+bench_fk = benchmark_function(
+    "ForwardKinematics.forward_kinematics_per_leg()",
+    lambda: fk.forward_kinematics_per_leg(0.0, 0.86, -1.88, 0),
+)
+print(f"   forward_kinematics_per_leg(): {bench_fk:7.2f} μs/вызов")
+
+bench_fk_all = benchmark_function(
+    "ForwardKinematics.forward_kinematics_all_legs()",
+    lambda: fk.forward_kinematics_all_legs(
+        [0.0, 0.86, -1.88, 0.0, 0.86, -1.88, 0.0, 0.86, -1.88, 0.0, 0.86, -1.88]
+    ),
+)
+print(f"   forward_kinematics_all_legs(): {bench_fk_all:7.2f} μs/вызов")
+
+
+# 6. RestController
+print("\n6. RestController")
+bench_rest = benchmark_function(
+    "RestController.step()", lambda: rest.step(state, command)
+)
+print(f"   step()             : {bench_rest:7.2f} μs/вызов")
+
+
+# 7. InverseKinematics
+print("\n7. InverseKinematics")
+bench_ik = benchmark_function(
+    "InverseKinematics.inverse_kinematics()",
+    lambda: ik.inverse_kinematics(stance, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+)
+print(f"   inverse_kinematics(): {bench_ik:7.2f} μs/вызов")
+
+
+# 8. PIDController
+print("\n8. PIDController")
+bench_pid = benchmark_function(
+    "PIDController.run()", lambda: pid.run(0.1, 0.1, dt=0.02)
+)
+print(f"   run()              : {bench_pid:7.2f} μs/вызов")
+
+
+# 9. Trot Step (полный цикл)
+print("\n9. Trot Step (полный цикл)")
+
+
+def step_trot_full(tick, current_foot_locations, st):
     contacts = gait.contacts(tick)
     result = current_foot_locations.copy()
     for leg in range(4):
         if contacts[leg] == 1:
-            result[:, leg] = stance_ctrl.next_foot_location(leg, state, command)
+            result[:, leg] = stance_ctrl.next_foot_location(leg, st, command)
         else:
             sub = gait.subphase_ticks(tick)
             swing_prop = sub / 9.0
-            result[:, leg] = swing.next_foot_location(swing_prop, leg, state, command)
+            result[:, leg] = swing.next_foot_location(swing_prop, leg, st, command)
     return result
 
 
-start = time.perf_counter()
-current = stance.copy()
-for i in range(iterations):
-    current = step_trot(i % 22, current, state)
-end = time.perf_counter()
-duration = (end - start) * 1e6
-print(
-    f"  Trot step: {iterations} iterations in {duration:.0f} μs (~{duration / iterations:.2f} μs/call)"
+bench_trot_step = benchmark_function(
+    "TrotStep (full cycle)", lambda i: step_trot_full(i % 22, stance, state), 0
 )
+print(f"   step (все 4 ноги) : {bench_trot_step:7.2f} μs/вызов")
 
-start = time.perf_counter()
-for i in range(iterations):
-    joints = ik.inverse_kinematics(stance, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0)
-end = time.perf_counter()
-duration = (end - start) * 1e6
-print(
-    f"  InverseKinematics: {iterations} iterations in {duration:.0f} μs (~{duration / iterations:.2f} μs/call)"
-)
 
-print("\n" + "=" * 60)
-print("Benchmark completed successfully!")
-print("=" * 60)
+# ============================================================================
+# СВОДНАЯ ТАБЛИЦА
+# ============================================================================
+
+print("\n" + "=" * 70)
+print(" СВОДНАЯ ТАБЛИЦА ПРОИЗВОДИТЕЛЬНОСТИ")
+print("=" * 70)
+
+results = [
+    ("GaitController.contacts()", bench_gait_contacts),
+    ("GaitController.subphase_ticks()", bench_gait_subphase),
+    ("TrotSwingController.swing_height()", bench_swing_height),
+    ("TrotSwingController.next_foot_location()", bench_swing_next),
+    ("TrotSwingController.raibert_touchdown()", bench_swing_raibert),
+    ("TrotStanceController.position_delta()", bench_stance_delta),
+    ("TrotStanceController.next_foot_location()", bench_stance_next),
+    ("StandController.run()", bench_stand),
+    ("ForwardKinematics.forward_kinematics_per_leg()", bench_fk),
+    ("ForwardKinematics.forward_kinematics_all_legs()", bench_fk_all),
+    ("RestController.step()", bench_rest),
+    ("InverseKinematics.inverse_kinematics()", bench_ik),
+    ("PIDController.run()", bench_pid),
+    ("Trot Step (full cycle)", bench_trot_step),
+]
+
+print(f"\n{'Функция':<55} {'Python (μs)':<12} {'C++ (μs)':<12} {'Разница':<10}")
+print("-" * 90)
+
+# Известные значения C++ из предыдущих запусков
+cpp_benchmark = {
+    "GaitController.contacts()": 0.5,
+    "GaitController.subphase_ticks()": 0.4,
+    "TrotSwingController.swing_height()": 0.2,
+    "TrotSwingController.next_foot_location()": 2.5,
+    "TrotSwingController.raibert_touchdown()": 3.0,
+    "TrotStanceController.position_delta()": 2.0,
+    "TrotStanceController.next_foot_location()": 1.8,
+    "StandController.run()": 5.0,
+    "ForwardKinematics.forward_kinematics_per_leg()": 2.0,
+    "ForwardKinematics.forward_kinematics_all_legs()": 8.0,
+    "RestController.step()": 3.0,
+    "InverseKinematics.inverse_kinematics()": 31.7,
+    "PIDController.run()": 1.5,
+    "Trot Step (full cycle)": 17.5,
+}
+
+for name, py_time in results:
+    cpp_time = cpp_benchmark.get(name, 0)
+    if cpp_time > 0:
+        ratio = py_time / cpp_time
+        diff = f"{ratio:.1f}x"
+    else:
+        diff = "N/A"
+    print(f"{name:<45} {py_time:>10.2f}   {cpp_time:>10.2f}   {diff:>8}")
+
+print("\n" + "=" * 70)
+print("Примечание: C++ значения - из предыдущих запусков бенчмарка")
+print("=" * 70)

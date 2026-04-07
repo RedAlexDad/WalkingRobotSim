@@ -237,16 +237,7 @@ Leg 2: [hip=-0.0000, thigh=3.0946, calf=-3.0477]
 Leg 3: [hip=-6.2832, thigh=3.0946, calf=-3.0477]
 ```
 
-### Performance
-
-```
-TrotGaitController.step():  ~17.5 microseconds per call
-InverseKinematics.inverse_kinematics(): ~31.7 microseconds per call
-```
-
----
-
-## Результаты Python бенчмарка (без ROS зависимостей, v0.0.1)
+## Результаты Python бенчмарка (с ROS2, внутри Docker)
 
 ### Дата тестирования: 2026-04-07
 
@@ -260,40 +251,97 @@ phase_length: 22
 phase_ticks: [2, 9, 2, 9]
 ```
 
-### Inverse Kinematics (стойка)
+### Результаты тестирования классов
 
-```
-Leg 0: [-0.3293, 0.0000, -3.1416]
-Leg 1: [1.5708, 1.2303, -0.6809]
-Leg 2: [-1.5708, 1.2303, -0.6809]
-Leg  3: [0.3293, 0.0000, -3.1416]
-```
-
-### Performance
-
-```
-Trot step (swing + stance): ~68.71 microseconds per call
-InverseKinematics.inverse_kinematics(): ~40.96 microseconds per call
-```
+| Класс/Функция | Python Результат | C++ Результат | Статус |
+|---------------|------------------|---------------|--------|
+| **GaitController** | | | |
+| stance_ticks | 2 | 2 | ✅ |
+| swing_ticks | 9 | 9 | ✅ |
+| phase_length | 22 | 22 | ✅ |
+| phase_ticks | [2, 9, 2, 9] | [2, 9, 2, 9] | ✅ |
+| **TrotSwingController** | | | |
+| swing_height(0.0) | 0.0000 | 0.0000 | ✅ |
+| swing_height(0.5) | 0.1400 | 0.1400 | ✅ |
+| swing_height(1.0) | 0.0000 | 0.0000 | ✅ |
+| **TrotStanceController** | | | |
+| z_error_constant | 0.02 | 0.02 | ✅ |
+| **StandController** | | | |
+| max_reach | 0.065 | 0.065 | ✅ |
+| **State/Command** | | | |
+| robot_height | -0.25 | -0.25 | ✅ |
+| **ForwardKinematics** | | | |
+| FK(hip=0, thigh=0.86, calf=-1.88) | [0.4734, 0.0467, 0.2906] | [0.4734, 0.0467, 0.2906] | ✅ |
+| **RestController** | | | |
+| step() z positions | [-0.25, -0.25, -0.25, -0.25] | [-0.25, -0.25, -0.25, -0.25] | ✅ |
+| **InverseKinematics** | | | |
+| joints[0-5] default | [0.0, 0.86, -1.88, 0.0, 0.86, -1.88] | [0.0, 0.86, -1.88, 0.0, 0.86, -1.88] | ✅ |
+| joints[6-11] default | [0.0, 1.02, -1.88, 0.0, 1.02, -1.88] | [0.0, 1.02, -1.88, 0.0, 1.02, -1.88] | ✅ |
+| **PID Controller** | | | |
+| run(roll=0.1, pitch=0.1, dt=0.02) | [-0.0796, -0.0796] | [-0.0796, -0.0796] | ✅ |
 
 ---
 
 ## Сравнение производительности Python vs C++
 
-| Функция | Python | C++ | Разница |
-|---------|--------|-----|---------|
-| Trot step | ~68.71 μs | ~17.5 μs | **Python в 3.9x медленнее** |
-| InverseKinematics | ~40.96 μs | ~31.7 μs | **Python в 1.3x медленнее** |
+### Результаты бенчмарка (10000 итераций, Release сборка)
 
-### Анализ расхождений
+| Функция | Python (μs) | C++ (μs) | Разница |
+|---------|-------------|----------|---------|
+| **GaitController** | | | |
+| contacts() | 26.05 | 0.01 | **Python в 2605x медленнее** |
+| subphase_ticks() | 25.81 | 0.003 | **Python в 7591x медленнее** |
+| **TrotSwingController** | | | |
+| swing_height() | 0.18 | 0.002 | Python в **0.9x быстрее** (сопоставимо) |
+| next_foot_location() | 19.08 | 0.03 | Python в **636x медленнее** |
+| raibert_touchdown() | 10.98 | 0.02 | Python в **549x медленнее** |
+| **TrotStanceController** | | | |
+| position_delta() | 12.80 | 0.005 | Python в **2560x медленнее** |
+| next_foot_location() | 14.77 | 0.05 | Python в **295x медленнее** |
+| **StandController** | | | |
+| run() | N/A | 0.02 | (требует ROS) |
+| **ForwardKinematics** | | | |
+| forward_kinematics_per_leg() | 102.56 | N/A | одна нога |
+| forward_kinematics_all_legs() | 408.81 | 1.13 | Python в **362x медленнее** |
+| **RestController** | | | |
+| step() | 0.63 | 0.01 | Python в **63x медленнее** |
+| **InverseKinematics** | | | |
+| inverse_kinematics() | 131.19 | 0.69 | Python в **190x медленнее** |
+| **PIDController** | | | |
+| run() | 8.64 | 0.002 | Python в **4320x медленнее** |
+| **Trot Step (full cycle)** | | | |
+| step (all 4 legs) | 95.00 | 0.69 | Python в **138x медленнее** |
 
-1. **Trot step**: Python значительно медленнее из-за:
-   - numpy broadcast операций
-   - отсутствие Eigen оптимизаций
-   - Python GIL overhead
+### Анализ расхождений производительности
 
-2. **InverseKinematics**: Меньшая разница, так как основная работа - тригонометрия (arccos, sqrt)
+1. **GaitController (2600x-7600x)**: Python значительно медленнее из-за numpy overhead и Python GIL. C++ просто вычисляет индекс массива.
+
+2. **TrotSwingController (500x-600x)**: Большая разница из-за numpy broadcast операций и динамической типизации.
+
+3. **TrotStanceController (300x-2500x)**: Аналогично - numpy операции vs Eigen vectorized.
+
+4. **ForwardKinematics (362x)**: Python использует numpy trigonometric functions vs Eigen optimized.
+
+5. **InverseKinematics (190x)**: Основная работа - тригонометрия, но Python имеет overhead от numpy.
+
+6. **PIDController (4300x)**: Неожиданно большое различие - возможно из-за Python function call overhead.
+
+7. **Trot Step (138x)**: Суммарный эффект всех операций.
+
+### Выводы
+
+Python значительно медленнее C++ для всех операций контроллера:
+- **Минимальная разница**: swing_height() - 0.9x (сопоставимо)
+- **Максимальная разница**: subphase_ticks() - 7591x
+- **Средняя разница**: ~500-1000x для большинства операций
+
+Причины:
+1. Python GIL (Global Interpreter Lock)
+2. NumPy broadcasting overhead
+3. Динамическая типизация Python
+4. Eigen оптимизации (vectorization, cache locality)
+5. Function call overhead в Python
 
 ---
 
-*Данный документ будет обновлён после проведения бенчмарка*
+*Данный документ обновлён 2026-04-07*
