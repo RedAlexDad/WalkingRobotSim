@@ -20,15 +20,18 @@ class PID_controller:
         self.last_error = np.array([0.0, 0.0])
         self.last_time = None
 
-    def run(self, roll, pitch):
+    def run(self, roll, pitch, dt=None):
         error = self.desired_roll_pitch - np.array([roll, pitch])
 
-        t_now = self.get_time_in_seconds()
-        if self.last_time is None:
-            self.last_time = t_now
-            return np.array([0.0, 0.0])
-
-        step = t_now - self.last_time
+        if dt is not None:
+            step = dt
+            t_now = None
+        else:
+            t_now = self.get_time_in_seconds()
+            if self.last_time is None:
+                self.last_time = t_now
+                return np.array([0.0, 0.0])
+            step = t_now - self.last_time
 
         if step < 1e-6:
             return np.array([0.0, 0.0])
@@ -43,7 +46,8 @@ class PID_controller:
 
         self.D_term = (error - self.last_error) / step
 
-        self.last_time = t_now
+        if dt is None:
+            self.last_time = t_now
         self.last_error = error
 
         P_ret = self.kp * error

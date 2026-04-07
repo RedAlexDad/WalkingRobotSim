@@ -246,4 +246,54 @@ InverseKinematics.inverse_kinematics(): ~31.7 microseconds per call
 
 ---
 
+## Результаты Python бенчмарка (без ROS зависимостей, v0.0.1)
+
+### Дата тестирования: 2026-04-07
+
+### Конфигурация
+
+```
+stance_time: 0.04, swing_time: 0.18, time_step: 0.02
+stance_ticks: 2
+swing_ticks: 9
+phase_length: 22
+phase_ticks: [2, 9, 2, 9]
+```
+
+### Inverse Kinematics (стойка)
+
+```
+Leg 0: [-0.3293, 0.0000, -3.1416]
+Leg 1: [1.5708, 1.2303, -0.6809]
+Leg 2: [-1.5708, 1.2303, -0.6809]
+Leg  3: [0.3293, 0.0000, -3.1416]
+```
+
+### Performance
+
+```
+Trot step (swing + stance): ~68.71 microseconds per call
+InverseKinematics.inverse_kinematics(): ~40.96 microseconds per call
+```
+
+---
+
+## Сравнение производительности Python vs C++
+
+| Функция | Python | C++ | Разница |
+|---------|--------|-----|---------|
+| Trot step | ~68.71 μs | ~17.5 μs | **Python в 3.9x медленнее** |
+| InverseKinematics | ~40.96 μs | ~31.7 μs | **Python в 1.3x медленнее** |
+
+### Анализ расхождений
+
+1. **Trot step**: Python значительно медленнее из-за:
+   - numpy broadcast операций
+   - отсутствие Eigen оптимизаций
+   - Python GIL overhead
+
+2. **InverseKinematics**: Меньшая разница, так как основная работа - тригонометрия (arccos, sqrt)
+
+---
+
 *Данный документ будет обновлён после проведения бенчмарка*
