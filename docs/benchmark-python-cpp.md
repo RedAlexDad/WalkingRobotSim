@@ -203,6 +203,47 @@ ros2 run robot_controller_cpp robot_controller_node --ros-args --log-level robot
 1. ❌ **Timing параметры**: C++ использует 0.55/0.45, Python использует 0.04/0.18
 2. ❌ **RestController**: C++ не имеет IMU compensation (низкий приоритет)
 
+## Результаты C++ бенчмарка (без ROS)
+
+### Gait Controller
+
+```
+Parameters:
+  stance_time: 0.04, swing_time: 0.18, time_step: 0.02
+  stance_ticks: 2
+  swing_ticks: 9
+  phase_length: 22
+  phase_ticks: [2, 9, 2, 9]
+```
+
+### Trot Step Evolution (vx=0.03)
+
+```
+tick= 0 phase=0 contacts: [1111] -> foot_z: [0.25, 0.25, 0.25, 0.25]
+tick= 2 phase=1 contacts: [1001] -> foot_z: [0.25, 0.25, 0.25, 0.25]
+tick= 3 phase=1 contacts: [1001] -> foot_z: [0.25, 0.28, 0.28, 0.25]
+tick= 5 phase=1 contacts: [1001] -> foot_z: [0.25, 0.34, 0.34, 0.25]
+tick= 7 phase=1 contacts: [1001] -> foot_z: [0.25, 0.37, 0.37, 0.25]
+tick= 9 phase=1 contacts: [1001] -> foot_z: [0.25, 0.28, 0.28, 0.25]
+tick=11 phase=2 contacts: [1111] -> foot_z: [0.25, 0.25, 0.25, 0.25]
+```
+
+### Inverse Kinematics (стойка)
+
+```
+Leg 0: [hip=-0.0000, thigh=-0.0470, calf=-3.0477]
+Leg 1: [hip=-6.2832, thigh=-0.0470, calf=-3.0477]
+Leg 2: [hip=-0.0000, thigh=3.0946, calf=-3.0477]
+Leg 3: [hip=-6.2832, thigh=3.0946, calf=-3.0477]
+```
+
+### Performance
+
+```
+TrotGaitController.step():  ~17.5 microseconds per call
+InverseKinematics.inverse_kinematics(): ~31.7 microseconds per call
+```
+
 ---
 
 *Данный документ будет обновлён после проведения бенчмарка*
