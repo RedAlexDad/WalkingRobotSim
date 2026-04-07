@@ -70,6 +70,15 @@ public:
                 if (msg->robot_id == 1) {
                     command_.velocity = {msg->cmd_vel.linear.x, msg->cmd_vel.linear.y, msg->cmd_vel.linear.z};
                     command_.yaw_rate = {msg->cmd_vel.angular.x, msg->cmd_vel.angular.y, msg->cmd_vel.angular.z};
+
+                    // Ограничение скорости для CRAWL режима (как в Python crawl_gait.py)
+                    if (state_.behavior_state == BehaviorState::CRAWL) {
+                        constexpr double crawl_max_vx = 0.011;
+                        constexpr double crawl_max_yaw = 0.15;
+                        command_.velocity[0] = std::clamp(command_.velocity[0], -crawl_max_vx, crawl_max_vx);
+                        command_.velocity[1] = std::clamp(command_.velocity[1], -crawl_max_vx * 0.5, crawl_max_vx * 0.5);
+                        command_.yaw_rate[2] = std::clamp(command_.yaw_rate[2], -crawl_max_yaw, crawl_max_yaw);
+                    }
                     if (false)
                         RCLCPP_DEBUG(get_logger(), "[DEBUG] Velocity: vx=%.4f vy=%.4f vz=%.4f yaw=%.4f",
                                    command_.velocity[0], command_.velocity[1], command_.velocity[2], command_.yaw_rate[2]);
