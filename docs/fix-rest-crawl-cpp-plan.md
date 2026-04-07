@@ -343,15 +343,15 @@ Python в TrotGaitController имеет аналогичную логику че
 
 ## План исправления
 
-### Фаза 1: REST контроллер ✅ ПРИОРИТЕТ
+### Фаза 1: REST контроллер ✅ ЗАВЕРШЕНА
 - [x] **Исправление 1.1:** Добавить IMU компенсацию в `RestController::step()`
-- [ ] **Исправление 1.2:** Добавить `use_imu` флаг
+- [x] **Исправление 1.2:** Добавить `use_imu` флаг
 
-### Фаза 2: CRAWL swing
-- [ ] **Исправление 2.1:** Заменить trot swing на crawl swing в `step_crawl()`
-- [ ] **Исправление 2.2:** Исправить Z вектор в `CrawlSwingController::next_foot_location()`
-- [ ] **Исправление 2.3:** Убрать hardcoded timing из `CrawlSwingController`
-- [ ] **Исправление 2.4:** Добавить `shifted_left` / `body_shift_y`
+### Фаза 2: CRAWL swing ✅ ЗАВЕРШЕНА
+- [x] **Исправление 2.1:** Заменить trot swing на crawl swing в `step_crawl()`
+- [x] **Исправление 2.2:** Исправить Z вектор в `CrawlSwingController::next_foot_location()`
+- [x] **Исправление 2.3:** Убрать hardcoded timing из `CrawlSwingController`
+- [x] **Исправление 2.4:** Добавить `shifted_left` / `body_shift_y`
 
 ### Фаза 3: CRAWL stance
 - [x] **Исправление 3.1:** Использовать `CrawlStanceController` в `step_crawl()`
