@@ -39,7 +39,7 @@ CMakeLists.txt.user
 *.user
 qtcreator-*
 .idea/
-.vscode/settings.json
+.vscode/*
 
 # Файлы точечной карты и облака
 *.pcd

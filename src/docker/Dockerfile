@@ -177,8 +177,8 @@ FROM python-deps AS workspace
 
 WORKDIR /root/ws
 
-# Копирование исходного кода
-COPY ../ /root/ws/src
+# Копирование исходного кода (контекст сборки - корень проекта)
+COPY src/ /root/ws/src/
 
 # Кэширование сборки ROS пакетов
 RUN --mount=type=cache,target=/root/.ccache \
