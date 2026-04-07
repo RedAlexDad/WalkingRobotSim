@@ -196,12 +196,20 @@ private:
             if (state_.behavior_state == BehaviorState::REST) {
                 state_.behavior_state = BehaviorState::TROT;
                 use_trot_ = true;
+                use_crawl_ = false;
                 trot_gait_->pid_controller().reset(this->now().seconds());
                 state_.ticks = 0;
-                state_.body_local_position[2] = 0.0;  // поднять корпус
+                state_.body_local_position[2] = 0.0;
+            } else if (state_.behavior_state == BehaviorState::CRAWL) {
+                state_.behavior_state = BehaviorState::TROT;
+                use_trot_ = true;
+                use_crawl_ = false;
+                trot_gait_->pid_controller().reset(this->now().seconds());
+                state_.ticks = 0;
+                state_.body_local_position[2] = 0.0;
+                RCLCPP_INFO(get_logger(), "Switched to TROT controller (from CRAWL)");
             }
             command_.trot_event = false;
-            RCLCPP_INFO(get_logger(), "Switched to TROT controller");
         } else if (command_.rest_event) {
             state_.behavior_state = BehaviorState::REST;
             use_crawl_ = false;
