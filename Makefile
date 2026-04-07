@@ -746,13 +746,11 @@ help:
 	@printf "  ${GREEN}${BOLD}make test-clean${NC}       Очистка после тестов\n"
 	@echo ""
 	@printf "${BOLD}Тесты корректности и производительности:${NC}\n"
-	@printf "  ${GREEN}${BOLD}make test-correctness${NC}   Сравнение old vs new (34 теста)\n"
-	@printf "  ${GREEN}${BOLD}make test-benchmark${NC}     Замер производительности\n"
-	@printf "  ${GREEN}${BOLD}make test-all${NC}           Оба теста подряд\n"
-	@printf "  ${GREEN}${BOLD}make test-cross${NC}        Кросс-языковой тест Python vs C++\n"
-	@printf "  ${GREEN}${BOLD}make benchmark${NC}          Запуск бенчмарка Python + C++ с таблицей\n"
-	@printf "  ${GREEN}${BOLD}make benchmark-python${NC}  Только Python бенчмарк\n"
-	@printf "  ${GREEN}${BOLD}make benchmark-cpp${NC}     Только C++ бенчмарк\n"
+	@printf "  ${GREEN}${BOLD}make test-correctness${NC}     Запуск тестов корректности\n"
+	@printf "  ${GREEN}${BOLD}make test-benchmark${NC}      Замер производительности Python\n"
+	@printf "  ${GREEN}${BOLD}make benchmark${NC}            Запуск бенчмарка Python + C++ с таблицей\n"
+	@printf "  ${GREEN}${BOLD}make benchmark-python${NC}    Только Python бенчмарк\n"
+	@printf "  ${GREEN}${BOLD}make benchmark-cpp${NC}       Только C++ бенчмарк\n"
 	@echo ""
 	@printf "${BOLD}Прочее:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make setup${NC}            Начальная настройка проекта\n"
@@ -770,35 +768,21 @@ help:
 # ТЕСТЫ
 # ════════════════════════════════════════════════════════════
 
-.PHONY: test-correctness test-benchmark test-cross bench-cpp test-all benchmark benchmark-python benchmark-cpp
+.PHONY: test-correctness test-benchmark benchmark benchmark-python benchmark-cpp
 
-## Проверка корректности — сравнение результатов old vs new (34 теста)
+## Проверка корректности — запуск всех тестов в correctness/
 test-correctness:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Тесты корректности (old vs new)...${NC}\n"
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Тесты корректности...${NC}\n"
 	@cd $(PROJECT_ROOT)/src/tests/correctness && python3 run_all.py
 	@echo ""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Тесты корректности завершены${NC}\n"
 
-## Benchmark производительности — замер времени old vs new
+## Benchmark производительности — замер времени
 test-benchmark:
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Benchmark производительности...${NC}\n"
 	@cd $(PROJECT_ROOT) && python3 src/tests/benchmark_performance.py
 	@echo ""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Benchmark завершён${NC}\n"
-
-## Полный цикл тестирования: корректность + производительность
-test-all: test-correctness test-benchmark
-	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Все тесты завершены${NC}\n"
-
-## Кросс-языковой тест: Python vs C++
-test-cross:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Кросс-языковой тест: Python vs C++...${NC}\n"
-	@python3 $(PROJECT_ROOT)/src/tests/test_python_vs_cpp.py
-
-## C++ vs Python benchmark — замер производительности
-bench-cpp:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}C++ vs Python Benchmark...${NC}\n"
-	@python3 $(PROJECT_ROOT)/src/tests/benchmark_cpp_vs_python.py
 
 ## Запуск полного бенчмарка Python vs C++ с таблицей результатов
 benchmark:
