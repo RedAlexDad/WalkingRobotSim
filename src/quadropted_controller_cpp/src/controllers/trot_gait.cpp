@@ -8,7 +8,8 @@ TrotGaitController::TrotGaitController(double stance_time, double swing_time, do
                      (Eigen::MatrixXi(4, 4) << 1,1,1,0, 1,0,1,1, 1,0,1,1, 1,1,1,0).finished(),
                      default_stance),
       use_imu_(use_imu),
-      swing_(static_cast<int>(swing_time / time_step), time_step, 0.14, default_stance),
+      swing_(static_cast<int>(swing_time / time_step), time_step, 0.14, default_stance,
+             phase_length(), static_cast<int>(stance_time / time_step)),
       stance_(phase_length(), stance_ticks(), swing_ticks(), time_step, 0.02),
       pid_(0.15, 0.02, 0.002)
 {

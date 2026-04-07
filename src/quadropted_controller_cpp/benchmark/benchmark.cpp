@@ -194,7 +194,7 @@ void benchmark_trot_swing() {
     print_header("TrotSwing Controller Benchmark");
     
     auto stance = create_default_stance();
-    TrotSwingController swing(9, 0.02, 0.14, stance);
+    TrotSwingController swing(9, 0.02, 0.14, stance, 22, 2);
     
     std::cout << "Parameters: swing_ticks=9, time_step=0.02, z_leg_lift=0.14\n";
     
@@ -269,7 +269,7 @@ void benchmark_timing_json() {
     cmd.yaw_rate = {0.0, 0.0, 0.0};
     cmd.robot_height = 0.25;
     
-    TrotSwingController swing(9, 0.02, 0.14, stance);
+    TrotSwingController swing(9, 0.02, 0.14, stance, 22, 2);
     TrotStanceController stance_ctrl(22, 2, 9, 0.02, 0.02);
     StandController stand(stance);
     RestController rest(stance);

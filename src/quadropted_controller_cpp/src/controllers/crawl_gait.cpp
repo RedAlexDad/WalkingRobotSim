@@ -11,7 +11,9 @@ CrawlGaitController::CrawlGaitController(double stance_time, double swing_time,
                        1, 0, 1, 1, 1, 1, 1, 1,
                        1, 1, 1, 1, 1, 0, 1, 1).finished(),
                      default_stance),
-      swing_(swing_ticks(), time_step, 0.14, default_stance) {}
+      swing_(swing_ticks(), time_step, 0.14, default_stance,
+             phase_length(), stance_ticks(), 0.06 /* body_shift_y как в Python */),
+      stance_(phase_length(), stance_ticks(), swing_ticks(), time_step, 0.02 /* z_error_constant */, 0.06 /* body_shift_y */) {}
 
 void CrawlGaitController::reset() {
     first_cycle_ = true;

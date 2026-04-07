@@ -70,6 +70,15 @@ public:
                 if (msg->robot_id == 1) {
                     command_.velocity = {msg->cmd_vel.linear.x, msg->cmd_vel.linear.y, msg->cmd_vel.linear.z};
                     command_.yaw_rate = {msg->cmd_vel.angular.x, msg->cmd_vel.angular.y, msg->cmd_vel.angular.z};
+
+                    // Ограничение скорости для CRAWL режима (как в Python crawl_gait.py)
+                    if (state_.behavior_state == BehaviorState::CRAWL) {
+                        constexpr double crawl_max_vx = 0.011;
+                        constexpr double crawl_max_yaw = 0.15;
+                        command_.velocity[0] = std::clamp(command_.velocity[0], -crawl_max_vx, crawl_max_vx);
+                        command_.velocity[1] = std::clamp(command_.velocity[1], -crawl_max_vx * 0.5, crawl_max_vx * 0.5);
+                        command_.yaw_rate[2] = std::clamp(command_.yaw_rate[2], -crawl_max_yaw, crawl_max_yaw);
+                    }
                     if (false)
                         RCLCPP_DEBUG(get_logger(), "[DEBUG] Velocity: vx=%.4f vy=%.4f vz=%.4f yaw=%.4f",
                                    command_.velocity[0], command_.velocity[1], command_.velocity[2], command_.yaw_rate[2]);
@@ -170,6 +179,7 @@ public:
 private:
     void change_controller() {
         if (command_.trot_event && command_.rest_event) {
+            // REST first, then TROT
             state_.behavior_state = BehaviorState::REST;
             rest_ctrl_->pid().reset(this->now().seconds());
             command_.rest_event = false;
@@ -179,24 +189,35 @@ private:
             use_trot_ = true;
             trot_gait_->pid_controller().reset(this->now().seconds());
             state_.ticks = 0;
+            state_.body_local_position[2] = 0.0;  // поднять корпус
             command_.trot_event = false;
             RCLCPP_INFO(get_logger(), "Switched to TROT controller");
         } else if (command_.trot_event) {
             if (state_.behavior_state == BehaviorState::REST) {
                 state_.behavior_state = BehaviorState::TROT;
                 use_trot_ = true;
+                use_crawl_ = false;
                 trot_gait_->pid_controller().reset(this->now().seconds());
                 state_.ticks = 0;
+                state_.body_local_position[2] = 0.0;
+            } else if (state_.behavior_state == BehaviorState::CRAWL) {
+                state_.behavior_state = BehaviorState::TROT;
+                use_trot_ = true;
+                use_crawl_ = false;
+                trot_gait_->pid_controller().reset(this->now().seconds());
+                state_.ticks = 0;
+                state_.body_local_position[2] = 0.0;
+                RCLCPP_INFO(get_logger(), "Switched to TROT controller (from CRAWL)");
             }
             command_.trot_event = false;
-            RCLCPP_INFO(get_logger(), "Switched to TROT controller");
         } else if (command_.rest_event) {
             state_.behavior_state = BehaviorState::REST;
             use_crawl_ = false;
             use_trot_ = false;
             rest_ctrl_->pid().reset(this->now().seconds());
+            state_.body_local_position[2] = -0.15;  // лечь на землю
             command_.rest_event = false;
-            RCLCPP_INFO(get_logger(), "Switched to REST controller");
+            RCLCPP_INFO(get_logger(), "Switched to REST controller — lying down");
         } else if (command_.stand_event) {
             if (state_.behavior_state != BehaviorState::STAND) {
                 state_.behavior_state = BehaviorState::STAND;
@@ -210,6 +231,7 @@ private:
             use_trot_ = false;
             crawl_gait_->reset();
             state_.ticks = 0;
+            state_.body_local_position[2] = 0.0;  // поднять корпус из REST
             command_.crawl_event = false;
         }
     }
@@ -221,9 +243,12 @@ private:
                            std::abs(cmd.velocity[1]) > 1e-4 ||
                            std::abs(cmd.yaw_rate[2]) > 1e-4;
         if (!has_command) {
+            // Плавное возвращение к default_stance (как в Python autoRest)
             Eigen::MatrixXd result = default_stance_;
             result.row(2).setConstant(cmd.robot_height);
-            return result;
+            // Lerp: 90% текущая позиция + 10% к целевой = плавный переход за ~20 шагов
+            constexpr double alpha = 0.1;
+            return state.foot_locations * (1.0 - alpha) + result * alpha;
         }
 
         // Use TrotGaitController's step method for unified stance/swing logic
@@ -270,30 +295,40 @@ private:
                            std::abs(cmd.velocity[1]) > 1e-4 ||
                            std::abs(cmd.yaw_rate[2]) > 1e-4;
         if (!has_command) {
+            // Плавное возвращение к default_stance
             Eigen::MatrixXd result = default_stance_;
             result.row(2).setConstant(cmd.robot_height);
-            return result;
+            constexpr double alpha = 0.1;
+            return state.foot_locations * (1.0 - alpha) + result * alpha;
         }
 
         Eigen::VectorXi contacts = crawl_gait_->contacts(state.ticks);
+        int phase_idx = crawl_gait_->phase_index(state.ticks);
         Eigen::MatrixXd new_foot_locations = Eigen::MatrixXd::Zero(3, 4);
 
         for (int leg = 0; leg < 4; ++leg) {
             if (contacts(leg) == 1) {
-                Eigen::Vector3d foot_loc = state.foot_locations.col(leg);
-                double step_dist_x = cmd.velocity[0] * (double)crawl_gait_->phase_length() / crawl_gait_->swing_ticks();
-                double step_dist_y = cmd.velocity[1] * (double)crawl_gait_->phase_length() / crawl_gait_->swing_ticks();
-                Eigen::Vector3d delta;
-                delta.x() = -(step_dist_x / 4.0) / (0.02 * crawl_gait_->stance_ticks()) * 0.02;
-                delta.y() = -(step_dist_y / 4.0) / (0.02 * crawl_gait_->stance_ticks()) * 0.02;
-                delta.z() = 0.0;
-                new_foot_locations.col(leg) = foot_loc + delta;
+                // Stance — CrawlStanceController с move_sideways
+                // Python: move_sideways = (phase_index in (0,4)), move_left = (phase_index == 0)
+                bool move_sideways = (phase_idx == 0 || phase_idx == 4);
+                bool move_left = (phase_idx == 0);
+                new_foot_locations.col(leg) = crawl_gait_->stance().next_foot_location(
+                    leg, state.foot_locations,
+                    Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]},
+                    cmd.robot_height, crawl_gait_->is_first_cycle(), move_sideways, move_left);
             } else {
+                // Swing — используем CRAWL swing controller (было: trot_gait_->swing_controller())
                 int sub_ticks = crawl_gait_->subphase_ticks(state.ticks);
                 double swing_prop = static_cast<double>(sub_ticks) / crawl_gait_->swing_ticks();
-                new_foot_locations.col(leg) = trot_gait_->swing_controller().next_foot_location(
+
+                // Python: shifted_left = (phase_index in (1,3))
+                bool shifted_left = (phase_idx == 1 || phase_idx == 3);
+                (void)shifted_left;  // CrawlSwing пока не использует (TODO в crawl_gait step)
+
+                new_foot_locations.col(leg) = crawl_gait_->swing().next_foot_location(
                     swing_prop, leg, state.foot_locations,
-                    Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]}, cmd.robot_height);
+                    Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]},
+                    cmd.robot_height);
             }
         }
 
@@ -307,14 +342,8 @@ private:
     }
 
     Eigen::MatrixXd step_rest(State& state, const Command& cmd) {
-        state.ticks++;  // Инкрементируем ticks как в trot
-        Eigen::MatrixXd result = default_stance_;
-        result.row(2).setConstant(cmd.robot_height);
-        // DEBUG: каждые 60 тиков
-        if (state.ticks % 60 == 0) {
-            RCLCPP_INFO(get_logger(), "[DEBUG] REST: Z=%.3f, ticks=%d", cmd.robot_height, state.ticks);
-        }
-        return result;
+        state.ticks++;
+        return rest_ctrl_->step(state, cmd);
     }
 
     void publish_foot_contacts() {
