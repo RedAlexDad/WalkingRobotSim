@@ -5,6 +5,7 @@
 #include <geometry_msgs/msg/twist.hpp>
 #include <quadropted_msgs/msg/robot_velocity.hpp>
 #include <quadropted_msgs/msg/robot_mode_command.hpp>
+#include <quadropted_msgs/srv/robot_behavior_command.hpp>
 
 #include "quadropted_controller_cpp/kinematics/inverse_kinematics.hpp"
 #include "quadropted_controller_cpp/states/state_command.hpp"
@@ -116,6 +117,51 @@ public:
 
         RCLCPP_INFO(get_logger(), "Robot Controller Node (C++) started at %d Hz", rate_);
         RCLCPP_INFO(get_logger(), "Startup grace period: 2 seconds (waiting for robot to land)");
+
+        // Behavior service (sit/up/walk)
+        behavior_srv_ = create_service<quadropted_msgs::srv::RobotBehaviorCommand>(
+            "robot_behavior_command",
+            [this](const std::shared_ptr<quadropted_msgs::srv::RobotBehaviorCommand::Request> request,
+                   std::shared_ptr<quadropted_msgs::srv::RobotBehaviorCommand::Response> response) {
+                std::string cmd = request->command;
+                std::transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
+                RCLCPP_INFO(get_logger(), "Received behavior command: %s", cmd.c_str());
+
+                if (cmd == "sit") {
+                    command_.stand_event = true;
+                    command_.rest_event = false;
+                    command_.trot_event = false;
+                    command_.crawl_event = false;
+                    change_controller();
+                    controller_change_needed_ = true;
+                    state_.body_local_position[2] = -0.15;
+                    response->success = true;
+                    response->message = "Robot sat down.";
+                } else if (cmd == "up") {
+                    command_.rest_event = true;
+                    command_.stand_event = false;
+                    command_.trot_event = false;
+                    command_.crawl_event = false;
+                    change_controller();
+                    controller_change_needed_ = true;
+                    state_.body_local_position[2] = 0.0;
+                    response->success = true;
+                    response->message = "Robot stood up.";
+                } else if (cmd == "walk") {
+                    command_.rest_event = true;
+                    command_.trot_event = true;
+                    command_.stand_event = false;
+                    command_.crawl_event = false;
+                    change_controller();
+                    controller_change_needed_ = true;
+                    state_.body_local_position[2] = 0.0;
+                    response->success = true;
+                    response->message = "Robot started walking.";
+                } else {
+                    response->success = false;
+                    response->message = "Unknown command: " + request->command;
+                }
+            });
     }
 
 private:
@@ -350,6 +396,7 @@ private:
     rclcpp::Subscription<quadropted_msgs::msg::RobotVelocity>::SharedPtr velocity_sub_;
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
     rclcpp::Subscription<quadropted_msgs::msg::RobotModeCommand>::SharedPtr mode_sub_;
+    rclcpp::Service<quadropted_msgs::srv::RobotBehaviorCommand>::SharedPtr behavior_srv_;
     rclcpp::TimerBase::SharedPtr timer_;
 };
 
