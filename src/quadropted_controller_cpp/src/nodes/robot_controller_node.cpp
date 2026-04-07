@@ -235,9 +235,12 @@ private:
                            std::abs(cmd.velocity[1]) > 1e-4 ||
                            std::abs(cmd.yaw_rate[2]) > 1e-4;
         if (!has_command) {
+            // Плавное возвращение к default_stance (как в Python autoRest)
             Eigen::MatrixXd result = default_stance_;
             result.row(2).setConstant(cmd.robot_height);
-            return result;
+            // Lerp: 90% текущая позиция + 10% к целевой = плавный переход за ~20 шагов
+            constexpr double alpha = 0.1;
+            return state.foot_locations * (1.0 - alpha) + result * alpha;
         }
 
         // Use TrotGaitController's step method for unified stance/swing logic
@@ -284,9 +287,11 @@ private:
                            std::abs(cmd.velocity[1]) > 1e-4 ||
                            std::abs(cmd.yaw_rate[2]) > 1e-4;
         if (!has_command) {
+            // Плавное возвращение к default_stance
             Eigen::MatrixXd result = default_stance_;
             result.row(2).setConstant(cmd.robot_height);
-            return result;
+            constexpr double alpha = 0.1;
+            return state.foot_locations * (1.0 - alpha) + result * alpha;
         }
 
         Eigen::VectorXi contacts = crawl_gait_->contacts(state.ticks);
