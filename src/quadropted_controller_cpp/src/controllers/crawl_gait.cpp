@@ -13,9 +13,12 @@ CrawlGaitController::CrawlGaitController(double stance_time, double swing_time,
                      default_stance),
       swing_(swing_ticks(), time_step, 0.14, default_stance) {}
 
+void CrawlGaitController::reset() {
+    first_cycle_ = true;
+}
+
 Eigen::MatrixXd CrawlGaitController::step(int ticks, const Eigen::MatrixXd& current,
-                                           const Eigen::Vector3d& cmd_vel) const
-{
+                                           const Eigen::Vector3d& cmd_vel) const {
     Eigen::MatrixXd new_foot_locations(3, 4);
 
     Eigen::VectorXi contact_modes = contacts(ticks);
@@ -30,8 +33,13 @@ Eigen::MatrixXd CrawlGaitController::step(int ticks, const Eigen::MatrixXd& curr
             double swing_prop = static_cast<double>(subphase_ticks(ticks)) /
                                 static_cast<double>(swing_ticks());
             new_foot_locations.col(leg_index) =
-                swing_.next_foot_location(swing_prop, leg_index, current, cmd_vel);
+                swing_.next_foot_location(swing_prop, leg_index, current, cmd_vel, first_cycle_);
         }
+    }
+
+    // Сброс first_cycle_ после первого полного цикла
+    if (ticks >= phase_length()) {
+        first_cycle_ = false;
     }
 
     return new_foot_locations;

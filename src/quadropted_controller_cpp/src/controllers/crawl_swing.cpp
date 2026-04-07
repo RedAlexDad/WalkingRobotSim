@@ -33,11 +33,17 @@ double CrawlSwingController::swing_height(double swing_prop) const {
 
 Eigen::Vector3d CrawlSwingController::next_foot_location(
     double swing_prop, int leg_index, const Eigen::MatrixXd& current,
-    const Eigen::Vector3d& cmd_vel) const
+    const Eigen::Vector3d& cmd_vel, bool first_cycle) const
 {
     assert(swing_prop >= 0.0 && swing_prop <= 1.0);
 
-    Eigen::Vector3d foot_location = current.col(leg_index);
+    Eigen::Vector3d foot_location;
+    if (first_cycle) {
+        foot_location = default_stance_.col(leg_index);
+    } else {
+        foot_location = current.col(leg_index);
+    }
+
     double swing_h = swing_height(swing_prop);
     Eigen::Vector3d touchdown = raibert_touchdown_location(leg_index, cmd_vel);
 

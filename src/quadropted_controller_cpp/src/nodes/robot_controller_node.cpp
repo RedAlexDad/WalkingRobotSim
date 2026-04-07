@@ -159,7 +159,7 @@ private:
             state_.behavior_state = BehaviorState::CRAWL;
             use_crawl_ = true;
             use_trot_ = false;
-            // crawl_gait_->reset_ticks();  // method not available
+            crawl_gait_->reset();
             state_.ticks = 0;
             command_.crawl_event = false;
         }
