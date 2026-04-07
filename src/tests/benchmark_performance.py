@@ -50,6 +50,13 @@ def benchmark_old():
     t = timeit.timeit(lambda: Trans_old_mod.rotxyz(0.1, -0.05, 0.02), number=ITERATIONS)
     results["rotxyz"] = t / ITERATIONS * 1000
 
+    def ht_old_test():
+        m = Trans_old_mod.homog_transform(0.1, 0.2, 0.3, 0.4, 0.5, 0.6)
+        return Trans_old_mod.homog_transform_inverse(m.copy())
+
+    t = timeit.timeit(ht_old_test, number=ITERATIONS)
+    results["homog_transform_inverse"] = t / ITERATIONS * 1000
+
     t = timeit.timeit(
         lambda: fk_old.forward_kinematics_all_legs(angles), number=ITERATIONS
     )
