@@ -286,54 +286,71 @@ phase_ticks: [2, 9, 2, 9]
 
 ### Результаты бенчмарка (10000 итераций, Release сборка)
 
+**Дата: 2026-04-07**
+
+**Метод:** Python скрипт запускает C++ бенчмарк, получает реальные данные и строит сводную таблицу.
+
 | Функция | Python (μs) | C++ (μs) | Разница |
 |---------|-------------|----------|---------|
 | **GaitController** | | | |
-| contacts() | 26.05 | 0.01 | **Python в 2605x медленнее** |
-| subphase_ticks() | 25.81 | 0.003 | **Python в 7591x медленнее** |
+| contacts() | 25.99 | 0.013 | **Python в 2015x медленнее** |
+| subphase_ticks() | 25.68 | 0.004 | **Python в 7339x медленнее** |
 | **TrotSwingController** | | | |
-| swing_height() | 0.18 | 0.002 | Python в **90x медленнее** |
-| next_foot_location() | 19.08 | 0.03 | Python в **636x медленнее** |
-| raibert_touchdown() | 10.98 | 0.02 | Python в **549x медленнее** |
+| swing_height() | 0.19 | 0.002 | Python в **90x медленнее** |
+| next_foot_location() | 19.35 | 0.027 | Python в **725x медленнее** |
+| raibert_touchdown() | 11.04 | 0.018 | Python в **631x медленнее** |
 | **TrotStanceController** | | | |
-| position_delta() | 12.80 | 0.005 | Python в **2560x медленнее** |
-| next_foot_location() | 14.77 | 0.05 | Python в **295x медленнее** |
+| position_delta() | 12.91 | 0.004 | **Python в 3688x медленнее** |
+| next_foot_location() | 14.86 | 0.034 | Python в **444x медленнее** |
 | **StandController** | | | |
-| run() | N/A | 0.02 | (требует ROS) |
+| run() | N/A | 0.018 | (требует ROS) |
 | **ForwardKinematics** | | | |
-| forward_kinematics_per_leg() | 102.56 | N/A | одна нога |
-| forward_kinematics_all_legs() | 408.81 | 1.13 | Python в **362x медленнее** |
+| forward_kinematics_per_leg() | 101.51 | N/A | - |
+| forward_kinematics_all_legs() | 408.96 | 1.069 | Python в **383x медленнее** |
 | **RestController** | | | |
-| step() | 0.63 | 0.01 | Python в **63x медленнее** |
+| step() | 0.66 | 0.015 | Python в **44x медленнее** |
 | **InverseKinematics** | | | |
-| inverse_kinematics() | 131.19 | 0.69 | Python в **190x медленнее** |
+| inverse_kinematics() | 132.70 | 0.666 | Python в **199x медленнее** |
 | **PIDController** | | | |
-| run() | 8.64 | 0.002 | Python в **4320x медленнее** |
+| run() | 8.76 | 0.002 | **Python в 3810x медленнее** |
 | **Trot Step (full cycle)** | | | |
-| step (all 4 legs) | 95.00 | 0.69 | Python в **138x медленнее** |
+| step (all 4 legs) | 95.90 | 0.171 | Python в **561x медленнее** |
+
+### Команды для запуска
+
+```bash
+# Сводная таблица Python vs C++ (запускает оба бенчмарка)
+make benchmark
+
+# Только Python бенчмарк
+make benchmark-python
+
+# Только C++ бенчмарк
+make benchmark-cpp
+```
 
 ### Анализ расхождений производительности
 
-1. **GaitController (2600x-7600x)**: Python значительно медленнее из-за numpy overhead и Python GIL. C++ просто вычисляет индекс массива.
+1. **GaitController (2000x-7400x)**: Python значительно медленнее из-за numpy overhead и Python GIL. C++ просто вычисляет индекс массива.
 
-2. **TrotSwingController (90x-600x)**: Большая разница из-за numpy broadcast операций и динамической типизации. Даже простая функция swing_height() медленнее в 90x.
+2. **TrotSwingController (90x-630x)**: Большая разница из-за numpy broadcast операций и динамической типизации. Даже простая функция swing_height() медленнее в 90x.
 
-3. **TrotStanceController (300x-2500x)**: Аналогично - numpy операции vs Eigen vectorized.
+3. **TrotStanceController (400x-3700x)**: Аналогично - numpy операции vs Eigen vectorized.
 
-4. **ForwardKinematics (362x)**: Python использует numpy trigonometric functions vs Eigen optimized.
+4. **ForwardKinematics (383x)**: Python использует numpy trigonometric functions vs Eigen optimized.
 
-5. **InverseKinematics (190x)**: Основная работа - тригонометрия, но Python имеет overhead от numpy.
+5. **InverseKinematics (199x)**: Основная работа - тригонометрия, но Python имеет overhead от numpy.
 
-6. **PIDController (4300x)**: Неожиданно большое различие - возможно из-за Python function call overhead.
+6. **PIDController (3810x)**: Неожиданно большое различие - возможно из-за Python function call overhead.
 
-7. **Trot Step (138x)**: Суммарный эффект всех операций.
+7. **Trot Step (561x)**: Суммарный эффект всех операций.
 
 ### Выводы
 
 Python значительно медленнее C++ для всех операций контроллера:
-- **Минимальная разница**: swing_height() - 90x (все ещё значительно)
-- **Максимальная разница**: subphase_ticks() - 7591x
-- **Средняя разница**: ~500-1000x для большинства операций
+- **Минимальная разница**: RestController.step() - 44x (все ещё значительно)
+- **Максимальная разница**: subphase_ticks() - 7339x
+- **Средняя разница**: ~200-500x для большинства операций
 
 Причины:
 1. Python GIL (Global Interpreter Lock)
@@ -341,6 +358,12 @@ Python значительно медленнее C++ для всех опера�
 3. Динамическая типизация Python
 4. Eigen оптимизации (vectorization, cache locality)
 5. Function call overhead в Python
+
+### Технические детали реализации
+
+**C++ бенчмарк:** Выводит JSON с результатами замеров между маркерами `=== BENCHMARK_JSON_START ===` и `=== BENCHMARK_JSON_END ===`.
+
+**Python бенчмарк:** Запускает C++ бенчмарк как подпроцесс, парсит JSON вывод и объединяет с результатами Python.
 
 ---
 
