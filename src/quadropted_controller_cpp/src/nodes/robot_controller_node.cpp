@@ -170,6 +170,7 @@ public:
 private:
     void change_controller() {
         if (command_.trot_event && command_.rest_event) {
+            // REST first, then TROT
             state_.behavior_state = BehaviorState::REST;
             rest_ctrl_->pid().reset(this->now().seconds());
             command_.rest_event = false;
@@ -179,6 +180,7 @@ private:
             use_trot_ = true;
             trot_gait_->pid_controller().reset(this->now().seconds());
             state_.ticks = 0;
+            state_.body_local_position[2] = 0.0;  // поднять корпус
             command_.trot_event = false;
             RCLCPP_INFO(get_logger(), "Switched to TROT controller");
         } else if (command_.trot_event) {
@@ -187,6 +189,7 @@ private:
                 use_trot_ = true;
                 trot_gait_->pid_controller().reset(this->now().seconds());
                 state_.ticks = 0;
+                state_.body_local_position[2] = 0.0;  // поднять корпус
             }
             command_.trot_event = false;
             RCLCPP_INFO(get_logger(), "Switched to TROT controller");
@@ -195,8 +198,9 @@ private:
             use_crawl_ = false;
             use_trot_ = false;
             rest_ctrl_->pid().reset(this->now().seconds());
+            state_.body_local_position[2] = -0.15;  // лечь на землю
             command_.rest_event = false;
-            RCLCPP_INFO(get_logger(), "Switched to REST controller");
+            RCLCPP_INFO(get_logger(), "Switched to REST controller — lying down");
         } else if (command_.stand_event) {
             if (state_.behavior_state != BehaviorState::STAND) {
                 state_.behavior_state = BehaviorState::STAND;
@@ -210,6 +214,7 @@ private:
             use_trot_ = false;
             crawl_gait_->reset();
             state_.ticks = 0;
+            state_.body_local_position[2] = 0.0;  // поднять корпус из REST
             command_.crawl_event = false;
         }
     }
