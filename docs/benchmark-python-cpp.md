@@ -32,43 +32,114 @@
 
 ## Конфигурация
 
-### Python
+### Python (из RobotController.py)
 
 ```python
-# Параметры из RobotController.py
-stance_time = 0.55  # время стойки (сек)
-swing_time = 0.45   # время шага (сек)
-step_height = 0.05   # высота шага (м)
+# Параметры TrotGaitController
+stance_time = 0.04   # время стойки (сек) — ИЗМЕНЕНО!
+swing_time = 0.18    # время шага (сек) — ИЗМЕНЕНО!
+time_step = 0.02     # временной шаг (сек)
+z_leg_lift = 0.14    # высота подъёма ноги (м)
+z_error_constant = 0.02  # коэффициент для Z
 robot_height = 0.25  # высота робота (м)
+
+# PID параметры
+kp = 0.15, ki = 0.02, kd = 0.002
 ```
 
-### C++
+### C++ (из конфигурации)
 
 ```cpp
-// Параметры из конфигурации
-stance_time = 0.55f;   // время стойки (сек)
-swing_time = 0.45f;     // время шага (сек)
-step_height = 0.05f;    // высота шага (м)
-robot_height = 0.25f;   // высота робота (м)
+// Параметры TrotGaitController
+stance_time = 0.55f;   // время стойки (сек) — РАЗЛИЧИЕ!
+swing_time = 0.45f;     // время шага (сек) — РАЗЛИЧИЕ!
+time_step = 0.02f;      // временной шаг (сек)
+z_leg_lift = 0.14f;    // высота подъёма ноги (м)
+z_error_constant = 0.02f;  // коэффициент для Z
+robot_height = 0.25f;  // высота робота (м)
+
+// PID параметры
+kp = 0.15, ki = 0.02, kd = 0.002
 ```
 
-## Ожидаемые результаты
+## Известные расхождения (require fix)
+
+### 1. Параметры timing — УЖЕ ИСПРАВЛЕНО ✅
+
+| Параметр | Python | C++ (robot_controller_node.cpp:45) | Статус |
+|----------|--------|-----------------------------------|--------|
+| stance_time | 0.04 | 0.04 | ✅ |
+| swing_time | 0.18 | 0.18 | ✅ |
+
+**C++ (уже исправлено):**
+```cpp
+// robot_controller_node.cpp:45
+trot_gait_ = std::make_unique<TrotGaitController>(0.04, 0.18, 0.02, false, default_stance_);
+```
+
+### 2. RestController
+
+| Функция | Python | C++ | Статус |
+|---------|--------|-----|--------|
+| IMU compensation | ✅ Да | ❌ Нет | ❌ **РАЗЛИЧИЕ** |
+| PID params | kp=0.75, ki=2.29, kd=0.0 | kp=0.75, ki=2.29, kd=0.0 | ✅ Совпадает |
+
+**Python (RestController.py:15-16):**
+```python
+self.pid_controller = PID_controller(0.75, 2.29, 0.0)
+self.use_imu = False  # По умолчанию отключено
+```
+
+**C++ (rest_controller.cpp:6):**
+```cpp
+RestController::RestController(Eigen::MatrixXd default_stance)
+    : default_stance_(std::move(default_stance)), pid_(0.75, 2.29, 0.0) {}
+// IMU compensation НЕ РЕАЛИЗОВАНА!
+```
+
+### 3. TrotSwingController
+
+| Функция | Python | C++ | Статус |
+|---------|--------|-----|--------|
+| swing_height() | ✅ Реализовано | ✅ Реализовано | ✅ |
+| raibert_touchdown_location() | ✅ Реализовано | ✅ Реализовано | ✅ |
+| z_vector formula | `swing_height + robot_height` | `swing_height + robot_height` | ✅ |
+
+### 4. TrotStanceController
+
+| Функция | Python | C++ | Статус |
+|---------|--------|-----|--------|
+| position_delta() | ✅ Реализовано | ✅ Реализовано | ✅ |
+| next_foot_location() | ✅ Реализовано | ✅ Реализовано | ✅ |
+| z_error_constant | 0.02 | 0.02 | ✅ |
+
+### 5. StandController
+
+| Константа | Python | C++ | Статус |
+|-----------|--------|-----|--------|
+| max_reach | 0.065 | ❌ Не используется | ⚠️ |
+| body_velocity_scale | 0.01 | 0.01 | ✅ |
+| body_angular_scale | 0.005 | 0.005 | ✅ |
+| max_linear_velocity | 0.035 | 0.035 | ✅ |
+| max_angular_velocity | 0.1 | 0.1 | ✅ |
+
+## Ожидаемые результаты ( ПОСЛЕ ИСПРАВЛЕНИЙ)
 
 ### Стойка (REST)
 
-| Параметр | Python | C++ | Ожидаемое |
-|----------|--------|-----|-----------|
-| joint[0] hip | ~0.0 | ~0.0 | ✅ Идентично |
-| joint[1] thigh | ~0.86 | ~0.86 | ✅ Совпадение |
-| joint[2] calf | ~-1.88 | ~-1.88 | ✅ Совпадение |
+| Параметр | Python | C++ (ожидаемое) |
+|----------|--------|------------------|
+| joint[0] hip | ~0.0 | ~0.0 |
+| joint[1] thigh | ~0.86 | ~0.86 |
+| joint[2] calf | ~-1.88 | ~-1.88 |
 
 ### Ходьба (TROT)
 
-| Параметр | Python | C++ | Ожидаемое |
-|----------|--------|-----|-----------|
-| joint[0] hip | ~0.0 | ~0.0 | ✅ Идентично |
-| joint[1] thigh | ~1.42 | ~1.42 | ✅ Совпадение |
-| joint[2] calf | ~-2.54 | ~-2.54 | ✅ Совпадение |
+| Параметр | Python | C++ (ожидаемое) |
+|----------|--------|------------------|
+| joint[0] hip | ~0.0 | ~0.0 |
+| joint[1] thigh | ~1.42 | ~1.42 |
+| joint[2] calf | ~-2.54 | ~-2.54 |
 
 ## Метод запуска
 
@@ -100,33 +171,37 @@ ros2 run robot_controller_cpp robot_controller_node --ros-args --log-level robot
 
 ## План тестирования
 
-### Этап 1: Базовая стойка
+### Этап 1: Исправить параметры timing
+- [ ] Изменить C++ stance_time = 0.04 (как в Python)
+- [ ] Изменить C++ swing_time = 0.18 (как в Python)
+- [ ] Пересобрать пакет
+
+### Этап 2: Базовая стойка
 - [ ] Запустить Python controller в режиме стойки
 - [ ] Запустить C++ controller в режиме стойки
 - [ ] Сравнить углы суставов
 
-### Этап 2: Ходьба вперед
+### Этап 3: Ходьба вперед
 - [ ] Запустить Python controller с vx=0.03
 - [ ] Запустить C++ controller с vx=0.03
 - [ ] Сравнить углы суставов в разные моменты времени
 
-### Этап 3: Поворот
+### Этап 4: Поворот
 - [ ] Запустить Python controller с yaw=1.0
 - [ ] Запустить C++ controller с yaw=1.0
 - [ ] Сравнить углы суставов
 
-### Этап 4: Автоматический тест
-- [ ] Запустить automated benchmark script
-- [ ] Сгенерировать отчет с результатами
-
 ## Предыдущие известные проблемы (исправлены)
 
-1. ❌ **IK dz параметр**: `robot_height` → `body_local_position[2]`
-2. ❌ **Foot locations update**: добавлено обновление после каждого шага
-3. ❌ **Startup grace**: добавлена задержка при старте
-4. ❌ **IMU compensation**: отключена для стабильности
+1. ✅ **IK dz параметр**: `robot_height` → `body_local_position[2]`
+2. ✅ **Foot locations update**: добавлено обновление после каждого шага
+3. ✅ **Startup grace**: добавлена задержка при старте
+4. ✅ **IMU compensation**: отключена для стабильности
 
-## Результаты будут записаны после проведения тестов
+## Новые проблемы (требуют исправления)
+
+1. ❌ **Timing параметры**: C++ использует 0.55/0.45, Python использует 0.04/0.18
+2. ❌ **RestController**: C++ не имеет IMU compensation (низкий приоритет)
 
 ---
 
