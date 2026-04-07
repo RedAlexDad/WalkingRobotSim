@@ -85,7 +85,7 @@ protected:
                           -dy,  dy, -dy,  dy,
                             0,   0,   0,   0;
         swing = std::make_unique<quadropted::TrotSwingController>(
-            9, 0.02, 0.14, default_stance);
+            9, 0.02, 0.14, default_stance, 22, 2);
     }
 };
 
