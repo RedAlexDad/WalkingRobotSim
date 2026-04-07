@@ -281,15 +281,14 @@ private:
 
         for (int leg = 0; leg < 4; ++leg) {
             if (contacts(leg) == 1) {
-                // Stance — inline дельта (TODO: заменить на CrawlStanceController с move_sideways)
-                Eigen::Vector3d foot_loc = state.foot_locations.col(leg);
-                double step_dist_x = cmd.velocity[0] * (double)crawl_gait_->phase_length() / crawl_gait_->swing_ticks();
-                double step_dist_y = cmd.velocity[1] * (double)crawl_gait_->phase_length() / crawl_gait_->swing_ticks();
-                Eigen::Vector3d delta;
-                delta.x() = -(step_dist_x / 4.0) / (0.02 * crawl_gait_->stance_ticks()) * 0.02;
-                delta.y() = -(step_dist_y / 4.0) / (0.02 * crawl_gait_->stance_ticks()) * 0.02;
-                delta.z() = 0.0;
-                new_foot_locations.col(leg) = foot_loc + delta;
+                // Stance — CrawlStanceController с move_sideways
+                // Python: move_sideways = (phase_index in (0,4)), move_left = (phase_index == 0)
+                bool move_sideways = (phase_idx == 0 || phase_idx == 4);
+                bool move_left = (phase_idx == 0);
+                new_foot_locations.col(leg) = crawl_gait_->stance().next_foot_location(
+                    leg, state.foot_locations,
+                    Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]},
+                    cmd.robot_height, crawl_gait_->is_first_cycle(), move_sideways, move_left);
             } else {
                 // Swing — используем CRAWL swing controller (было: trot_gait_->swing_controller())
                 int sub_ticks = crawl_gait_->subphase_ticks(state.ticks);
