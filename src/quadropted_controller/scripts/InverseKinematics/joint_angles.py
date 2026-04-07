@@ -43,8 +43,14 @@ def compute_all_joint_angles(positions, l1, l2, l3, l4):
     :param positions: Массив локальных позиций
         - (4, 3) для старого формата (строки = ноги)
         - (3, 4) для нового формата (столбцы = ноги)
+        - list: будет преобразован в numpy array
     :return: Список из 12 углов (3 на ногу)
     """
+    import numpy as np
+
+    if isinstance(positions, list):
+        positions = np.array(positions)
+
     is_new_format = positions.shape == (3, 4)
 
     angles = []
