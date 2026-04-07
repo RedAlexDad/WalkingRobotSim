@@ -23,11 +23,12 @@ public:
         declare_parameter("verbose", false);
         declare_parameter("publish_rate", 50);
         declare_parameter("has_imu_heading", true);
-        declare_parameter("enable_odom_tf", true);
+        declare_parameter("enable_odom_tf", false);
         declare_parameter("base_frame_id", "base");
         declare_parameter("odom_frame_id", "odom");
         declare_parameter("is_gazebo", true);
         declare_parameter("filter_window_size", 14);
+        declare_parameter("imu_topic", "imu_plugin/out");
 
         verbose_          = get_parameter("verbose").as_bool();
         publish_rate_     = get_parameter("publish_rate").as_int();
@@ -37,6 +38,7 @@ public:
         odom_frame_id_    = get_parameter("odom_frame_id").as_string();
         is_gazebo_        = get_parameter("is_gazebo").as_bool();
         int filter_window = static_cast<int>(get_parameter("filter_window_size").as_int());
+        std::string imu_topic = get_parameter("imu_topic").as_string();
 
         // FK solver
         double body_length = 0.3762, body_width = 0.0935;
@@ -60,7 +62,7 @@ public:
         // Subscriptions
         if (has_imu_heading_) {
             imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
-                "imu_plugin/out", 10,
+                imu_topic, 10,
                 [this](const sensor_msgs::msg::Imu::SharedPtr msg) { imu_callback(msg); });
         }
 

@@ -10,7 +10,7 @@ def generate_launch_description():
                 executable="odometry_node",
                 name="dog_odometry_cpp",
                 namespace="robot1",
-                parameters=[{"verbose": False, "publish_rate": 50, "is_gazebo": True}],
+                parameters=[{"verbose": False, "publish_rate": 50, "is_gazebo": True, "enable_odom_tf": True}],
                 remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
             ),
             Node(

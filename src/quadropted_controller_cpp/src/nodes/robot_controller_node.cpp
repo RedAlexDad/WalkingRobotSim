@@ -5,6 +5,7 @@
 #include <geometry_msgs/msg/twist.hpp>
 #include <quadropted_msgs/msg/robot_velocity.hpp>
 #include <quadropted_msgs/msg/robot_mode_command.hpp>
+#include <quadropted_msgs/msg/robot_foot_contact.hpp>
 #include <quadropted_msgs/srv/robot_behavior_command.hpp>
 
 #include "quadropted_controller_cpp/kinematics/inverse_kinematics.hpp"
@@ -59,6 +60,8 @@ public:
         // Publishers
         joint_pub_ = create_publisher<std_msgs::msg::Float64MultiArray>(
             "joint_group_controller/commands", 10);
+        foot_contact_pub_ = create_publisher<quadropted_msgs::msg::RobotFootContact>(
+            "foot_contact", rclcpp::SensorDataQoS());
 
         // Subscriptions
         velocity_sub_ = create_subscription<quadropted_msgs::msg::RobotVelocity>(
@@ -314,6 +317,23 @@ private:
         return result;
     }
 
+    void publish_foot_contacts() {
+        auto msg = std::make_unique<quadropted_msgs::msg::RobotFootContact>();
+        if (state_.behavior_state == BehaviorState::REST) {
+            // В режиме отдыха все лапы на земле (как в Python)
+            msg->contacts = {true, true, true, true};
+        } else if (use_trot_) {
+            Eigen::VectorXi contacts = trot_gait_->contacts(state_.ticks);
+            msg->contacts = {contacts(0) != 0, contacts(1) != 0, contacts(2) != 0, contacts(3) != 0};
+        } else if (use_crawl_) {
+            Eigen::VectorXi contacts = crawl_gait_->contacts(state_.ticks);
+            msg->contacts = {contacts(0) != 0, contacts(1) != 0, contacts(2) != 0, contacts(3) != 0};
+        } else {
+            msg->contacts = {true, true, true, true};
+        }
+        foot_contact_pub_->publish(std::move(msg));
+    }
+
     void control_loop() {
         // Grace period при старте — ждём пока робот приземлится
         if (startup_grace_ > 0) {
@@ -341,6 +361,9 @@ private:
             change_controller();
             controller_change_needed_ = false;
         }
+
+        // Publish foot contacts for odometry
+        publish_foot_contacts();
 
         // IK debug — проверяем размеры
         if (state_.ticks < 5) {
@@ -393,6 +416,7 @@ private:
     std::unique_ptr<InverseKinematics> ik_;
 
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr joint_pub_;
+    rclcpp::Publisher<quadropted_msgs::msg::RobotFootContact>::SharedPtr foot_contact_pub_;
     rclcpp::Subscription<quadropted_msgs::msg::RobotVelocity>::SharedPtr velocity_sub_;
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
     rclcpp::Subscription<quadropted_msgs::msg::RobotModeCommand>::SharedPtr mode_sub_;

@@ -37,8 +37,8 @@ void update_odometry(OdometryState& state, double dt, double contact_count_coeff
     double avg_delta_x, avg_delta_y;
 
     if (contact_sum > 0) {
-        avg_delta_x = delta_x_total / actual_contacts;
-        avg_delta_y = delta_y_total / actual_contacts;
+        avg_delta_x = delta_x_total / contact_sum;
+        avg_delta_y = delta_y_total / contact_sum;
     } else {
         avg_delta_x = state.linear_velocity_x * dt;
         avg_delta_y = state.linear_velocity_y * dt;
