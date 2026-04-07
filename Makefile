@@ -56,7 +56,7 @@ endef
 # ОСНОВНЫЕ КОМАНДЫ
 # ════════════════════════════════════════════════════════════
 
-.PHONY: deploy build up up-bg down restart clean status logs shell
+.PHONY: deploy build up up-bg down restart clean status logs shell benchmark
 
 ## Сборка и запуск контейнера (рекомендуется)
 deploy: build up
@@ -214,7 +214,7 @@ shell:
 # СПЕЦИАЛЬНЫЕ КОМАНДЫ
 # ════════════════════════════════════════════════════════════
 
-.PHONY: gazebo gazebo-py teleop exec kill-ros test-aliases
+.PHONY: gazebo gazebo-py gazebo-cpp teleop exec kill-ros test-aliases
 
 ## Запуск Gazebo симуляции (C++ контроллер)
 gazebo:
@@ -237,6 +237,18 @@ gazebo-py:
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
 		ros2 launch gazebo_sim launch_python.launch.py use_sim_time:=true gui:=true"
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
+	@$(MAKE) save-logs
+
+## Запуск Gazebo симуляции с C++ контроллером
+gazebo-cpp:
+	$(require-container)
+	$(check-x11)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Gazebo симуляции с C++ контроллером...${NC}\n"
+	@docker exec -it $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 launch gazebo_sim launch_cpp.launch.py use_sim_time:=true gui:=true"
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
@@ -694,6 +706,7 @@ help:
 	@printf "${BOLD}Специализированные команды:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make gazebo${NC}         Запуск Gazebo симуляции (C++ контроллер)\n"
 	@printf "  ${GREEN}${BOLD}make gazebo-py${NC}      Запуск Gazebo симуляции (Python контроллер)\n"
+	@printf "  ${GREEN}${BOLD}make gazebo-cpp${NC}     Запуск Gazebo симуляции (C++ контроллер)\n"
 	@printf "  ${GREEN}${BOLD}make teleop${NC}         Запуск управления роботом\n"
 	@printf "  ${GREEN}${BOLD}make kill-ros${NC}       Очистка всех ROS/Gazebo процессов\n"
 	@echo ""
@@ -732,6 +745,13 @@ help:
 	@printf "  ${GREEN}${BOLD}make test-container${NC}   Тестовый запуск контейнера\n"
 	@printf "  ${GREEN}${BOLD}make test-clean${NC}       Очистка после тестов\n"
 	@echo ""
+	@printf "${BOLD}Тесты корректности и производительности:${NC}\n"
+	@printf "  ${GREEN}${BOLD}make test-correctness${NC}   Сравнение old vs new (34 теста)\n"
+	@printf "  ${GREEN}${BOLD}make test-benchmark${NC}     Замер производительности\n"
+	@printf "  ${GREEN}${BOLD}make test-all${NC}           Оба теста подряд\n"
+	@printf "  ${GREEN}${BOLD}make test-cross${NC}        Кросс-языковой тест Python vs C++\n"
+	@printf "  ${GREEN}${BOLD}make bench-cpp${NC}         C++ vs Python benchmark\n"
+	@echo ""
 	@printf "${BOLD}Прочее:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make setup${NC}            Начальная настройка проекта\n"
 	@printf "  ${GREEN}${BOLD}make backup${NC}           Создание бэкапа данных\n"
@@ -743,6 +763,40 @@ help:
 	@printf "  • Gazebo Harmonic\n"
 	@printf "  • Docker + Docker Compose\n"
 	@echo ""
+
+# ════════════════════════════════════════════════════════════
+# ТЕСТЫ
+# ════════════════════════════════════════════════════════════
+
+.PHONY: test-correctness test-benchmark test-cross bench-cpp test-all
+
+## Проверка корректности — сравнение результатов old vs new (34 теста)
+test-correctness:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Тесты корректности (old vs new)...${NC}\n"
+	@cd $(PROJECT_ROOT)/src/tests/correctness && python3 run_all.py
+	@echo ""
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Тесты корректности завершены${NC}\n"
+
+## Benchmark производительности — замер времени old vs new
+test-benchmark:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Benchmark производительности...${NC}\n"
+	@cd $(PROJECT_ROOT) && python3 src/tests/benchmark_performance.py
+	@echo ""
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Benchmark завершён${NC}\n"
+
+## Полный цикл тестирования: корректность + производительность
+test-all: test-correctness test-benchmark
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Все тесты завершены${NC}\n"
+
+## Кросс-языковой тест: Python vs C++
+test-cross:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Кросс-языковой тест: Python vs C++...${NC}\n"
+	@python3 $(PROJECT_ROOT)/src/tests/test_python_vs_cpp.py
+
+## C++ vs Python benchmark — замер производительности
+bench-cpp:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}C++ vs Python Benchmark...${NC}\n"
+	@python3 $(PROJECT_ROOT)/src/tests/benchmark_cpp_vs_python.py
 
 # ════════════════════════════════════════════════════════════
 # DEFAULT TARGET

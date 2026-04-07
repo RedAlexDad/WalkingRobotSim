@@ -1,4 +1,53 @@
 {
-    "makefile.extensionOutputFolder": "./.vscode",
-    "cmake.sourceDirectory": "/home/redalexdad/GitHub/WalkingRobotSim/build/ros2_unitree_legged_msgs/ros2_unitree_legged_msgs__py"
+  // Автоматическое форматирование при сохранении
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "always"
+  },
+
+  // Настройки для Python
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "always"
+    }
+  },
+
+  // Настройки для C/C++
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+    "editor.formatOnSave": true
+  },
+  "[c]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+    "editor.formatOnSave": true
+  },
+
+  // Конфигурация форматтеров
+  "python.formatting.provider": "black",
+  "python.formatting.blackArgs": ["--line-length=120"],
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.flake8Enabled": false,
+  "python.linting.mypyEnabled": false,
+
+  // Настройки для C/C++ форматирования (clang-format)
+  "C_Cpp.clang_format_path": "clang-format",
+  "C_Cpp.clang_format_style": "file",
+  "C_Cpp.formatting": "clangFormat",
+
+  // Дополнительные настройки для ROS 2
+  "files.associations": {
+    "*.launch.py": "python",
+    "*.urdf": "xml",
+    "*.xacro": "xml",
+    "*.sdf": "xml",
+    "*.world": "xml"
+  },
+
+  // Исключения из форматирования
+  "editor.formatOnSaveMode": "file",
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000
 }

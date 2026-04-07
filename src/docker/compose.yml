@@ -112,10 +112,10 @@ services:
       ROS_DISTRO: jazzy
     # Конфигурация сборки для образа
     build:
-      # Каталог контекста сборки (родитель текущего каталога)
-      context: ..
+      # Каталог контекста сборки (корень проекта)
+      context: ../../
       # Путь к Dockerfile
-      dockerfile: docker/Dockerfile
+      dockerfile: src/docker/Dockerfile
       # Аргументы сборки
       args:
         # Базовый образ для сборки
@@ -144,7 +144,7 @@ services:
       - ../../logs/gazebo:/root/ws/logs
       # Данные Gazebo (относительно корня проекта)
       - ../../data/gazebo:/root/ws/data
-      # Именованный том для исходного кода проекта
+      # Исходный код проекта (монтируем только проект)
       - project_src:/root/ws/src/
 
     # Политика перезапуска для контейнера
@@ -182,4 +182,4 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ${PWD}/../
+      device: ../../src
