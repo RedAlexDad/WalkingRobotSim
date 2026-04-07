@@ -117,7 +117,7 @@ RestController::RestController(Eigen::MatrixXd default_stance)
 
 | Константа | Python | C++ | Статус |
 |-----------|--------|-----|--------|
-| max_reach | 0.065 | ❌ Не используется | ⚠️ |
+| max_reach | 0.065 | 0.065 (не используется) | ✅ |
 | body_velocity_scale | 0.01 | 0.01 | ✅ |
 | body_angular_scale | 0.005 | 0.005 | ✅ |
 | max_linear_velocity | 0.035 | 0.035 | ✅ |
