@@ -13,8 +13,7 @@ Eigen::Vector3d CrawlStanceController::next_foot_location(
     int leg_index, const Eigen::MatrixXd& state_foot, const Eigen::Vector3d& cmd_vel,
     double robot_height, bool first_cycle, bool move_sideways, bool move_left) const
 {
-    (void)leg_index;
-    double z = state_foot(2, 0);
+    double z = state_foot(2, leg_index);
 
     double step_dist_x = cmd_vel.x() * (static_cast<double>(phase_length_) / swing_ticks_);
     int shift_factor = first_cycle ? 1 : 2;
