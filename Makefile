@@ -803,17 +803,12 @@ bench-cpp:
 ## Запуск полного бенчмарка Python vs C++ с таблицей результатов
 benchmark:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Python бенчмарка...${NC}\n"
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Python бенчмарка (включает сводную таблицу)...${NC}\n"
 	@docker exec $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
 		source /root/ws/install/setup.bash && \
 		cd /root/ws/src/quadropted_controller/scripts/benchmark && \
-		python3 benchmark.py 2>&1 | tail -50"
-	@echo ""
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск C++ бенчмарка...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
-		/root/ws/build/quadropted_controller_cpp/benchmark 2>&1 | tail -30"
+		python3 benchmark.py 2>&1 | grep -A 100 'СВОДНАЯ ТАБЛИЦА'"
 	@echo ""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Бенчмарк завершён${NC}\n"
 	@printf "${YELLOW}${BOLD}[INFO]${NC} ${CYAN}Полный вывод смотрите в документации:${NC}\n"
