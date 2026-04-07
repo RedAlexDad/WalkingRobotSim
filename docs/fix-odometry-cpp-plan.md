@@ -164,12 +164,72 @@ declare_parameter("enable_odom_tf", false);  // было: true
 
 ---
 
+### ❌ Ошибка #5: Подписка на `robot_velocity` отсутствовала в C++
+
+**Файл:** `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp`
+
+**Симптом:**
+- Python odometry_node имеет подписку на `robot_velocity` → обновляет `linear_velocity_x/y`
+- C++ odometry_node **НЕ подписывался** на `robot_velocity`
+- `odom_state_->linear_velocity_x/y` всегда `0.0`
+
+**Зачем нужна линейная скорость — два режима одометрии:**
+
+В `odometry_update.cpp` есть два режима вычисления смещения:
+
+```cpp
+if (contact_sum > 0) {
+    // РЕЖИМ 1: Контактный — по движению лап на земле
+    avg_delta_x = delta_x_total / contact_sum;
+    avg_delta_y = delta_y_total / contact_sum;
+} else {
+    // РЕЖИМ 2: Скоростной — ВСЕ ЛАПЫ В ВОЗДУХЕ!
+    avg_delta_x = state.linear_velocity_x * dt;
+    avg_delta_y = state.linear_velocity_y * dt;
+}
+```
+
+| Режим | Когда срабатывает | Источник данных |
+|-------|-------------------|-----------------|
+| **Контактный** | ≥1 лапа на земле (`contact_sum > 0`) | Позиции лап через FK |
+| **Скоростной** | Все лапы в воздухе (`contact_sum == 0`) | Команда скорости × dt |
+
+**Практическая значимость:**
+При trot контакты чередуются:
+```
+[1,0,0,1] → контактный режим ✅
+[0,1,1,0] → контактный режим ✅
+[1,1,1,1] → контактный режим ✅
+[0,0,0,0] → скоростной режим ⚠️ (почти никогда при нормальной ходьбе)
+```
+
+Скоростной режим — это **страховка** для экзотических случаев (прыжок, сбой датчиков). В нормальном режиме одометрия работает **полностью на контактах лап** и `linear_velocity` не используется.
+
+**Почему всё равно нужно исправить:**
+1. Идентичность с Python версией
+2. Публикация корректных `twist` данных в `/odom` сообщении
+3. Надёжность — если контакты пропадут, одометрия не "замрёт"
+
+**Исправление:**
+```cpp
+velocity_sub_ = create_subscription<quadropted_msgs::msg::RobotVelocity>(
+    "robot_velocity", 10,
+    [this](const quadropted_msgs::msg::RobotVelocity::SharedPtr msg) {
+        if (msg->robot_id == 1) {
+            odom_state_->linear_velocity_x = msg->cmd_vel.linear.x;
+            odom_state_->linear_velocity_y = msg->cmd_vel.linear.y;
+        }
+    });
+```
+
+---
+
 ## Декомпозиция проблемы (чек-лист)
 
 ### 1. Проверка входных данных одометрии
 - [x] **1.1** Проверить `foot_positions` — позиции лап в локальной системе координат ✅ FK работает
-- [x] **1.2** Проверить `foot_contacts` — данные контактов (4 канала) ❌ **НЕ ПУБЛИКОВАЛИСЬ**
-- [ ] **1.3** Проверить `linear_velocity_x/y` — линейные скорости
+- [x] **1.2** Проверить `foot_contacts` — данные контактов (4 канала) ❌ → ✅ **ИСПРАВЛЕНО** (не публиковались)
+- [x] **1.3** Проверить `linear_velocity_x/y` — линейные скорости ❌ → ✅ **ИСПРАВЛЕНО** (не подписывались)
 - [x] **1.4** Проверить `theta` — угол рыскания (yaw) из IMU ✅ IMU подписка исправлена
 
 ### 2. Проверка вычисления delta (смещение лап)
@@ -219,6 +279,7 @@ declare_parameter("enable_odom_tf", false);  // было: true
 - [x] **Исправление 2:** Публикация `foot_contact` в `robot_controller_node`
 - [x] **Исправление 3:** Параметр `imu_topic` используется в коде
 - [x] **Исправление 4:** `enable_odom_tf=False` при использовании EKF
+- [x] **Исправление 5:** Подписка на `robot_velocity` в `odometry_node`
 
 ### Фаза 4: Верификация ✅ ЗАВЕРШЕНА
 
@@ -262,6 +323,11 @@ declare_parameter("enable_odom_tf", false);  // было: true
 - Одометрия никогда не вычисляла смещение → робот всегда в (0, 0)
 - Исправлено: добавлена публикация `foot_contact` в `robot_controller_node`
 
+### Гипотеза 6: linear_velocity не обновляется ✅ ПОДТВЕРЖДЕНА, ИСПРАВЛЕНА
+- C++ odometry_node не подписывался на `robot_velocity`
+- `linear_velocity_x/y` всегда `0.0` → скоростной режим не работал
+- Исправлено: добавлена подписка на `robot_velocity` (как в Python)
+
 ---
 
 ## Изменённые файлы
@@ -270,7 +336,7 @@ declare_parameter("enable_odom_tf", false);  // было: true
 |------|-----------|-----|
 | `src/quadropted_controller_cpp/src/odometry/odometry_update.cpp` | `contact_sum` вместо `actual_contacts` | Исправление |
 | `src/quadropted_controller_cpp/src/nodes/robot_controller_node.cpp` | +include, +publisher, +`publish_foot_contacts()` | Новая функциональность |
-| `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | +параметр `imu_topic`, default `enable_odom_tf=False` | Исправление |
+| `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | +параметр `imu_topic`, +подписка `robot_velocity`, default `enable_odom_tf=False` | Исправление |
 | `src/gazebo_sim/launch/gazebo_multi_nav2_cpp.launch.py` | `enable_odom_tf=False`, `imu_topic` исправлен | Исправление |
 | `src/quadropted_controller_cpp/launch/quadropted_controller_cpp.launch.py` | `enable_odom_tf=True` для standalone | Исправление |
 
@@ -305,6 +371,7 @@ Running main() from gmock_main.cc
 | **Навигация** | Зависает, карта пустая ❌ | `Goal succeeded` ✅ |
 | **foot_contact** | Никто не публикует (`Publisher count: 0`) ❌ | Публикуется каждый тик ✅ |
 | **TF publisher'ы** | 2 конфиктующих (odometry + EKF) ❌ | 1 (EKF) ✅ |
+| **linear_velocity** | Не обновляется (`0.0` всегда) ❌ | Подписка на `robot_velocity` ✅ |
 
 ---
 

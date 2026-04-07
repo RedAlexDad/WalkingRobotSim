@@ -74,6 +74,15 @@ public:
             "foot_contact", rclcpp::SensorDataQoS(),
             [this](const quadropted_msgs::msg::RobotFootContact::SharedPtr msg) { foot_contacts_callback(msg); });
 
+        velocity_sub_ = create_subscription<quadropted_msgs::msg::RobotVelocity>(
+            "robot_velocity", 10,
+            [this](const quadropted_msgs::msg::RobotVelocity::SharedPtr msg) {
+                if (msg->robot_id == 1) {
+                    odom_state_->linear_velocity_x = msg->cmd_vel.linear.x;
+                    odom_state_->linear_velocity_y = msg->cmd_vel.linear.y;
+                }
+            });
+
         // Timer
         double timer_period = 1.0 / static_cast<double>(publish_rate_);
         timer_ = create_wall_timer(
@@ -230,13 +239,14 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
     rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr joint_states_sub_;
     rclcpp::Subscription<quadropted_msgs::msg::RobotFootContact>::SharedPtr foot_contacts_sub_;
+    rclcpp::Subscription<quadropted_msgs::msg::RobotVelocity>::SharedPtr velocity_sub_;
 
     rclcpp::TimerBase::SharedPtr timer_;
 
     bool verbose_ = false;
     int publish_rate_ = 50;
     bool has_imu_heading_ = true;
-    bool enable_odom_tf_ = true;
+    bool enable_odom_tf_ = false;
     std::string base_frame_id_ = "base";
     std::string odom_frame_id_ = "odom";
     bool is_gazebo_ = true;
