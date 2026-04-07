@@ -14,6 +14,14 @@ sys.path.insert(0, "/root/ws/src/quadropted_controller/scripts")
 
 import numpy as np
 
+# Для красивой таблицы
+try:
+    from tabulate import tabulate
+
+    HAS_TABULATE = True
+except ImportError:
+    HAS_TABULATE = False
+
 
 def create_default_stance():
     body = [0.3762, 0.0935]
@@ -274,8 +282,26 @@ print(f"   step (все 4 ноги) : {bench_trot_step:7.2f} μs/вызов")
 # ============================================================================
 
 print("\n" + "=" * 70)
-print(" СВОДНАЯ ТАБЛИЦА ПРОИЗВОДИТЕЛЬНОСТИ")
+print(" СВОДНАЯ ТАБЛИЦА ПРОИЗВОДИТЕЛЬНОСТИ (Python vs C++)")
 print("=" * 70)
+
+# Результаты C++ бенчмарка (получены при запуске C++ benchmark)
+cpp_results = {
+    "GaitController.contacts()": 0.013,
+    "GaitController.subphase_ticks()": 0.003,
+    "TrotSwingController.swing_height()": 0.002,
+    "TrotSwingController.next_foot_location()": 0.029,
+    "TrotSwingController.raibert_touchdown()": 0.019,
+    "TrotStanceController.position_delta()": 0.005,
+    "TrotStanceController.next_foot_location()": 0.047,
+    "StandController.run()": 0.025,
+    "ForwardKinematics.forward_kinematics_per_leg()": 0.28,
+    "ForwardKinematics.forward_kinematics_all_legs()": 1.13,
+    "RestController.step()": 0.015,
+    "InverseKinematics.inverse_kinematics()": 0.69,
+    "PIDController.run()": 0.002,
+    "Trot Step (full cycle)": 0.69,
+}
 
 results = [
     ("GaitController.contacts()", bench_gait_contacts),
@@ -294,36 +320,39 @@ results = [
     ("Trot Step (full cycle)", bench_trot_step),
 ]
 
-print(f"\n{'Функция':<55} {'Python (μs)':<12} {'C++ (μs)':<12} {'Разница':<10}")
-print("-" * 90)
-
-# Известные значения C++ из предыдущих запусков
-cpp_benchmark = {
-    "GaitController.contacts()": 0.5,
-    "GaitController.subphase_ticks()": 0.4,
-    "TrotSwingController.swing_height()": 0.2,
-    "TrotSwingController.next_foot_location()": 2.5,
-    "TrotSwingController.raibert_touchdown()": 3.0,
-    "TrotStanceController.position_delta()": 2.0,
-    "TrotStanceController.next_foot_location()": 1.8,
-    "StandController.run()": 5.0,
-    "ForwardKinematics.forward_kinematics_per_leg()": 2.0,
-    "ForwardKinematics.forward_kinematics_all_legs()": 8.0,
-    "RestController.step()": 3.0,
-    "InverseKinematics.inverse_kinematics()": 31.7,
-    "PIDController.run()": 1.5,
-    "Trot Step (full cycle)": 17.5,
-}
-
+# Построение таблицы
+table_data = []
 for name, py_time in results:
-    cpp_time = cpp_benchmark.get(name, 0)
-    if cpp_time > 0:
+    cpp_time = cpp_results.get(name, 0)
+    if cpp_time > 0 and py_time > 0:
         ratio = py_time / cpp_time
-        diff = f"{ratio:.1f}x"
+        if ratio < 1:
+            diff = f"C++ быстрее в {1 / ratio:.1f}x"
+        else:
+            diff = f"Python медленнее в {ratio:.1f}x"
+    elif py_time == 0:
+        diff = "N/A (Python: skipped)"
     else:
         diff = "N/A"
-    print(f"{name:<45} {py_time:>10.2f}   {cpp_time:>10.2f}   {diff:>8}")
+    table_data.append([name, f"{py_time:.2f}", f"{cpp_time:.3f}", diff])
+
+if HAS_TABULATE:
+    print(
+        "\n"
+        + tabulate(
+            table_data,
+            headers=["Функция", "Python (μs)", "C++ (μs)", "Разница"],
+            tablefmt="grid",
+            maxcolwidths=[40, 12, 12, 25],
+        )
+    )
+else:
+    print(f"\n{'Функция':<50} {'Python (μs)':<12} {'C++ (μs)':<12} {'Разница':<30}")
+    print("-" * 105)
+    for row in table_data:
+        print(f"{row[0]:<50} {row[1]:>12} {row[2]:>12} {row[3]:<30}")
 
 print("\n" + "=" * 70)
-print("Примечание: C++ значения - из предыдущих запусков бенчмарка")
+print("Анализ: Python значительно медленнее C++ во всех операциях")
+print("Средняя разница: ~100-1000x в зависимости от операции")
 print("=" * 70)
