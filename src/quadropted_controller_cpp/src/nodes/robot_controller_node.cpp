@@ -307,14 +307,8 @@ private:
     }
 
     Eigen::MatrixXd step_rest(State& state, const Command& cmd) {
-        state.ticks++;  // Инкрементируем ticks как в trot
-        Eigen::MatrixXd result = default_stance_;
-        result.row(2).setConstant(cmd.robot_height);
-        // DEBUG: каждые 60 тиков
-        if (state.ticks % 60 == 0) {
-            RCLCPP_INFO(get_logger(), "[DEBUG] REST: Z=%.3f, ticks=%d", cmd.robot_height, state.ticks);
-        }
-        return result;
+        state.ticks++;
+        return rest_ctrl_->step(state, cmd);
     }
 
     void publish_foot_contacts() {
