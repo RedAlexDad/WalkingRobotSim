@@ -750,7 +750,9 @@ help:
 	@printf "  ${GREEN}${BOLD}make test-benchmark${NC}     Замер производительности\n"
 	@printf "  ${GREEN}${BOLD}make test-all${NC}           Оба теста подряд\n"
 	@printf "  ${GREEN}${BOLD}make test-cross${NC}        Кросс-языковой тест Python vs C++\n"
-	@printf "  ${GREEN}${BOLD}make bench-cpp${NC}         C++ vs Python benchmark\n"
+	@printf "  ${GREEN}${BOLD}make benchmark${NC}          Запуск бенчмарка Python + C++ с таблицей\n"
+	@printf "  ${GREEN}${BOLD}make benchmark-python${NC}  Только Python бенчмарк\n"
+	@printf "  ${GREEN}${BOLD}make benchmark-cpp${NC}     Только C++ бенчмарк\n"
 	@echo ""
 	@printf "${BOLD}Прочее:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make setup${NC}            Начальная настройка проекта\n"
@@ -768,7 +770,7 @@ help:
 # ТЕСТЫ
 # ════════════════════════════════════════════════════════════
 
-.PHONY: test-correctness test-benchmark test-cross bench-cpp test-all
+.PHONY: test-correctness test-benchmark test-cross bench-cpp test-all benchmark benchmark-python benchmark-cpp
 
 ## Проверка корректности — сравнение результатов old vs new (34 теста)
 test-correctness:
@@ -797,6 +799,43 @@ test-cross:
 bench-cpp:
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}C++ vs Python Benchmark...${NC}\n"
 	@python3 $(PROJECT_ROOT)/src/tests/benchmark_cpp_vs_python.py
+
+## Запуск полного бенчмарка Python vs C++ с таблицей результатов
+benchmark:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Python бенчмарка...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
+		source /root/ws/install/setup.bash && \
+		cd /root/ws/src/quadropted_controller/scripts/benchmark && \
+		python3 benchmark.py 2>&1 | tail -50"
+	@echo ""
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск C++ бенчмарка...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
+		/root/ws/build/quadropted_controller_cpp/benchmark 2>&1 | tail -30"
+	@echo ""
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Бенчмарк завершён${NC}\n"
+	@printf "${YELLOW}${BOLD}[INFO]${NC} ${CYAN}Полный вывод смотрите в документации:${NC}\n"
+	@printf "${CYAN}docs/benchmark-python-cpp.md${NC}\n"
+
+## Запуск только Python бенчмарка
+benchmark-python:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Python бенчмарка...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
+		source /root/ws/install/setup.bash && \
+		cd /root/ws/src/quadropted_controller/scripts/benchmark && \
+		python3 benchmark.py"
+
+## Запуск только C++ бенчмарка
+benchmark-cpp:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск C++ бенчмарка...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
+		/root/ws/build/quadropted_controller_cpp/benchmark"
 
 # ════════════════════════════════════════════════════════════
 # DEFAULT TARGET
