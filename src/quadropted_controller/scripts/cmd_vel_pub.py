@@ -67,22 +67,25 @@ class RobotVelocityHandler(Node):
         new_msg = RobotVelocity()
         new_msg.robot_id = 1
 
-        new_msg.cmd_vel.linear.x = self.multiply_and_limit(
+        # STAND режим: линейное масштабирование чтобы speed из teleop влиял на скорость
+        # TROT/CRAWL: используют насыщающую экспоненту для ограничения максимальной скорости
+        # Для STAND нужно чтобы увеличение speed давало пропорциональное ускорение
+        new_msg.cmd_vel.linear.x = self.linear_scale_and_limit(
             msg.linear.x, 0.035, -1.0, 1.0
         )
-        new_msg.cmd_vel.linear.y = self.multiply_and_limit(
+        new_msg.cmd_vel.linear.y = self.linear_scale_and_limit(
             msg.linear.y, 0.012, -1.0, 1.0
         )
-        # linear.z (вверх/вниз) — используем тот же масштаб что и для x
-        new_msg.cmd_vel.linear.z = self.multiply_and_limit(
+        # linear.z (вверх/вниз) — линейное масштабирование
+        new_msg.cmd_vel.linear.z = self.linear_scale_and_limit(
             msg.linear.z, 0.035, -1.0, 1.0
         )
 
-        # angular.x/y (roll/pitch) — тоже масштабируем для STAND режима
-        new_msg.cmd_vel.angular.x = self.multiply_and_limit(
+        # angular.x/y (roll/pitch) — линейное масштабирование для STAND
+        new_msg.cmd_vel.angular.x = self.linear_scale_and_limit(
             msg.angular.x, 0.1, -1.0, 1.0
         )
-        new_msg.cmd_vel.angular.y = self.multiply_and_limit(
+        new_msg.cmd_vel.angular.y = self.linear_scale_and_limit(
             msg.angular.y, 0.1, -1.0, 1.0
         )
         new_msg.cmd_vel.angular.z = self.limit(msg.angular.z, -1.0, 1.0)
@@ -105,6 +108,14 @@ class RobotVelocityHandler(Node):
             adjusted_value = (-value) * 0.035
             scaled_value = -scale_factor * (1 - math.exp(-100 * adjusted_value))
 
+        return self.limit_value(scaled_value, min_limit, max_limit)
+
+    def linear_scale_and_limit(self, value, scale_factor, min_limit, max_limit):
+        # Линейное масштабирование: value * scale_factor, с ограничением
+        # teleop speed=0.5 → value=0.5 → scaled=0.5*0.035=0.0175
+        # teleop speed=1.0 → value=1.0 → scaled=1.0*0.035=0.035
+        # teleop speed=2.0 → value=2.0 → scaled=2.0*0.035=0.07 (но ограничено max_limit=1.0)
+        scaled_value = value * scale_factor
         return self.limit_value(scaled_value, min_limit, max_limit)
 
     def limit_value(self, value, min_limit, max_limit):
