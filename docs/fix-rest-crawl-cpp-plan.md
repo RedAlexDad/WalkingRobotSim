@@ -476,6 +476,63 @@ default_stance_ <<  dx_front,  dx_front, -dx_back, -dx_back,
                     0,         0,          0,       0;
 ```
 
+### 🔴 Ошибка #16: STAND — пробел не сбрасывает позицию корпуса к центру
+
+**Файл:** `src/quadropted_controller_cpp/src/controllers/stand_controller.cpp`
+
+**Симптом:** При нажатии пробела в teleop (stop) body position замирает на месте вместо возврата к центру.
+
+**Python:** Аналогично — Python StandController НЕ имеет auto-return логики. Но для STAND режима пользователь ожидает что при stop робот вернётся к нейтральной позиции.
+
+**TROT/CRAWL:** Имеют `has_command` проверку с lerp к `default_stance` (alpha=0.1).
+
+**Исправление:** Добавить `has_command` проверку в `StandController::run()`:
+```cpp
+bool has_command = std::abs(linear_vel.x()) > 1e-4 || ...;
+if (has_command) {
+    // Активное управление — накапливаем
+    state.body_local_position[0] += linear_vel.x() * body_velocity_scale_;
+} else {
+    // Stop — плавный возврат к центру
+    constexpr double alpha_pos = 0.05;  // ~20 тиков (0.33с)
+    state.body_local_position[0] *= (1.0 - alpha_pos);
+}
+```
+
+### 🔴 Ошибка #17: STAND — speed в teleop не влияет на скорость изменения позиции
+
+**Файлы:** 
+- `src/quadropted_controller_cpp/include/.../stand_controller.hpp` — `max_linear_velocity_=0.035`
+- `src/quadropted_controller/scripts/cmd_vel_pub.py` — `multiply_and_limit` с насыщающей экспонентой
+
+**Симптом:** Увеличение speed в teleop (q/w/e ключи) почти не влияет на скорость движения корпуса.
+
+**Причина #1:** `max_linear_velocity_=0.035` слишком маленький — даже при teleop speed=5.0 velocity обрезается до 0.035.
+
+**Причина #2:** `cmd_vel_pub.py` использует `multiply_and_limit` с насыщающей экспонентой:
+```python
+scaled_value = scale_factor * (1 - math.exp(-100 * value * 0.035))
+```
+При `value=1.0`: `0.035 * (1 - exp(-3.5)) = 0.0339` (уже 97% от максимума!)
+При `value=5.0`: `0.035 * (1 - exp(-17.5)) = 0.0350` (полная сатурация)
+
+**Исправление:**
+1. Увеличить `max_linear_velocity_` с `0.035` → `0.2` (×5.7)
+2. Увеличить `max_angular_velocity_` с `0.1` → `0.5` (×5)
+3. Заменить `multiply_and_limit` на `linear_scale_and_limit` (линейное масштабирование):
+```python
+def linear_scale_and_limit(self, value, scale_factor, min_limit, max_limit):
+    scaled_value = value * scale_factor  # linear: 0.5→0.0175, 1.0→0.035, 5.0→0.175
+    return self.limit_value(scaled_value, min_limit, max_limit)
+```
+
+**Результат:**
+| teleop speed | velocity (было) | velocity (стало) | body speed/tick | body speed/sec |
+|-------------|-----------------|------------------|-----------------|----------------|
+| 0.5 | 0.0289 | 0.0175 | 0.000175 | 0.0105 м/с |
+| 1.0 | 0.0339 | 0.035 | 0.00035 | 0.021 м/с |
+| 5.0 | 0.0350 (sat!) | 0.175 | 0.00175 | 0.105 м/с |
+
 ---
 
 ## Декомпозиция проблемы (чек-лист)
@@ -509,10 +566,12 @@ default_stance_ <<  dx_front,  dx_front, -dx_back, -dx_back,
 - [x] **5.3** Добавить `step_stand()` метод с вызовом `stand_ctrl_->run()` ✅
 - [x] **5.4** Обновить `control_loop()` — добавить `else if (use_stand_)` ✅
 - [x] **5.5** Обновить `publish_foot_contacts()` для STAND (все лапы на земле) ✅
-- [ ] **5.6** Исправить timer integer division: `1000/60` → `microseconds(1000000.0/60)` (#14)
-- [ ] **5.7** Исправить default stance — сделать асимметричным как в Python (#15)
-- [ ] **5.8** Добавить масштабирование `linear.z` и `angular.x/y` в cmd_vel_pub.py для STAND
-- [ ] **5.9** Убрать `state.ticks++` из step_stand() (как в Python)
+- [x] **5.6** Исправить timer integer division: `1000/60` → `microseconds(1000000.0/60)` (#14) ✅
+- [x] **5.7** Исправить default stance — сделать асимметричным как в Python (#15) ✅
+- [x] **5.8** Добавить масштабирование `linear.z` и `angular.x/y` в cmd_vel_pub.py для STAND ✅
+- [x] **5.9** Убрать `state.ticks++` из step_stand() (как в Python) ✅
+- [x] **5.10** Добавить плавный возврат к центру при stop (пробел) (#16)
+- [x] **5.11** Увеличить max_velocity и использовать линейное масштабирование для speed (#17)
 
 ### 7. Переключение режимов
 - [x] **7.1** Добавить переход CRAWL→TROT в `change_controller()` ✅
