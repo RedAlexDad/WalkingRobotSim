@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include "quadropted_controller_cpp/pid_controller.hpp"
 
 TEST(PID, run_returns_2_elements) {

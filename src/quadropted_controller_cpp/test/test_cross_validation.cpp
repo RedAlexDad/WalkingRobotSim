@@ -1,11 +1,12 @@
 #include <gtest/gtest.h>
+
+#include "quadropted_controller_cpp/controllers/gait_controller.hpp"
+#include "quadropted_controller_cpp/controllers/pid_controller.hpp"
+#include "quadropted_controller_cpp/controllers/rest_controller.hpp"
+#include "quadropted_controller_cpp/controllers/trot_gait.hpp"
+#include "quadropted_controller_cpp/controllers/trot_swing.hpp"
 #include "quadropted_controller_cpp/kinematics/forward_kinematics.hpp"
 #include "quadropted_controller_cpp/kinematics/inverse_kinematics.hpp"
-#include "quadropted_controller_cpp/controllers/gait_controller.hpp"
-#include "quadropted_controller_cpp/controllers/trot_swing.hpp"
-#include "quadropted_controller_cpp/controllers/trot_gait.hpp"
-#include "quadropted_controller_cpp/controllers/rest_controller.hpp"
-#include "quadropted_controller_cpp/controllers/pid_controller.hpp"
 #include "quadropted_controller_cpp/states/state_command.hpp"
 
 // ════════════════════════════════════════════════════════════
@@ -13,18 +14,15 @@
 // ════════════════════════════════════════════════════════════
 
 class TrotGaitTest : public ::testing::Test {
-protected:
+  protected:
     std::unique_ptr<quadropted::TrotGaitController> trot;
     Eigen::MatrixXd default_stance;
 
     void SetUp() override {
         double dx = 0.2081, dy = 0.14225;
         default_stance.resize(3, 4);
-        default_stance <<  dx,  dx, -dx, -dx,
-                          -dy,  dy, -dy,  dy,
-                            0,   0,   0,   0;
-        trot = std::make_unique<quadropted::TrotGaitController>(
-            0.04, 0.18, 0.02, false, default_stance);
+        default_stance << dx, dx, -dx, -dx, -dy, dy, -dy, dy, 0, 0, 0, 0;
+        trot = std::make_unique<quadropted::TrotGaitController>(0.04, 0.18, 0.02, false, default_stance);
     }
 };
 
@@ -74,18 +72,15 @@ TEST_F(TrotGaitTest, swing_controller_initialization) {
 // ════════════════════════════════════════════════════════════
 
 class TrotSwingTest : public ::testing::Test {
-protected:
+  protected:
     std::unique_ptr<quadropted::TrotSwingController> swing;
     Eigen::MatrixXd default_stance;
 
     void SetUp() override {
         double dx = 0.2081, dy = 0.14225;
         default_stance.resize(3, 4);
-        default_stance <<  dx,  dx, -dx, -dx,
-                          -dy,  dy, -dy,  dy,
-                            0,   0,   0,   0;
-        swing = std::make_unique<quadropted::TrotSwingController>(
-            9, 0.02, 0.14, default_stance, 22, 2);
+        default_stance << dx, dx, -dx, -dx, -dy, dy, -dy, dy, 0, 0, 0, 0;
+        swing = std::make_unique<quadropted::TrotSwingController>(9, 0.02, 0.14, default_stance, 22, 2);
     }
 };
 
@@ -114,16 +109,14 @@ TEST_F(TrotSwingTest, raibert_touchdown_zero_velocity) {
 // ════════════════════════════════════════════════════════════
 
 class RestControllerTest : public ::testing::Test {
-protected:
+  protected:
     std::unique_ptr<quadropted::RestController> rest;
     Eigen::MatrixXd default_stance;
 
     void SetUp() override {
         double dx = 0.2081, dy = 0.14225;
         default_stance.resize(3, 4);
-        default_stance <<  dx,  dx, -dx, -dx,
-                          -dy,  dy, -dy,  dy,
-                            0,   0,   0,   0;
+        default_stance << dx, dx, -dx, -dx, -dy, dy, -dy, dy, 0, 0, 0, 0;
         rest = std::make_unique<quadropted::RestController>(default_stance);
     }
 };
@@ -153,7 +146,7 @@ TEST_F(RestControllerTest, pid_controller_initialization) {
 // ════════════════════════════════════════════════════════════
 
 class ControlLoopTest : public ::testing::Test {
-protected:
+  protected:
     quadropted::State state;
     quadropted::Command cmd;
     std::unique_ptr<quadropted::InverseKinematics> ik;
@@ -165,12 +158,9 @@ protected:
         double dx = body[0] * 0.5 + 0.02;
         double dy = body[1] * 0.5 + legs[1];
         default_stance.resize(3, 4);
-        default_stance <<  dx,  dx, -dx, -dx,
-                          -dy,  dy, -dy,  dy,
-                            0,   0,   0,   0;
+        default_stance << dx, dx, -dx, -dx, -dy, dy, -dy, dy, 0, 0, 0, 0;
 
-        ik = std::make_unique<quadropted::InverseKinematics>(
-            body[0], body[1], legs[0], legs[1], legs[2], legs[3]);
+        ik = std::make_unique<quadropted::InverseKinematics>(body[0], body[1], legs[0], legs[1], legs[2], legs[3]);
     }
 };
 
@@ -226,17 +216,16 @@ TEST_F(ControlLoopTest, fk_ik_roundtrip) {
 // ════════════════════════════════════════════════════════════
 
 class GaitPhaseTest : public ::testing::Test {
-protected:
+  protected:
     std::unique_ptr<quadropted::GaitController> gait;
     Eigen::MatrixXi contact_phases;
     Eigen::MatrixXd default_stance;
 
     void SetUp() override {
         contact_phases.resize(4, 4);
-        contact_phases << 1,1,1,0, 1,0,1,1, 1,0,1,1, 1,1,1,0;
+        contact_phases << 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0;
         default_stance = Eigen::MatrixXd::Zero(3, 4);
-        gait = std::make_unique<quadropted::GaitController>(
-            0.04, 0.18, 0.02, contact_phases, default_stance);
+        gait = std::make_unique<quadropted::GaitController>(0.04, 0.18, 0.02, contact_phases, default_stance);
     }
 };
 
@@ -263,14 +252,22 @@ TEST_F(GaitPhaseTest, phase_index_cycle) {
 
 TEST_F(GaitPhaseTest, contacts_match_python) {
     auto c0 = gait->contacts(0);
-    EXPECT_EQ(c0(0), 1); EXPECT_EQ(c0(1), 1);
-    EXPECT_EQ(c0(2), 1); EXPECT_EQ(c0(3), 1);  // col 0
+    EXPECT_EQ(c0(0), 1);
+    EXPECT_EQ(c0(1), 1);
+    EXPECT_EQ(c0(2), 1);
+    EXPECT_EQ(c0(3), 1);  // col 0
 
     auto c2 = gait->contacts(2);
-    EXPECT_EQ(c2(0), 1); EXPECT_EQ(c2(1), 0);
-    EXPECT_EQ(c2(2), 0); EXPECT_EQ(c2(3), 1);  // col 1
+    EXPECT_EQ(c2(0), 1);
+    EXPECT_EQ(c2(1), 0);
+    EXPECT_EQ(c2(2), 0);
+    EXPECT_EQ(c2(3), 1);  // col 1
 
     auto c11 = gait->contacts(11);
-    EXPECT_EQ(c11(0), 1); EXPECT_EQ(c11(1), 1);
-    EXPECT_EQ(c11(0), 1); EXPECT_EQ(c11(1), 1); EXPECT_EQ(c11(2), 1); EXPECT_EQ(c11(3), 1);  // col 3
+    EXPECT_EQ(c11(0), 1);
+    EXPECT_EQ(c11(1), 1);
+    EXPECT_EQ(c11(0), 1);
+    EXPECT_EQ(c11(1), 1);
+    EXPECT_EQ(c11(2), 1);
+    EXPECT_EQ(c11(3), 1);  // col 3
 }

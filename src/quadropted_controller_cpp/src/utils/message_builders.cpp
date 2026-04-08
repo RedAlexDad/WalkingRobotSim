@@ -1,4 +1,5 @@
 #include "quadropted_controller_cpp/utils/message_builders.hpp"
+
 #include <cmath>
 
 namespace quadropted {
@@ -8,11 +9,9 @@ Quaternion build_quaternion_from_yaw(double theta) {
     return {0.0, 0.0, std::sin(half_theta), std::cos(half_theta)};
 }
 
-OdometryData build_odometry_data(double x, double y, double theta,
-                                  double linear_vx, double linear_vy, double angular_vz,
-                                  const std::string& frame_id,
-                                  const std::string& child_frame_id,
-                                  const std::string& stamp) {
+OdometryData build_odometry_data(double x, double y, double theta, double linear_vx, double linear_vy,
+                                 double angular_vz, const std::string& frame_id, const std::string& child_frame_id,
+                                 const std::string& stamp) {
     OdometryData data;
     data.header_frame_id = frame_id;
     data.header_stamp = stamp;
@@ -36,10 +35,8 @@ OdometryData build_odometry_data(double x, double y, double theta,
     return data;
 }
 
-TFData build_tf_data(double x, double y, double theta,
-                      const std::string& frame_id,
-                      const std::string& child_frame_id,
-                      const std::string& stamp) {
+TFData build_tf_data(double x, double y, double theta, const std::string& frame_id, const std::string& child_frame_id,
+                     const std::string& stamp) {
     TFData data;
     data.header_frame_id = frame_id;
     data.child_frame_id = child_frame_id;
@@ -55,22 +52,13 @@ TFData build_tf_data(double x, double y, double theta,
     return data;
 }
 
-std::vector<MarkerData> build_marker_data(
-    const std::vector<std::array<double, 3>>& foot_positions,
-    const std::string& frame_id,
-    const std::string& stamp,
-    double marker_scale)
-{
+std::vector<MarkerData> build_marker_data(const std::vector<std::array<double, 3>>& foot_positions,
+                                          const std::string& frame_id, const std::string& stamp, double marker_scale) {
     std::vector<MarkerData> markers;
     markers.reserve(foot_positions.size());
 
     // Цвета для каждой ноги: FR-красный, FL-зеленый, RR-синий, RL-желтый
-    const double colors[][3] = {
-        {1.0, 0.0, 0.0},
-        {0.0, 1.0, 0.0},
-        {0.0, 0.0, 1.0},
-        {1.0, 1.0, 0.0}
-    };
+    const double colors[][3] = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}, {1.0, 1.0, 0.0}};
 
     for (size_t i = 0; i < foot_positions.size(); ++i) {
         MarkerData marker;
@@ -90,4 +78,4 @@ std::vector<MarkerData> build_marker_data(
     return markers;
 }
 
-} // namespace quadropted
+}  // namespace quadropted

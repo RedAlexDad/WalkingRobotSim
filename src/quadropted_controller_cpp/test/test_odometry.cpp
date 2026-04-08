@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include "quadropted_controller_cpp/odometry_state.hpp"
 #include "quadropted_controller_cpp/odometry_update.hpp"
 
@@ -16,7 +17,9 @@ TEST(Odometry, append_delta_and_average) {
 
 TEST(Odometry, reset) {
     quadropted::OdometryState state;
-    state.x = 1.0; state.y = 2.0; state.theta = 0.5;
+    state.x = 1.0;
+    state.y = 2.0;
+    state.theta = 0.5;
     state.delta_x_queue.push_back(0.1);
     state.reset();
     EXPECT_DOUBLE_EQ(state.x, 0.0);

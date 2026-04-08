@@ -1,5 +1,6 @@
-#include "quadropted_controller_cpp/odometry/odometry.hpp"
 #include <cmath>
+
+#include "quadropted_controller_cpp/odometry/odometry.hpp"
 
 namespace quadropted {
 
@@ -53,4 +54,4 @@ void update_odometry(OdometryState& state, double dt, double contact_count_coeff
     state.y += avg.first * sin_theta + avg.second * cos_theta;
 }
 
-} // namespace quadropted
+}  // namespace quadropted

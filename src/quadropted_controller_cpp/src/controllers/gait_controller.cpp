@@ -2,16 +2,19 @@
 
 namespace quadropted {
 
-GaitController::GaitController(double stance_time, double swing_time, double time_step,
-                                Eigen::MatrixXi contact_phases, Eigen::MatrixXd default_stance)
-    : stance_time_(stance_time), swing_time_(swing_time), time_step_(time_step),
-      contact_phases_(std::move(contact_phases)), default_stance_(std::move(default_stance))
-{
+GaitController::GaitController(double stance_time, double swing_time, double time_step, Eigen::MatrixXi contact_phases,
+                               Eigen::MatrixXd default_stance)
+    : stance_time_(stance_time),
+      swing_time_(swing_time),
+      time_step_(time_step),
+      contact_phases_(std::move(contact_phases)),
+      default_stance_(std::move(default_stance)) {
     stance_ticks_ = static_cast<int>(stance_time_ / time_step_);
     swing_ticks_ = static_cast<int>(swing_time_ / time_step_);
     compute_phase_ticks();
     phase_length_ = 0;
-    for (int t : phase_ticks_) phase_length_ += t;
+    for (int t : phase_ticks_)
+        phase_length_ += t;
 }
 
 void GaitController::compute_phase_ticks() {
@@ -63,4 +66,4 @@ Eigen::VectorXi GaitController::contacts(int ticks) const {
     return contact_phases_.col(phase_index(ticks));
 }
 
-} // namespace quadropted
+}  // namespace quadropted

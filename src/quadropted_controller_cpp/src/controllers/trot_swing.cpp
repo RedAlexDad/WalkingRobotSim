@@ -2,23 +2,21 @@
 
 namespace quadropted {
 
-TrotSwingController::TrotSwingController(int swing_ticks, double time_step,
-                                          double z_leg_lift, Eigen::MatrixXd default_stance,
-                                          int phase_length, int stance_ticks)
-    : swing_ticks_(swing_ticks), time_step_(time_step),
-      z_leg_lift_(z_leg_lift), default_stance_(std::move(default_stance)),
-      phase_length_(phase_length), stance_ticks_(stance_ticks) {}
+TrotSwingController::TrotSwingController(int swing_ticks, double time_step, double z_leg_lift,
+                                         Eigen::MatrixXd default_stance, int phase_length, int stance_ticks)
+    : swing_ticks_(swing_ticks),
+      time_step_(time_step),
+      z_leg_lift_(z_leg_lift),
+      default_stance_(std::move(default_stance)),
+      phase_length_(phase_length),
+      stance_ticks_(stance_ticks) {}
 
-Eigen::Vector3d TrotSwingController::raibert_touchdown_location(
-    int leg_index, const Eigen::Vector3d& cmd_vel) const
-{
+Eigen::Vector3d TrotSwingController::raibert_touchdown_location(int leg_index, const Eigen::Vector3d& cmd_vel) const {
     double scale_factor = 1.0;
     // Python: phase_length * time_step для delta_pos
     double total_time = phase_length_ * time_step_;
     Eigen::Vector3d delta_pos;
-    delta_pos << cmd_vel.x() * total_time * scale_factor,
-                  cmd_vel.y() * total_time * scale_factor,
-                  0.0;
+    delta_pos << cmd_vel.x() * total_time * scale_factor, cmd_vel.y() * total_time * scale_factor, 0.0;
 
     // Python: stance_ticks * time_step для yaw rotation
     double theta = stance_ticks_ * time_step_ * cmd_vel.z();
@@ -36,10 +34,9 @@ double TrotSwingController::swing_height(double swing_prop) const {
     }
 }
 
-Eigen::Vector3d TrotSwingController::next_foot_location(
-    double swing_prop, int leg_index, const Eigen::MatrixXd& current,
-    const Eigen::Vector3d& cmd_vel, double robot_height) const
-{
+Eigen::Vector3d TrotSwingController::next_foot_location(double swing_prop, int leg_index,
+                                                        const Eigen::MatrixXd& current, const Eigen::Vector3d& cmd_vel,
+                                                        double robot_height) const {
     assert(swing_prop >= 0.0 && swing_prop <= 1.0);
 
     Eigen::Vector3d foot_location = current.col(leg_index);
@@ -68,4 +65,4 @@ Eigen::Vector3d TrotSwingController::next_foot_location(
     return result;
 }
 
-} // namespace quadropted
+}  // namespace quadropted

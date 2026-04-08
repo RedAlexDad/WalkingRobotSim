@@ -1,26 +1,26 @@
-#include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/float64_multi_array.hpp>
-#include <sensor_msgs/msg/joint_state.hpp>
-#include <sensor_msgs/msg/imu.hpp>
+#include <cmath>
 #include <geometry_msgs/msg/twist.hpp>
-#include <quadropted_msgs/msg/robot_velocity.hpp>
-#include <quadropted_msgs/msg/robot_mode_command.hpp>
 #include <quadropted_msgs/msg/robot_foot_contact.hpp>
+#include <quadropted_msgs/msg/robot_mode_command.hpp>
+#include <quadropted_msgs/msg/robot_velocity.hpp>
 #include <quadropted_msgs/srv/robot_behavior_command.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
+#include <std_msgs/msg/float64_multi_array.hpp>
 
-#include "quadropted_controller_cpp/kinematics/inverse_kinematics.hpp"
-#include "quadropted_controller_cpp/states/state_command.hpp"
-#include "quadropted_controller_cpp/controllers/trot_gait.hpp"
 #include "quadropted_controller_cpp/controllers/crawl_gait.hpp"
 #include "quadropted_controller_cpp/controllers/rest_controller.hpp"
 #include "quadropted_controller_cpp/controllers/stand_controller.hpp"
+#include "quadropted_controller_cpp/controllers/trot_gait.hpp"
+#include "quadropted_controller_cpp/kinematics/inverse_kinematics.hpp"
+#include "quadropted_controller_cpp/states/state_command.hpp"
 #include "quadropted_controller_cpp/utils/math_utils.hpp"
-#include <cmath>
 
 namespace quadropted {
 
 class RobotControllerNode : public rclcpp::Node {
-public:
+  public:
     RobotControllerNode() : Node("robot_controller_cpp"), rate_(60), state_(0.25) {
         declare_parameter("verbose", false);
         // debug_mode removed
@@ -36,12 +36,10 @@ public:
         // FR/FL: 0.1881 + 0.02 =  0.2081
         // RR/RL: -0.1881 + 0.0  = -0.1881  (2cm ближе к центру чем передние!)
         double dx_front = body[0] * 0.5 + 0.02;  // 0.2081 — передние лапы
-        double dx_back  = body[0] * 0.5 + 0.0;   // 0.1881 — задние лапы
+        double dx_back = body[0] * 0.5 + 0.0;    // 0.1881 — задние лапы
         double dy = body[1] * 0.5 + legs[1];
         default_stance_.resize(3, 4);
-        default_stance_ <<  dx_front,  dx_front, -dx_back, -dx_back,
-                            -dy,       dy,       -dy,      dy,
-                             0,        0,         0,       0;
+        default_stance_ << dx_front, dx_front, -dx_back, -dx_back, -dy, dy, -dy, dy, 0, 0, 0, 0;
 
         state_.foot_locations = default_stance_;
         state_.behavior_state = BehaviorState::REST;
@@ -65,15 +63,13 @@ public:
         ik_ = std::make_unique<InverseKinematics>(body[0], body[1], legs[0], legs[1], legs[2], legs[3]);
 
         // Publishers
-        joint_pub_ = create_publisher<std_msgs::msg::Float64MultiArray>(
-            "joint_group_controller/commands", 10);
-        foot_contact_pub_ = create_publisher<quadropted_msgs::msg::RobotFootContact>(
-            "foot_contact", rclcpp::SensorDataQoS());
+        joint_pub_ = create_publisher<std_msgs::msg::Float64MultiArray>("joint_group_controller/commands", 10);
+        foot_contact_pub_ =
+            create_publisher<quadropted_msgs::msg::RobotFootContact>("foot_contact", rclcpp::SensorDataQoS());
 
         // Subscriptions
         velocity_sub_ = create_subscription<quadropted_msgs::msg::RobotVelocity>(
-            "robot_velocity", 10,
-            [this](const quadropted_msgs::msg::RobotVelocity::SharedPtr msg) {
+            "robot_velocity", 10, [this](const quadropted_msgs::msg::RobotVelocity::SharedPtr msg) {
                 if (msg->robot_id == 1) {
                     command_.velocity = {msg->cmd_vel.linear.x, msg->cmd_vel.linear.y, msg->cmd_vel.linear.z};
                     command_.yaw_rate = {msg->cmd_vel.angular.x, msg->cmd_vel.angular.y, msg->cmd_vel.angular.z};
@@ -81,8 +77,8 @@ public:
                     // STAND mode — логируем каждую команду
                     if (state_.behavior_state == BehaviorState::STAND) {
                         RCLCPP_INFO(get_logger(), "[STAND VELOCITY] vx=%.4f vy=%.4f vz=%.4f | ax=%.4f ay=%.4f az=%.4f",
-                                   command_.velocity[0], command_.velocity[1], command_.velocity[2],
-                                   command_.yaw_rate[0], command_.yaw_rate[1], command_.yaw_rate[2]);
+                                    command_.velocity[0], command_.velocity[1], command_.velocity[2],
+                                    command_.yaw_rate[0], command_.yaw_rate[1], command_.yaw_rate[2]);
                     }
 
                     // Ограничение скорости для CRAWL режима (как в Python crawl_gait.py)
@@ -90,46 +86,54 @@ public:
                         constexpr double crawl_max_vx = 0.011;
                         constexpr double crawl_max_yaw = 0.15;
                         command_.velocity[0] = std::clamp(command_.velocity[0], -crawl_max_vx, crawl_max_vx);
-                        command_.velocity[1] = std::clamp(command_.velocity[1], -crawl_max_vx * 0.5, crawl_max_vx * 0.5);
+                        command_.velocity[1] =
+                            std::clamp(command_.velocity[1], -crawl_max_vx * 0.5, crawl_max_vx * 0.5);
                         command_.yaw_rate[2] = std::clamp(command_.yaw_rate[2], -crawl_max_yaw, crawl_max_yaw);
                     }
                     if (false)
                         RCLCPP_DEBUG(get_logger(), "[DEBUG] Velocity: vx=%.4f vy=%.4f vz=%.4f yaw=%.4f",
-                                   command_.velocity[0], command_.velocity[1], command_.velocity[2], command_.yaw_rate[2]);
+                                     command_.velocity[0], command_.velocity[1], command_.velocity[2],
+                                     command_.yaw_rate[2]);
                 }
             });
 
         // IMU subscription — обновляем roll/pitch для компенсации
-        imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
-            "imu", 10,
-            [this](const sensor_msgs::msg::Imu::SharedPtr msg) {
+        imu_sub_ =
+            create_subscription<sensor_msgs::msg::Imu>("imu", 10, [this](const sensor_msgs::msg::Imu::SharedPtr msg) {
                 // Конвертируем quaternion в euler angles
                 double w = msg->orientation.w;
                 double x = msg->orientation.x;
                 double y = msg->orientation.y;
                 double z = msg->orientation.z;
-                state_.imu_roll = std::atan2(2.0*(w*x + y*z), 1.0 - 2.0*(x*x + y*y));
-                state_.imu_pitch = std::asin(2.0*(w*y - z*x));
+                state_.imu_roll = std::atan2(2.0 * (w * x + y * z), 1.0 - 2.0 * (x * x + y * y));
+                state_.imu_pitch = std::asin(2.0 * (w * y - z * x));
                 if (false)
                     RCLCPP_DEBUG(get_logger(), "[DEBUG] IMU: roll=%.4f pitch=%.4f", state_.imu_roll, state_.imu_pitch);
             });
 
         mode_sub_ = create_subscription<quadropted_msgs::msg::RobotModeCommand>(
-            "robot_mode", 10,
-            [this](const quadropted_msgs::msg::RobotModeCommand::SharedPtr msg) {
+            "robot_mode", 10, [this](const quadropted_msgs::msg::RobotModeCommand::SharedPtr msg) {
                 if (msg->robot_id == 1) {
                     if (msg->mode == "REST") {
-                        command_.rest_event = true; command_.trot_event = false;
-                        command_.crawl_event = false; command_.stand_event = false;
+                        command_.rest_event = true;
+                        command_.trot_event = false;
+                        command_.crawl_event = false;
+                        command_.stand_event = false;
                     } else if (msg->mode == "TROT") {
-                        command_.rest_event = false; command_.trot_event = true;
-                        command_.crawl_event = false; command_.stand_event = false;
+                        command_.rest_event = false;
+                        command_.trot_event = true;
+                        command_.crawl_event = false;
+                        command_.stand_event = false;
                     } else if (msg->mode == "CRAWL") {
-                        command_.rest_event = false; command_.trot_event = false;
-                        command_.crawl_event = true; command_.stand_event = false;
+                        command_.rest_event = false;
+                        command_.trot_event = false;
+                        command_.crawl_event = true;
+                        command_.stand_event = false;
                     } else if (msg->mode == "STAND") {
-                        command_.rest_event = false; command_.trot_event = false;
-                        command_.crawl_event = false; command_.stand_event = true;
+                        command_.rest_event = false;
+                        command_.trot_event = false;
+                        command_.crawl_event = false;
+                        command_.stand_event = true;
                     }
                     change_controller();
                     controller_change_needed_ = true;
@@ -138,9 +142,8 @@ public:
 
         // Control loop timer — используем microseconds для точной частоты 60 Hz
         // Python: 1.0/60 = 0.01667s, C++: 1000000/60 = 16666.67µs ≈ 16667µs
-        timer_ = create_wall_timer(
-            std::chrono::microseconds(static_cast<long long>(1000000.0 / rate_)),
-            std::bind(&RobotControllerNode::control_loop, this));
+        timer_ = create_wall_timer(std::chrono::microseconds(static_cast<long long>(1000000.0 / rate_)),
+                                   std::bind(&RobotControllerNode::control_loop, this));
 
         RCLCPP_INFO(get_logger(), "Robot Controller Node (C++) started at %d Hz", rate_);
         RCLCPP_INFO(get_logger(), "Startup grace period: 2 seconds (waiting for robot to land)");
@@ -191,7 +194,7 @@ public:
             });
     }
 
-private:
+  private:
     void change_controller() {
         if (command_.trot_event && command_.rest_event) {
             // REST first, then TROT
@@ -270,9 +273,8 @@ private:
     Eigen::MatrixXd step_trot(State& state, const Command& cmd) {
         state.ticks++;  // Инкрементируем каждый тик
         // При нулевой скорости — стабильная стойка
-        bool has_command = std::abs(cmd.velocity[0]) > 1e-4 ||
-                           std::abs(cmd.velocity[1]) > 1e-4 ||
-                           std::abs(cmd.yaw_rate[2]) > 1e-4;
+        bool has_command =
+            std::abs(cmd.velocity[0]) > 1e-4 || std::abs(cmd.velocity[1]) > 1e-4 || std::abs(cmd.yaw_rate[2]) > 1e-4;
         if (!has_command) {
             // Плавное возвращение к default_stance (как в Python autoRest)
             Eigen::MatrixXd result = default_stance_;
@@ -283,19 +285,19 @@ private:
         }
 
         // Use TrotGaitController's step method for unified stance/swing logic
-        Eigen::MatrixXd new_foot_locations = trot_gait_->step(
-            state.ticks,
-            state.foot_locations,
-            Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]},
-            cmd.robot_height);
+        Eigen::MatrixXd new_foot_locations =
+            trot_gait_->step(state.ticks, state.foot_locations,
+                             Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]}, cmd.robot_height);
 
         // DEBUG: показываем foot locations
         if (state.ticks % 60 == 0) {
-            RCLCPP_INFO(get_logger(), "[DEBUG] foot_locs: FR=(%.4f,%.4f,%.4f) FL=(%.4f,%.4f,%.4f) RR=(%.4f,%.4f,%.4f) RL=(%.4f,%.4f,%.4f)",
-                       state.foot_locations(0,0), state.foot_locations(1,0), state.foot_locations(2,0),
-                       state.foot_locations(0,1), state.foot_locations(1,1), state.foot_locations(2,1),
-                       state.foot_locations(0,2), state.foot_locations(1,2), state.foot_locations(2,2),
-                       state.foot_locations(0,3), state.foot_locations(1,3), state.foot_locations(2,3));
+            RCLCPP_INFO(
+                get_logger(),
+                "[DEBUG] foot_locs: FR=(%.4f,%.4f,%.4f) FL=(%.4f,%.4f,%.4f) RR=(%.4f,%.4f,%.4f) RL=(%.4f,%.4f,%.4f)",
+                state.foot_locations(0, 0), state.foot_locations(1, 0), state.foot_locations(2, 0),
+                state.foot_locations(0, 1), state.foot_locations(1, 1), state.foot_locations(2, 1),
+                state.foot_locations(0, 2), state.foot_locations(1, 2), state.foot_locations(2, 2),
+                state.foot_locations(0, 3), state.foot_locations(1, 3), state.foot_locations(2, 3));
         }
 
         // IMU compensation
@@ -305,15 +307,14 @@ private:
             new_foot_locations = rot * new_foot_locations;
             if (false)
                 RCLCPP_DEBUG(get_logger(), "[DEBUG] IMU comp: roll=%.3f pitch=%.3f comp_x=%.3f comp_y=%.3f",
-                           state.imu_roll, state.imu_pitch, -comp[0], -comp[1]);
+                             state.imu_roll, state.imu_pitch, -comp[0], -comp[1]);
         }
-
 
         // DEBUG: каждые 60 тиков
         if (state.ticks % 60 == 0) {
             Eigen::VectorXi contacts = trot_gait_->contacts(state.ticks);
-            RCLCPP_INFO(get_logger(), "[DEBUG] TROT step: ticks=%d contacts=[%d,%d,%d,%d]",
-                       state.ticks, contacts(0), contacts(1), contacts(2), contacts(3));
+            RCLCPP_INFO(get_logger(), "[DEBUG] TROT step: ticks=%d contacts=[%d,%d,%d,%d]", state.ticks, contacts(0),
+                        contacts(1), contacts(2), contacts(3));
         }
 
         return new_foot_locations;
@@ -322,9 +323,8 @@ private:
     Eigen::MatrixXd step_crawl(State& state, const Command& cmd) {
         state.ticks++;
         // При нулевой скорости — стабильная стойка
-        bool has_command = std::abs(cmd.velocity[0]) > 1e-4 ||
-                           std::abs(cmd.velocity[1]) > 1e-4 ||
-                           std::abs(cmd.yaw_rate[2]) > 1e-4;
+        bool has_command =
+            std::abs(cmd.velocity[0]) > 1e-4 || std::abs(cmd.velocity[1]) > 1e-4 || std::abs(cmd.yaw_rate[2]) > 1e-4;
         if (!has_command) {
             // Плавное возвращение к default_stance
             Eigen::MatrixXd result = default_stance_;
@@ -344,8 +344,7 @@ private:
                 bool move_sideways = (phase_idx == 0 || phase_idx == 4);
                 bool move_left = (phase_idx == 0);
                 new_foot_locations.col(leg) = crawl_gait_->stance().next_foot_location(
-                    leg, state.foot_locations,
-                    Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]},
+                    leg, state.foot_locations, Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]},
                     cmd.robot_height, crawl_gait_->is_first_cycle(), move_sideways, move_left);
             } else {
                 // Swing — используем CRAWL swing controller (было: trot_gait_->swing_controller())
@@ -358,15 +357,14 @@ private:
 
                 new_foot_locations.col(leg) = crawl_gait_->swing().next_foot_location(
                     swing_prop, leg, state.foot_locations,
-                    Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]},
-                    cmd.robot_height);
+                    Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]}, cmd.robot_height);
             }
         }
 
         // DEBUG
         if (state.ticks % 60 == 0) {
-            RCLCPP_INFO(get_logger(), "[DEBUG] CRAWL step: ticks=%d contacts=[%d,%d,%d,%d]",
-                       state.ticks, contacts(0), contacts(1), contacts(2), contacts(3));
+            RCLCPP_INFO(get_logger(), "[DEBUG] CRAWL step: ticks=%d contacts=[%d,%d,%d,%d]", state.ticks, contacts(0),
+                        contacts(1), contacts(2), contacts(3));
         }
 
         return new_foot_locations;
@@ -385,12 +383,13 @@ private:
         static int stand_debug_counter = 0;
         stand_debug_counter++;
         if (stand_debug_counter % 30 == 0) {
-            RCLCPP_INFO(get_logger(), "[STAND DEBUG] cmd: vx=%.4f vy=%.4f vz=%.4f ax=%.4f ay=%.4f az=%.4f | "
-                       "pos: x=%.4f y=%.4f z=%.4f | ori: r=%.4f p=%.4f y=%.4f",
-                       cmd.velocity[0], cmd.velocity[1], cmd.velocity[2],
-                       cmd.yaw_rate[0], cmd.yaw_rate[1], cmd.yaw_rate[2],
-                       state.body_local_position[0], state.body_local_position[1], state.body_local_position[2],
-                       state.body_local_orientation[0], state.body_local_orientation[1], state.body_local_orientation[2]);
+            RCLCPP_INFO(get_logger(),
+                        "[STAND DEBUG] cmd: vx=%.4f vy=%.4f vz=%.4f ax=%.4f ay=%.4f az=%.4f | "
+                        "pos: x=%.4f y=%.4f z=%.4f | ori: r=%.4f p=%.4f y=%.4f",
+                        cmd.velocity[0], cmd.velocity[1], cmd.velocity[2], cmd.yaw_rate[0], cmd.yaw_rate[1],
+                        cmd.yaw_rate[2], state.body_local_position[0], state.body_local_position[1],
+                        state.body_local_position[2], state.body_local_orientation[0], state.body_local_orientation[1],
+                        state.body_local_orientation[2]);
         }
 
         return stand_ctrl_->run(state, cmd);
@@ -449,15 +448,15 @@ private:
         // IK debug — проверяем размеры
         if (state_.ticks < 5) {
             RCLCPP_INFO(get_logger(), "[IK DEBUG] leg_positions: %dx%d, dx=%.3f dy=%.3f dz=%.3f",
-                       (int)leg_positions.rows(), (int)leg_positions.cols(),
-                       state_.body_local_position[0], state_.body_local_position[1], state_.robot_height);
+                        (int)leg_positions.rows(), (int)leg_positions.cols(), state_.body_local_position[0],
+                        state_.body_local_position[1], state_.robot_height);
         }
 
         try {
-            auto joint_angles = ik_->inverse_kinematics(
-                leg_positions,
-                state_.body_local_position[0], state_.body_local_position[1], state_.body_local_position[2],
-                state_.body_local_orientation[0], state_.body_local_orientation[1], state_.body_local_orientation[2]);
+            auto joint_angles =
+                ik_->inverse_kinematics(leg_positions, state_.body_local_position[0], state_.body_local_position[1],
+                                        state_.body_local_position[2], state_.body_local_orientation[0],
+                                        state_.body_local_orientation[1], state_.body_local_orientation[2]);
 
             auto msg = std::make_unique<std_msgs::msg::Float64MultiArray>();
             msg->data.assign(joint_angles.begin(), joint_angles.end());
@@ -466,12 +465,12 @@ private:
             // DEBUG: выводим каждые 60 тиков (раз в секунду)
             if (state_.ticks % 60 == 0) {
                 RCLCPP_INFO(get_logger(),
-                    "[DEBUG] cmd: vx=%.4f vy=%.4f vz=%.4f yaw=%.4f | "
-                    "pos: x=%.4f y=%.4f z=%.4f | "
-                    "joints[0-2]: %.4f %.4f %.4f",
-                    command_.velocity[0], command_.velocity[1], command_.velocity[2], command_.yaw_rate[2],
-                    state_.body_local_position[0], state_.body_local_position[1], state_.body_local_position[2],
-                    joint_angles[0], joint_angles[1], joint_angles[2]);
+                            "[DEBUG] cmd: vx=%.4f vy=%.4f vz=%.4f yaw=%.4f | "
+                            "pos: x=%.4f y=%.4f z=%.4f | "
+                            "joints[0-2]: %.4f %.4f %.4f",
+                            command_.velocity[0], command_.velocity[1], command_.velocity[2], command_.yaw_rate[2],
+                            state_.body_local_position[0], state_.body_local_position[1], state_.body_local_position[2],
+                            joint_angles[0], joint_angles[1], joint_angles[2]);
             }
         } catch (const std::exception& e) {
             RCLCPP_ERROR(get_logger(), "IK error: %s", e.what());
@@ -481,7 +480,7 @@ private:
     // Members
     int rate_;
     bool verbose_;
-    bool debug_mode_ = false; // removed
+    bool debug_mode_ = false;  // removed
     bool controller_change_needed_ = false;
     bool use_trot_ = false;
     bool use_crawl_ = false;
@@ -507,7 +506,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
 };
 
-} // namespace quadropted
+}  // namespace quadropted
 
 int main(int argc, char** argv) {
     rclcpp::init(argc, argv);

@@ -1,16 +1,13 @@
 #include "quadropted_controller_cpp/controllers/pid_controller.hpp"
+
 #include <cmath>
 
 namespace quadropted {
 
-PIDController::PIDController(double kp, double ki, double kd)
-    : kp_(kp), ki_(ki), kd_(kd) {}
+PIDController::PIDController(double kp, double ki, double kd) : kp_(kp), ki_(ki), kd_(kd) {}
 
 std::array<double, 2> PIDController::run(double roll, double pitch, double current_time) {
-    std::array<double, 2> error = {
-        desired_roll_pitch_[0] - roll,
-        desired_roll_pitch_[1] - pitch
-    };
+    std::array<double, 2> error = {desired_roll_pitch_[0] - roll, desired_roll_pitch_[1] - pitch};
 
     if (last_time_ < 0.0) {
         last_time_ = current_time;
@@ -24,8 +21,10 @@ std::array<double, 2> PIDController::run(double roll, double pitch, double curre
 
     for (int i = 0; i < 2; ++i) {
         i_term_[i] += error[i] * step;
-        if (i_term_[i] < -max_i_) i_term_[i] = -max_i_;
-        else if (i_term_[i] > max_i_) i_term_[i] = max_i_;
+        if (i_term_[i] < -max_i_)
+            i_term_[i] = -max_i_;
+        else if (i_term_[i] > max_i_)
+            i_term_[i] = max_i_;
 
         d_term_[i] = (error[i] - last_error_[i]) / step;
     }
@@ -53,4 +52,4 @@ void PIDController::set_desired(double roll, double pitch) {
     desired_roll_pitch_[1] = pitch;
 }
 
-} // namespace quadropted
+}  // namespace quadropted

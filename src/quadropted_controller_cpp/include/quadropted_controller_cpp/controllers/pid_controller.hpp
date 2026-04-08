@@ -4,7 +4,7 @@
 namespace quadropted {
 
 class PIDController {
-public:
+  public:
     PIDController(double kp, double ki, double kd);
 
     std::array<double, 2> run(double roll, double pitch, double current_time);
@@ -15,7 +15,7 @@ public:
     const std::array<double, 2>& i_term() const { return i_term_; }
     const std::array<double, 2>& d_term() const { return d_term_; }
 
-private:
+  private:
     double kp_, ki_, kd_;
     std::array<double, 2> desired_roll_pitch_{0.0, 0.0};
     std::array<double, 2> i_term_{0.0, 0.0}, d_term_{0.0, 0.0};
@@ -24,4 +24,4 @@ private:
     double last_time_ = -1.0;
 };
 
-}
+}  // namespace quadropted
