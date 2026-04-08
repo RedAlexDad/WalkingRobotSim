@@ -72,8 +72,8 @@ jobs:
 
     - name: Build Docker image
       run: |
-        cd ${{ env.DOCKER_DIR }}
-        docker build -t walking_robot_sim:ci .
+        # Строим из корня проекта чтобы COPY src/ работал правильно
+        docker build -f src/docker/Dockerfile -t walking_robot_sim:ci .
 
     - name: Start container
       run: |
@@ -160,8 +160,9 @@ jobs:
 
     - name: Build Docker image
       run: |
-        cd ${{ env.DOCKER_DIR }}
+        # Строим из корня проекта чтобы COPY src/ работал правильно
         docker build \
+          -f src/docker/Dockerfile \
           --cache-from type=local,src=/tmp/.buildx-cache \
           --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
           -t walking_robot_sim:ci .
@@ -196,8 +197,8 @@ jobs:
 
     - name: Build image (cached)
       run: |
-        cd ${{ env.DOCKER_DIR }}
-        docker build -t walking_robot_sim:ci .
+        # Строим из корня проекта чтобы COPY src/ работал правильно
+        docker build -f src/docker/Dockerfile -t walking_robot_sim:ci .
 
     - name: Start container
       run: |
