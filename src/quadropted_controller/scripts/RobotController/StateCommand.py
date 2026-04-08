@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # Author: lnotspotl, abutalipovvv
-import numpy as np
 from enum import Enum
+
+import numpy as np
 
 
 class BehaviorState(Enum):
@@ -11,7 +12,7 @@ class BehaviorState(Enum):
     STAND = 3
 
 
-class State(object):
+class State:
     def __init__(self, default_height):
 
         self.velocity = np.array([0.0, 0.0])

@@ -1,15 +1,17 @@
 import os
+
+import xacro
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch_ros.actions import Node
-from ament_index_python.packages import get_package_share_directory
-import xacro
+
 
 def generate_launch_description():
     # Paths to files and directories
     go1_description_pkg = get_package_share_directory('go2_description')
     xacro_path = os.path.join(go1_description_pkg, 'xacro', 'robot.xacro')
-    
+
     # Declare launch arguments
     user_debug_arg = DeclareLaunchArgument(
         'user_debug',
@@ -17,7 +19,7 @@ def generate_launch_description():
         description='Enable debug mode'
     )
     robot_name = 'robot1'
-    
+
     # Command to convert xacro to robot_description
     robot_desc = xacro.process_file(xacro_path, mappings={'robot_name': robot_name}).toxml()
     params_robot_state_publisher = {'robot_description': robot_desc, 'use_sim_time': True}
@@ -29,7 +31,7 @@ def generate_launch_description():
         arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
         output="screen",
     )
-    
+
     # Robot state publisher
     node_robot_state_publisher = Node(
         package='robot_state_publisher',
@@ -37,7 +39,7 @@ def generate_launch_description():
         output='screen',
         parameters=[params_robot_state_publisher],
     )
-    
+
     # Joint state publisher GUI
     joint_state_gui = Node(
         package='joint_state_publisher_gui',

@@ -3,14 +3,14 @@
 RobotController — пакет контроллеров робота.
 """
 
+from .crawl_gait.crawl_gait import CrawlGaitController
 from .GaitController import GaitController
 from .PIDController import PID_controller
-from .StateCommand import State, Command, BehaviorState
-from .StandController import StandController
 from .RestController import RestController
-from .trot_gait.trot_gait import TrotGaitController
-from .crawl_gait.crawl_gait import CrawlGaitController
 from .RobotController import Robot
+from .StandController import StandController
+from .StateCommand import BehaviorState, Command, State
+from .trot_gait.trot_gait import TrotGaitController
 
 __all__ = [
     "GaitController",

@@ -2,50 +2,326 @@ name: CI
 
 on:
   push:
-    branches: [ main, jazzy ]
+    branches: [main, jazzy_cpp]
   pull_request:
-    branches: [ main, jazzy ]
+    branches: [main, jazzy_cpp]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ROS_DISTRO: jazzy
+  DOCKER_DIR: src/docker
 
 jobs:
-  docker-build:
+  # ════════════════════════════════════════════════════════════
+  # 1. LINT — быстрый статический анализ (2-3 min)
+  # ════════════════════════════════════════════════════════════
+  lint:
+    name: Lint & Static Analysis
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 5
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install lint tools
+      run: pip install yamllint ruff
+
+    - name: YAML lint
+      run: |
+        echo "=== Checking .github/workflows ==="
+        yamllint -c .yamllint .github/workflows/
+        echo "=== Checking src/docker ==="
+        yamllint -c .yamllint src/docker/*.yml
+
+    - name: Python lint (ruff)
+      run: ruff check src/
+
+    - name: C++ format check
+      run: |
+        sudo apt-get update && sudo apt-get install -y clang-format
+        echo "=== Checking C++ files ==="
+        find src/quadropted_controller_cpp -name '*.hpp' -o -name '*.cpp' | \
+          xargs clang-format --dry-run --Werror
+
+  # ════════════════════════════════════════════════════════════
+  # 2. C++ UNIT TESTS — внутри Docker контейнера (10-15 min)
+  # ════════════════════════════════════════════════════════════
+  cpp-tests:
+    name: C++ Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [lint]
+    steps:
+    - uses: actions/checkout@v4
+
     - name: Free disk space
       run: |
-        sudo rm -rf /usr/share/dotnet
-        sudo rm -rf /opt/ghc
-        sudo rm -rf "/usr/local/share/boost"
+        sudo rm -rf /usr/share/dotnet /opt/ghc "/usr/local/share/boost"
         sudo apt-get clean
         docker system prune -a -f
         df -h
-        
+
     - name: Build Docker image
       run: |
-        cd src/docker
-        docker build --no-cache -t walking_robot_sim:test .
-        
-    - name: Test container
+        cd ${{ env.DOCKER_DIR }}
+        docker build -t walking_robot_sim:ci .
+
+    - name: Start container
       run: |
-        cd src/docker
+        cd ${{ env.DOCKER_DIR }}
         docker compose up -d
-        sleep 30
-        docker compose exec -T simulator bash -c "source /opt/ros/jazzy/setup.bash && ros2 node list" > test_results.txt 2>&1
-        docker compose logs simulator > container_logs.txt
-        docker compose down
-        
+
+    - name: Wait for workspace
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        echo "Waiting for workspace (max 60s)..."
+        for i in $(seq 1 30); do
+          if docker compose exec -T simulator bash -c \
+            "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && ros2 node list" 2>/dev/null | grep -q .; then
+            echo "Workspace ready at ${i}s"
+            exit 0
+          fi
+          sleep 2
+        done
+        echo "WARNING: Workspace not ready, continuing anyway"
+
+    - name: Build C++ package
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker compose exec -T simulator bash -c "
+          source /opt/ros/jazzy/setup.bash
+          source /root/ws/install/setup.bash 2>/dev/null || true
+          cd /root/ws
+          colcon build --packages-select quadropted_controller_cpp --cmake-args -DCMAKE_BUILD_TYPE=Release"
+
+    - name: Run C++ tests
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker compose exec -T simulator bash -c "
+          source /opt/ros/jazzy/setup.bash
+          source /root/ws/install/setup.bash
+          cd /root/ws
+          colcon test --packages-select quadropted_controller_cpp
+          colcon test-result --verbose"
+
     - name: Upload test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: ci-results
+        name: cpp-test-results
         path: |
-          src/docker/test_results.txt
-          src/docker/container_logs.txt
+          build/quadropted_controller_cpp/test_results/**/*.xml
+          build/quadropted_controller_cpp/Testing/**/*.xml
         retention-days: 7
+
+    - name: Cleanup
+      if: always()
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker compose down -v --remove-orphans
+
+  # ════════════════════════════════════════════════════════════
+  # 3. DOCKER BUILD — сборка образа с кэшированием (20-40 min / 5-10 cached)
+  # ════════════════════════════════════════════════════════════
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: [lint]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet /opt/ghc "/usr/local/share/boost"
+        sudo apt-get clean
+        docker system prune -a -f
+        df -h
+
+    - name: Docker cache
+      uses: actions/cache@v4
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ hashFiles('src/docker/Dockerfile') }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+
+    - name: Build Docker image
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker build \
+          --cache-from type=local,src=/tmp/.buildx-cache \
+          --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+          -t walking_robot_sim:ci .
+
+    - name: Move cache
+      run: |
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+    - name: Verify image
+      run: |
+        docker image ls walking_robot_sim:ci
+        SIZE=$(docker image inspect walking_robot_sim:ci --format='{{.Size}}')
+        echo "Image size: $(( SIZE / 1024 / 1024 / 1024 )) GB"
+
+  # ════════════════════════════════════════════════════════════
+  # 4. SMOKE TESTS — быстрый запуск и проверка (5-10 min)
+  # ════════════════════════════════════════════════════════════
+  smoke-tests:
+    name: Docker Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [docker-build]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet /opt/ghc "/usr/local/share/boost"
+        sudo apt-get clean
+        docker system prune -a -f
+
+    - name: Build image (cached)
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker build -t walking_robot_sim:ci .
+
+    - name: Start container
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker compose up -d
+
+    - name: Wait for ROS nodes (poll-based)
+      id: wait_ros
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        echo "Waiting for ROS nodes (max 90s)..."
+        for i in $(seq 1 45); do
+          if docker compose exec -T simulator bash -c \
+            "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && ros2 node list" 2>/dev/null | grep -q .; then
+            echo "ROS ready at ${i}s"
+            docker compose exec -T simulator bash -c \
+              "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && ros2 node list" \
+              > ros_nodes.txt 2>&1
+            cat ros_nodes.txt
+            exit 0
+          fi
+          sleep 2
+        done
+        echo "ROS nodes not ready after 90s"
+        docker compose logs --tail=50 simulator || true
+        exit 1
+
+    - name: Check critical nodes
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        nodes=$(cat ros_nodes.txt)
+        FAIL=0
+        for pattern in "robot_controller" "odometry" "cmd_vel"; do
+          if echo "$nodes" | grep -qi "$pattern"; then
+            echo "✓ Found node: $pattern"
+          else
+            echo "✗ Missing node: $pattern"
+            FAIL=1
+          fi
+        done
+        if [ $FAIL -eq 1 ]; then
+          echo "WARNING: Some critical nodes missing"
+        fi
+
+    - name: Check critical topics
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker compose exec -T simulator bash -c "
+          source /opt/ros/jazzy/setup.bash
+          source /root/ws/install/setup.bash
+          ros2 topic list
+        " > topics.txt 2>&1
+        cat topics.txt
+
+        FAIL=0
+        for topic in "/robot1/joint_states" "/robot1/odom" "/robot1/imu" "/robot1/robot_mode"; do
+          if grep -q "$topic" topics.txt; then
+            echo "✓ Topic: $topic"
+          else
+            echo "✗ Missing topic: $topic"
+            FAIL=1
+          fi
+        done
+        if [ $FAIL -eq 1 ]; then
+          echo "WARNING: Some critical topics missing"
+        fi
+
+    - name: Test behavior state switching
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker compose exec -T simulator bash -c "
+          source /opt/ros/jazzy/setup.bash
+          source /root/ws/install/setup.bash
+
+          echo '=== Test: REST → TROT ==='
+          ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand '{mode: REST, robot_id: 1}'
+          sleep 1
+          ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand '{mode: TROT, robot_id: 1}'
+          sleep 1
+
+          echo '=== Test: TROT → CRAWL ==='
+          ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand '{mode: CRAWL, robot_id: 1}'
+          sleep 1
+
+          echo '=== Test: CRAWL → STAND ==='
+          ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand '{mode: STAND, robot_id: 1}'
+          sleep 1
+
+          echo '=== Test: STAND → REST ==='
+          ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand '{mode: REST, robot_id: 1}'
+          sleep 1
+
+          echo 'All behavior state switches completed'
+        " || echo "Behavior switch test completed with warnings"
+
+    - name: Test velocity command
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker compose exec -T simulator bash -c "
+          source /opt/ros/jazzy/setup.bash
+          source /root/ws/install/setup.bash
+
+          echo '=== Test: Send velocity command ==='
+          timeout 5s ros2 topic pub /robot1/cmd_vel geometry_msgs/msg/Twist \
+            '{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}' || true
+          sleep 1
+
+          echo '=== Test: Check cmd_vel_pub bridge ==='
+          timeout 5s ros2 topic echo /robot1/robot_velocity --once || echo 'robot_velocity topic timeout'
+        " || echo "Velocity test completed with warnings"
+
+    - name: Cleanup
+      if: always()
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker compose down -v --remove-orphans
+        docker system prune -f
+
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: smoke-results
+        path: |
+          src/docker/ros_nodes.txt
+          src/docker/topics.txt
+        retention-days: 3

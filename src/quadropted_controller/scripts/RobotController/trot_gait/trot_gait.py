@@ -6,14 +6,16 @@ Trot Gait Controller — главный контроллер походки trot
 
 import numpy as np
 import rclpy
+from geometry_msgs.msg import Twist
 from rclpy.node import Node
 from RoboticsUtilities.rotation_matrices import rotxyz, rotz
+
+from quadropted_msgs.msg import RobotFootContact
+
 from ..GaitController import GaitController
 from ..PIDController import PID_controller
-from geometry_msgs.msg import Twist
-from quadropted_msgs.msg import RobotFootContact
-from .trot_swing import TrotSwingController
 from .trot_stance import TrotStanceController
+from .trot_swing import TrotSwingController
 
 
 class TrotGaitController(GaitController):
