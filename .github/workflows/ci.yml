@@ -149,27 +149,12 @@ jobs:
         docker system prune -a -f
         df -h
 
-    - name: Docker cache
-      uses: actions/cache@v4
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ hashFiles('src/docker/Dockerfile') }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-
-
     - name: Build Docker image
       run: |
         # Строим из корня проекта чтобы COPY src/ работал правильно
         docker build \
           -f src/docker/Dockerfile \
-          --cache-from type=local,src=/tmp/.buildx-cache \
-          --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
           -t walking_robot_sim:ci .
-
-    - name: Move cache
-      run: |
-        rm -rf /tmp/.buildx-cache
-        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
     - name: Verify image
       run: |
