@@ -3,7 +3,7 @@
 import numpy as np
 
 
-class GaitController(object):
+class GaitController:
     def __init__(
         self, stance_time, swing_time, time_step, contact_phases, default_stance
     ):

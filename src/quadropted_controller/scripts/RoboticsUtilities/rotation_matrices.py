@@ -4,8 +4,9 @@
 Вынесен из RoboticsUtilities/Transformations.py при декомпозиции.
 """
 
+from math import cos, sin
+
 import numpy as np
-from math import sin, cos
 
 
 def rotx(alpha):

@@ -1,27 +1,28 @@
 import os
+
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
-from launch.substitutions import LaunchConfiguration, Command
-from ament_index_python.packages import get_package_share_directory
-from launch.substitutions import LaunchConfiguration, Command, FindExecutable, PathJoinSubstitution
+
 
 def generate_launch_description():
     # Paths to files and directories
     go1_description_pkg = get_package_share_directory('go1_gazebo')
     xacro_path = os.path.join(go1_description_pkg, 'urdf', 'go1.urdf.xacro')
-    
+
     # Declare launch arguments
     user_debug_arg = DeclareLaunchArgument(
         'user_debug',
         default_value='false',
         description='Enable debug mode'
     )
-    
+
     # Command to convert xacro to robot_description
     robot_description_content = Command([PathJoinSubstitution([FindExecutable(name="xacro")]), " ", xacro_path])
     robot_description = {"robot_description": robot_description_content}
-    
+
     # Node to spawn joint state broadcaster
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",

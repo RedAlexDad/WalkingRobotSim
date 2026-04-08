@@ -9,10 +9,10 @@ Usage:
   python3 benchmark.py --combined     # Python + C++ сводная таблица (make benchmark)
 """
 
-import time
-import sys
-import os
 import argparse
+import os
+import sys
+import time
 
 # Add source path
 sys.path.insert(0, "/root/ws/src/quadropted_controller/scripts")
@@ -94,7 +94,7 @@ print(f"  max_reach = {stand.max_reach}")
 
 
 print("\n[5] Testing State and Command...")
-from RobotController.StateCommand import State, Command
+from RobotController.StateCommand import Command, State
 
 state = State(0.25)
 state.foot_locations = stance.copy()

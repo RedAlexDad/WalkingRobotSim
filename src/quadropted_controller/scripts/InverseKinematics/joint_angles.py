@@ -4,7 +4,7 @@
 Вынесено из InverseKinematics/robot_IK.py при декомпозиции.
 """
 
-from math import sqrt, atan2, sin, cos, pi
+from math import atan2, cos, pi, sin, sqrt
 
 
 def compute_joint_angles_for_leg(x, y, z, leg_index, l1, l2, l3, l4):

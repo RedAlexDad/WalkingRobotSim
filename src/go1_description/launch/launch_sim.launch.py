@@ -1,15 +1,12 @@
 import os
 
+import xacro
 from ament_index_python.packages import get_package_share_directory
-
-
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-
 from launch_ros.actions import Node
-import xacro
 
 
 def generate_launch_description():
@@ -35,7 +32,7 @@ def generate_launch_description():
     )
 
 
-    world = os.path.join(pkg_path, 'world', 'empty.world')    
+    world = os.path.join(pkg_path, 'world', 'empty.world')
     # Include the Gazebo launch file, provided by the ros_gz_sim package
     gazebo = IncludeLaunchDescription(
                 PythonLaunchDescriptionSource([os.path.join(
@@ -55,8 +52,8 @@ def generate_launch_description():
     robot_desc = xacro.process_file(
             xacro_file,
             mappings={'robot_name': name}
-        ).toxml() 
-    
+        ).toxml()
+
     params = {'robot_description': robot_desc, 'use_sim_time': use_sim_time}
 
     node_robot_state_publisher = Node(
