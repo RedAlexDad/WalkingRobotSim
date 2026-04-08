@@ -111,7 +111,7 @@ kubectl port-forward ...
 │  │  │  Container: simulator            │  │  │
 │  │  └──────────────────────────────────┘  │  │
 │  └────────────────────────────────────────┘  │
-│  + etcd + kubelet + kube-proxy + CNI + ...  │
+│  + etcd + kubelet + kube-proxy + CNI + ...   │
 └──────────────────────────────────────────────┘
 ```
 
