@@ -341,6 +341,200 @@ Python в TrotGaitController имеет аналогичную логику че
 
 ---
 
+### 🔴 Ошибка #13: STAND — не работает при teleop
+
+**Файл:** `src/quadropted_controller_cpp/src/nodes/robot_controller_node.cpp`
+
+**Симптом:** При переключении в STAND режим (через `make stand` или teleop) робот **продолжает ходить** вместо того чтобы стоять на месте.
+
+**Причина:**
+```cpp
+// control_loop() — выбор контроллера
+if (use_trot_) {
+    leg_positions = step_trot(state_, command_);
+} else if (use_crawl_) {
+    leg_positions = step_crawl(state_, command_);   // ← выполняется если был CRAWL
+} else {
+    leg_positions = step_rest(state_, command_);    // ← fallback, STAND не обрабатывается
+}
+```
+
+При переключении в STAND:
+```cpp
+} else if (command_.stand_event) {
+    if (state_.behavior_state != BehaviorState::STAND) {
+        state_.behavior_state = BehaviorState::STAND;
+        use_trot_ = false;
+        state_.body_local_position[2] = 0.005;
+    }
+    command_.stand_event = false;
+}
+```
+
+**Проблема:** `use_stand_` флаг отсутствует! Если до STAND был CRAWL → `use_crawl_ = true` → выполняется `step_crawl()`.
+Если до STAND был TROT → `use_trot_ = true` → выполняется `step_trot()`.
+
+**Python:**
+```python
+elif self.command.stand_event:
+    if self.state.behavior_state != BehaviorState.STAND:
+        self.state.behavior_state = BehaviorState.STAND
+        self.currentController = self.standController  # ← явно меняет контроллер
+        self.state.body_local_position[2] = 0.005
+```
+
+**Исправление:**
+1. Добавить флаг `use_stand_`
+2. В `change_controller()` при STAND: `use_stand_ = true`, `use_trot_ = false`, `use_crawl_ = false`
+3. В `control_loop()` добавить проверку `else if (use_stand_)`
+4. Добавить `step_stand()` метод с вызовом `stand_ctrl_->run()`
+5. В `publish_foot_contacts()` для STAND: все лапы на земле
+
+---
+
+## Сравнение Python vs C++ STAND режима (полный анализ)
+
+### 🔍 Найдено 5 функциональных различий
+
+| # | Аспект | Python | C++ | Влияние на STAND |
+|---|--------|--------|-----|------------------|
+| 1 | **Timer frequency** | `1.0/60 = 0.01667s` (60 Hz) | `1000/60 = 16ms` (62.5 Hz, integer division!) | Тело двигается на 4% быстрее |
+| 2 | **Default stance** | Асимметричный: `x_shift_front=0.02, x_shift_back=-0.0` → FR/FL: 0.2081, RR/RL: -0.1881 | Симметричный: `dx = body[0]*0.5 + 0.02` → все ±0.2081 | Задние лапы на 2cm дальше — другая IK конфигурация |
+| 3 | **state.ticks** | НЕ инкрементируется в StandController.run() | Инкрементируется в step_stand() | DEBUG логика работает, но поведение другое |
+| 4 | **foot_locations мутация** | `state.foot_locations = temp` внутри StandController.run() | `state_.foot_locations = leg_positions` в control_loop() | Результат одинаковый, locus мутации разный |
+| 5 | **change_controller порядок** | `stand_event` до `rest_event` | `rest_event` до `stand_event` | Разница только при одновременных событиях (редко) |
+
+### ✅ Подтверждено: core логика ИДЕНТИЧНА
+
+| Компонент | Python | C++ | Статус |
+|-----------|--------|-----|--------|
+| `body_velocity_scale` | `0.01` | `0.01` | ✅ Match |
+| `body_angular_scale` | `0.005` | `0.005` | ✅ Match |
+| `max_linear_velocity` | `0.035` | `0.035` | ✅ Match |
+| `max_angular_velocity` | `0.1` | `0.1` | ✅ Match |
+| velocity clamping | `np.clip()` | `cwiseMax/cwiseMin` | ✅ Match |
+| position update | `state.body_local_position[i] += vel[i] * scale` | `state.body_local_position[i] += vel[i] * scale` | ✅ Match |
+| IK call | `ik.run(state.body_local_position[0], ...)` | `ik_->inverse_kinematics(..., state_.body_local_position[0], ...)` | ✅ Match |
+| robot_id check | `msg.robot_id == 1` | `msg->robot_id == 1` | ✅ Match |
+| cmd_vel_pub linear.z | `msg.linear.z` (pass-through) | `msg->cmd_vel.linear.z` | ✅ Match |
+
+### 📋 Гипотеза: почему STAND не реагирует на teleop
+
+Из логов видно, что STAND активировался (`z=0.0050`), но `[STAND VELOCITY]` логи **не появлялись**. Это означает одно из:
+
+1. **Teleop не публикует когда STAND активен** — пользователь запускает `make stand` после `make teleop`, но teleop публикует только при нажатии клавиш. Если клавиши не нажимаются, команда = `0` (не нулевая, а `stop` сообщение).
+
+2. **Startup grace period** — первые 2 секунды после запуска C++ ноды control_loop возвращается сразу, команды принимаются но не применяются.
+
+3. **Проблема с cmd_vel_pub** — `linear.z` проходит без масштабирования: `new_msg.cmd_vel.linear.z = msg.linear.z`. Teleop публикует `linear.z = ±1.0` при нажатии `t/b`. При `body_velocity_scale = 0.01` и 62.5 Hz: `1.0 * 0.01 * 62.5 = 0.625 м/с` — очень быстро! Может быть IK не справляется или ограничения Gazebo мешают.
+
+### 🔴 Новая ошибка #14: STAND — timer integer division
+
+**Файл:** `src/quadropted_controller_cpp/src/nodes/robot_controller_node.cpp` (строка 138)
+
+**Симптом:** C++ control loop работает на 62.5 Hz вместо Python 60 Hz.
+
+```cpp
+std::chrono::milliseconds(1000 / rate_)  // 1000/60 = 16 (integer!) → 62.5 Hz
+```
+
+**Python:**
+```python
+self.create_timer(1.0 / RATE, self.control_loop)  # 1.0/60 = 0.01667 → 60 Hz
+```
+
+**Исправление:**
+```cpp
+std::chrono::microseconds(static_cast<long long>(1000000.0 / rate_))  // 16667µs → 60 Hz
+```
+
+### ⚠️ Ошибка #15: STAND — симметричный default stance отличается от Python
+
+**Файл:** `src/quadropted_controller_cpp/src/nodes/robot_controller_node.cpp` (строки 37-42)
+
+**Python (асимметричный):**
+```python
+self.delta_x = self.body[0] * 0.5       # 0.1881
+self.x_shift_front = 0.02
+self.x_shift_back = -0.0
+# FR/FL: 0.1881 + 0.02 =  0.2081
+# RR/RL: -0.1881 + 0.0  = -0.1881  ← 2cm ближе!
+```
+
+**C++ (симметричный):**
+```cpp
+double dx = body[0] * 0.5 + 0.02;  // 0.2081
+default_stance_ <<  dx,  dx, -dx, -dx,  // RR/RL: -0.2081 ← 2cm дальше!
+```
+
+**Исправление:**
+```cpp
+double dx_front = body[0] * 0.5 + 0.02;   // 0.2081
+double dx_back  = body[0] * 0.5 + 0.0;    // 0.1881
+default_stance_ <<  dx_front,  dx_front, -dx_back, -dx_back,
+                   -dy,        dy,        -dy,      dy,
+                    0,         0,          0,       0;
+```
+
+### 🔴 Ошибка #16: STAND — пробел не сбрасывает позицию корпуса к центру
+
+**Файл:** `src/quadropted_controller_cpp/src/controllers/stand_controller.cpp`
+
+**Симптом:** При нажатии пробела в teleop (stop) body position замирает на месте вместо возврата к центру.
+
+**Python:** Аналогично — Python StandController НЕ имеет auto-return логики. Но для STAND режима пользователь ожидает что при stop робот вернётся к нейтральной позиции.
+
+**TROT/CRAWL:** Имеют `has_command` проверку с lerp к `default_stance` (alpha=0.1).
+
+**Исправление:** Добавить `has_command` проверку в `StandController::run()`:
+```cpp
+bool has_command = std::abs(linear_vel.x()) > 1e-4 || ...;
+if (has_command) {
+    // Активное управление — накапливаем
+    state.body_local_position[0] += linear_vel.x() * body_velocity_scale_;
+} else {
+    // Stop — плавный возврат к центру
+    constexpr double alpha_pos = 0.05;  // ~20 тиков (0.33с)
+    state.body_local_position[0] *= (1.0 - alpha_pos);
+}
+```
+
+### 🔴 Ошибка #17: STAND — speed в teleop не влияет на скорость изменения позиции
+
+**Файлы:** 
+- `src/quadropted_controller_cpp/include/.../stand_controller.hpp` — `max_linear_velocity_=0.035`
+- `src/quadropted_controller/scripts/cmd_vel_pub.py` — `multiply_and_limit` с насыщающей экспонентой
+
+**Симптом:** Увеличение speed в teleop (q/w/e ключи) почти не влияет на скорость движения корпуса.
+
+**Причина #1:** `max_linear_velocity_=0.035` слишком маленький — даже при teleop speed=5.0 velocity обрезается до 0.035.
+
+**Причина #2:** `cmd_vel_pub.py` использует `multiply_and_limit` с насыщающей экспонентой:
+```python
+scaled_value = scale_factor * (1 - math.exp(-100 * value * 0.035))
+```
+При `value=1.0`: `0.035 * (1 - exp(-3.5)) = 0.0339` (уже 97% от максимума!)
+При `value=5.0`: `0.035 * (1 - exp(-17.5)) = 0.0350` (полная сатурация)
+
+**Исправление:**
+1. Увеличить `max_linear_velocity_` с `0.035` → `0.2` (×5.7)
+2. Увеличить `max_angular_velocity_` с `0.1` → `0.5` (×5)
+3. Заменить `multiply_and_limit` на `linear_scale_and_limit` (линейное масштабирование):
+```python
+def linear_scale_and_limit(self, value, scale_factor, min_limit, max_limit):
+    scaled_value = value * scale_factor  # linear: 0.5→0.0175, 1.0→0.035, 5.0→0.175
+    return self.limit_value(scaled_value, min_limit, max_limit)
+```
+
+**Результат:**
+| teleop speed | velocity (было) | velocity (стало) | body speed/tick | body speed/sec |
+|-------------|-----------------|------------------|-----------------|----------------|
+| 0.5 | 0.0289 | 0.0175 | 0.000175 | 0.0105 м/с |
+| 1.0 | 0.0339 | 0.035 | 0.00035 | 0.021 м/с |
+| 5.0 | 0.0350 (sat!) | 0.175 | 0.00175 | 0.105 м/с |
+
+---
+
 ## Декомпозиция проблемы (чек-лист)
 
 ### 1. REST контроллер
@@ -365,6 +559,19 @@ Python в TrotGaitController имеет аналогичную логику че
 - [x] **4.1** Добавить `phase_length_` в `TrotSwingController` (сейчас использует `swing_ticks_`) ✅
 - [x] **4.2** Добавить `stance_ticks_` в `TrotSwingController` для yaw rotation ✅
 - [x] **4.3** Исправить `raibert_touchdown_location()`: delta_pos = phase_length × dt, theta = stance_ticks × dt ✅
+
+### 5. STAND контроллер
+- [x] **5.1** Добавить флаг `use_stand_` в `RobotControllerNode` ✅
+- [x] **5.2** Обновить `change_controller()` для STAND: `use_stand_=true, use_trot_=false, use_crawl_=false` ✅
+- [x] **5.3** Добавить `step_stand()` метод с вызовом `stand_ctrl_->run()` ✅
+- [x] **5.4** Обновить `control_loop()` — добавить `else if (use_stand_)` ✅
+- [x] **5.5** Обновить `publish_foot_contacts()` для STAND (все лапы на земле) ✅
+- [x] **5.6** Исправить timer integer division: `1000/60` → `microseconds(1000000.0/60)` (#14) ✅
+- [x] **5.7** Исправить default stance — сделать асимметричным как в Python (#15) ✅
+- [x] **5.8** Добавить масштабирование `linear.z` и `angular.x/y` в cmd_vel_pub.py для STAND ✅
+- [x] **5.9** Убрать `state.ticks++` из step_stand() (как в Python) ✅
+- [x] **5.10** Добавить плавный возврат к центру при stop (пробел) (#16)
+- [x] **5.11** Увеличить max_velocity и использовать линейное масштабирование для speed (#17)
 
 ### 7. Переключение режимов
 - [x] **7.1** Добавить переход CRAWL→TROT в `change_controller()` ✅

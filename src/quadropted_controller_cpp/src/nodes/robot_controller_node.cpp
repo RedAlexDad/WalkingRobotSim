@@ -13,6 +13,7 @@
 #include "quadropted_controller_cpp/controllers/trot_gait.hpp"
 #include "quadropted_controller_cpp/controllers/crawl_gait.hpp"
 #include "quadropted_controller_cpp/controllers/rest_controller.hpp"
+#include "quadropted_controller_cpp/controllers/stand_controller.hpp"
 #include "quadropted_controller_cpp/utils/math_utils.hpp"
 #include <cmath>
 
@@ -30,13 +31,17 @@ public:
         double body[] = {0.3762, 0.0935};
         double legs[] = {0.0, 0.0955, 0.213, 0.213};
 
-        // Default stance
-        double dx = body[0] * 0.5 + 0.02;
+        // Default stance — асимметричный как в Python RobotController.py
+        // Python: delta_x = body[0]*0.5, x_shift_front=0.02, x_shift_back=0.0
+        // FR/FL: 0.1881 + 0.02 =  0.2081
+        // RR/RL: -0.1881 + 0.0  = -0.1881  (2cm ближе к центру чем передние!)
+        double dx_front = body[0] * 0.5 + 0.02;  // 0.2081 — передние лапы
+        double dx_back  = body[0] * 0.5 + 0.0;   // 0.1881 — задние лапы
         double dy = body[1] * 0.5 + legs[1];
         default_stance_.resize(3, 4);
-        default_stance_ <<  dx,  dx, -dx, -dx,
-                           -dy,  dy, -dy,  dy,
-                            0,   0,   0,   0;
+        default_stance_ <<  dx_front,  dx_front, -dx_back, -dx_back,
+                            -dy,       dy,       -dy,      dy,
+                             0,        0,         0,       0;
 
         state_.foot_locations = default_stance_;
         state_.behavior_state = BehaviorState::REST;
@@ -47,7 +52,9 @@ public:
         trot_gait_ = std::make_unique<TrotGaitController>(0.04, 0.18, 0.02, false, default_stance_);
         crawl_gait_ = std::make_unique<CrawlGaitController>(0.55, 0.45, 0.02, default_stance_);
         rest_ctrl_ = std::make_unique<RestController>(default_stance_);
+        stand_ctrl_ = std::make_unique<StandController>(default_stance_);
         use_trot_ = false;
+        use_stand_ = false;
 
         // Начинаем с REST → TROT
         command_.trot_event = true;
@@ -70,6 +77,13 @@ public:
                 if (msg->robot_id == 1) {
                     command_.velocity = {msg->cmd_vel.linear.x, msg->cmd_vel.linear.y, msg->cmd_vel.linear.z};
                     command_.yaw_rate = {msg->cmd_vel.angular.x, msg->cmd_vel.angular.y, msg->cmd_vel.angular.z};
+
+                    // STAND mode — логируем каждую команду
+                    if (state_.behavior_state == BehaviorState::STAND) {
+                        RCLCPP_INFO(get_logger(), "[STAND VELOCITY] vx=%.4f vy=%.4f vz=%.4f | ax=%.4f ay=%.4f az=%.4f",
+                                   command_.velocity[0], command_.velocity[1], command_.velocity[2],
+                                   command_.yaw_rate[0], command_.yaw_rate[1], command_.yaw_rate[2]);
+                    }
 
                     // Ограничение скорости для CRAWL режима (как в Python crawl_gait.py)
                     if (state_.behavior_state == BehaviorState::CRAWL) {
@@ -122,9 +136,10 @@ public:
                 }
             });
 
-        // Control loop timer
+        // Control loop timer — используем microseconds для точной частоты 60 Hz
+        // Python: 1.0/60 = 0.01667s, C++: 1000000/60 = 16666.67µs ≈ 16667µs
         timer_ = create_wall_timer(
-            std::chrono::milliseconds(1000 / rate_),
+            std::chrono::microseconds(static_cast<long long>(1000000.0 / rate_)),
             std::bind(&RobotControllerNode::control_loop, this));
 
         RCLCPP_INFO(get_logger(), "Robot Controller Node (C++) started at %d Hz", rate_);
@@ -197,6 +212,7 @@ private:
                 state_.behavior_state = BehaviorState::TROT;
                 use_trot_ = true;
                 use_crawl_ = false;
+                use_stand_ = false;
                 trot_gait_->pid_controller().reset(this->now().seconds());
                 state_.ticks = 0;
                 state_.body_local_position[2] = 0.0;
@@ -204,16 +220,27 @@ private:
                 state_.behavior_state = BehaviorState::TROT;
                 use_trot_ = true;
                 use_crawl_ = false;
+                use_stand_ = false;
                 trot_gait_->pid_controller().reset(this->now().seconds());
                 state_.ticks = 0;
                 state_.body_local_position[2] = 0.0;
                 RCLCPP_INFO(get_logger(), "Switched to TROT controller (from CRAWL)");
+            } else if (state_.behavior_state == BehaviorState::STAND) {
+                state_.behavior_state = BehaviorState::TROT;
+                use_trot_ = true;
+                use_crawl_ = false;
+                use_stand_ = false;
+                trot_gait_->pid_controller().reset(this->now().seconds());
+                state_.ticks = 0;
+                state_.body_local_position[2] = 0.0;
+                RCLCPP_INFO(get_logger(), "Switched to TROT controller (from STAND)");
             }
             command_.trot_event = false;
         } else if (command_.rest_event) {
             state_.behavior_state = BehaviorState::REST;
             use_crawl_ = false;
             use_trot_ = false;
+            use_stand_ = false;
             rest_ctrl_->pid().reset(this->now().seconds());
             state_.body_local_position[2] = -0.15;  // лечь на землю
             command_.rest_event = false;
@@ -221,14 +248,18 @@ private:
         } else if (command_.stand_event) {
             if (state_.behavior_state != BehaviorState::STAND) {
                 state_.behavior_state = BehaviorState::STAND;
+                use_stand_ = true;
                 use_trot_ = false;
+                use_crawl_ = false;
                 state_.body_local_position[2] = 0.005;
+                RCLCPP_INFO(get_logger(), "Switched to STAND controller");
             }
             command_.stand_event = false;
         } else if (command_.crawl_event) {
             state_.behavior_state = BehaviorState::CRAWL;
             use_crawl_ = true;
             use_trot_ = false;
+            use_stand_ = false;
             crawl_gait_->reset();
             state_.ticks = 0;
             state_.body_local_position[2] = 0.0;  // поднять корпус из REST
@@ -346,10 +377,29 @@ private:
         return rest_ctrl_->step(state, cmd);
     }
 
+    Eigen::MatrixXd step_stand(State& state, Command& cmd) {
+        // NOTE: state.ticks НЕ инкрементируется здесь (как в Python StandController)
+        // ticks инкрементируется только в step_trot() и step_crawl()
+
+        // DEBUG: логируем команды STAND (каждый тик т.к. ticks не меняется)
+        static int stand_debug_counter = 0;
+        stand_debug_counter++;
+        if (stand_debug_counter % 30 == 0) {
+            RCLCPP_INFO(get_logger(), "[STAND DEBUG] cmd: vx=%.4f vy=%.4f vz=%.4f ax=%.4f ay=%.4f az=%.4f | "
+                       "pos: x=%.4f y=%.4f z=%.4f | ori: r=%.4f p=%.4f y=%.4f",
+                       cmd.velocity[0], cmd.velocity[1], cmd.velocity[2],
+                       cmd.yaw_rate[0], cmd.yaw_rate[1], cmd.yaw_rate[2],
+                       state.body_local_position[0], state.body_local_position[1], state.body_local_position[2],
+                       state.body_local_orientation[0], state.body_local_orientation[1], state.body_local_orientation[2]);
+        }
+
+        return stand_ctrl_->run(state, cmd);
+    }
+
     void publish_foot_contacts() {
         auto msg = std::make_unique<quadropted_msgs::msg::RobotFootContact>();
-        if (state_.behavior_state == BehaviorState::REST) {
-            // В режиме отдыха все лапы на земле (как в Python)
+        if (state_.behavior_state == BehaviorState::REST || state_.behavior_state == BehaviorState::STAND) {
+            // В режиме отдыха и стойки все лапы на земле (как в Python)
             msg->contacts = {true, true, true, true};
         } else if (use_trot_) {
             Eigen::VectorXi contacts = trot_gait_->contacts(state_.ticks);
@@ -379,6 +429,8 @@ private:
             leg_positions = step_trot(state_, command_);
         } else if (use_crawl_) {
             leg_positions = step_crawl(state_, command_);
+        } else if (use_stand_) {
+            leg_positions = step_stand(state_, command_);
         } else {
             leg_positions = step_rest(state_, command_);
         }
@@ -433,6 +485,7 @@ private:
     bool controller_change_needed_ = false;
     bool use_trot_ = false;
     bool use_crawl_ = false;
+    bool use_stand_ = false;
     int startup_grace_ = 120;  // 2 секунды задержки при старте
 
     Eigen::MatrixXd default_stance_;
@@ -442,6 +495,7 @@ private:
     std::unique_ptr<TrotGaitController> trot_gait_;
     std::unique_ptr<CrawlGaitController> crawl_gait_;
     std::unique_ptr<RestController> rest_ctrl_;
+    std::unique_ptr<StandController> stand_ctrl_;
     std::unique_ptr<InverseKinematics> ik_;
 
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr joint_pub_;

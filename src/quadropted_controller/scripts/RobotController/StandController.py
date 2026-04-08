@@ -12,8 +12,9 @@ class StandController:
         self.body_velocity_scale = 0.01  # Масштаб для линейных скоростей
         self.body_angular_scale = 0.005  # Масштаб для угловой скорости
 
-        self.max_linear_velocity = 0.035  # [m/s]
-        self.max_angular_velocity = 0.1  # [rad/s]
+        # Увеличено с 0.035 → 0.2 чтобы teleop speed мог влиять на скорость
+        self.max_linear_velocity = 0.2  # [m/s]
+        self.max_angular_velocity = 0.5  # [rad/s]
 
     @property
     def default_stance(self):
