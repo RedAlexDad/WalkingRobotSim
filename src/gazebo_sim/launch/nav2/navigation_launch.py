@@ -15,7 +15,6 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration
@@ -32,7 +31,7 @@ def generate_launch_description():
     autostart = LaunchConfiguration("autostart")
     params_file = LaunchConfiguration("params_file")
 
-    lifecycle_nodes = ["controller_server", 
+    lifecycle_nodes = ["controller_server",
                        "planner_server",
                        "behavior_server",
                        "smoother_server",

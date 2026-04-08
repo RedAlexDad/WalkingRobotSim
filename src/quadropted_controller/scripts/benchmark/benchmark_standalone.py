@@ -5,6 +5,7 @@ Python Quadruped Controller Benchmark (standalone - no ROS dependencies)
 """
 
 import time
+
 import numpy as np
 
 
@@ -302,7 +303,7 @@ def benchmark_gait_controller():
     gait = GaitController(0.04, 0.18, 0.02, contact_phases, stance)
 
     print("Parameters:")
-    print(f"  stance_time: 0.04, swing_time: 0.18, time_step: 0.02")
+    print("  stance_time: 0.04, swing_time: 0.18, time_step: 0.02")
     print(f"  stance_ticks: {gait.stance_ticks}")
     print(f"  swing_ticks: {gait.swing_ticks}")
     print(f"  phase_length: {gait.phase_length}")
@@ -447,7 +448,7 @@ def benchmark_rest_controller():
 
     print("Testing Rest controller step:")
     result = rest.step(state, command)
-    print(f"  Result:")
+    print("  Result:")
     print(f"  FR: [{result[0, 0]:.4f}, {result[1, 0]:.4f}, {result[2, 0]:.4f}]")
     print(f"  FL: [{result[0, 1]:.4f}, {result[1, 1]:.4f}, {result[2, 1]:.4f}]")
     print(f"  RR: [{result[0, 2]:.4f}, {result[1, 2]:.4f}, {result[2, 2]:.4f}]")
@@ -470,7 +471,7 @@ def benchmark_stand_controller():
 
     print("Testing Stand controller run:")
     result = stand.run(state, command)
-    print(f"  Result:")
+    print("  Result:")
     print(f"  FR: [{result[0, 0]:.4f}, {result[1, 0]:.4f}, {result[2, 0]:.4f}]")
     print(f"  FL: [{result[0, 1]:.4f}, {result[1, 1]:.4f}, {result[2, 1]:.4f}]")
     print(f"  RR: [{result[0, 2]:.4f}, {result[1, 2]:.4f}, {result[2, 2]:.4f}]")
@@ -539,7 +540,7 @@ def benchmark_timing():
     end = time.perf_counter()
     duration = (end - start) * 1e6
 
-    print(f"Trot step (swing + stance):")
+    print("Trot step (swing + stance):")
     print(f"  {iterations} iterations in {duration:.0f} microseconds")
     print(f"  ~{duration / iterations:.2f} microseconds per call")
 
@@ -549,7 +550,7 @@ def benchmark_timing():
     end = time.perf_counter()
     duration = (end - start) * 1e6
 
-    print(f"\nInverseKinematics.inverse_kinematics():")
+    print("\nInverseKinematics.inverse_kinematics():")
     print(f"  {iterations} iterations in {duration:.0f} microseconds")
     print(f"  ~{duration / iterations:.2f} microseconds per call")
 

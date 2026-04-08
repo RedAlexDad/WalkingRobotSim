@@ -3,15 +3,13 @@
 Аналог launch_python.launch.py, но использует C++ узлы.
 """
 import os
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import (
-    IncludeLaunchDescription, DeclareLaunchArgument,
-    ExecuteProcess, RegisterEventHandler
-)
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription, RegisterEventHandler
+from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch.event_handlers import OnProcessExit
 from launch_ros.actions import SetParameter
 
 

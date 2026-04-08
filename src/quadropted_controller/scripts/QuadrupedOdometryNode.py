@@ -5,28 +5,24 @@
 
 import rclpy
 import tf2_ros
-
-from rclpy.node import Node
-
-from sensor_msgs.msg import Imu
+from ForwardKinematics import ForwardKinematics
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Int64
+from QuadrupedOdometry import (
+    MainLoop,
+    MarkerPublisher,
+    NodeConfig,
+    OdometryPublisher,
+    OdometryState,
+    SubscriptionCallbacks,
+    declare_parameters,
+)
+from rclpy.node import Node
 from rosgraph_msgs.msg import Clock
-from std_msgs.msg import Float64MultiArray
+from sensor_msgs.msg import Imu
+from std_msgs.msg import Float64MultiArray, Int64
 from visualization_msgs.msg import MarkerArray
 
-from quadropted_msgs.msg import RobotVelocity, RobotFootContact
-from ForwardKinematics import ForwardKinematics
-
-from QuadrupedOdometry import (
-    OdometryState,
-    NodeConfig,
-    declare_parameters,
-    SubscriptionCallbacks,
-    OdometryPublisher,
-    MarkerPublisher,
-    MainLoop,
-)
+from quadropted_msgs.msg import RobotFootContact, RobotVelocity
 
 
 class DogOdometry(
