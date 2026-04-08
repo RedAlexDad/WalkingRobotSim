@@ -73,10 +73,18 @@ class RobotVelocityHandler(Node):
         new_msg.cmd_vel.linear.y = self.multiply_and_limit(
             msg.linear.y, 0.012, -1.0, 1.0
         )
-        new_msg.cmd_vel.linear.z = msg.linear.z
+        # linear.z (вверх/вниз) — используем тот же масштаб что и для x
+        new_msg.cmd_vel.linear.z = self.multiply_and_limit(
+            msg.linear.z, 0.035, -1.0, 1.0
+        )
 
-        new_msg.cmd_vel.angular.x = msg.angular.x
-        new_msg.cmd_vel.angular.y = msg.angular.y
+        # angular.x/y (roll/pitch) — тоже масштабируем для STAND режима
+        new_msg.cmd_vel.angular.x = self.multiply_and_limit(
+            msg.angular.x, 0.1, -1.0, 1.0
+        )
+        new_msg.cmd_vel.angular.y = self.multiply_and_limit(
+            msg.angular.y, 0.1, -1.0, 1.0
+        )
         new_msg.cmd_vel.angular.z = self.limit(msg.angular.z, -1.0, 1.0)
 
         self.publisher_.publish(new_msg)

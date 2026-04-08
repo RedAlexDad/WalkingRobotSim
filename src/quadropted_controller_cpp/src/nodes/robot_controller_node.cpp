@@ -31,13 +31,17 @@ public:
         double body[] = {0.3762, 0.0935};
         double legs[] = {0.0, 0.0955, 0.213, 0.213};
 
-        // Default stance
-        double dx = body[0] * 0.5 + 0.02;
+        // Default stance — асимметричный как в Python RobotController.py
+        // Python: delta_x = body[0]*0.5, x_shift_front=0.02, x_shift_back=0.0
+        // FR/FL: 0.1881 + 0.02 =  0.2081
+        // RR/RL: -0.1881 + 0.0  = -0.1881  (2cm ближе к центру чем передние!)
+        double dx_front = body[0] * 0.5 + 0.02;  // 0.2081 — передние лапы
+        double dx_back  = body[0] * 0.5 + 0.0;   // 0.1881 — задние лапы
         double dy = body[1] * 0.5 + legs[1];
         default_stance_.resize(3, 4);
-        default_stance_ <<  dx,  dx, -dx, -dx,
-                           -dy,  dy, -dy,  dy,
-                            0,   0,   0,   0;
+        default_stance_ <<  dx_front,  dx_front, -dx_back, -dx_back,
+                            -dy,       dy,       -dy,      dy,
+                             0,        0,         0,       0;
 
         state_.foot_locations = default_stance_;
         state_.behavior_state = BehaviorState::REST;
@@ -73,6 +77,13 @@ public:
                 if (msg->robot_id == 1) {
                     command_.velocity = {msg->cmd_vel.linear.x, msg->cmd_vel.linear.y, msg->cmd_vel.linear.z};
                     command_.yaw_rate = {msg->cmd_vel.angular.x, msg->cmd_vel.angular.y, msg->cmd_vel.angular.z};
+
+                    // STAND mode — логируем каждую команду
+                    if (state_.behavior_state == BehaviorState::STAND) {
+                        RCLCPP_INFO(get_logger(), "[STAND VELOCITY] vx=%.4f vy=%.4f vz=%.4f | ax=%.4f ay=%.4f az=%.4f",
+                                   command_.velocity[0], command_.velocity[1], command_.velocity[2],
+                                   command_.yaw_rate[0], command_.yaw_rate[1], command_.yaw_rate[2]);
+                    }
 
                     // Ограничение скорости для CRAWL режима (как в Python crawl_gait.py)
                     if (state_.behavior_state == BehaviorState::CRAWL) {
@@ -125,9 +136,10 @@ public:
                 }
             });
 
-        // Control loop timer
+        // Control loop timer — используем microseconds для точной частоты 60 Hz
+        // Python: 1.0/60 = 0.01667s, C++: 1000000/60 = 16666.67µs ≈ 16667µs
         timer_ = create_wall_timer(
-            std::chrono::milliseconds(1000 / rate_),
+            std::chrono::microseconds(static_cast<long long>(1000000.0 / rate_)),
             std::bind(&RobotControllerNode::control_loop, this));
 
         RCLCPP_INFO(get_logger(), "Robot Controller Node (C++) started at %d Hz", rate_);
@@ -365,8 +377,22 @@ private:
         return rest_ctrl_->step(state, cmd);
     }
 
-    Eigen::MatrixXd step_stand(State& state, const Command& cmd) {
-        state.ticks++;
+    Eigen::MatrixXd step_stand(State& state, Command& cmd) {
+        // NOTE: state.ticks НЕ инкрементируется здесь (как в Python StandController)
+        // ticks инкрементируется только в step_trot() и step_crawl()
+
+        // DEBUG: логируем команды STAND (каждый тик т.к. ticks не меняется)
+        static int stand_debug_counter = 0;
+        stand_debug_counter++;
+        if (stand_debug_counter % 30 == 0) {
+            RCLCPP_INFO(get_logger(), "[STAND DEBUG] cmd: vx=%.4f vy=%.4f vz=%.4f ax=%.4f ay=%.4f az=%.4f | "
+                       "pos: x=%.4f y=%.4f z=%.4f | ori: r=%.4f p=%.4f y=%.4f",
+                       cmd.velocity[0], cmd.velocity[1], cmd.velocity[2],
+                       cmd.yaw_rate[0], cmd.yaw_rate[1], cmd.yaw_rate[2],
+                       state.body_local_position[0], state.body_local_position[1], state.body_local_position[2],
+                       state.body_local_orientation[0], state.body_local_orientation[1], state.body_local_orientation[2]);
+        }
+
         return stand_ctrl_->run(state, cmd);
     }
 
