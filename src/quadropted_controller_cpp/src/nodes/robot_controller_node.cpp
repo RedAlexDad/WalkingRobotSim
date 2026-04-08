@@ -13,6 +13,7 @@
 #include "quadropted_controller_cpp/controllers/trot_gait.hpp"
 #include "quadropted_controller_cpp/controllers/crawl_gait.hpp"
 #include "quadropted_controller_cpp/controllers/rest_controller.hpp"
+#include "quadropted_controller_cpp/controllers/stand_controller.hpp"
 #include "quadropted_controller_cpp/utils/math_utils.hpp"
 #include <cmath>
 
@@ -47,7 +48,9 @@ public:
         trot_gait_ = std::make_unique<TrotGaitController>(0.04, 0.18, 0.02, false, default_stance_);
         crawl_gait_ = std::make_unique<CrawlGaitController>(0.55, 0.45, 0.02, default_stance_);
         rest_ctrl_ = std::make_unique<RestController>(default_stance_);
+        stand_ctrl_ = std::make_unique<StandController>(default_stance_);
         use_trot_ = false;
+        use_stand_ = false;
 
         // Начинаем с REST → TROT
         command_.trot_event = true;
@@ -197,6 +200,7 @@ private:
                 state_.behavior_state = BehaviorState::TROT;
                 use_trot_ = true;
                 use_crawl_ = false;
+                use_stand_ = false;
                 trot_gait_->pid_controller().reset(this->now().seconds());
                 state_.ticks = 0;
                 state_.body_local_position[2] = 0.0;
@@ -204,16 +208,27 @@ private:
                 state_.behavior_state = BehaviorState::TROT;
                 use_trot_ = true;
                 use_crawl_ = false;
+                use_stand_ = false;
                 trot_gait_->pid_controller().reset(this->now().seconds());
                 state_.ticks = 0;
                 state_.body_local_position[2] = 0.0;
                 RCLCPP_INFO(get_logger(), "Switched to TROT controller (from CRAWL)");
+            } else if (state_.behavior_state == BehaviorState::STAND) {
+                state_.behavior_state = BehaviorState::TROT;
+                use_trot_ = true;
+                use_crawl_ = false;
+                use_stand_ = false;
+                trot_gait_->pid_controller().reset(this->now().seconds());
+                state_.ticks = 0;
+                state_.body_local_position[2] = 0.0;
+                RCLCPP_INFO(get_logger(), "Switched to TROT controller (from STAND)");
             }
             command_.trot_event = false;
         } else if (command_.rest_event) {
             state_.behavior_state = BehaviorState::REST;
             use_crawl_ = false;
             use_trot_ = false;
+            use_stand_ = false;
             rest_ctrl_->pid().reset(this->now().seconds());
             state_.body_local_position[2] = -0.15;  // лечь на землю
             command_.rest_event = false;
@@ -221,14 +236,18 @@ private:
         } else if (command_.stand_event) {
             if (state_.behavior_state != BehaviorState::STAND) {
                 state_.behavior_state = BehaviorState::STAND;
+                use_stand_ = true;
                 use_trot_ = false;
+                use_crawl_ = false;
                 state_.body_local_position[2] = 0.005;
+                RCLCPP_INFO(get_logger(), "Switched to STAND controller");
             }
             command_.stand_event = false;
         } else if (command_.crawl_event) {
             state_.behavior_state = BehaviorState::CRAWL;
             use_crawl_ = true;
             use_trot_ = false;
+            use_stand_ = false;
             crawl_gait_->reset();
             state_.ticks = 0;
             state_.body_local_position[2] = 0.0;  // поднять корпус из REST
@@ -346,10 +365,15 @@ private:
         return rest_ctrl_->step(state, cmd);
     }
 
+    Eigen::MatrixXd step_stand(State& state, const Command& cmd) {
+        state.ticks++;
+        return stand_ctrl_->run(state, cmd);
+    }
+
     void publish_foot_contacts() {
         auto msg = std::make_unique<quadropted_msgs::msg::RobotFootContact>();
-        if (state_.behavior_state == BehaviorState::REST) {
-            // В режиме отдыха все лапы на земле (как в Python)
+        if (state_.behavior_state == BehaviorState::REST || state_.behavior_state == BehaviorState::STAND) {
+            // В режиме отдыха и стойки все лапы на земле (как в Python)
             msg->contacts = {true, true, true, true};
         } else if (use_trot_) {
             Eigen::VectorXi contacts = trot_gait_->contacts(state_.ticks);
@@ -379,6 +403,8 @@ private:
             leg_positions = step_trot(state_, command_);
         } else if (use_crawl_) {
             leg_positions = step_crawl(state_, command_);
+        } else if (use_stand_) {
+            leg_positions = step_stand(state_, command_);
         } else {
             leg_positions = step_rest(state_, command_);
         }
@@ -433,6 +459,7 @@ private:
     bool controller_change_needed_ = false;
     bool use_trot_ = false;
     bool use_crawl_ = false;
+    bool use_stand_ = false;
     int startup_grace_ = 120;  // 2 секунды задержки при старте
 
     Eigen::MatrixXd default_stance_;
@@ -442,6 +469,7 @@ private:
     std::unique_ptr<TrotGaitController> trot_gait_;
     std::unique_ptr<CrawlGaitController> crawl_gait_;
     std::unique_ptr<RestController> rest_ctrl_;
+    std::unique_ptr<StandController> stand_ctrl_;
     std::unique_ptr<InverseKinematics> ik_;
 
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr joint_pub_;

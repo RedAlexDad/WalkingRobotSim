@@ -341,6 +341,57 @@ Python в TrotGaitController имеет аналогичную логику че
 
 ---
 
+### 🔴 Ошибка #13: STAND — не работает при teleop
+
+**Файл:** `src/quadropted_controller_cpp/src/nodes/robot_controller_node.cpp`
+
+**Симптом:** При переключении в STAND режим (через `make stand` или teleop) робот **продолжает ходить** вместо того чтобы стоять на месте.
+
+**Причина:**
+```cpp
+// control_loop() — выбор контроллера
+if (use_trot_) {
+    leg_positions = step_trot(state_, command_);
+} else if (use_crawl_) {
+    leg_positions = step_crawl(state_, command_);   // ← выполняется если был CRAWL
+} else {
+    leg_positions = step_rest(state_, command_);    // ← fallback, STAND не обрабатывается
+}
+```
+
+При переключении в STAND:
+```cpp
+} else if (command_.stand_event) {
+    if (state_.behavior_state != BehaviorState::STAND) {
+        state_.behavior_state = BehaviorState::STAND;
+        use_trot_ = false;
+        state_.body_local_position[2] = 0.005;
+    }
+    command_.stand_event = false;
+}
+```
+
+**Проблема:** `use_stand_` флаг отсутствует! Если до STAND был CRAWL → `use_crawl_ = true` → выполняется `step_crawl()`.
+Если до STAND был TROT → `use_trot_ = true` → выполняется `step_trot()`.
+
+**Python:**
+```python
+elif self.command.stand_event:
+    if self.state.behavior_state != BehaviorState.STAND:
+        self.state.behavior_state = BehaviorState.STAND
+        self.currentController = self.standController  # ← явно меняет контроллер
+        self.state.body_local_position[2] = 0.005
+```
+
+**Исправление:**
+1. Добавить флаг `use_stand_`
+2. В `change_controller()` при STAND: `use_stand_ = true`, `use_trot_ = false`, `use_crawl_ = false`
+3. В `control_loop()` добавить проверку `else if (use_stand_)`
+4. Добавить `step_stand()` метод с вызовом `stand_ctrl_->run()`
+5. В `publish_foot_contacts()` для STAND: все лапы на земле
+
+---
+
 ## Декомпозиция проблемы (чек-лист)
 
 ### 1. REST контроллер
@@ -365,6 +416,13 @@ Python в TrotGaitController имеет аналогичную логику че
 - [x] **4.1** Добавить `phase_length_` в `TrotSwingController` (сейчас использует `swing_ticks_`) ✅
 - [x] **4.2** Добавить `stance_ticks_` в `TrotSwingController` для yaw rotation ✅
 - [x] **4.3** Исправить `raibert_touchdown_location()`: delta_pos = phase_length × dt, theta = stance_ticks × dt ✅
+
+### 5. STAND контроллер
+- [ ] **5.1** Добавить флаг `use_stand_` в `RobotControllerNode`
+- [ ] **5.2** Обновить `change_controller()` для STAND: `use_stand_=true, use_trot_=false, use_crawl_=false`
+- [ ] **5.3** Добавить `step_stand()` метод с вызовом `stand_ctrl_->run()`
+- [ ] **5.4** Обновить `control_loop()` — добавить `else if (use_stand_)`
+- [ ] **5.5** Обновить `publish_foot_contacts()` для STAND (все лапы на земле)
 
 ### 7. Переключение режимов
 - [x] **7.1** Добавить переход CRAWL→TROT в `change_controller()` ✅
