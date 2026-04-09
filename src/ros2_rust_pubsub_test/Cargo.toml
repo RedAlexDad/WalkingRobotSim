@@ -1,0 +1,11 @@
+[package]
+name = "ros2_rust_pubsub_test"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "rclrs_check"
+path = "src/rclrs_check.rs"
+
+[dependencies]
+rclrs = "0.7"

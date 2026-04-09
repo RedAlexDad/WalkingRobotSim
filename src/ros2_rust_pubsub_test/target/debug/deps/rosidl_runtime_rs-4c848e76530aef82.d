@@ -1,0 +1,10 @@
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_rust_pubsub_test/target/debug/deps/rosidl_runtime_rs-4c848e76530aef82.d: /home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/lib.rs /home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/sequence.rs /home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/string.rs /home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/traits.rs
+
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_rust_pubsub_test/target/debug/deps/librosidl_runtime_rs-4c848e76530aef82.rlib: /home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/lib.rs /home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/sequence.rs /home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/string.rs /home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/traits.rs
+
+/home/redalexdad/GitHub/WalkingRobotSim/src/ros2_rust_pubsub_test/target/debug/deps/librosidl_runtime_rs-4c848e76530aef82.rmeta: /home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/lib.rs /home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/sequence.rs /home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/string.rs /home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/traits.rs
+
+/home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/lib.rs:
+/home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/sequence.rs:
+/home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/string.rs:
+/home/redalexdad/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rosidl_runtime_rs-0.6.0/src/traits.rs:
