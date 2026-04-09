@@ -4,8 +4,17 @@ version = "0.1.0"
 edition = "2021"
 
 [[bin]]
+name = "pub"
+path = "src/pub.rs"
+
+[[bin]]
+name = "sub"
+path = "src/sub.rs"
+
+[[bin]]
 name = "rclrs_check"
 path = "src/rclrs_check.rs"
 
 [dependencies]
 rclrs = "0.7"
+rosidl_runtime_rs = "0.6"

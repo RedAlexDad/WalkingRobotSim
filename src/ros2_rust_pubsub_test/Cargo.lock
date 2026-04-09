@@ -630,6 +630,7 @@ name = "ros2_rust_pubsub_test"
 version = "0.1.0"
 dependencies = [
  "rclrs",
+ "rosidl_runtime_rs",
 ]
 
 [[package]]

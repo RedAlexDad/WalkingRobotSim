@@ -86,3 +86,9 @@ wheels/
 
 # Qwen
 .qwen/*
+# ROS 2 Rust target directories
+src/ros2_rust_pubsub_test/target/
+
+# Git submodules (clone separately)
+src/ros2_rust/
+src/rosidl_rust/
