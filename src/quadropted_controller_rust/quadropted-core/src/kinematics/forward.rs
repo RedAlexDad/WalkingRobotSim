@@ -7,14 +7,15 @@ use crate::math::rotation::rotxyz;
 use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
 
 /// Get base position for a leg (FR, FL, RR, RL)
+/// Order matches C++ compute_local_positions: FR=(hl,-hw), FL=(hl,hw), RR=(-hl,-hw), RL=(-hl,hw)
 pub fn leg_base_positions(leg_index: usize, body_length: f64, body_width: f64) -> Vector2<f64> {
     let hl = body_length / 2.0;
     let hw = body_width / 2.0;
     match leg_index {
-        0 => nalgebra::Vector2::new(hl, hw),   // FR
-        1 => nalgebra::Vector2::new(hl, -hw),  // FL
-        2 => nalgebra::Vector2::new(-hl, hw),  // RR
-        3 => nalgebra::Vector2::new(-hl, -hw), // RL
+        0 => nalgebra::Vector2::new(hl, -hw),  // FR
+        1 => nalgebra::Vector2::new(hl, hw),   // FL
+        2 => nalgebra::Vector2::new(-hl, -hw), // RR
+        3 => nalgebra::Vector2::new(-hl, hw),  // RL
         _ => panic!("Invalid leg_index. Must be 0 (FR), 1 (FL), 2 (RR), or 3 (RL)."),
     }
 }
@@ -94,10 +95,11 @@ mod tests {
     #[test]
     fn test_leg_base_positions() {
         let (bl, bw, _, _, _, _) = default_body();
-        assert_eq!(leg_base_positions(0, bl, bw), nalgebra::Vector2::new(0.1881, 0.04675));
-        assert_eq!(leg_base_positions(1, bl, bw), nalgebra::Vector2::new(0.1881, -0.04675));
-        assert_eq!(leg_base_positions(2, bl, bw), nalgebra::Vector2::new(-0.1881, 0.04675));
-        assert_eq!(leg_base_positions(3, bl, bw), nalgebra::Vector2::new(-0.1881, -0.04675));
+        // Order: FR=(hl,-hw), FL=(hl,hw), RR=(-hl,-hw), RL=(-hl,hw)
+        assert_eq!(leg_base_positions(0, bl, bw), nalgebra::Vector2::new(0.1881, -0.04675));
+        assert_eq!(leg_base_positions(1, bl, bw), nalgebra::Vector2::new(0.1881, 0.04675));
+        assert_eq!(leg_base_positions(2, bl, bw), nalgebra::Vector2::new(-0.1881, -0.04675));
+        assert_eq!(leg_base_positions(3, bl, bw), nalgebra::Vector2::new(-0.1881, 0.04675));
     }
 
     #[test]
