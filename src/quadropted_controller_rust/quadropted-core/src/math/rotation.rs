@@ -34,17 +34,19 @@ pub fn rotz(angle: f64) -> Matrix3<f64> {
     )
 }
 
-/// Combined rotation: Rz(yaw) * Ry(pitch) * Rx(roll)
+/// Combined rotation: Rx(roll) * Ry(pitch) * Rz(yaw)
 /// Equivalent to C++ rotxyz(roll, pitch, yaw)
+/// Order: intrinsic rotations — roll first, then pitch, then yaw
 pub fn rotxyz(roll: f64, pitch: f64, yaw: f64) -> Matrix3<f64> {
-    let (sr, cr) = roll.sin_cos();
-    let (sp, cp) = pitch.sin_cos();
-    let (sy, cy) = yaw.sin_cos();
+    // .sin_cos() returns (sin, cos)
+    let (sa, ca) = roll.sin_cos();    // sa=sin(roll),  ca=cos(roll)
+    let (sb, cb) = pitch.sin_cos();   // sb=sin(pitch), cb=cos(pitch)
+    let (sg, cg) = yaw.sin_cos();     // sg=sin(yaw),   cg=cos(yaw)
 
     Matrix3::new(
-        cp * cy,  sr * sp * cy - cr * sy,  cr * sp * cy + sr * sy,
-        cp * sy,  sr * sp * sy + cr * cy,  cr * sp * sy - sr * cy,
-        -sp,      sr * cp,                 cr * cp,
+        cb * cg,   -cb * sg,                   sb,
+        sa * sb * cg + ca * sg,  -sa * sb * sg + ca * cg,  -sa * cb,
+        -ca * sb * cg + sa * sg,  ca * sb * sg + sa * cg,  ca * cb,
     )
 }
 

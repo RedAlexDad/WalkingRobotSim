@@ -113,15 +113,16 @@ fn cross_validate_rotxyz() {
     for (roll, pitch, yaw) in test_cases {
         let rust_result = rotxyz(roll, pitch, yaw);
 
-        // C++ formula: Rz * Ry * Rx
-        let (sr, cr) = roll.sin_cos();
-        let (sp, cp) = pitch.sin_cos();
-        let (sy, cy) = yaw.sin_cos();
+        // C++ formula: Rx * Ry * Rz (same as quadropted_controller_cpp)
+        // .sin_cos() returns (sin, cos)
+        let (sa, ca) = roll.sin_cos();
+        let (sb, cb) = pitch.sin_cos();
+        let (sg, cg) = yaw.sin_cos();
 
         let cpp_expected = nalgebra::Matrix3::new(
-            cp * cy,  sr * sp * cy - cr * sy,  cr * sp * cy + sr * sy,
-            cp * sy,  sr * sp * sy + cr * cy,  cr * sp * sy - sr * cy,
-            -sp,      sr * cp,                 cr * cp,
+            cb * cg,   -cb * sg,                   sb,
+            sa * sb * cg + ca * sg,  -sa * sb * sg + ca * cg,  -sa * cb,
+            -ca * sb * cg + sa * sg,  ca * sb * sg + sa * cg,  ca * cb,
         );
 
         assert!(
