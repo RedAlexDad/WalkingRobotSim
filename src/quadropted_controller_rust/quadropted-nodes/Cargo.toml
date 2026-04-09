@@ -10,4 +10,6 @@ path = "src/bin/robot_controller_node.rs"
 
 [dependencies]
 rclrs = "0.7"
+rosidl_runtime_rs = "0.6"
+nalgebra = "0.33"
 quadropted-core = { path = "../quadropted-core" }
