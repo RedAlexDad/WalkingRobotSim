@@ -1,0 +1,9 @@
+[package]
+name = "quadropted-nodes"
+version = "0.1.0"
+edition = "2021"
+description = "ROS 2 nodes for Quadropted robot"
+
+[dependencies]
+rclrs = "0.7"
+quadropted-core = { path = "../quadropted-core" }

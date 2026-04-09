@@ -1,0 +1,10 @@
+[package]
+name = "quadropted-core"
+version = "0.1.0"
+edition = "2021"
+description = "Core robotics algorithms: kinematics, controllers, odometry"
+
+[dependencies]
+nalgebra = "0.33"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
