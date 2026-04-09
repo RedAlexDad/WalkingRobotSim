@@ -554,25 +554,25 @@ type Vec3 = nalgebra::Vector3<f64>;
 ## Итоговый чек-лист
 
 ### Фаза 1: Инфраструктура
-- [ ] 1.1 Создать Cargo workspace
-- [ ] 1.2 Настроить colcon + cargo билд
+- [x] 1.1 Создать Cargo workspace
+- [x] 1.2 Настроить colcon + cargo билд
 - [ ] 1.3 Сгенерировать Rust типы для msg/srv
-- [ ] 1.4 Настроить CI для Rust
+- [ ] 1.4 Настроить CI для Rust (rustfmt, clippy, test)
 
 ### Фаза 2: Math & Utils
-- [ ] 2.1 Rotation matrices (3×3)
-- [ ] 2.2 Homogeneous transforms (4×4)
-- [ ] 2.3 rotxyz (Euler angles)
+- [x] 2.1 Rotation matrices (3×3) — rotx, roty, rotz, rotxyz ✅
+- [x] 2.2 Homogeneous transforms (4×4) — transxyz, transform, inverse ✅
+- [ ] 2.3 Cross-validation тесты: Rust vs C++
 - [ ] 2.4 Message builders
 
 ### Фаза 3: Kinematics
 - [ ] 3.1 Forward kinematics
 - [ ] 3.2 Inverse kinematics
-- [ ] 3.3 Leg base positions
+- [ ] 3.3 Cross-validation: FK/IK roundtrip Rust vs C++
 
 ### Фаза 4: Controllers Core
 - [ ] 4.1 PID controller
-- [ ] 4.2 State/Command structs
+- [ ] 4.2 State/Command structs ✅
 - [ ] 4.3 GaitController base
 - [ ] 4.4 TrotStance
 - [ ] 4.5 TrotSwing + Raibert heuristic
@@ -590,7 +590,7 @@ type Vec3 = nalgebra::Vector3<f64>;
 
 ### Фаза 6: Тестирование
 - [ ] 6.1 Unit tests (>80% coverage)
-- [ ] 6.2 Cross-validation Rust vs C++
+- [ ] 6.2 Cross-validation Rust vs C++ (math, kinematics, controllers)
 - [ ] 6.3 Benchmark (criterion)
 - [ ] 6.4 Smoke test в Gazebo
 - [ ] 6.5 Integration test
