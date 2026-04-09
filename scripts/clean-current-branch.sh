@@ -34,7 +34,31 @@ fi
 # 2. Запускаем filter-branch только для текущей ветки
 echo "Запуск filter-branch..."
 FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f \
-  --msg-filter 'sed "s/Co-authored-by: Qwen-Coder <qwen-coder@alibabacloud.com>//g; s/✅//g; /^[[:space:]]*$/d; s/  *$//"' \
+  --msg-filter '
+    # Удаляем Co-authored-by
+    sed "s/Co-authored-by: Qwen-Coder <qwen-coder@alibabacloud.com>//g" |
+    # Удаляем эмодзи
+    sed "s/✅//g; s/⏳//g" |
+    # Сохраняем ПЕРВУЮ пустую строку (разделитель subject/body), удаляем остальные trailing
+    awk "
+      BEGIN { line_num=0 }
+      { lines[line_num++] = \$0 }
+      END {
+        print lines[0]
+        if (line_num > 1 && lines[1] == \"\") {
+          has_blank=1
+        }
+        if (!has_blank && line_num > 1) {
+          print \"\"
+        }
+        for (i = 1; i < line_num; i++) {
+          print lines[i]
+        }
+      }
+    " |
+    # Убираем trailing пробелы
+    sed "s/  *$//"
+  ' \
   "$RANGE"
 
 # 3. Удаляем backup ссылки

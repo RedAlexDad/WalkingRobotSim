@@ -3,6 +3,11 @@ project(quadropted_controller_rust)
 
 find_package(ament_cmake REQUIRED)
 
+# Install launch files
+install(DIRECTORY launch/
+    DESTINATION share/${PROJECT_NAME}/launch
+)
+
 # Build the Rust workspace
 execute_process(
     COMMAND cargo build --release
