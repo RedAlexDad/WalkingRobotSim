@@ -86,11 +86,24 @@ wheels/
 
 # Qwen
 .qwen/*
-# ROS 2 Rust target directories
-src/ros2_rust_pubsub_test/target/
 
 # Git submodules (clone separately)
+
+# ════════════════════════════════════════════════════════════
+# Rust
+# ════════════════════════════════════════════════════════════
+
+# Build output
+**/target/
+**/Cargo.lock
+
+# Rust analyzer
+**/.rust-analyzer/
+
+# IDE
+**/.idea/
+**/.vscode/settings.json
+
+# External repos (clone separately)
 src/ros2_rust/
 src/rosidl_rust/
-src/quadropted_controller_rust/target/\nsrc/quadropted_controller_rust/Cargo.lock
-src/quadropted_controller_rust/target/\nsrc/quadropted_controller_rust/Cargo.lock
