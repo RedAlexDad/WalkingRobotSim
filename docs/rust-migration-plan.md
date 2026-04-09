@@ -6,7 +6,95 @@
 
 ---
 
-## Текущее состояние
+## ⚠️ КРИТИЧЕСКАЯ ЗАВИСИМОСТЬ: ros2_rust
+
+> **Без репозитория [ros2-rust/ros2_rust](https://github.com/ros2-rust/ros2_rust) проект НЕ СОБЕРЁТСЯ и НЕ ЗАПУСТИТСЯ.**
+
+Это не просто библиотека — это **вся инфраструктура** для работы ROS 2 на Rust:
+
+```
+ros2_rust экосистема (ОБЯЗАТЕЛЬНО):
+├── rclrs (crate)              — ROS 2 client library для Rust (pub/sub, services, params, timers)
+├── rosidl_rust (repo)         — Генератор Rust типов из .msg/.srv файлов
+├── colcon-cargo (pip)         — Плагин colcon для cargo build
+├── colcon-ros-cargo (pip)     — Плагин colcon для ROS 2 пакетов на Rust
+└── examples (repo)            — Примеры минимальных узлов
+
+Без этого:
+❌ msg/srv типы не генерируются для Rust
+❌ colcon не знает как собирать Rust пакеты
+❌ rclrs не подключится к ROS 2 graph
+❌ Ни один узел не запустится
+```
+
+### Архитектурная роль ros2_rust
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    ROS 2 GRAPH (rclcpp/rclrs)               │
+│                                                             │
+│  ┌─────────────┐    ┌──────────────┐    ┌─────────────────┐│
+│  │ C++ Nodes   │    │ Rust Nodes   │    │ Python Nodes    ││
+│  │ (rclcpp)    │◄──►│ (rclrs)      │◄──►│ (rclpy)         ││
+│  └─────────────┘    └──────┬───────┘    └─────────────────┘│
+│                            │                                │
+│                    ┌───────▼───────┐                        │
+│                    │  rosidl_rust  │ ← ГЕНЕРАТОР ТИПОВ     │
+│                    │  (msg/srv)    │   Без него нет типов!  │
+│                    └───────────────┘                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Что происходит без ros2_rust
+
+| Этап | Без ros2_rust | С ros2_rust |
+|------|---------------|-------------|
+| `colcon build` | ❌ "unknown package type rust" | ✅ Собирает через cargo |
+| msg типы | ❌ Нет Rust типов для .msg | ✅ `rosidl_rust` генерирует |
+| srv типы | ❌ Нет Rust типов для .srv | ✅ `rosidl_rust` генерирует |
+| Node::new() | ❌ rclrs не установлен | ✅ Подключается к ROS 2 graph |
+| Publishing | ❌ Нечего публиковать | ✅ Publisher<T> работает |
+| Subscribing | ❌ Нечего читать | ✅ Subscription<T> работает |
+
+### Обязательные шаги установки
+
+```bash
+# 1. Клонировать ros2_rust workspace (КРИТИЧНО!)
+cd ~/ws/src
+git clone https://github.com/ros2-rust/ros2_rust.git
+
+# 2. Клонировать rosidl_rust генератор (КРИТИЧНО!)
+git clone https://github.com/ros2-rust/rosidl_rust.git
+
+# 3. Установить colcon плагины (КРИТИЧНО!)
+pip3 install colcon-cargo colcon-ros-cargo
+
+# 4. Установить системные зависимости
+sudo apt install -y libclang-dev python3-vcstool
+
+# 5. Установить тестовые сообщения (workaround issue #557)
+sudo apt install -y ros-jazzy-example-interfaces ros-jazzy-test-msgs
+
+# 6. Установить Rust toolchain
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup default stable
+```
+
+### Структура зависимостей проекта
+
+```
+WalkingRobotSim/
+├── src/
+│   ├── ros2_rust/                    # 🔴 КРИТИЧНО: клонировать!
+│   │   ├── rclrs/                    #     ROS 2 Rust client library
+│   │   └── examples/                 #     Примеры (опционально)
+│   │
+│   ├── rosidl_rust/                  # 🔴 КРИТИЧНО: клонировать!
+│   │   └── ...                       #     Генератор msg/srv типов
+│   │
+│   ├── quadropted_msgs/              # Наши msg/srv типы
+│   │   ├── msg/
+│   │   │   ├── RobotVelocity.msg     #     ← ros
 
 | Компонент | Язык | Файлов | Сложность |
 |-----------|------|--------|-----------|
