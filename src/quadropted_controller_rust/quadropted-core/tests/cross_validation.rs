@@ -184,3 +184,73 @@ fn cross_validate_homog_transform_inverse() {
         m, inv, product
     );
 }
+
+#[test]
+fn cross_validate_forward_kinematics_zero_joints() {
+    use quadropted_core::kinematics::forward::{forward_kinematics_all_legs, leg_base_positions};
+
+    // Unitree GO2 dimensions: body=(0.3762, 0.0935), legs=(0.0, 0.0955, 0.213, 0.213)
+    let (bl, bw, l1, l2, l3, l4) = (0.3762, 0.0935, 0.0, 0.0955, 0.213, 0.213);
+    let angles = [0.0; 12];
+    let result = forward_kinematics_all_legs(&angles, bl, bw, l1, l2, l3, l4);
+
+    // C++ FK chain: T_base * T_hip * T_thigh * T_thigh_t * T_calf * T_calf_t * T_foot
+    // With all zeros: foot should be at base_x + l2 + l3 + l4, base_y, -l1
+    let expected_x_offset = l2 + l3 + l4; // 0.5215
+    let expected_z = -l1; // 0.0
+
+    for leg in 0..4 {
+        let base = leg_base_positions(leg, bl, bw);
+        assert!(
+            (result[leg].x - (base.x + expected_x_offset)).abs() < 1e-10,
+            "FK leg {} X mismatch: expected {}, got {}",
+            leg, base.x + expected_x_offset, result[leg].x
+        );
+        assert!(
+            (result[leg].y - base.y).abs() < 1e-10,
+            "FK leg {} Y mismatch: expected {}, got {}",
+            leg, base.y, result[leg].y
+        );
+        assert!(
+            (result[leg].z - expected_z).abs() < 1e-10,
+            "FK leg {} Z mismatch: expected {}, got {}",
+            leg, expected_z, result[leg].z
+        );
+    }
+}
+
+#[test]
+fn cross_validate_forward_kinematics_with_joints() {
+    use quadropted_core::kinematics::forward::forward_kinematics_all_legs;
+
+    // Unitree GO2 dimensions
+    let (bl, bw, l1, l2, l3, l4) = (0.3762, 0.0935, 0.0, 0.0955, 0.213, 0.213);
+
+    // Typical standing joint angles: hip=0, thigh=0.86, calf=-1.88
+    let mut angles = [0.0; 12];
+    for leg in 0..4 {
+        angles[leg * 3] = 0.0;       // hip
+        angles[leg * 3 + 1] = 0.86;  // thigh
+        angles[leg * 3 + 2] = -1.88; // calf
+    }
+
+    let result = forward_kinematics_all_legs(&angles, bl, bw, l1, l2, l3, l4);
+
+    // Verify all feet are on the ground (z ≈ 0 for standing robot)
+    for leg in 0..4 {
+        assert!(
+            result[leg].z.abs() < 0.5,
+            "FK leg {} Z out of range: {}", leg, result[leg].z
+        );
+    }
+
+    // Symmetry: left legs should mirror right legs in Y
+    assert!(
+        (result[0].y + result[1].y).abs() < 1e-10,
+        "FK Y symmetry broken: FR={}, FL={}", result[0].y, result[1].y
+    );
+    assert!(
+        (result[2].y + result[3].y).abs() < 1e-10,
+        "FK Y symmetry broken: RR={}, RL={}", result[2].y, result[3].y
+    );
+}
