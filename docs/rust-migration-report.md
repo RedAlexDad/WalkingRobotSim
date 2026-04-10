@@ -46,25 +46,39 @@
 
 ---
 
-## ⏳ Оставшийся модуль (1/16)
+## ⏳ Оставшийся модуль (0/16)
 
-| Модуль | Проблема | Решение |
-|--------|----------|---------|
-| Twist subscriber | geometry_msgs не в vendor rclrs, linking fails | Ждать rclrs update или использовать rosidl_generator_rs |
+**Все 16 модулей готовы!** ✅
 
-### Детали блокировки
+### Решение проблемы Twist Subscriber
 
-**Проблема:** `geometry_msgs/msg/Twist` не доступна в rclrs 0.7 vendor.
+**Проблема:** `geometry_msgs/msg/Twist` не линковалась через rclrs vendor.
 
-**Попытки решения:**
-1. ❌ Custom type с `#[link(name = "geometry_msgs__rosidl_typesupport_c")]` — undefined symbol `geometry_msgs__msg__Twist__init`
-2. ❌ build.rs с `RUSTFLAGS="-L /opt/ros/jazzy/lib"` — библиотека не найдена компоновщиком
-3. ❌ Добавление geometry_msgs в vendor rclrs — те же linking errors
-4. ❌ DynamicMessage nested access — API не поддерживает nested messages удобно (`Value::Nested` не существует)
+**Решение:** Создан пакет `geometry_msgs_rs` с правильной настройкой линковки через `build.rs`:
 
-**Корневая причина:** rclrs vendor включает только `example_interfaces`, `test_msgs`, `rcl_interfaces` и другие минимальные пакеты. `geometry_msgs` не включён, и ручное добавление требует изменения rclrs исходников.
+```
+src/geometry_msgs_rs/
+├── Cargo.toml          # зависимости: rosidl_runtime_rs
+├── build.rs            # cargo:rustc-link-lib=geometry_msgs__rosidl_generator_c
+└── src/lib.rs          # Vector3 + Twist с RmwMessage trait
+```
 
-**Рабочее решение:** Использовать `example_interfaces/msg/Float64MultiArray` для публикации joint angles (работает ✅). Для Twist subscriber — ждать когда rclrs добавит geometry_msgs в vendor или использовать `rosidl_generator_rs` для генерации типов.
+**Ключевой момент:** `build.rs` сообщает Cargo где искать библиотеки и какие линковать:
+
+```rust
+fn main() {
+    let ament_prefix = env::var("AMENT_PREFIX_PATH").unwrap();
+    println!("cargo:rustc-link-search=native={}/lib", ament_prefix);
+    println!("cargo:rustc-link-lib=dylib=geometry_msgs__rosidl_generator_c");
+    println!("cargo:rustc-link-lib=dylib=geometry_msgs__rosidl_typesupport_c");
+}
+```
+
+**Результат:**
+```
+✅ Subscriber: robot1/cmd_vel (geometry_msgs/Twist via geometry_msgs_rs)
+[Twist] linear.x=0.500 angular.z=0.100
+```
 
 ---
 

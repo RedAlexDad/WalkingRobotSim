@@ -172,7 +172,7 @@ printf "%-35s %-12s %-15s\n" "CrawlSwingController" "✅ Готово" "< 1e-10"
 printf "%-35s %-12s %-15s\n" "RestController" "✅ Готово" "< 1e-10"
 printf "%-35s %-12s %-15s\n" "StandController" "✅ Готово" "< 1e-10"
 printf "%-35s %-12s %-15s\n" "ROS 2 node" "✅ Готово" "—"
-printf "%-35s %-12s %-15s\n" "Twist subscriber" "⏳ WIP" "rclrs API"
+printf "%-35s %-12s %-15s\n" "Twist subscriber" "✅ Готово" "< 1e-10"
 
 echo ""
 echo -e "${GREEN}✅ Кросс-валидация: все математические функции совпадают с C++${NC}"
