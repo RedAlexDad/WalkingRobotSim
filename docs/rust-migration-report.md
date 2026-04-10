@@ -50,18 +50,21 @@
 
 | Модуль | Проблема | Решение |
 |--------|----------|---------|
-| Twist subscriber | rclrs 0.7 не vendored geometry_msgs | Ждать rclrs update или rosidl_rust генерацию |
+| Twist subscriber | geometry_msgs не в vendor rclrs, linking fails | Ждать rclrs update или использовать rosidl_generator_rs |
 
 ### Детали блокировки
 
 **Проблема:** `geometry_msgs/msg/Twist` не доступна в rclrs 0.7 vendor.
 
 **Попытки решения:**
-1. ❌ Custom type с `#[link]` — undefined symbol `geometry_msgs__msg__Twist__init` при линковке
-2. ❌ build.rs с RUSTFLAGS — библиотека не найдена компоновщиком
-3. ❌ DynamicMessage nested access — API не поддерживает nested messages удобно (`Value::Nested` не существует)
+1. ❌ Custom type с `#[link(name = "geometry_msgs__rosidl_typesupport_c")]` — undefined symbol `geometry_msgs__msg__Twist__init`
+2. ❌ build.rs с `RUSTFLAGS="-L /opt/ros/jazzy/lib"` — библиотека не найдена компоновщиком
+3. ❌ Добавление geometry_msgs в vendor rclrs — те же linking errors
+4. ❌ DynamicMessage nested access — API не поддерживает nested messages удобно (`Value::Nested` не существует)
 
-**Решение:** Код для Twist subscriber готов — нужно только раскомментировать когда geometry_msgs появится в rclrs vendor. Альтернатива — использовать rosidl_rust для генерации типов.
+**Корневая причина:** rclrs vendor включает только `example_interfaces`, `test_msgs`, `rcl_interfaces` и другие минимальные пакеты. `geometry_msgs` не включён, и ручное добавление требует изменения rclrs исходников.
+
+**Рабочее решение:** Использовать `example_interfaces/msg/Float64MultiArray` для публикации joint angles (работает ✅). Для Twist subscriber — ждать когда rclrs добавит geometry_msgs в vendor или использовать `rosidl_generator_rs` для генерации типов.
 
 ---
 
