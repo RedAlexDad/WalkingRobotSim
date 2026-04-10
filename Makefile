@@ -96,6 +96,34 @@ up-bg:
 	@cd $(DOCKER_DIR) && $(COMPOSE) up -d
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Контейнер запущен${NC}\n"
 
+## Пересборка Rust + перезапуск (быстрее чем make deploy)
+docker-rust:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Пересборка Rust workspace + перезапуск...${NC}\n"
+	@cd $(DOCKER_DIR) && $(COMPOSE) build 2>&1 | grep -v "^ > importing cache manifest" | grep -v "^------" || true
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Docker образ пересобран${NC}\n"
+	@if docker ps --format '{{.Names}}' | grep -q $(CONTAINER_NAME); then \
+		printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Перезапуск контейнера...${NC}\n"; \
+		docker stop $(CONTAINER_NAME) >/dev/null 2>&1; \
+		docker rm $(CONTAINER_NAME) >/dev/null 2>&1; \
+	fi
+	@cd $(DOCKER_DIR) && $(COMPOSE) up -d
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Ожидание инициализации ROS окружения...${NC}\n"
+	@attempt=0; \
+	while [ $$attempt -lt 30 ]; do \
+		if docker exec $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && ros2 node list" >/dev/null 2>&1; then \
+			printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}ROS окружение готово ($${attempt} сек)${NC}\n"; \
+			break; \
+		fi; \
+		attempt=$$((attempt + 1)); \
+		sleep 1; \
+		printf "."; \
+	done; \
+	if [ $$attempt -eq 30 ]; then \
+		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}ROS окружение может быть не готово, но продолжаем...${NC}\n"; \
+	fi
+	@echo ""
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Готово: make gazebo-rust${NC}\n"
+
 ## Остановка контейнера с сохранением логов
 down:
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Остановка контейнера $(CONTAINER_NAME)...${NC}\n"
@@ -319,7 +347,8 @@ rest:
 	@docker exec $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: REST, robot_id: 1}\""
+		ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: REST, robot_id: 1}\" 2>/dev/null || true; \
+		ros2 topic pub --once /robot1/cmd_vel geometry_msgs/msg/Twist \"{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: -99.0}}\""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Режим REST установлен${NC}\n"
 
 ## Перевести робота в режим TROT (бег рысью)
@@ -329,7 +358,8 @@ trot:
 	@docker exec $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: TROT, robot_id: 1}\""
+		ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: TROT, robot_id: 1}\" 2>/dev/null || true; \
+		ros2 topic pub --once /robot1/cmd_vel geometry_msgs/msg/Twist \"{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 99.0}}\""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Режим TROT установлен${NC}\n"
 
 ## Перевести робота в режим CRAWL (ползание)
@@ -339,7 +369,8 @@ crawl:
 	@docker exec $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: CRAWL, robot_id: 1}\""
+		ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: CRAWL, robot_id: 1}\" 2>/dev/null || true; \
+		ros2 topic pub --once /robot1/cmd_vel geometry_msgs/msg/Twist \"{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 99.0}}\""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Режим CRAWL установлен${NC}\n"
 
 ## Перевести робота в режим STAND (стойка)
@@ -349,7 +380,8 @@ stand:
 	@docker exec $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: STAND, robot_id: 1}\""
+		ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: STAND, robot_id: 1}\" 2>/dev/null || true; \
+		ros2 topic pub --once /robot1/cmd_vel geometry_msgs/msg/Twist \"{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: -99.0}}\""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Режим STAND установлен${NC}\n"
 
 ## Выполнение команды в контейнере (пример: make exec CMD="ros2 topic list")
