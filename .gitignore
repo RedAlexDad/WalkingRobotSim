@@ -4,6 +4,7 @@ install/
 log/
 devel/
 bin/
+!src/quadropted_controller_rust/quadropted-nodes/src/bin/
 
 # Изолированная сборка
 build_isolated/

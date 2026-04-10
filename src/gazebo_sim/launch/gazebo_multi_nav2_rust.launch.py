@@ -170,7 +170,10 @@ def generate_launch_description():
             name='robot_controller_rust',
             namespace=namespace,
             output='screen',
-            remappings=remappings_initial
+            remappings=[
+                ("/joint_group_controller/commands", "joint_group_controller/commands"),
+                ("/robot1/cmd_vel", "cmd_vel"),
+            ],
         )
 
         odom = Node(
