@@ -149,6 +149,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     ros-${ROS_DISTRO}-ament-cmake-gtest \
     ros-${ROS_DISTRO}-ament-cmake-gmock \
     ros-${ROS_DISTRO}-ament-cmake-pytest \
+    ros-${ROS_DISTRO}-test-msgs \
     libbenchmark-dev \
     libbenchmark-tools \
     tmux \
