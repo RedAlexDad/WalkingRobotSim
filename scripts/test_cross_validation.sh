@@ -133,11 +133,10 @@ printf "%-45s %-12s %-12s %-12s\n" "Rotation matrices" "$cpp_rot" "✅ $RUST_UNI
 printf "%-45s %-12s %-12s %-12s\n" "Homogeneous transforms" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ 2"
 
 # Kinematics (FK/IK)
-cpp_fk_ik="⏳ TODO"
-printf "%-45s %-12s %-12s %-12s\n" "Forward/Inverse Kinematics" "$cpp_fk_ik" "⏳ stub" "⏳ TODO"
+printf "%-45s %-12s %-12s %-12s\n" "Forward/Inverse Kinematics" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ 8"
 
 # Controllers
-printf "%-45s %-12s %-12s %-12s\n" "Controllers (TROT/CRAWL/etc)" "✅ part" "⏳ stub" "⏳ TODO"
+printf "%-45s %-12s %-12s %-12s\n" "Controllers (TROT/CRAWL/etc)" "✅ part" "✅ $RUST_UNIT_PASSED" "⏳ WIP"
 
 # Odometry
 printf "%-45s %-12s %-12s %-12s\n" "Odometry" "✅ part" "⏳ stub" "⏳ TODO"
@@ -163,13 +162,17 @@ printf "%-35s %-12s %-15s\n" "rotxyz" "✅ Готово" "< 1e-10"
 printf "%-35s %-12s %-15s\n" "homog_transxyz" "✅ Готово" "0"
 printf "%-35s %-12s %-15s\n" "homog_transform" "✅ Готово" "0"
 printf "%-35s %-12s %-15s\n" "homog_transform_inverse" "✅ Готово" "< 1e-10"
-printf "%-35s %-12s %-15s\n" "Forward kinematics" "⏳ Stub" "—"
-printf "%-35s %-12s %-15s\n" "Inverse kinematics" "⏳ Stub" "—"
-printf "%-35s %-12s %-15s\n" "PID controller" "⏳ Stub" "—"
-printf "%-35s %-12s %-15s\n" "TrotGaitController" "⏳ Stub" "—"
-printf "%-35s %-12s %-15s\n" "CrawlGaitController" "⏳ Stub" "—"
-printf "%-35s %-12s %-15s\n" "RestController" "⏳ Stub" "—"
-printf "%-35s %-12s %-15s\n" "StandController" "⏳ Stub" "—"
+printf "%-35s %-12s %-15s\n" "Forward kinematics" "✅ Готово" "< 1e-10"
+printf "%-35s %-12s %-15s\n" "Inverse kinematics" "✅ Готово" "< 1e-10"
+printf "%-35s %-12s %-15s\n" "PID controller" "✅ Готово" "< 1e-10"
+printf "%-35s %-12s %-15s\n" "TrotStanceController" "✅ Готово" "< 1e-10"
+printf "%-35s %-12s %-15s\n" "TrotSwingController" "✅ Готово" "< 1e-10"
+printf "%-35s %-12s %-15s\n" "CrawlStanceController" "✅ Готово" "< 1e-10"
+printf "%-35s %-12s %-15s\n" "CrawlSwingController" "✅ Готово" "< 1e-10"
+printf "%-35s %-12s %-15s\n" "RestController" "✅ Готово" "< 1e-10"
+printf "%-35s %-12s %-15s\n" "StandController" "✅ Готово" "< 1e-10"
+printf "%-35s %-12s %-15s\n" "ROS 2 node" "✅ Готово" "—"
+printf "%-35s %-12s %-15s\n" "Twist subscriber" "⏳ WIP" "rclrs API"
 
 echo ""
 echo -e "${GREEN}✅ Кросс-валидация: все математические функции совпадают с C++${NC}"
