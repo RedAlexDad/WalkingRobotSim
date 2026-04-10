@@ -214,7 +214,7 @@ shell:
 # СПЕЦИАЛЬНЫЕ КОМАНДЫ
 # ════════════════════════════════════════════════════════════
 
-.PHONY: gazebo gazebo-py gazebo-cpp teleop exec kill-ros test-aliases
+.PHONY: gazebo gazebo-py gazebo-cpp gazebo-rust teleop exec kill-ros test-aliases
 
 ## Запуск Gazebo симуляции (C++ контроллер)
 gazebo:
@@ -249,6 +249,18 @@ gazebo-cpp:
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
 		ros2 launch gazebo_sim launch_cpp.launch.py use_sim_time:=true gui:=true"
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
+	@$(MAKE) save-logs
+
+## Запуск Gazebo симуляции с Rust контроллером
+gazebo-rust:
+	$(require-container)
+	$(check-x11)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Gazebo симуляции с Rust контроллером...${NC}\n"
+	@docker exec -it $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 launch gazebo_sim launch_rust.launch.py use_sim_time:=true gui:=true"
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
