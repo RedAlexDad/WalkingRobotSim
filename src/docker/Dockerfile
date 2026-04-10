@@ -170,6 +170,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pandas \
     PyYAML
 
+# Установка Rust toolchain
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
 # ============================================================
 # ЭТАП 9: Workspace setup
 # ============================================================

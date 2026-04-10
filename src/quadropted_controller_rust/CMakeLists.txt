@@ -8,6 +8,9 @@ install(DIRECTORY launch/
     DESTINATION share/${PROJECT_NAME}/launch
 )
 
+# Ensure cargo is in PATH
+set(ENV{PATH} "$ENV{HOME}/.cargo/bin:$ENV{PATH}")
+
 # Build the Rust workspace
 execute_process(
     COMMAND cargo build --release
@@ -29,6 +32,8 @@ install(
     PATTERN "deps" EXCLUDE
     PATTERN "examples" EXCLUDE
     PATTERN "incremental" EXCLUDE
+    PATTERN "*.rlib" EXCLUDE
+    PATTERN "*.dSYM" EXCLUDE
 )
 
 ament_package()

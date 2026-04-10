@@ -1,7 +1,6 @@
 //! Build script to link geometry_msgs libraries
 
 use std::env;
-use std::path::PathBuf;
 
 fn main() {
     // Get ROS 2 install path
