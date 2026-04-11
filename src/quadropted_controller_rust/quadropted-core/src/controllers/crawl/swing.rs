@@ -78,15 +78,16 @@ impl CrawlSwingController {
         leg_index: usize,
         current: &SMatrix<f64, 3, 4>,
         cmd_vel: &Vector3<f64>,
-        robot_height: f64,
+        first_cycle: bool,
+        phase_index: usize,
     ) -> Vector3<f64> {
         assert!(swing_prop >= 0.0 && swing_prop <= 1.0);
 
         let foot_location: Vector3<f64> = current.column(leg_index).into();
         let swing_h = self.swing_height(swing_prop);
 
-        // shifted_left determined by crawl_gait based on phase_index
-        let shifted_left = false; // TODO: pass phase_index from crawl_gait
+        // shifted_left determined by phase_index (phases 4-7 are shifted left)
+        let shifted_left = phase_index >= 4;
         let touchdown = self.raibert_touchdown_location(leg_index, cmd_vel, shifted_left);
 
         let time_left = self.time_step * self.swing_ticks as f64 * (1.0 - swing_prop);
@@ -100,8 +101,8 @@ impl CrawlSwingController {
 
         let delta_foot = velocity * self.time_step;
 
-        // z_vector = [0, 0, swing_height + robot_height]
-        let z_vector = Vector3::new(0.0, 0.0, swing_h + robot_height);
+        // z_vector = [0, 0, swing_height] (no robot_height in crawl)
+        let z_vector = Vector3::new(0.0, 0.0, swing_h);
 
         // foot_location * [1,1,0] + z_vector + delta_foot
         Vector3::new(foot_location.x, foot_location.y, 0.0) + z_vector + delta_foot
@@ -136,10 +137,10 @@ mod tests {
         let foot = default_stance();
         let cmd_vel = Vector3::zeros();
 
-        let result = controller.next_foot_location(0.5, 0, &foot, &cmd_vel, -0.25);
+        let result = controller.next_foot_location(0.5, 0, &foot, &cmd_vel, true, 0);
 
-        // With zero velocity, Z should be swing_height + robot_height
-        let expected_z = 0.08 + (-0.25);
+        // With zero velocity, Z should be swing_height
+        let expected_z = 0.08;
         assert!((result.z - expected_z).abs() < 0.01, "Z = {}, expected {}", result.z, expected_z);
     }
 
