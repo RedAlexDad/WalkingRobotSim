@@ -1,16 +1,21 @@
-//! Robot Controller Node — Full Rust implementation with TrotGait
+//! Robot Controller Node — Full Rust implementation with State Machine
 //!
 //! Full ROS 2 integration:
-//! - TrotGaitController orchestrates stance/swing phases
+//! - Behavior State Machine: REST/TROT/CRAWL/STAND
+//! - Subscriptions: robot_mode, robot_velocity, imu
+//! - TrotGaitController + CrawlGaitController
 //! - IK computes joint angles from foot positions
 //! - Float64MultiArray publisher for joint_group_controller/commands
-//! - Twist subscriber for cmd_vel (future: mode switching)
 
 use rclrs::vendor::example_interfaces::msg::rmw::Float64MultiArray;
 use quadropted_core::controllers::trot::gait::TrotGaitController;
+use quadropted_core::controllers::crawl::gait::CrawlGaitController;
+use quadropted_core::controllers::rest::{RestController, RestState};
+use quadropted_core::controllers::stand::{StandController, BodyState};
+use quadropted_core::state::behavior::BehaviorState;
 use quadropted_core::kinematics::inverse::{compute_local_positions, compute_all_joint_angles};
 use nalgebra::SMatrix;
-use rclrs::{Context, CreateBasicExecutor, Publisher, SpinOptions};
+use rclrs::{Context, CreateBasicExecutor, Publisher, Subscription, SpinOptions};
 use rosidl_runtime_rs::Sequence;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -18,8 +23,16 @@ use std::time::Duration;
 struct SharedState {
     ticks: i32,
     foot_locations: SMatrix<f64, 3, 4>,
+    behavior_state: BehaviorState,
     trot_gait: TrotGaitController,
+    crawl_gait: CrawlGaitController,
+    rest_ctrl: RestController,
+    rest_state: RestState,
+    stand_ctrl: StandController,
+    body_state: BodyState,
     cmd_vel: [f64; 3],
+    imu_roll: f64,
+    imu_pitch: f64,
 }
 
 impl SharedState {
@@ -37,7 +50,10 @@ impl SharedState {
         default_stance[(0, 2)] = -dx_back; default_stance[(1, 2)] = -dy;
         default_stance[(0, 3)] = -dx_back; default_stance[(1, 3)] = dy;
 
-        let trot_gait = TrotGaitController::new(0.04, 0.18, 0.02, false, default_stance);
+        let trot_gait = TrotGaitController::new(0.04, 0.18, 0.02, false, default_stance.clone());
+        let crawl_gait = CrawlGaitController::new(0.55, 0.45, 0.02, default_stance.clone());
+        let rest_ctrl = RestController::new(default_stance.clone());
+        let stand_ctrl = StandController::new(default_stance.clone());
 
         println!("[Rust] Default stance:");
         for leg in 0..4 {
@@ -47,25 +63,60 @@ impl SharedState {
 
         Self {
             ticks: 0,
-            foot_locations: trot_gait.default_stance(),
+            foot_locations: default_stance.clone(),
+            behavior_state: BehaviorState::REST,
             trot_gait,
-            cmd_vel: [0.05, 0.0, 0.0],  // Walk forward slowly
+            crawl_gait,
+            rest_ctrl,
+            rest_state: RestState { imu_roll: 0.0, imu_pitch: 0.0 },
+            stand_ctrl,
+            body_state: BodyState {
+                body_local_position: [0.0, 0.0, 0.0],
+                body_local_orientation: [0.0, 0.0, 0.0],
+            },
+            cmd_vel: [0.0, 0.0, 0.0],
+            imu_roll: 0.0,
+            imu_pitch: 0.0,
         }
     }
 
     fn step(&mut self, robot_height: f64) -> [f64; 12] {
         self.ticks += 1;
 
-        // Always run TrotGait
-        self.foot_locations = self.trot_gait.step(
-            self.ticks,
-            &self.foot_locations,
-            &self.cmd_vel,
-            robot_height,
-        );
+        // State machine: select controller based on behavior_state
+        self.foot_locations = match self.behavior_state {
+            BehaviorState::REST => {
+                self.rest_ctrl.step(&self.rest_state, robot_height)
+            }
+            BehaviorState::TROT => {
+                self.trot_gait.step(
+                    self.ticks,
+                    &self.foot_locations,
+                    &self.cmd_vel,
+                    robot_height,
+                )
+            }
+            BehaviorState::CRAWL => {
+                // Clamp velocity for crawl mode
+                let mut crawl_vel = self.cmd_vel;
+                crawl_vel[0] = crawl_vel[0].clamp(-0.011, 0.011);
+                crawl_vel[1] = crawl_vel[1].clamp(-0.0055, 0.0055);
+                crawl_vel[2] = crawl_vel[2].clamp(-0.15, 0.15);
+
+                self.crawl_gait.step(self.ticks, &self.foot_locations, &crawl_vel)
+            }
+            BehaviorState::STAND => {
+                let yaw_rate = [0.0, 0.0, self.cmd_vel[2]];
+                self.stand_ctrl.run(
+                    &mut self.body_state,
+                    robot_height,
+                    &self.cmd_vel,
+                    &yaw_rate,
+                )
+            }
+        };
 
         // IK: foot positions → joint angles
-        // Clamp angles to safe range
         let local = compute_local_positions(
             &self.foot_locations, 0.3762, 0.0935,
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -85,7 +136,7 @@ impl SharedState {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🦀 Rust Robot Controller Node starting...");
-    println!("   Features: TrotGaitController + IK + Float64MultiArray pub\n");
+    println!("   Features: State Machine (REST/TROT/CRAWL/STAND) + IK + Subscriptions\n");
 
     let ctx = Context::new([], rclrs::InitOptions::new())?;
     let mut executor = ctx.create_basic_executor();
@@ -99,6 +150,54 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         node.create_publisher("joint_group_controller/commands")?;
     println!("✅ Publisher: joint_group_controller/commands");
 
+    // Subscription: robot_mode
+    let mode_state = state.clone();
+    let _mode_sub = node.create_subscription("robot_mode", move |msg: quadropted_msgs_rs::RobotModeCommand| {
+        if msg.robot_id == 1 {
+            let mut s = mode_state.lock().unwrap();
+            let mode_str = msg.mode.to_cstr().to_str().unwrap_or("");
+            if let Some(new_state) = BehaviorState::from_str(mode_str) {
+                println!("[Rust] Mode change: {:?} -> {:?}", s.behavior_state, new_state);
+                s.behavior_state = new_state;
+                s.ticks = 0;
+
+                // Reset controllers on mode change
+                if new_state == BehaviorState::CRAWL {
+                    s.crawl_gait.reset();
+                }
+            }
+        }
+    })?;
+    println!("✅ Subscription: robot_mode");
+
+    // Subscription: robot_velocity
+    let vel_state = state.clone();
+    let _vel_sub = node.create_subscription("robot_velocity", move |msg: quadropted_msgs_rs::RobotVelocity| {
+        if msg.robot_id == 1 {
+            let mut s = vel_state.lock().unwrap();
+            s.cmd_vel = [
+                msg.cmd_vel.linear.x,
+                msg.cmd_vel.linear.y,
+                msg.cmd_vel.angular.z,
+            ];
+        }
+    })?;
+    println!("✅ Subscription: robot_velocity");
+
+    // Subscription: imu
+    let imu_state = state.clone();
+    let _imu_sub = node.create_subscription("imu", move |msg: sensor_msgs_rs::Imu| {
+        let mut s = imu_state.lock().unwrap();
+        // Convert quaternion to euler angles
+        let w = msg.orientation.w;
+        let x = msg.orientation.x;
+        let y = msg.orientation.y;
+        let z = msg.orientation.z;
+        s.imu_roll = (2.0 * (w * x + y * z)).atan2(1.0 - 2.0 * (x * x + y * y));
+        s.imu_pitch = (2.0 * (w * y - z * x)).asin();
+    })?;
+    println!("✅ Subscription: imu");
+
     // 60Hz control loop
     let ctrl_state = state.clone();
     let ctrl_pub = joint_pub.clone();
@@ -107,8 +206,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let angles = s.step(-0.25);
 
         if s.ticks % 120 == 0 {
-            println!("[Rust DEBUG] Tick #{} ({:.1}s) TROT mode, vx={:.3}",
-                s.ticks, s.ticks as f64 / 60.0, s.cmd_vel[0]);
+            println!("[Rust DEBUG] Tick #{} ({:.1}s) {:?} mode, vx={:.3}",
+                s.ticks, s.ticks as f64 / 60.0, s.behavior_state, s.cmd_vel[0]);
             let joint_names = [
                 "rf_hip", "rf_upper", "rf_lower",
                 "lf_hip", "lf_upper", "lf_lower",
@@ -130,7 +229,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::thread::sleep(Duration::from_millis(16)); // 60Hz
     });
 
-    println!("✅ 60Hz control loop with TrotGait + IK");
+    println!("✅ 60Hz control loop with State Machine");
     println!("🚀 Spinning (Ctrl+C to stop)...\n");
 
     loop {

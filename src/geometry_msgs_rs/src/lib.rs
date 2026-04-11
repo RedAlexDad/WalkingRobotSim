@@ -66,6 +66,68 @@ where
     }
 }
 
+// ========================= geometry_msgs/msg/Quaternion =========================
+
+#[link(name = "geometry_msgs__rosidl_generator_c")]
+unsafe extern "C" {
+    fn geometry_msgs__msg__Quaternion__init(msg: *mut Quaternion) -> bool;
+    fn geometry_msgs__msg__Quaternion__Sequence__init(seq: *mut Sequence<Quaternion>, size: usize) -> bool;
+    fn geometry_msgs__msg__Quaternion__Sequence__fini(seq: *mut Sequence<Quaternion>);
+}
+
+#[repr(C)]
+#[derive(Clone, Debug)]
+pub struct Quaternion {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub w: f64,
+}
+
+impl Default for Quaternion {
+    fn default() -> Self {
+        unsafe {
+            let mut msg = std::mem::zeroed();
+            if !geometry_msgs__msg__Quaternion__init(&mut msg as *mut _) {
+                panic!("Quaternion__init failed");
+            }
+            msg
+        }
+    }
+}
+
+impl SequenceAlloc for Quaternion {
+    fn sequence_init(seq: &mut Sequence<Self>, size: usize) -> bool {
+        unsafe { geometry_msgs__msg__Quaternion__Sequence__init(seq as *mut _, size) }
+    }
+    fn sequence_fini(seq: &mut Sequence<Self>) {
+        unsafe { geometry_msgs__msg__Quaternion__Sequence__fini(seq as *mut _) }
+    }
+    fn sequence_copy(_in: &Sequence<Self>, _out: &mut Sequence<Self>) -> bool { true }
+}
+
+impl Message for Quaternion {
+    type RmwMsg = Self;
+    fn into_rmw_message(msg: std::borrow::Cow<'_, Self>) -> std::borrow::Cow<'_, Self> { msg }
+    fn from_rmw_message(msg: Self) -> Self { msg }
+}
+
+impl RmwMessage for Quaternion
+where
+    Self: Sized,
+{
+    const TYPE_NAME: &'static str = "geometry_msgs/msg/Quaternion";
+    fn get_type_support() -> *const std::ffi::c_void {
+        unsafe {
+            extern "C" {
+                fn rosidl_typesupport_c__get_message_type_support_handle__geometry_msgs__msg__Quaternion()
+                    -> *const std::ffi::c_void;
+            }
+            rosidl_typesupport_c__get_message_type_support_handle__geometry_msgs__msg__Quaternion()
+        }
+    }
+}
+
 // ========================= geometry_msgs/msg/Twist =========================
 
 #[link(name = "geometry_msgs__rosidl_generator_c")]
