@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(quadropted_controller_rust)
 
 find_package(ament_cmake REQUIRED)
+find_package(quadropted_msgs REQUIRED)
 
 # Install launch files
 install(DIRECTORY launch/
@@ -21,19 +22,10 @@ if(NOT result EQUAL 0)
     message(FATAL_ERROR "cargo build failed: ${result}")
 endif()
 
-# Install all binaries
+# Install the specific executable
 install(
-    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/target/release/
+    PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/target/release/robot_controller_node
     DESTINATION lib/${PROJECT_NAME}
-    USE_SOURCE_PERMISSIONS
-    PATTERN ".cargo*" EXCLUDE
-    PATTERN "*.d" EXCLUDE
-    PATTERN "build" EXCLUDE
-    PATTERN "deps" EXCLUDE
-    PATTERN "examples" EXCLUDE
-    PATTERN "incremental" EXCLUDE
-    PATTERN "*.rlib" EXCLUDE
-    PATTERN "*.dSYM" EXCLUDE
 )
 
 ament_package()
