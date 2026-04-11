@@ -168,11 +168,12 @@ def generate_launch_description():
             package='quadropted_controller_rust',
             executable='robot_controller_node',
             name='robot_controller_rust',
-            namespace=namespace,
             output='screen',
             remappings=[
-                ("/joint_group_controller/commands", "joint_group_controller/commands"),
-                ("/robot1/cmd_vel", "cmd_vel"),
+                ("joint_group_controller/commands", f"/{namespace}/joint_group_controller/commands"),
+                ("robot_mode", f"/{namespace}/robot_mode"),
+                ("cmd_vel", f"/{namespace}/cmd_vel"),
+                ("imu", f"/{namespace}/imu_plugin/out"),
             ],
         )
 
