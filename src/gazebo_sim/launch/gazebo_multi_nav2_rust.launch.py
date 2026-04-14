@@ -16,7 +16,7 @@ from launch.actions import (
     RegisterEventHandler,
 )
 from launch.conditions import IfCondition
-from launch.event_handlers import OnProcessExit
+from launch.event_handlers import OnProcessExit, OnProcessStart
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import ComposableNodeContainer, Node, SetRemap
@@ -168,13 +168,31 @@ def generate_launch_description():
             package='quadropted_controller_rust',
             executable='robot_controller_node',
             name='robot_controller_rust',
+            namespace=namespace,
             output='screen',
             remappings=[
-                ("joint_group_controller/commands", f"/{namespace}/joint_group_controller/commands"),
-                ("robot_mode", f"/{namespace}/robot_mode"),
-                ("cmd_vel", f"/{namespace}/cmd_vel"),
-                ("imu", f"/{namespace}/imu_plugin/out"),
+                ("joint_group_controller/commands", "joint_group_controller/commands"),
+                ("robot_mode", "robot_mode"),
+                ("robot_velocity", "robot_velocity"),
+                ("imu", "imu_plugin/out"),
             ],
+        )
+
+        initial_trot_mode = RegisterEventHandler(
+            event_handler=OnProcessStart(
+                target_action=controller,
+                on_start=[
+                    ExecuteProcess(
+                        cmd=[
+                            'ros2', 'topic', 'pub', '-t', '5', '--qos-reliability', 'reliable',
+                            f'/{namespace}/robot_mode',
+                            'quadropted_msgs/msg/RobotModeCommand',
+                            "{mode: 'TROT', robot_id: 1}",
+                        ],
+                        output='screen'
+                    )
+                ]
+            )
         )
 
         odom = Node(
@@ -281,6 +299,7 @@ def generate_launch_description():
             joint_state_broadcaster,
             joint_group_controller,
             controller,  # <-- Rust controller node
+            initial_trot_mode,
             cmd_vel_pub,
             odom,
             start_robot_localization_cmd,

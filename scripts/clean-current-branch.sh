@@ -36,7 +36,7 @@ echo "Запуск filter-branch..."
 FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f \
   --msg-filter '
     # Удаляем Co-authored-by
-    sed "s/Co-authored-by: Qwen-Coder <qwen-coder@alibabacloud.com>//g" |
+    sed "s/Co-authored-by: Qwen-Coder <qwen-coder@alibabacloud.com>//g; s/Co-Authored-By: Claude Sonnet 4 <noreply@anthropic.com>//g" |
     # Удаляем эмодзи
     sed "s/✅//g; s/⏳//g" |
     # Сохраняем ПЕРВУЮ пустую строку (разделитель subject/body), удаляем остальные trailing
@@ -76,7 +76,7 @@ git gc --prune=now
 # 6. Проверяем результат
 echo ""
 echo "=== Проверка ==="
-COUNT=$(git log --format="%B" | grep -c "Co-authored-by: Qwen-Coder\|✅" || true)
+COUNT=$(git log --format="%B" | grep -c "Co-authored-by: Qwen-Coder\|Co-Authored-By: Claude Sonnet 4\|✅\|⏳" || true)
 
 if [ "$COUNT" -eq 0 ]; then
   echo "SUCCESS: Все Co-authored-by и ✅ удалены из ветки $BRANCH!"

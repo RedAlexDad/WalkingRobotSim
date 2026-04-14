@@ -16,3 +16,4 @@ quadropted-core = { path = "../quadropted-core" }
 geometry_msgs_rs = { path = "../../geometry_msgs_rs" }
 quadropted_msgs_rs = { path = "../../quadropted_msgs_rs" }
 sensor_msgs_rs = { path = "../../sensor_msgs_rs" }
+std_msgs_rs = { path = "../../std_msgs_rs" }

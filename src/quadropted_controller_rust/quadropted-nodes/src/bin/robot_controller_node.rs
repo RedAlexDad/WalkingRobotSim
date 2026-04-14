@@ -7,7 +7,7 @@
 //! - IK computes joint angles from foot positions
 //! - Float64MultiArray publisher for joint_group_controller/commands
 
-use rclrs::vendor::example_interfaces::msg::rmw::Float64MultiArray;
+use std_msgs_rs::Float64MultiArray;
 use quadropted_core::controllers::trot::gait::TrotGaitController;
 use quadropted_core::controllers::crawl::gait::CrawlGaitController;
 use quadropted_core::controllers::rest::{RestController, RestState};
@@ -15,10 +15,34 @@ use quadropted_core::controllers::stand::{StandController, BodyState};
 use quadropted_core::state::behavior::BehaviorState;
 use quadropted_core::kinematics::inverse::{compute_local_positions, compute_all_joint_angles};
 use nalgebra::SMatrix;
-use rclrs::{Context, CreateBasicExecutor, Publisher, Subscription, SpinOptions};
+use rclrs::{Context, CreateBasicExecutor, Publisher, SpinOptions};
 use rosidl_runtime_rs::Sequence;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::sync::atomic::{AtomicU64, Ordering};
+
+// #region agent log
+static LOG_SEQ: AtomicU64 = AtomicU64::new(0);
+const DEBUG_LOG_PATH: &str = "/home/redalexdad/GitHub/WalkingRobotSim/.cursor/debug-f81059.log";
+const DEBUG_SESSION_ID: &str = "f81059";
+
+fn dbg_log(run_id: &str, hypothesis_id: &str, location: &str, message: &str, data: &str) {
+    let seq = LOG_SEQ.fetch_add(1, Ordering::Relaxed);
+    let ts = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    let line = format!(
+        "{{\"sessionId\":\"{}\",\"id\":\"{}-{}\",\"timestamp\":{},\"location\":\"{}\",\"message\":\"{}\",\"data\":{},\"runId\":\"{}\",\"hypothesisId\":\"{}\"}}",
+        DEBUG_SESSION_ID, DEBUG_SESSION_ID, seq, ts, location, message, data, run_id, hypothesis_id
+    );
+    if let Ok(mut f) = OpenOptions::new().create(true).append(true).open(DEBUG_LOG_PATH) {
+        let _ = writeln!(f, "{}", line);
+    }
+}
+// #endregion
 
 struct SharedState {
     ticks: i32,
@@ -30,9 +54,12 @@ struct SharedState {
     rest_state: RestState,
     stand_ctrl: StandController,
     body_state: BodyState,
-    cmd_vel: [f64; 3],
+    cmd_linear: [f64; 3],
+    cmd_angular: [f64; 3],
     imu_roll: f64,
     imu_pitch: f64,
+    mode_msg_count: u64,
+    vel_msg_count: u64,
 }
 
 impl SharedState {
@@ -74,9 +101,12 @@ impl SharedState {
                 body_local_position: [0.0, 0.0, 0.0],
                 body_local_orientation: [0.0, 0.0, 0.0],
             },
-            cmd_vel: [0.0, 0.0, 0.0],
+            cmd_linear: [0.0, 0.0, 0.0],
+            cmd_angular: [0.0, 0.0, 0.0],
             imu_roll: 0.0,
             imu_pitch: 0.0,
+            mode_msg_count: 0,
+            vel_msg_count: 0,
         }
     }
 
@@ -89,46 +119,74 @@ impl SharedState {
                 self.rest_ctrl.step(&self.rest_state, robot_height)
             }
             BehaviorState::TROT => {
+                let gait_cmd = [self.cmd_linear[0], self.cmd_linear[1], self.cmd_angular[2]];
                 self.trot_gait.step(
                     self.ticks,
                     &self.foot_locations,
-                    &self.cmd_vel,
+                    &gait_cmd,
                     robot_height,
                 )
             }
             BehaviorState::CRAWL => {
                 // Clamp velocity for crawl mode
-                let mut crawl_vel = self.cmd_vel;
+                let mut crawl_vel = [self.cmd_linear[0], self.cmd_linear[1], self.cmd_angular[2]];
                 crawl_vel[0] = crawl_vel[0].clamp(-0.011, 0.011);
                 crawl_vel[1] = crawl_vel[1].clamp(-0.0055, 0.0055);
                 crawl_vel[2] = crawl_vel[2].clamp(-0.15, 0.15);
 
-                self.crawl_gait.step(self.ticks, &self.foot_locations, &crawl_vel)
+                self.crawl_gait.step(self.ticks, &self.foot_locations, &crawl_vel, robot_height)
             }
             BehaviorState::STAND => {
-                let yaw_rate = [0.0, 0.0, self.cmd_vel[2]];
                 self.stand_ctrl.run(
                     &mut self.body_state,
                     robot_height,
-                    &self.cmd_vel,
-                    &yaw_rate,
+                    &self.cmd_linear,
+                    &self.cmd_angular,
                 )
             }
         };
+        // #region agent log
+        if self.ticks <= 20 || self.ticks % 120 == 0 {
+            dbg_log(
+                "pre-fix",
+                "H6_MODE_PIPELINE_NOT_REACHING_NODE",
+                "robot_controller_node.rs:step_after_controller",
+                "controller output foot locations and msg counters",
+                &format!(
+                    "{{\"ticks\":{},\"mode\":\"{:?}\",\"mode_msg_count\":{},\"vel_msg_count\":{},\"fr\":[{:.5},{:.5},{:.5}],\"fl\":[{:.5},{:.5},{:.5}],\"rr\":[{:.5},{:.5},{:.5}],\"rl\":[{:.5},{:.5},{:.5}]}}",
+                    self.ticks,
+                    self.behavior_state,
+                    self.mode_msg_count,
+                    self.vel_msg_count,
+                    self.foot_locations[(0,0)], self.foot_locations[(1,0)], self.foot_locations[(2,0)],
+                    self.foot_locations[(0,1)], self.foot_locations[(1,1)], self.foot_locations[(2,1)],
+                    self.foot_locations[(0,2)], self.foot_locations[(1,2)], self.foot_locations[(2,2)],
+                    self.foot_locations[(0,3)], self.foot_locations[(1,3)], self.foot_locations[(2,3)]
+                ),
+            );
+        }
+        // #endregion
 
         // IK: foot positions → joint angles
         let local = compute_local_positions(
             &self.foot_locations, 0.3762, 0.0935,
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         );
-        let mut angles = compute_all_joint_angles(&local, 0.0, 0.0955, 0.213, 0.213);
-
-        // Clamp angles to safe range
-        for i in 0..4 {
-            angles[i * 3 + 0] = angles[i * 3 + 0].clamp(-0.3, 0.3);
-            angles[i * 3 + 1] = angles[i * 3 + 1].clamp(0.5, 1.3);
-            angles[i * 3 + 2] = angles[i * 3 + 2].clamp(-2.8, -1.5);
+        let angles = compute_all_joint_angles(&local, 0.0, 0.0955, 0.213, 0.213);
+        // #region agent log
+        if self.ticks <= 20 || self.ticks % 120 == 0 {
+            dbg_log(
+                "pre-fix",
+                "H5_IK_INPUT_DRIFT",
+                "robot_controller_node.rs:step_after_ik",
+                "ik output joint sample",
+                &format!(
+                    "{{\"ticks\":{},\"joints\":[{:.5},{:.5},{:.5},{:.5},{:.5},{:.5}]}}",
+                    self.ticks, angles[0], angles[1], angles[2], angles[3], angles[4], angles[5]
+                ),
+            );
         }
+        // #endregion
 
         angles
     }
@@ -155,8 +213,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _mode_sub = node.create_subscription("robot_mode", move |msg: quadropted_msgs_rs::RobotModeCommand| {
         if msg.robot_id == 1 {
             let mut s = mode_state.lock().unwrap();
-            let mode_str = msg.mode.to_cstr().to_str().unwrap_or("");
+            let mode_raw = msg.mode.to_cstr().to_string_lossy();
+            let mode_str = mode_raw.trim().trim_matches(char::from(0));
             if let Some(new_state) = BehaviorState::from_str(mode_str) {
+                s.mode_msg_count += 1;
+                // #region agent log
+                dbg_log(
+                    "pre-fix",
+                    "H4_STATE_TRANSITION_RESET",
+                    "robot_controller_node.rs:mode_sub",
+                    "mode transition request",
+                    &format!(
+                        "{{\"from\":\"{:?}\",\"to\":\"{:?}\",\"ticks_before\":{},\"mode_str\":\"{}\"}}",
+                        s.behavior_state, new_state, s.ticks, mode_str
+                    ),
+                );
+                // #endregion
                 println!("[Rust] Mode change: {:?} -> {:?}", s.behavior_state, new_state);
                 s.behavior_state = new_state;
                 s.ticks = 0;
@@ -165,6 +237,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if new_state == BehaviorState::CRAWL {
                     s.crawl_gait.reset();
                 }
+                // #region agent log
+                dbg_log(
+                    "pre-fix",
+                    "H4_STATE_TRANSITION_RESET",
+                    "robot_controller_node.rs:mode_sub_after_reset",
+                    "mode transition applied",
+                    &format!("{{\"to\":\"{:?}\",\"ticks_after\":{}}}", s.behavior_state, s.ticks),
+                );
+                // #endregion
+            } else {
+                println!("[Rust] Ignored unknown mode: '{}'", mode_str);
             }
         }
     })?;
@@ -175,11 +258,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _vel_sub = node.create_subscription("robot_velocity", move |msg: quadropted_msgs_rs::RobotVelocity| {
         if msg.robot_id == 1 {
             let mut s = vel_state.lock().unwrap();
-            s.cmd_vel = [
+            s.vel_msg_count += 1;
+            // #region agent log
+            dbg_log(
+                "pre-fix",
+                "H2_VELOCITY_MAPPING_LOSS",
+                "robot_controller_node.rs:vel_sub_raw",
+                "raw robot_velocity",
+                &format!(
+                    "{{\"lin\":[{:.5},{:.5},{:.5}],\"ang\":[{:.5},{:.5},{:.5}],\"mode\":\"{:?}\"}}",
+                    msg.cmd_vel.linear.x, msg.cmd_vel.linear.y, msg.cmd_vel.linear.z,
+                    msg.cmd_vel.angular.x, msg.cmd_vel.angular.y, msg.cmd_vel.angular.z,
+                    s.behavior_state
+                ),
+            );
+            // #endregion
+            s.cmd_linear = [
                 msg.cmd_vel.linear.x,
                 msg.cmd_vel.linear.y,
+                msg.cmd_vel.linear.z,
+            ];
+            s.cmd_angular = [
+                msg.cmd_vel.angular.x,
+                msg.cmd_vel.angular.y,
                 msg.cmd_vel.angular.z,
             ];
+            // #region agent log
+            dbg_log(
+                "pre-fix",
+                "H2_VELOCITY_MAPPING_LOSS",
+                "robot_controller_node.rs:vel_sub_mapped",
+                "mapped cmd_vel used by controller",
+                &format!(
+                    "{{\"linear\":[{:.5},{:.5},{:.5}],\"angular\":[{:.5},{:.5},{:.5}]}}",
+                    s.cmd_linear[0], s.cmd_linear[1], s.cmd_linear[2],
+                    s.cmd_angular[0], s.cmd_angular[1], s.cmd_angular[2]
+                ),
+            );
+            // #endregion
         }
     })?;
     println!("✅ Subscription: robot_velocity");
@@ -207,7 +323,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         if s.ticks % 120 == 0 {
             println!("[Rust DEBUG] Tick #{} ({:.1}s) {:?} mode, vx={:.3}",
-                s.ticks, s.ticks as f64 / 60.0, s.behavior_state, s.cmd_vel[0]);
+                s.ticks, s.ticks as f64 / 60.0, s.behavior_state, s.cmd_linear[0]);
             let joint_names = [
                 "rf_hip", "rf_upper", "rf_lower",
                 "lf_hip", "lf_upper", "lf_lower",

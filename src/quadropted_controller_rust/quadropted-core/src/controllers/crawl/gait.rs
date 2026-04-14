@@ -7,6 +7,29 @@ use super::stance::CrawlStanceController;
 use super::swing::CrawlSwingController;
 use crate::controllers::gait::GaitController;
 use nalgebra::{DMatrix, SMatrix};
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::sync::atomic::{AtomicU64, Ordering};
+
+// #region agent log
+static LOG_SEQ_CRAWL: AtomicU64 = AtomicU64::new(0);
+const DEBUG_LOG_PATH: &str = "/home/redalexdad/GitHub/WalkingRobotSim/.cursor/debug-f81059.log";
+
+fn dbg_log_crawl(run_id: &str, hypothesis_id: &str, location: &str, message: &str, data: &str) {
+    let seq = LOG_SEQ_CRAWL.fetch_add(1, Ordering::Relaxed);
+    let ts = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    let line = format!(
+        "{{\"sessionId\":\"f81059\",\"id\":\"f81059-crawl-{}\",\"timestamp\":{},\"location\":\"{}\",\"message\":\"{}\",\"data\":{},\"runId\":\"{}\",\"hypothesisId\":\"{}\"}}",
+        seq, ts, location, message, data, run_id, hypothesis_id
+    );
+    if let Ok(mut f) = OpenOptions::new().create(true).append(true).open(DEBUG_LOG_PATH) {
+        let _ = writeln!(f, "{}", line);
+    }
+}
+// #endregion
 
 /// Crawl Gait Controller
 pub struct CrawlGaitController {
@@ -81,16 +104,58 @@ impl CrawlGaitController {
         ticks: i32,
         current: &SMatrix<f64, 3, 4>,
         cmd_vel: &[f64; 3],
+        robot_height: f64,
     ) -> SMatrix<f64, 3, 4> {
         let mut next = *current;
         let contacts = self.gait.contacts(ticks);
         let sub = self.gait.subphase_ticks(ticks);
+        // #region agent log
+        if ticks <= 30 || ticks % 120 == 0 {
+            dbg_log_crawl(
+                "pre-fix",
+                "H1_CONTACT_PHASE_LAYOUT",
+                "crawl/gait.rs:step_phase",
+                "crawl contacts and phase",
+                &format!(
+                    "{{\"ticks\":{},\"phase_index\":{},\"subphase_ticks\":{},\"first_cycle\":{},\"contacts\":[{},{},{},{}]}}",
+                    ticks, self.gait.phase_index(ticks), sub, self.first_cycle_, contacts[0], contacts[1], contacts[2], contacts[3]
+                ),
+            );
+        }
+        // #endregion
 
         for leg in 0..4 {
             if contacts[leg] == 1 {
-                // Stance phase — foot on ground
-                // В C++ просто возвращается текущая позиция
-                next.column_mut(leg).copy_from(&current.column(leg));
+                let phase_idx = self.gait.phase_index(ticks);
+                let move_sideways = phase_idx == 0 || phase_idx == 4;
+                let move_left = phase_idx == 0;
+                let cmd = nalgebra::Vector3::new(cmd_vel[0], cmd_vel[1], cmd_vel[2]);
+                // #region agent log
+                if ticks <= 30 || ticks % 120 == 0 {
+                    dbg_log_crawl(
+                        "pre-fix",
+                        "H3_CRAWL_STANCE_PATH_MISMATCH",
+                        "crawl/gait.rs:stance_branch",
+                        "crawl stance branch selected",
+                        &format!(
+                            "{{\"ticks\":{},\"leg\":{},\"branch\":\"stance_controller\",\"phase_idx\":{},\"move_sideways\":{},\"move_left\":{}}}",
+                            ticks, leg, phase_idx, move_sideways, move_left
+                        ),
+                    );
+                }
+                // #endregion
+                // Stance phase — C++ node uses explicit CrawlStanceController branch.
+                next.column_mut(leg).copy_from(
+                    &self.stance_.next_foot_location(
+                        leg,
+                        current,
+                        &cmd,
+                        robot_height,
+                        self.first_cycle_,
+                        move_sideways,
+                        move_left,
+                    ),
+                );
             } else {
                 // Swing phase — foot in air
                 let swing_prop = sub as f64 / self.gait.swing_ticks as f64;
@@ -102,6 +167,7 @@ impl CrawlGaitController {
                         leg,
                         current,
                         &cmd,
+                        robot_height,
                         self.first_cycle_,
                         phase_idx,
                     )
@@ -173,7 +239,7 @@ mod tests {
         let mut crawl = CrawlGaitController::new(0.55, 0.45, 0.02, default_stance);
         let cmd_vel = [0.01, 0.0, 0.0];
         
-        let next = crawl.step(0, &default_stance, &cmd_vel);
+        let next = crawl.step(0, &default_stance, &cmd_vel, -0.25);
         
         // Проверяем что foot locations изменились
         assert!(next.nrows() == 3 && next.ncols() == 4);
@@ -192,7 +258,7 @@ mod tests {
         // Симулируем полный цикл
         let phase_len = crawl.phase_length();
         for tick in 0..=phase_len {
-            crawl.step(tick, &default_stance, &[0.01, 0.0, 0.0]);
+            crawl.step(tick, &default_stance, &[0.01, 0.0, 0.0], -0.25);
         }
         
         assert!(!crawl.is_first_cycle());

@@ -78,6 +78,7 @@ impl CrawlSwingController {
         leg_index: usize,
         current: &SMatrix<f64, 3, 4>,
         cmd_vel: &Vector3<f64>,
+        robot_height: f64,
         first_cycle: bool,
         phase_index: usize,
     ) -> Vector3<f64> {
@@ -101,8 +102,9 @@ impl CrawlSwingController {
 
         let delta_foot = velocity * self.time_step;
 
-        // z_vector = [0, 0, swing_height] (no robot_height in crawl)
-        let z_vector = Vector3::new(0.0, 0.0, swing_h);
+        // Keep swing arc around commanded robot height.
+        // Without this offset, foot z drifts near zero and IK saturates joints.
+        let z_vector = Vector3::new(0.0, 0.0, swing_h + robot_height);
 
         // foot_location * [1,1,0] + z_vector + delta_foot
         Vector3::new(foot_location.x, foot_location.y, 0.0) + z_vector + delta_foot
@@ -137,10 +139,10 @@ mod tests {
         let foot = default_stance();
         let cmd_vel = Vector3::zeros();
 
-        let result = controller.next_foot_location(0.5, 0, &foot, &cmd_vel, true, 0);
+        let result = controller.next_foot_location(0.5, 0, &foot, &cmd_vel, -0.25, true, 0);
 
-        // With zero velocity, Z should be swing_height
-        let expected_z = 0.08;
+        // With zero velocity, Z should be robot_height + swing_height
+        let expected_z = -0.17;
         assert!((result.z - expected_z).abs() < 0.01, "Z = {}, expected {}", result.z, expected_z);
     }
 
