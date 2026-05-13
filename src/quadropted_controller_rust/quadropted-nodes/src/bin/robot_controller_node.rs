@@ -145,6 +145,25 @@ impl SharedState {
                 )
             }
         };
+
+        if self.behavior_state == BehaviorState::CRAWL && self.ticks % 60 == 0 {
+            let contacts = self.crawl_gait.contacts(self.ticks);
+            let phase_idx = self.crawl_gait.phase_index(self.ticks);
+            let sub_ticks = self.crawl_gait.subphase_ticks(self.ticks);
+            println!(
+                "[RUNTIME_CRAWL_RUST] ticks={} phase={} sub={} contacts=[{},{},{},{}] cmd=[{:.4},{:.4},{:.4}] \
+fr=({:.4},{:.4},{:.4}) fl=({:.4},{:.4},{:.4}) rr=({:.4},{:.4},{:.4}) rl=({:.4},{:.4},{:.4})",
+                self.ticks,
+                phase_idx,
+                sub_ticks,
+                contacts[0], contacts[1], contacts[2], contacts[3],
+                self.cmd_linear[0], self.cmd_linear[1], self.cmd_angular[2],
+                self.foot_locations[(0, 0)], self.foot_locations[(1, 0)], self.foot_locations[(2, 0)],
+                self.foot_locations[(0, 1)], self.foot_locations[(1, 1)], self.foot_locations[(2, 1)],
+                self.foot_locations[(0, 2)], self.foot_locations[(1, 2)], self.foot_locations[(2, 2)],
+                self.foot_locations[(0, 3)], self.foot_locations[(1, 3)], self.foot_locations[(2, 3)],
+            );
+        }
         // #region agent log
         if self.ticks <= 20 || self.ticks % 120 == 0 {
             dbg_log(
@@ -193,7 +212,7 @@ impl SharedState {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🦀 Rust Robot Controller Node starting...");
+    println!("🦀 Rust Robot Controller Node starting... [TRACE_CRAWL_COMPARE_V2]");
     println!("   Features: State Machine (REST/TROT/CRAWL/STAND) + IK + Subscriptions\n");
 
     let ctx = Context::new([], rclrs::InitOptions::new())?;
@@ -324,6 +343,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if s.ticks % 120 == 0 {
             println!("[Rust DEBUG] Tick #{} ({:.1}s) {:?} mode, vx={:.3}",
                 s.ticks, s.ticks as f64 / 60.0, s.behavior_state, s.cmd_linear[0]);
+            if s.behavior_state == BehaviorState::CRAWL {
+                let contacts = s.crawl_gait.contacts(s.ticks);
+                let phase_idx = s.crawl_gait.phase_index(s.ticks);
+                let sub_ticks = s.crawl_gait.subphase_ticks(s.ticks);
+                println!(
+                    "[RUNTIME_CRAWL_RUST] ticks={} phase={} sub={} contacts=[{},{},{},{}] cmd=[{:.4},{:.4},{:.4}] fr=({:.4},{:.4},{:.4}) fl=({:.4},{:.4},{:.4}) rr=({:.4},{:.4},{:.4}) rl=({:.4},{:.4},{:.4})",
+                    s.ticks,
+                    phase_idx,
+                    sub_ticks,
+                    contacts[0], contacts[1], contacts[2], contacts[3],
+                    s.cmd_linear[0], s.cmd_linear[1], s.cmd_angular[2],
+                    s.foot_locations[(0, 0)], s.foot_locations[(1, 0)], s.foot_locations[(2, 0)],
+                    s.foot_locations[(0, 1)], s.foot_locations[(1, 1)], s.foot_locations[(2, 1)],
+                    s.foot_locations[(0, 2)], s.foot_locations[(1, 2)], s.foot_locations[(2, 2)],
+                    s.foot_locations[(0, 3)], s.foot_locations[(1, 3)], s.foot_locations[(2, 3)],
+                );
+            }
             let joint_names = [
                 "rf_hip", "rf_upper", "rf_lower",
                 "lf_hip", "lf_upper", "lf_lower",

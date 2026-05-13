@@ -365,6 +365,15 @@ class RobotControllerNode : public rclcpp::Node {
         if (state.ticks % 60 == 0) {
             RCLCPP_INFO(get_logger(), "[DEBUG] CRAWL step: ticks=%d contacts=[%d,%d,%d,%d]", state.ticks, contacts(0),
                         contacts(1), contacts(2), contacts(3));
+            RCLCPP_INFO(
+                get_logger(),
+                "[RUNTIME_CRAWL_CPP] ticks=%d phase=%d sub=%d contacts=[%d,%d,%d,%d] cmd=[%.4f,%.4f,%.4f] "
+                "fr=(%.4f,%.4f,%.4f) fl=(%.4f,%.4f,%.4f) rr=(%.4f,%.4f,%.4f) rl=(%.4f,%.4f,%.4f)",
+                state.ticks, phase_idx, crawl_gait_->subphase_ticks(state.ticks), contacts(0), contacts(1), contacts(2),
+                contacts(3), cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2], new_foot_locations(0, 0),
+                new_foot_locations(1, 0), new_foot_locations(2, 0), new_foot_locations(0, 1), new_foot_locations(1, 1),
+                new_foot_locations(2, 1), new_foot_locations(0, 2), new_foot_locations(1, 2), new_foot_locations(2, 2),
+                new_foot_locations(0, 3), new_foot_locations(1, 3), new_foot_locations(2, 3));
         }
 
         return new_foot_locations;

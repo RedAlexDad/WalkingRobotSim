@@ -180,6 +180,22 @@ impl CrawlGaitController {
             self.first_cycle_ = false;
         }
 
+        if ticks % 60 == 0 {
+            println!(
+                "[RUNTIME_CRAWL_RUST] ticks={} phase={} sub={} contacts=[{},{},{},{}] cmd=[{:.4},{:.4},{:.4}] \
+fr=({:.4},{:.4},{:.4}) fl=({:.4},{:.4},{:.4}) rr=({:.4},{:.4},{:.4}) rl=({:.4},{:.4},{:.4})",
+                ticks,
+                self.gait.phase_index(ticks),
+                sub,
+                contacts[0], contacts[1], contacts[2], contacts[3],
+                cmd_vel[0], cmd_vel[1], cmd_vel[2],
+                next[(0, 0)], next[(1, 0)], next[(2, 0)],
+                next[(0, 1)], next[(1, 1)], next[(2, 1)],
+                next[(0, 2)], next[(1, 2)], next[(2, 2)],
+                next[(0, 3)], next[(1, 3)], next[(2, 3)],
+            );
+        }
+
         next
     }
 
@@ -206,6 +222,22 @@ impl CrawlGaitController {
     /// Is first cycle?
     pub fn is_first_cycle(&self) -> bool {
         self.first_cycle_
+    }
+
+    /// Contact mask for current tick in leg order FR, FL, RR, RL.
+    pub fn contacts(&self, ticks: i32) -> [i32; 4] {
+        let contacts = self.gait.contacts(ticks);
+        [contacts[0], contacts[1], contacts[2], contacts[3]]
+    }
+
+    /// Current gait phase index.
+    pub fn phase_index(&self, ticks: i32) -> usize {
+        self.gait.phase_index(ticks)
+    }
+
+    /// Current subphase ticks.
+    pub fn subphase_ticks(&self, ticks: i32) -> i32 {
+        self.gait.subphase_ticks(ticks)
     }
 }
 
