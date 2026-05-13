@@ -1,4 +1,4 @@
-# Конвертация LaserScan → range image
+	# Конвертация LaserScan → range image
 
 ## Задача
 
