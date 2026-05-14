@@ -122,18 +122,6 @@ services:
         BASE_IMG: osrf/ros:jazzy-desktop
         # Используемый дистрибутив ROS
         ROS_DISTRO: jazzy
-      # Источники кэша для ускорения сборки
-      cache_from:
-        - walking_robot_sim:base-system
-        - walking_robot_sim:ros-core
-        - walking_robot_sim:ros-control
-        - walking_robot_sim:ros-simulation
-        - walking_robot_sim:ros-navigation
-        - walking_robot_sim:ros-vision
-        - walking_robot_sim:ros-tools
-        - walking_robot_sim:python-deps
-        - walking_robot_sim:workspace
-        - walking_robot_sim:latest
       # Целевая стадия сборки для создания
       target: final
     # Тома для монтирования в контейнере

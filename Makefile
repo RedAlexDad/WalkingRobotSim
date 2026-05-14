@@ -61,11 +61,20 @@ endef
 ## Сборка и запуск контейнера (рекомендуется)
 deploy: build up
 
+## Сборка и запуск контейнера без кэша (решение проблем с cache_from)
+deploy-no-cache: build-no-cache up
+
 ## Сборка Docker образа
 build:
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Сборка Docker образа с кэшированием по этапам...${NC}\n"
-	@cd $(DOCKER_DIR) && $(COMPOSE) build 2>&1 | grep -v "^ > importing cache manifest" | grep -v "^------" || true
+	@cd $(DOCKER_DIR) && $(COMPOSE) --progress=auto build
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Образ собран${NC}\n"
+
+## Сборка Docker образа без кэша (решает проблему с cache_from)
+build-no-cache:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Сборка Docker образа БЕЗ кэширования (решение проблем с cache_from)...${NC}\n"
+	@cd $(DOCKER_DIR) && $(COMPOSE) --progress=auto build --no-cache
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Образ собран без кэша${NC}\n"
 
 ## Запуск контейнера
 up:
