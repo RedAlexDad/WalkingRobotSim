@@ -349,6 +349,28 @@ stand:
 		ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: STAND, robot_id: 1}\""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Режим STAND установлен${NC}\n"
 
+.PHONY: waypoint-start waypoint-clear
+
+## Запустить навигацию по всем waypoints (сервис /start_navigation)
+waypoint-start:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск навигации по waypoints...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /start_navigation std_srvs/Trigger"
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Очистить все waypoints (сервис /clear_waypoints)
+waypoint-clear:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Очистка waypoints...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /clear_waypoints std_srvs/Trigger"
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
 ## Выполнение команды в контейнере (пример: make exec CMD="ros2 topic list")
 exec:
 	$(require-container)

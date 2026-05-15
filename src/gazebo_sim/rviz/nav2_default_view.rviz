@@ -559,7 +559,19 @@ Visualization Manager:
       Name: Realsense
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
-      Name: MarkerArray
+      Name: WaypointMarkers
+      Namespaces:
+        waypoints: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /waypoint_markers
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: false
+      Name: OldMarkerArray
       Namespaces:
         {}
       Topic:
@@ -568,7 +580,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /robot1/waypoints
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -600,6 +612,13 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /robot1/clicked_point
     - Class: nav2_rviz_plugins/GoalTool
+    - Class: rviz_waypoint_tool/WaypointTool
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /custom_goal_pose
   Transformation:
     Current:
       Class: rviz_default_plugins/TF
