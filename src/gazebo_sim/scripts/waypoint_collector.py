@@ -10,6 +10,7 @@ from nav2_msgs.action import FollowWaypoints
 from nav2_simple_commander.robot_navigator import BasicNavigator
 from std_msgs.msg import ColorRGBA
 from std_srvs.srv import Trigger
+from quadropted_msgs.srv import WaypointNavigate
 from action_msgs.msg import GoalStatus
 import threading
 
@@ -50,6 +51,14 @@ class WaypointCollector(Node):
 
         self.start_service = self.create_service(
             Trigger, "/start_navigation", self.start_navigation_callback
+        )
+
+        self.navigate_service = self.create_service(
+            WaypointNavigate, "/navigate_to_waypoint", self.navigate_to_waypoint_callback
+        )
+
+        self.stop_service = self.create_service(
+            Trigger, "/stop_navigation", self.stop_navigation_callback
         )
 
         self.timer = self.create_timer(0.1, self.check_navigation)
@@ -151,7 +160,7 @@ class WaypointCollector(Node):
             )
 
             self.navigation_active = True
-            self._send_goal_async()
+            self._send_goal_async(self.waypoints)
             self.get_logger().info(
                 f"Sent {len(self.waypoints)} waypoints to FollowWaypoints action"
             )
@@ -164,9 +173,15 @@ class WaypointCollector(Node):
             response.message = f"Failed to start navigation: {str(e)}"
         return response
 
-    def _send_goal_async(self):
+    def _make_goal_msg(self, waypoints):
         goal_msg = FollowWaypoints.Goal()
-        goal_msg.poses = self.waypoints
+        goal_msg.poses = waypoints
+        return goal_msg
+
+    def _send_goal_async(self, waypoints=None):
+        if waypoints is None:
+            waypoints = self.waypoints
+        goal_msg = self._make_goal_msg(waypoints)
 
         if self._follow_wp_client.server_is_ready():
             self._do_send_goal(goal_msg)
@@ -229,6 +244,69 @@ class WaypointCollector(Node):
         if self._nav_goal_handle:
             self._nav_goal_handle.cancel_goal_async()
         self.navigation_active = False
+
+    def navigate_to_waypoint_callback(self, request, response):
+        idx = request.index
+
+        if not self.waypoints:
+            self.get_logger().warn("No waypoints available")
+            response.success = False
+            response.message = "No waypoints to navigate"
+            return response
+
+        if idx < -1 or idx >= len(self.waypoints):
+            self.get_logger().error(f"Invalid waypoint index {idx}, have {len(self.waypoints)} waypoints")
+            response.success = False
+            response.message = f"Invalid index {idx}, valid: -1..{len(self.waypoints) - 1}"
+            return response
+
+        if self.navigation_active:
+            self.cancel_navigation()
+            self.get_logger().info("Cancelled previous navigation")
+
+        if not self.nav2_ready:
+            self.get_logger().warn("Nav2 is not ready yet")
+            response.success = False
+            response.message = "Nav2 is not ready yet"
+            return response
+
+        try:
+            if idx == -1:
+                targets = self.waypoints
+                label = "all"
+            else:
+                targets = [self.waypoints[idx]]
+                label = str(idx)
+
+            self.navigation_active = True
+            self._send_goal_async(targets)
+            self.get_logger().info(f"Navigating to waypoint index {label}")
+            response.success = True
+            response.message = f"Navigating to waypoint index {label}"
+        except Exception as e:
+            self.get_logger().error(f"Failed to start navigation: {str(e)}")
+            self.navigation_active = False
+            response.success = False
+            response.message = str(e)
+        return response
+
+    def stop_navigation_callback(self, request, response):
+        if not self.navigation_active:
+            self.get_logger().info("No active navigation to stop")
+            response.success = True
+            response.message = "No active navigation"
+            return response
+
+        try:
+            self.cancel_navigation()
+            self.get_logger().info("Navigation stopped via /stop_navigation")
+            response.success = True
+            response.message = "Navigation stopped"
+        except Exception as e:
+            self.get_logger().error(f"Failed to stop navigation: {str(e)}")
+            response.success = False
+            response.message = str(e)
+        return response
 
     def check_navigation(self):
         if self.navigation_active and self._nav_result_future:

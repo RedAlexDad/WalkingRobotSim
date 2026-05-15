@@ -337,6 +337,45 @@ waypoint_follower:
 
 После пересборки и запуска `ros2 action info /robot1/follow_waypoints` должен показать 1 сервер.
 
+---
+
+# Четвёртая итерация: добавлены команды навигации к конкретному waypoint и остановки
+
+## Изменения
+
+### 1. Новый сервис WaypointNavigate в quadropted_msgs
+
+Создан `srv/WaypointNavigate.srv`:
+```
+int32 index   # index waypoint (-1 = все)
+---
+bool success
+string message
+```
+
+### 2. Новые сервисы в waypoint_collector.py
+
+- `/navigate_to_waypoint` (WaypointNavigate) — навигация к waypoint по индексу. `index=-1` = все waypoints.
+- `/stop_navigation` (Trigger) — остановка текущей навигации без очистки списка waypoints.
+- `/start_navigation` теперь явно передаёт `self.waypoints` в `_send_goal_async()`.
+
+### 3. Новые Makefile цели
+
+```
+make waypoint-start               # все waypoints (как было)
+make waypoint-navigate INDEX=2    # навигация к waypoint №2
+make waypoint-stop                # остановка навигации
+make waypoint-clear               # очистка + остановка (было)
+```
+
+### 4. Сборка
+
+Требуется пересобрать `quadropted_msgs` (новый .srv):
+```
+colcon build --packages-select quadropted_msgs
+colcon build --packages-select gazebo_sim
+```
+
 ## Файлы
 
 - `src/gazebo_sim/scripts/waypoint_collector.py` — основная нода (исправлена)

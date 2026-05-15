@@ -21,6 +21,7 @@ set(msg_files
 
 set(srv_files
   "srv/RobotBehaviorCommand.srv"
+  "srv/WaypointNavigate.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
