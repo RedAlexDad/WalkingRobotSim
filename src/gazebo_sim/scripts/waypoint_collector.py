@@ -29,6 +29,8 @@ class WaypointCollector(Node):
         self.navigation_active = False
         self._nav_goal_handle = None
         self._nav_result_future = None
+        self._pending_goal = None
+        self._goal_retry_timer = None
 
         self.subscription = self.create_subscription(
             PoseStamped, "/custom_goal_pose", self.goal_pose_callback, 10
@@ -166,10 +168,28 @@ class WaypointCollector(Node):
         goal_msg = FollowWaypoints.Goal()
         goal_msg.poses = self.waypoints
 
-        if not self._follow_wp_client.wait_for_server(timeout_sec=1.0):
-            self.get_logger().error("FollowWaypoints action server not available")
-            self.navigation_active = False
-            return
+        if self._follow_wp_client.server_is_ready():
+            self._do_send_goal(goal_msg)
+        else:
+            self.get_logger().warn(
+                "FollowWaypoints server not ready, retrying..."
+            )
+            self._pending_goal = goal_msg
+            self._goal_retry_timer = self.create_timer(
+                0.5, self._retry_send_goal
+            )
+
+    def _retry_send_goal(self):
+        if self._follow_wp_client.server_is_ready():
+            self._goal_retry_timer.cancel()
+            self._do_send_goal(self._pending_goal)
+            self._pending_goal = None
+        else:
+            self.get_logger().info(
+                "Still waiting for FollowWaypoints server..."
+            )
+
+    def _do_send_goal(self, goal_msg):
         send_goal_future = self._follow_wp_client.send_goal_async(
             goal_msg, self._feedback_callback
         )

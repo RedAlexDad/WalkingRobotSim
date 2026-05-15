@@ -212,7 +212,31 @@ def isTaskComplete(self):
 
 ### Iteration 1: async ActionClient
 
-После первого запуска с async ActionClient — SIGABRT:
+После первого запуска с async ActionClient — SIGABRT.
+**Причина**: `FollowWaypoints.Goal.poses` ожидает `PoseStamped[]`, а код отправлял `Pose[]`.
+
+### Iteration 2: wait_for_server внутри колбэка
+
+После исправления типа — `FollowWaypoints action server not available`.
+**Причина**: `wait_for_server(timeout_sec=1.0)` не может найти сервер, потому что
+вызывается внутри service callback. `SingleThreadedExecutor` занят обработкой
+колбэка и не может обрабатывать DDS discovery события.
+
+**Исправление**: timer-based retry вместо блокирующего wait_for_server:
+```python
+def _send_goal_async(self):
+    if self._follow_wp_client.server_is_ready():
+        self._do_send_goal(goal_msg)
+    else:
+        self._goal_retry_timer = self.create_timer(0.5, self._retry_send_goal)
+
+def _retry_send_goal(self):
+    if self._follow_wp_client.server_is_ready():
+        self._goal_retry_timer.cancel()
+        self._do_send_goal(self._pending_goal)
+```
+
+Теперь discovery происходит асинхронно, executor не блокируется.
 
 ```
 geometry_msgs__msg__pose_stamped__convert_from_py: Assertion
