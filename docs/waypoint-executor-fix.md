@@ -210,6 +210,27 @@ def isTaskComplete(self):
 
 Полностью переписан механизм отправки goal:
 
+### Iteration 1: async ActionClient
+
+После первого запуска с async ActionClient — SIGABRT:
+
+```
+geometry_msgs__msg__pose_stamped__convert_from_py: Assertion
+`strncmp("geometry_msgs.msg._pose_stamped.PoseStamped", full_classname_dest, 43) == 0' failed.
+```
+
+**Причина**: `FollowWaypoints.Goal.poses` ожидает `PoseStamped[]`, а код отправлял `Pose[]`:
+```python
+# BUG: wp.pose — это Pose, а нужно PoseStamped
+goal_msg.poses = [wp.pose for wp in self.waypoints]
+# FIX: self.waypoints уже содержит PoseStamped
+goal_msg.poses = self.waypoints
+```
+
+Дополнительно: `wait_for_server(timeout_sec=1.0)` может вернуть `False` — добавлена проверка.
+
+### Итоговый код
+
 1. **ActionClient на ноде WaypointCollector** (а не на BasicNavigator):
    ```python
    self._follow_wp_client = ActionClient(

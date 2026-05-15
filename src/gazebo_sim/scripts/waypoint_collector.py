@@ -164,9 +164,12 @@ class WaypointCollector(Node):
 
     def _send_goal_async(self):
         goal_msg = FollowWaypoints.Goal()
-        goal_msg.poses = [wp.pose for wp in self.waypoints]
+        goal_msg.poses = self.waypoints
 
-        self._follow_wp_client.wait_for_server(timeout_sec=1.0)
+        if not self._follow_wp_client.wait_for_server(timeout_sec=1.0):
+            self.get_logger().error("FollowWaypoints action server not available")
+            self.navigation_active = False
+            return
         send_goal_future = self._follow_wp_client.send_goal_async(
             goal_msg, self._feedback_callback
         )
