@@ -1,75 +1,67 @@
 #!/usr/bin/env python3
-"""
-Waypoint Collector Node
-Подписывается на /custom_goal_pose для добавления waypoints без автоматической навигации.
-Запускает навигацию по waypoints только по вызову сервиса /start_navigation.
-"""
 
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import SingleThreadedExecutor
+from rclpy.action import ActionClient
 from geometry_msgs.msg import PoseStamped, PoseArray
 from visualization_msgs.msg import Marker, MarkerArray
+from nav2_msgs.action import FollowWaypoints
 from nav2_simple_commander.robot_navigator import BasicNavigator
 from std_msgs.msg import ColorRGBA
 from std_srvs.srv import Trigger
-import tf_transformations
+from action_msgs.msg import GoalStatus
 import threading
 
 
 class WaypointCollector(Node):
     def __init__(self):
         super().__init__("waypoint_collector")
-        self.waypoints = []  # Список для хранения waypoints
-        # Используем тот же namespace, что и у этой ноды (например, /robot1),
-        # чтобы BasicNavigator искал action серверы в правильном namespace
+        self.waypoints = []
         ns = self.get_namespace().lstrip('/')
         self.navigator = BasicNavigator(namespace=ns)
-        self.navigation_active = False  # Флаг активной навигации
 
-        # Подписка на /custom_goal_pose (вместо /goal_pose)
+        # Own ActionClient on this node (which is in the executor)
+        self._follow_wp_client = ActionClient(
+            self, FollowWaypoints, 'follow_waypoints'
+        )
+
+        self.navigation_active = False
+        self._nav_goal_handle = None
+        self._nav_result_future = None
+
         self.subscription = self.create_subscription(
             PoseStamped, "/custom_goal_pose", self.goal_pose_callback, 10
         )
 
-        # Публикация в /custom_waypoints
         self.waypoint_publisher = self.create_publisher(
             PoseArray, "/custom_waypoints", 10
         )
 
-        # Публикация маркеров для визуализации waypoints
         self.marker_publisher = self.create_publisher(
             MarkerArray, "/waypoint_markers", 10
         )
 
-        # Сервис для очистки waypoints
         self.clear_service = self.create_service(
             Trigger, "/clear_waypoints", self.clear_waypoints_callback
         )
 
-        # Сервис для запуска навигации
         self.start_service = self.create_service(
             Trigger, "/start_navigation", self.start_navigation_callback
         )
 
-        # Таймер для проверки навигации
         self.timer = self.create_timer(0.1, self.check_navigation)
-        # Таймер для спина BasicNavigator (global executor свободен, т.к. main() использует свой executor)
-        self.create_timer(0.5, self._spin_basic_navigator)
 
-        # Запуск ожидания Nav2 в отдельном потоке, чтобы не блокировать конструктор
         self.nav2_ready = False
         self._start_nav2_wait_thread()
 
         self.get_logger().info("Waypoint Collector Node started")
 
     def goal_pose_callback(self, msg):
-        # Добавление новой позы в список waypoints
         self.waypoints.append(msg)
         self.get_logger().info(
             f"Added waypoint: x={msg.pose.position.x}, y={msg.pose.position.y}, total waypoints: {len(self.waypoints)}"
         )
-        # Публикация маркеров сразу после добавления новой точки
         self.publish_markers()
 
     def publish_markers(self):
@@ -88,14 +80,13 @@ class WaypointCollector(Node):
             marker.scale.y = 0.2
             marker.scale.z = 0.2
 
-            # Назначение цветов
             color = ColorRGBA()
             if i % 3 == 0:
-                color.r, color.g, color.b, color.a = 1.0, 0.0, 0.0, 1.0  # Красный
+                color.r, color.g, color.b, color.a = 1.0, 0.0, 0.0, 1.0
             elif i % 3 == 1:
-                color.r, color.g, color.b, color.a = 0.0, 1.0, 0.0, 1.0  # Зелёный
+                color.r, color.g, color.b, color.a = 0.0, 1.0, 0.0, 1.0
             else:
-                color.r, color.g, color.b, color.a = 0.0, 0.0, 1.0, 1.0  # Синий
+                color.r, color.g, color.b, color.a = 0.0, 0.0, 1.0, 1.0
 
             marker.color = color
             marker_array.markers.append(marker)
@@ -106,11 +97,9 @@ class WaypointCollector(Node):
         )
 
     def clear_waypoints_callback(self, request, response):
-        # Немедленная очистка waypoints и маркеров
         try:
             if self.navigation_active:
-                self.navigator.cancelTask()
-                self.get_logger().info("Canceled active navigation task")
+                self.cancel_navigation()
         except Exception as e:
             self.get_logger().error(f"Failed to cancel navigation task: {str(e)}")
 
@@ -131,7 +120,6 @@ class WaypointCollector(Node):
         return response
 
     def start_navigation_callback(self, request, response):
-        # Запуск навигации по текущему списку waypoints
         if not self.waypoints:
             self.get_logger().warn("No waypoints available to start navigation")
             response.success = False
@@ -144,20 +132,24 @@ class WaypointCollector(Node):
             response.message = "Navigation is already active"
             return response
 
+        if not self.nav2_ready:
+            self.get_logger().warn("Nav2 is not ready yet, waiting...")
+            response.success = False
+            response.message = "Nav2 is not ready yet"
+            return response
+
         try:
-            # Публикация waypoints в /custom_waypoints
             pose_array = PoseArray()
             pose_array.header.frame_id = "map"
             pose_array.header.stamp = self.get_clock().now().to_msg()
             pose_array.poses = [wp.pose for wp in self.waypoints]
             self.waypoint_publisher.publish(pose_array)
             self.get_logger().info(
-                f"1111 Published {len(self.waypoints)} waypoints to /custom_waypoints"
+                f"Published {len(self.waypoints)} waypoints to /custom_waypoints"
             )
 
-            # Асинхронный запуск навигации
             self.navigation_active = True
-            self.navigator.followWaypoints(self.waypoints)
+            self._send_goal_async()
             self.get_logger().info(
                 f"Sent {len(self.waypoints)} waypoints to FollowWaypoints action"
             )
@@ -170,8 +162,58 @@ class WaypointCollector(Node):
             response.message = f"Failed to start navigation: {str(e)}"
         return response
 
-    def _spin_basic_navigator(self):
-        rclpy.spin_once(self.navigator, timeout_sec=0)
+    def _send_goal_async(self):
+        goal_msg = FollowWaypoints.Goal()
+        goal_msg.poses = [wp.pose for wp in self.waypoints]
+
+        self._follow_wp_client.wait_for_server(timeout_sec=1.0)
+        send_goal_future = self._follow_wp_client.send_goal_async(
+            goal_msg, self._feedback_callback
+        )
+        send_goal_future.add_done_callback(self._goal_response_callback)
+
+    def _feedback_callback(self, feedback_msg):
+        self.get_logger().info(
+            f"Current waypoint: {feedback_msg.feedback.current_waypoint}"
+        )
+
+    def _goal_response_callback(self, future):
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().error("FollowWaypoints goal was rejected")
+            self.navigation_active = False
+            return
+
+        self._nav_goal_handle = goal_handle
+        self.get_logger().info("FollowWaypoints goal accepted")
+        result_future = goal_handle.get_result_async()
+        result_future.add_done_callback(self._result_callback)
+
+    def _result_callback(self, future):
+        result = future.result()
+        self._nav_result_future = future
+        if result.status == GoalStatus.STATUS_SUCCEEDED:
+            self.get_logger().info("Navigation SUCCEEDED")
+        elif result.status == GoalStatus.STATUS_ABORTED:
+            self.get_logger().error("Navigation FAILED (aborted)")
+        elif result.status == GoalStatus.STATUS_CANCELED:
+            self.get_logger().info("Navigation CANCELED")
+        else:
+            self.get_logger().warn(f"Navigation result status: {result.status}")
+        self.navigation_active = False
+
+    def cancel_navigation(self):
+        if self._nav_goal_handle:
+            self._nav_goal_handle.cancel_goal_async()
+        self.navigation_active = False
+
+    def check_navigation(self):
+        if self.navigation_active and self._nav_result_future:
+            if self._nav_result_future.result():
+                status = self._nav_result_future.result().status
+                if status != GoalStatus.STATUS_SUCCEEDED and status != GoalStatus.STATUS_EXECUTING:
+                    self.get_logger().info(f"Navigation completed with status: {status}")
+                    self.navigation_active = False
 
     def _start_nav2_wait_thread(self):
         thread = threading.Thread(target=self._wait_for_nav2, daemon=True)
@@ -185,17 +227,6 @@ class WaypointCollector(Node):
             self.get_logger().info("Nav2 is active")
         except Exception as e:
             self.get_logger().error(f"Failed to activate Nav2: {str(e)}")
-
-    def check_navigation(self):
-        # Проверка завершения навигации
-        if self.navigation_active and self.navigator.isTaskComplete():
-            feedback = self.navigator.getFeedback()
-            if feedback:
-                self.get_logger().info(f"Current waypoint: {feedback.current_waypoint}")
-            result = self.navigator.getResult()
-            self.get_logger().info(f"Navigation result: {result}")
-            self.navigation_active = False
-            self.get_logger().info("Navigation completed, ready for new start command")
 
 
 def main(args=None):
