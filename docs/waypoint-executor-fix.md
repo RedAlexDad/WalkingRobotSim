@@ -291,11 +291,58 @@ goal_msg.poses = self.waypoints
 5. **Правильное отслеживание завершения** через `_nav_result_future` и
    `GoalStatus` в `check_navigation()`.
 
+---
+
+# Третья итерация: FollowWaypoints action server не запущен (0 серверов)
+
+## Проблема
+
+`ros2 action info /robot1/follow_waypoints`:
+- Action clients: 3
+- Action servers: 0
+
+Несмотря на то, что `waypoint_collector` (3 клиента) исправно пытается подключиться,
+action server `follow_waypoints` физически не запущен в системе.
+
+## Коренная причина
+
+В `navigation_launch.py` нода `waypoint_follower` была **закомментирована**:
+
+```python
+lifecycle_nodes = [
+    "controller_server", "planner_server", "behavior_server",
+    "smoother_server",  "bt_navigator",
+    # 'waypoint_follower'  # <-- выключен
+]
+```
+
+Параметры в `nav2_params.yaml` при этом были полностью настроены:
+```yaml
+waypoint_follower:
+  ros__parameters:
+    stop_on_failure: false
+    waypoint_pause_duration: 0.0
+    plugin: "nav2_waypoint_follower::WaitAtWaypoint"
+```
+
+То есть конфиг был готов, но сам lifecycle node не создавался — action server
+`/robot1/follow_waypoints` никогда не регистрировался в DDS.
+
+## Исправление
+
+Два изменения в `navigation_launch.py`:
+
+1. `'waypoint_follower'` добавлен в список `lifecycle_nodes`
+2. Добавлен `Node(package='nav2_waypoint_follower', executable='waypoint_follower', ...)`
+
+После пересборки и запуска `ros2 action info /robot1/follow_waypoints` должен показать 1 сервер.
+
 ## Файлы
 
 - `src/gazebo_sim/scripts/waypoint_collector.py` — основная нода (исправлена)
 - `src/gazebo_sim/launch/gazebo_multi_nav2_cpp.launch.py` — launch файл с проблемным timing
-- `src/gazebo_sim/config/nav2_params.yaml` — AMCL конфиг
+- `src/gazebo_sim/config/nav2_params.yaml` — AMCL конфиг (уже содержит waypoint_follower параметры)
+
 - `src/gazebo_sim/config/robots.yaml` — spawn координаты робота
 - `src/gazebo_sim/maps/cafe_world_map.yaml` — карта
 - `src/gazebo_sim/world/cafe.world` — мир Gazebo

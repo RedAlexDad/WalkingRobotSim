@@ -36,8 +36,8 @@ def generate_launch_description():
                        "behavior_server",
                        "smoother_server",
                         #  "docking_server",
-                         "bt_navigator"]
-    #  'waypoint_follower']
+                        "bt_navigator",
+                       "waypoint_follower"]
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
@@ -85,6 +85,13 @@ def generate_launch_description():
                 parameters=[configured_params],
                 remappings=remappings),
             Node(package="nav2_bt_navigator", executable="bt_navigator", name="bt_navigator", output="screen", parameters=[configured_params], remappings=remappings),
+            Node(
+                package='nav2_waypoint_follower',
+                executable='waypoint_follower',
+                name='waypoint_follower',
+                output='screen',
+                parameters=[configured_params],
+                remappings=remappings),
 
             Node(
                 package="nav2_lifecycle_manager",
