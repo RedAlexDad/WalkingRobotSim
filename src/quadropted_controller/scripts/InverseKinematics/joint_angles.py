@@ -24,6 +24,11 @@ def compute_joint_angles_for_leg(x, y, z, leg_index, l1, l2, l3, l4):
 
     D = (H**2 - l3**2 - l4**2) / (2 * l3 * l4)
 
+    if D > 1:
+        D = 1.0
+    elif D < -1:
+        D = -1.0
+
     theta4 = -atan2(sqrt(1 - D**2), D)
 
     theta3 = atan2(z, G) - atan2(l4 * sin(theta4), l3 + l4 * cos(theta4))

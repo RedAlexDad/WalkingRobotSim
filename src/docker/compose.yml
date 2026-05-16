@@ -122,18 +122,6 @@ services:
         BASE_IMG: osrf/ros:jazzy-desktop
         # Используемый дистрибутив ROS
         ROS_DISTRO: jazzy
-      # Источники кэша для ускорения сборки
-      cache_from:
-        - walking_robot_sim:base-system
-        - walking_robot_sim:ros-core
-        - walking_robot_sim:ros-control
-        - walking_robot_sim:ros-simulation
-        - walking_robot_sim:ros-navigation
-        - walking_robot_sim:ros-vision
-        - walking_robot_sim:ros-tools
-        - walking_robot_sim:python-deps
-        - walking_robot_sim:workspace
-        - walking_robot_sim:latest
       # Целевая стадия сборки для создания
       target: final
     # Тома для монтирования в контейнере
@@ -162,15 +150,16 @@ services:
     #   timeout: 10s
     #   retries: 3
     #   start_period: 60s
-    # Ограничения ресурсов для контейнера (75% от 32GB ОЗУ и 16 ядер)
-    deploy:
-      resources:
-        limits:
-          memory: 24G # 75% от 32GB ОЗУ
-          cpus: "12.0" # 75% от 16 ядер
-        reservations:
-          memory: 12G # Минимальные 37.5% — гарантия при нагрузке
-          cpus: "8.0" # Минимальные 50% — стабильность EKF и Gazebo
+    # Ограничения ресурсов — закомментированы для совместимости с CI (2 CPU)
+    # Раскомментируйте для локальной разработки с мощным железом
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 24G
+    #       cpus: "12.0"
+    #     reservations:
+    #       memory: 12G
+    #       cpus: "8.0"
 
 # Определить именованные тома
 volumes:

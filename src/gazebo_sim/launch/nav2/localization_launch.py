@@ -15,13 +15,11 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import LoadComposableNodes
-from launch_ros.actions import Node
+from launch_ros.actions import LoadComposableNodes, Node
 from launch_ros.descriptions import ComposableNode
 from nav2_common.launch import RewrittenYaml
 
@@ -58,7 +56,7 @@ def generate_launch_description():
     param_substitutions = {
         'use_sim_time': use_sim_time,
         'yaml_filename': map_yaml_file}
-    
+
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key=namespace,
@@ -81,7 +79,7 @@ def generate_launch_description():
             'map_server',
             default_value='True',
             description='Whether run a map server per nav2 stack')
-    
+
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
         default_value='true',

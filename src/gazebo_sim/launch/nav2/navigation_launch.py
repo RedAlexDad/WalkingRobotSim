@@ -15,7 +15,6 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration
@@ -32,13 +31,13 @@ def generate_launch_description():
     autostart = LaunchConfiguration("autostart")
     params_file = LaunchConfiguration("params_file")
 
-    lifecycle_nodes = ["controller_server", 
+    lifecycle_nodes = ["controller_server",
                        "planner_server",
                        "behavior_server",
                        "smoother_server",
                         #  "docking_server",
-                         "bt_navigator"]
-    #  'waypoint_follower']
+                        "bt_navigator",
+                       "waypoint_follower"]
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
@@ -49,7 +48,7 @@ def generate_launch_description():
     remappings = [("/tf", "tf"), ("/tf_static", "tf_static"),('/scan', [namespace, '/scan'] ),('/odom', [namespace, '/odometry/filtered'] )]
 
     # Create our own temporary YAML files that include substitutions
-    param_substitutions = {"use_sim_time": use_sim_time, "autostart": autostart, "scan_topic": f'{namespace}/scan'}
+    param_substitutions = {"use_sim_time": use_sim_time, "autostart": autostart}
 
     configured_params = RewrittenYaml(source_file=params_file, root_key=namespace, param_rewrites=param_substitutions, convert_types=True)
 
@@ -86,6 +85,13 @@ def generate_launch_description():
                 parameters=[configured_params],
                 remappings=remappings),
             Node(package="nav2_bt_navigator", executable="bt_navigator", name="bt_navigator", output="screen", parameters=[configured_params], remappings=remappings),
+            Node(
+                package='nav2_waypoint_follower',
+                executable='waypoint_follower',
+                name='waypoint_follower',
+                output='screen',
+                parameters=[configured_params],
+                remappings=remappings),
 
             Node(
                 package="nav2_lifecycle_manager",

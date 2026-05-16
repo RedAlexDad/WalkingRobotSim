@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
-#include "quadropted_controller_cpp/homogeneous_transforms.hpp"
+
 #include <cmath>
+
+#include "quadropted_controller_cpp/homogeneous_transforms.hpp"
 
 TEST(HomogTransform, transxyz) {
     auto m = quadropted::homog_transxyz(0.1, 0.2, 0.3);
@@ -18,10 +20,7 @@ TEST(HomogTransform, transform) {
 
 TEST(HomogTransform, inverse) {
     Eigen::Matrix4d m;
-    m << 0, 0, 1, 0.1,
-         0, 1, 0, 0.2,
-        -1, 0, 0, 0.3,
-         0, 0, 0, 1;
+    m << 0, 0, 1, 0.1, 0, 1, 0, 0.2, -1, 0, 0, 0.3, 0, 0, 0, 1;
     auto inv = quadropted::homog_transform_inverse(m);
     // Проверка: M @ inv ≈ I
     auto product = m * inv;

@@ -1,21 +1,22 @@
 import os
-from ament_index_python.packages import get_package_share_directory
 
+import xacro
+import yaml
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (
-    IncludeLaunchDescription,
     DeclareLaunchArgument,
     ExecuteProcess,
     GroupAction,
-    RegisterEventHandler
+    IncludeLaunchDescription,
+    RegisterEventHandler,
 )
+from launch.conditions import IfCondition
+from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import ComposableNodeContainer, Node, SetRemap
 from launch_ros.descriptions import ComposableNode
-from launch.conditions import IfCondition
-from launch_ros.actions import Node, SetRemap, ComposableNodeContainer
-from launch.event_handlers import OnProcessExit
-import xacro, yaml
 
 
 def generate_launch_description():
@@ -26,7 +27,7 @@ def generate_launch_description():
     robots_file_path = os.path.join(pkg_path, 'config', 'robots.yaml')
 
     # Загрузка данных из YAML файла
-    with open(robots_file_path, 'r') as file:
+    with open(robots_file_path) as file:
         yaml_data = yaml.safe_load(file)
 
     robots = yaml_data['robots']
@@ -52,7 +53,7 @@ def generate_launch_description():
         ("/scan", "scan"),
         ("/odom", "odometry/filtered")
     ]
-    
+
     map_server = Node(package='nav2_map_server',
                       executable='map_server',
                       name='map_server',
@@ -79,7 +80,7 @@ def generate_launch_description():
             ("/scan", "scan"),
             ("/odom", "odometry/filtered")
         ]
-    
+
 
     bridge_params = os.path.join(pkg_path,'config','gz_bridge.yaml')
     ros_gz_bridge_clock = Node(
@@ -91,9 +92,9 @@ def generate_launch_description():
             f'config_file:={bridge_params}',
         ]
     )
-    ld.add_action(ros_gz_bridge_clock)   
+    ld.add_action(ros_gz_bridge_clock)
 
-    
+
     last_action = None
 
     for i, robot in enumerate(robots):
@@ -180,7 +181,7 @@ def generate_launch_description():
             name='robot_controller_cpp',
             namespace=namespace,
             output='screen',
-            
+
             remappings=remappings
         )
 
@@ -207,11 +208,11 @@ def generate_launch_description():
                 'open_loop': False,
                 'has_imu_heading': True,
                 'is_gazebo': True,
-                'imu_topic': f'/{namespace}/imu',
+                'imu_topic': f'/{namespace}/imu_plugin/out',
                 'base_frame_id': "base_link",
                 'odom_frame_id': "odom",
-                'clock_topic': f'/clock',
-                'enable_odom_tf': True,
+                'clock_topic': '/clock',
+                'enable_odom_tf': False,  # EKF публикует TF, избегаем дублирования
             }],
             remappings=remappings
         )
@@ -237,7 +238,7 @@ def generate_launch_description():
                 'map': map_yaml_file,
                 'use_namespace': 'True',
                 'namespace': namespace,
-                'params_file': params_file,  
+                'params_file': params_file,
                 'autostart': 'true',
                 'use_sim_time': 'true',
                 'log_level': 'warn',
@@ -290,7 +291,7 @@ def generate_launch_description():
             name='ekf_filter_node',
             namespace=namespace,
             output='screen',
-            parameters=[robot_localization_file_path, 
+            parameters=[robot_localization_file_path,
             {'use_sim_time': use_sim_time}],
             remappings=remappings)
 
@@ -316,6 +317,15 @@ def generate_launch_description():
             remappings=remappings
         )
 
+        waypoint_collector = Node(
+            package='gazebo_sim',
+            executable='waypoint_collector.py',
+            namespace=namespace,
+            name='waypoint_collector',
+            output='screen',
+            remappings=remappings
+        )
+
         # Группировка всех действий для робота
         robot_group = GroupAction([
             node_robot_state_publisher,
@@ -324,6 +334,7 @@ def generate_launch_description():
             start_gazebo_ros_image_bridge_cmd,
             robot_control,
             nav2_actions,
+            waypoint_collector,
             rviz,
             # test_action
         ])

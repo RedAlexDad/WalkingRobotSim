@@ -5,9 +5,9 @@
 namespace quadropted {
 
 class GaitController {
-public:
-    GaitController(double stance_time, double swing_time, double time_step,
-                   Eigen::MatrixXi contact_phases, Eigen::MatrixXd default_stance);
+  public:
+    GaitController(double stance_time, double swing_time, double time_step, Eigen::MatrixXi contact_phases,
+                   Eigen::MatrixXd default_stance);
 
     const Eigen::MatrixXd& default_stance() const { return default_stance_; }
     int stance_ticks() const { return stance_ticks_; }
@@ -19,7 +19,7 @@ public:
     int subphase_ticks(int ticks) const;
     Eigen::VectorXi contacts(int ticks) const;
 
-protected:
+  protected:
     double stance_time_, swing_time_, time_step_;
     Eigen::MatrixXi contact_phases_;
     Eigen::MatrixXd default_stance_;
@@ -28,4 +28,4 @@ protected:
     void compute_phase_ticks();
 };
 
-}
+}  // namespace quadropted

@@ -1,13 +1,11 @@
-#include "quadropted_controller_cpp/odometry/odometry.hpp"
 #include <algorithm>
+
+#include "quadropted_controller_cpp/odometry/odometry.hpp"
 
 namespace quadropted {
 
 OdometryState::OdometryState(int window)
-    : filter_window_size(window),
-      delta_x_queue(), delta_y_queue(),
-      sum_delta_x(0.0), sum_delta_y(0.0)
-{
+    : filter_window_size(window), delta_x_queue(), delta_y_queue(), sum_delta_x(0.0), sum_delta_y(0.0) {
     // Инициализируем optional массивы
     for (int i = 0; i < 4; ++i) {
         prev_foot_positions[i] = std::nullopt;
@@ -34,7 +32,9 @@ std::pair<double, double> OdometryState::average_delta() const {
 }
 
 void OdometryState::reset() {
-    x = 0.0; y = 0.0; theta = 0.0;
+    x = 0.0;
+    y = 0.0;
+    theta = 0.0;
     linear_velocity_x = 0.0;
     linear_velocity_y = 0.0;
     imu_angular_velocity = 0.0;
@@ -53,4 +53,4 @@ void OdometryState::reset() {
     encoder_pos = 0;
 }
 
-} // namespace quadropted
+}  // namespace quadropted

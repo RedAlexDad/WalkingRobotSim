@@ -61,11 +61,20 @@ endef
 ## Сборка и запуск контейнера (рекомендуется)
 deploy: build up
 
+## Сборка и запуск контейнера без кэша (решение проблем с cache_from)
+deploy-no-cache: build-no-cache up
+
 ## Сборка Docker образа
 build:
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Сборка Docker образа с кэшированием по этапам...${NC}\n"
-	@cd $(DOCKER_DIR) && $(COMPOSE) build 2>&1 | grep -v "^ > importing cache manifest" | grep -v "^------" || true
+	@cd $(DOCKER_DIR) && $(COMPOSE) --progress=auto build
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Образ собран${NC}\n"
+
+## Сборка Docker образа без кэша (решает проблему с cache_from)
+build-no-cache:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Сборка Docker образа БЕЗ кэширования (решение проблем с cache_from)...${NC}\n"
+	@cd $(DOCKER_DIR) && $(COMPOSE) --progress=auto build --no-cache
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Образ собран без кэша${NC}\n"
 
 ## Запуск контейнера
 up:
@@ -339,6 +348,82 @@ stand:
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
 		ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: STAND, robot_id: 1}\""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Режим STAND установлен${NC}\n"
+
+.PHONY: waypoint-start waypoint-clear waypoint-navigate waypoint-stop waypoint-resume waypoint-load waypoint-get
+
+## Запустить навигацию по всем waypoints (сервис /start_navigation)
+waypoint-start:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск навигации по waypoints...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /start_navigation std_srvs/Trigger"
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Очистить все waypoints (сервис /clear_waypoints)
+waypoint-clear:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Очистка waypoints...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /clear_waypoints std_srvs/Trigger"
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Навигация к конкретному waypoint по индексу (пример: make waypoint-navigate INDEX=2)
+waypoint-navigate:
+	$(require-container)
+	@if [ -z "$(INDEX)" ]; then \
+		printf "${RED}${BOLD}[✗]${NC} ${RED}Укажите индекс: make waypoint-navigate INDEX=2${NC}\n"; \
+		exit 1; \
+	fi
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Навигация к waypoint $(INDEX)...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /navigate_to_waypoint quadropted_msgs/srv/WaypointNavigate \"{index: $(INDEX)}\""
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Остановить текущую навигацию (сервис /stop_navigation)
+waypoint-stop:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Остановка навигации...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /stop_navigation std_srvs/Trigger"
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Продолжить навигацию с прерванного waypoint (сервис /resume_navigation)
+waypoint-resume:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Продолжение навигации...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /resume_navigation std_srvs/Trigger"
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Загрузить waypoints из JSON-файла (пример: make waypoint-load FILE=test.json)
+waypoint-load:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Загрузка waypoints..."
+ifneq ($(FILE),)
+	@printf " из $(FILE)...${NC}\n"
+else
+	@printf " (по умолчанию)...${NC}\n"
+endif
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /load_waypoints quadropted_msgs/srv/LoadWaypoints \"{file_path: '$(FILE)'}\""
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Получить текущие waypoints (сервис /get_waypoints)
+waypoint-get:
+	$(require-container)
+	@docker exec $(CONTAINER_NAME) bash -c 'source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; ros2 service call /get_waypoints quadropted_msgs/srv/GetWaypoints "{}" 2>/dev/null' | python3 -c "import sys,re; d=sys.stdin.read(); m=re.findall(r'x=([-\d.]+),\s*y=([-\d.]+),\s*z=([-\d.]+),\s*yaw=([-\d.]+)',d); [print(str(i)+chr(9)+str(round(float(x),3))+chr(9)+str(round(float(y),3))+chr(9)+str(round(float(z),3))+chr(9)+str(round(float(yaw),3))) for i,(x,y,z,yaw) in enumerate(m)]"
 
 ## Выполнение команды в контейнере (пример: make exec CMD="ros2 topic list")
 exec:
@@ -735,9 +820,18 @@ help:
 	@printf "  ${GREEN}${BOLD}make trot${NC}           Режим бега рысью (TROT)\n"
 	@printf "  ${GREEN}${BOLD}make crawl${NC}          Режим ползания (CRAWL)\n"
 	@echo ""
+	@printf "${BOLD}Waypoint навигация:${NC}\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-start${NC}               Запуск навигации по всем waypoints\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-navigate INDEX=2${NC}    Навигация к конкретному waypoint\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-stop${NC}                Остановка текущей навигации\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-resume${NC}              Продолжить навигацию с прерванного waypoint\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-load FILE=wp.yaml${NC}   Загрузить waypoints из файла\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-get${NC}                 Получить текущие waypoints\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-clear${NC}               Очистка waypoints и остановка\n"
+	@echo ""
 	@printf "${BOLD}Положение робота:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make set-pose X=1.0 Y=0.0 Z=0.0 YAW=0.0${NC}   Установка положения\n"
-	@printf "  ${GREEN}${BOLD}make reset-pose${NC}                            Сброс положения в начало\n"
+	@printf "  ${GREEN}${BOLD}make reset-pose${NC}                           Сброс положения в начало\n"
 	@echo ""
 	@printf "${BOLD}Тестирование:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make test${NC}             Полный цикл тестирования\n"
@@ -746,11 +840,11 @@ help:
 	@printf "  ${GREEN}${BOLD}make test-clean${NC}       Очистка после тестов\n"
 	@echo ""
 	@printf "${BOLD}Тесты корректности и производительности:${NC}\n"
-	@printf "  ${GREEN}${BOLD}make test-correctness${NC}   Сравнение old vs new (34 теста)\n"
-	@printf "  ${GREEN}${BOLD}make test-benchmark${NC}     Замер производительности\n"
-	@printf "  ${GREEN}${BOLD}make test-all${NC}           Оба теста подряд\n"
-	@printf "  ${GREEN}${BOLD}make test-cross${NC}        Кросс-языковой тест Python vs C++\n"
-	@printf "  ${GREEN}${BOLD}make bench-cpp${NC}         C++ vs Python benchmark\n"
+	@printf "  ${GREEN}${BOLD}make test-correctness${NC}    Запуск тестов корректности\n"
+	@printf "  ${GREEN}${BOLD}make test-benchmark${NC}	   Замер производительности Python\n"
+	@printf "  ${GREEN}${BOLD}make benchmark${NC}           Запуск бенчмарка Python + C++ с таблицей\n"
+	@printf "  ${GREEN}${BOLD}make benchmark-python${NC}    Только Python бенчмарк\n"
+	@printf "  ${GREEN}${BOLD}make benchmark-cpp${NC}       Только C++ бенчмарк\n"
 	@echo ""
 	@printf "${BOLD}Прочее:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make setup${NC}            Начальная настройка проекта\n"
@@ -768,35 +862,112 @@ help:
 # ТЕСТЫ
 # ════════════════════════════════════════════════════════════
 
-.PHONY: test-correctness test-benchmark test-cross bench-cpp test-all
+.PHONY: test-correctness test-benchmark benchmark benchmark-python benchmark-cpp
 
-## Проверка корректности — сравнение результатов old vs new (34 теста)
+## Проверка корректности — запуск всех тестов в correctness/
 test-correctness:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Тесты корректности (old vs new)...${NC}\n"
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Тесты корректности...${NC}\n"
 	@cd $(PROJECT_ROOT)/src/tests/correctness && python3 run_all.py
 	@echo ""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Тесты корректности завершены${NC}\n"
 
-## Benchmark производительности — замер времени old vs new
+## Benchmark производительности — замер времени
 test-benchmark:
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Benchmark производительности...${NC}\n"
 	@cd $(PROJECT_ROOT) && python3 src/tests/benchmark_performance.py
 	@echo ""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Benchmark завершён${NC}\n"
 
-## Полный цикл тестирования: корректность + производительность
-test-all: test-correctness test-benchmark
-	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Все тесты завершены${NC}\n"
+## Запуск полного бенчмарка Python vs C++ с таблицей результатов
+benchmark:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Python + C++ сводной таблицы...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
+		source /root/ws/install/setup.bash && \
+		cd /root/ws/src/quadropted_controller/scripts/benchmark && \
+		python3 benchmark.py --combined"
 
-## Кросс-языковой тест: Python vs C++
-test-cross:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Кросс-языковой тест: Python vs C++...${NC}\n"
-	@python3 $(PROJECT_ROOT)/src/tests/test_python_vs_cpp.py
+## Запуск только Python бенчмарка
+benchmark-python:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Python бенчмарка...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
+		source /root/ws/install/setup.bash && \
+		cd /root/ws/src/quadropted_controller/scripts/benchmark && \
+		python3 benchmark.py"
 
-## C++ vs Python benchmark — замер производительности
-bench-cpp:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}C++ vs Python Benchmark...${NC}\n"
-	@python3 $(PROJECT_ROOT)/src/tests/benchmark_cpp_vs_python.py
+## Запуск только C++ бенчмарка
+benchmark-cpp:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск C++ бенчмарка...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
+		/root/ws/build/quadropted_controller_cpp/benchmark"
+
+# ════════════════════════════════════════════════════════════
+# CI/CD — ЛОКАЛЬНАЯ ПРОВЕРКА
+# ════════════════════════════════════════════════════════════
+
+.PHONY: ci-lint ci-test ci-lint-yaml ci-lint-python ci-lint-cpp ci-test-cpp
+
+## Полный CI lint check (YAML + Python + C++)
+ci-lint: ci-lint-yaml ci-lint-python ci-lint-cpp
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Все lint проверки пройдены${NC}\n"
+
+## YAML lint (yamllint)
+ci-lint-yaml:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}YAML lint (yamllint)...${NC}\n"
+	@if command -v yamllint &> /dev/null; then \
+		yamllint -c .yamllint .github/workflows/ && \
+		yamllint -c .yamllint src/docker/*.yml && \
+		printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}YAML lint OK${NC}\n"; \
+	else \
+		pip install yamllint -q && \
+		yamllint -c .yamllint .github/workflows/ && \
+		yamllint -c .yamllint src/docker/*.yml && \
+		printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}YAML lint OK${NC}\n"; \
+	fi
+
+## Python lint (ruff)
+ci-lint-python:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Python lint (ruff)...${NC}\n"
+	@if command -v ruff &> /dev/null; then \
+		ruff check src/ && \
+		printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Python lint OK${NC}\n"; \
+	else \
+		pip install ruff -q && \
+		ruff check src/ && \
+		printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Python lint OK${NC}\n"; \
+	fi
+
+## C++ lint (clang-format check)
+ci-lint-cpp:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}C++ format check (clang-format)...${NC}\n"
+	@if command -v clang-format &> /dev/null; then \
+		find src/quadropted_controller_cpp -name '*.hpp' -o -name '*.cpp' | \
+			xargs clang-format --dry-run --Werror && \
+		printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}C++ format OK${NC}\n"; \
+	else \
+		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}clang-format не установлен, пропускаем${NC}\n"; \
+	fi
+
+## Локальный запуск C++ тестов (через Docker)
+ci-test: ci-test-cpp
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Все тесты пройдены${NC}\n"
+
+## C++ unit tests через Docker
+ci-test-cpp:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск C++ unit тестов...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
+		source /root/ws/install/setup.bash && \
+		cd /root/ws && \
+		colcon test --packages-select quadropted_controller_cpp && \
+		colcon test-result --verbose"
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}C++ tests OK${NC}\n"
 
 # ════════════════════════════════════════════════════════════
 # DEFAULT TARGET

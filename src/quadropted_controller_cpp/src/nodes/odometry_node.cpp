@@ -1,55 +1,56 @@
-#include <rclcpp/rclcpp.hpp>
-#include <nav_msgs/msg/odometry.hpp>
-#include <sensor_msgs/msg/imu.hpp>
+#include <tf2_ros/transform_broadcaster.h>
+
+#include <array>
+#include <cmath>
 #include <geometry_msgs/msg/transform_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <quadropted_msgs/msg/robot_foot_contact.hpp>
+#include <quadropted_msgs/msg/robot_velocity.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/imu.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
-#include <tf2_ros/transform_broadcaster.h>
-#include <quadropted_msgs/msg/robot_foot_contact.hpp>
-#include <quadropted_msgs/msg/robot_velocity.hpp>
 
 #include "quadropted_controller_cpp/kinematics/forward_kinematics.hpp"
 #include "quadropted_controller_cpp/odometry/odometry.hpp"
 #include "quadropted_controller_cpp/utils/message_builders.hpp"
 
-#include <cmath>
-#include <array>
-
 class DogOdometryNode : public rclcpp::Node {
-public:
+  public:
     DogOdometryNode() : Node("dog_odometry") {
         // Параметры
         declare_parameter("verbose", false);
         declare_parameter("publish_rate", 50);
         declare_parameter("has_imu_heading", true);
-        declare_parameter("enable_odom_tf", true);
+        declare_parameter("enable_odom_tf", false);
         declare_parameter("base_frame_id", "base");
         declare_parameter("odom_frame_id", "odom");
         declare_parameter("is_gazebo", true);
         declare_parameter("filter_window_size", 14);
+        declare_parameter("imu_topic", "imu_plugin/out");
 
-        verbose_          = get_parameter("verbose").as_bool();
-        publish_rate_     = get_parameter("publish_rate").as_int();
-        has_imu_heading_  = get_parameter("has_imu_heading").as_bool();
-        enable_odom_tf_   = get_parameter("enable_odom_tf").as_bool();
-        base_frame_id_    = get_parameter("base_frame_id").as_string();
-        odom_frame_id_    = get_parameter("odom_frame_id").as_string();
-        is_gazebo_        = get_parameter("is_gazebo").as_bool();
+        verbose_ = get_parameter("verbose").as_bool();
+        publish_rate_ = get_parameter("publish_rate").as_int();
+        has_imu_heading_ = get_parameter("has_imu_heading").as_bool();
+        enable_odom_tf_ = get_parameter("enable_odom_tf").as_bool();
+        base_frame_id_ = get_parameter("base_frame_id").as_string();
+        odom_frame_id_ = get_parameter("odom_frame_id").as_string();
+        is_gazebo_ = get_parameter("is_gazebo").as_bool();
         int filter_window = static_cast<int>(get_parameter("filter_window_size").as_int());
+        std::string imu_topic = get_parameter("imu_topic").as_string();
 
         // FK solver
         double body_length = 0.3762, body_width = 0.0935;
         double l1 = 0.0, l2 = 0.0955, l3 = 0.213, l4 = 0.213;
-        fk_ = std::make_unique<quadropted::ForwardKinematics>(
-            body_length, body_width, l1, l2, l3, l4);
+        fk_ = std::make_unique<quadropted::ForwardKinematics>(body_length, body_width, l1, l2, l3, l4);
 
         // Состояние
         odom_state_ = std::make_unique<quadropted::OdometryState>(filter_window);
         last_position_time_ = now();
 
         // Publishers
-        odom_pub_   = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
+        odom_pub_ = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
         marker_pub_ = create_publisher<visualization_msgs::msg::MarkerArray>("foot_markers", 10);
 
         // TF broadcaster
@@ -60,8 +61,7 @@ public:
         // Subscriptions
         if (has_imu_heading_) {
             imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
-                "imu_plugin/out", 10,
-                [this](const sensor_msgs::msg::Imu::SharedPtr msg) { imu_callback(msg); });
+                imu_topic, 10, [this](const sensor_msgs::msg::Imu::SharedPtr msg) { imu_callback(msg); });
         }
 
         joint_states_sub_ = create_subscription<std_msgs::msg::Float64MultiArray>(
@@ -72,16 +72,22 @@ public:
             "foot_contact", rclcpp::SensorDataQoS(),
             [this](const quadropted_msgs::msg::RobotFootContact::SharedPtr msg) { foot_contacts_callback(msg); });
 
+        velocity_sub_ = create_subscription<quadropted_msgs::msg::RobotVelocity>(
+            "robot_velocity", 10, [this](const quadropted_msgs::msg::RobotVelocity::SharedPtr msg) {
+                if (msg->robot_id == 1) {
+                    odom_state_->linear_velocity_x = msg->cmd_vel.linear.x;
+                    odom_state_->linear_velocity_y = msg->cmd_vel.linear.y;
+                }
+            });
+
         // Timer
         double timer_period = 1.0 / static_cast<double>(publish_rate_);
-        timer_ = create_wall_timer(
-            std::chrono::duration<double>(timer_period),
-            [this]() { timer_callback(); });
+        timer_ = create_wall_timer(std::chrono::duration<double>(timer_period), [this]() { timer_callback(); });
 
         RCLCPP_INFO(get_logger(), "Dog Odometry Node (C++) has been started.");
     }
 
-private:
+  private:
     void imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg) {
         double qx = msg->orientation.x;
         double qy = msg->orientation.y;
@@ -110,7 +116,8 @@ private:
     void foot_contacts_callback(const quadropted_msgs::msg::RobotFootContact::SharedPtr msg) {
         if (msg->contacts.size() != 4) {
             RCLCPP_ERROR(get_logger(), "Unexpected number of contacts: %zu. Expected 4.", msg->contacts.size());
-            for (int i = 0; i < 4; ++i) odom_state_->foot_contacts[i] = false;
+            for (int i = 0; i < 4; ++i)
+                odom_state_->foot_contacts[i] = false;
             return;
         }
         for (int i = 0; i < 4; ++i) {
@@ -121,14 +128,16 @@ private:
     void calculate_foot_positions() {
         try {
             std::vector<double> joints(12);
-            for (int i = 0; i < 12; ++i) joints[i] = odom_state_->joint_positions[i];
+            for (int i = 0; i < 12; ++i)
+                joints[i] = odom_state_->joint_positions[i];
             auto foot_positions = fk_->forward_kinematics_all_legs(joints);
             for (int i = 0; i < 4; ++i) {
                 odom_state_->foot_positions[i] = foot_positions[i];
             }
         } catch (const std::exception& e) {
             RCLCPP_ERROR(get_logger(), "Error in forward kinematics: %s", e.what());
-            for (int i = 0; i < 4; ++i) odom_state_->foot_positions[i] = Eigen::Vector3d::Zero();
+            for (int i = 0; i < 4; ++i)
+                odom_state_->foot_positions[i] = Eigen::Vector3d::Zero();
         }
     }
 
@@ -180,9 +189,7 @@ private:
         visualization_msgs::msg::MarkerArray marker_array;
         auto now_stamp = now();
 
-        const double colors[4][3] = {
-            {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}, {1.0, 1.0, 0.0}
-        };
+        const double colors[4][3] = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}, {1.0, 1.0, 0.0}};
 
         for (int i = 0; i < 4; ++i) {
             visualization_msgs::msg::Marker marker;
@@ -228,13 +235,14 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
     rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr joint_states_sub_;
     rclcpp::Subscription<quadropted_msgs::msg::RobotFootContact>::SharedPtr foot_contacts_sub_;
+    rclcpp::Subscription<quadropted_msgs::msg::RobotVelocity>::SharedPtr velocity_sub_;
 
     rclcpp::TimerBase::SharedPtr timer_;
 
     bool verbose_ = false;
     int publish_rate_ = 50;
     bool has_imu_heading_ = true;
-    bool enable_odom_tf_ = true;
+    bool enable_odom_tf_ = false;
     std::string base_frame_id_ = "base";
     std::string odom_frame_id_ = "odom";
     bool is_gazebo_ = true;

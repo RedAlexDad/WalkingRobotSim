@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include "quadropted_controller_cpp/forward_kinematics.hpp"
 
 TEST(FK, forward_kinematics_all_legs) {
@@ -25,5 +26,6 @@ TEST(FK, smoke_4_positions_3_coords) {
     std::vector<double> angles(12, 0.0);
     auto result = fk.forward_kinematics_all_legs(angles);
     ASSERT_EQ(result.size(), 4u);
-    for (auto& p : result) ASSERT_EQ(p.size(), 3);
+    for (auto& p : result)
+        ASSERT_EQ(p.size(), 3);
 }

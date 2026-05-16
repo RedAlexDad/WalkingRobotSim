@@ -17,10 +17,14 @@ set(msg_files
   "msg/RobotGaitCommand.msg"
   "msg/RobotModeCommand.msg"
   "msg/RobotFootContact.msg"
+  "msg/Waypoint.msg"
 )
 
 set(srv_files
   "srv/RobotBehaviorCommand.srv"
+  "srv/WaypointNavigate.srv"
+  "srv/LoadWaypoints.srv"
+  "srv/GetWaypoints.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

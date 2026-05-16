@@ -8,18 +8,19 @@ Multi Action Server
 """
 
 import time
+
 import rclpy
-from rclpy.action import ActionServer
-from rclpy.node import Node
+from builtin_interfaces.msg import Duration
 from example_interfaces.action import Fibonacci
 from nav2_msgs.action import Wait
-from builtin_interfaces.msg import Duration
+from rclpy.action import ActionServer
+from rclpy.node import Node
 
 
 class MultiActionServer(Node):
     def __init__(self):
         super().__init__('multi_action_server')
-        
+
         # Action Server 1: test_action (вычисление Фибоначчи)
         self._action_server_test = ActionServer(
             self,
@@ -28,7 +29,7 @@ class MultiActionServer(Node):
             self.execute_test_callback
         )
         self.get_logger().info("Test Action Server (test_action) started.")
-        
+
         # Action Server 2: count_action (ожидание указанного времени)
         self._action_server_count = ActionServer(
             self,
@@ -37,7 +38,7 @@ class MultiActionServer(Node):
             self.execute_count_callback
         )
         self.get_logger().info("Count Action Server (count_action) started.")
-        
+
     def execute_test_callback(self, goal_handle):
         self.get_logger().info("Received goal request on test_action")
         order = goal_handle.request.order

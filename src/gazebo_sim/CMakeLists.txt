@@ -20,11 +20,13 @@ install(DIRECTORY
   rviz
   models
   src
+  scripts
   DESTINATION share/${PROJECT_NAME}/
 )
 
 install(PROGRAMS
   src/test_action.py
+  scripts/waypoint_collector.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

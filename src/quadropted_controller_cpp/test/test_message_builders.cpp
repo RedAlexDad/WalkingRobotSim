@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
+
 #include <cmath>
+
 #include "quadropted_controller_cpp/message_builders.hpp"
 
 TEST(MessageBuilders, build_odometry_data_has_keys) {

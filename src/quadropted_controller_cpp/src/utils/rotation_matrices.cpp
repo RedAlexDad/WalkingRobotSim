@@ -1,4 +1,5 @@
 #include "quadropted_controller_cpp/utils/rotation_matrices.hpp"
+
 #include <cmath>
 
 namespace quadropted {
@@ -29,10 +30,9 @@ Eigen::Matrix3d rotxyz(double alpha, double beta, double gamma) {
     double cb = std::cos(beta), sb = std::sin(beta);
     double cg = std::cos(gamma), sg = std::sin(gamma);
     Eigen::Matrix3d m;
-    m << cb*cg, -cb*sg, sb,
-         sa*sb*cg+ca*sg, -sa*sb*sg+ca*cg, -sa*cb,
-        -ca*sb*cg+sa*sg, ca*sb*sg+sa*cg, ca*cb;
+    m << cb * cg, -cb * sg, sb, sa * sb * cg + ca * sg, -sa * sb * sg + ca * cg, -sa * cb, -ca * sb * cg + sa * sg,
+        ca * sb * sg + sa * cg, ca * cb;
     return m;
 }
 
-} // namespace quadropted
+}  // namespace quadropted

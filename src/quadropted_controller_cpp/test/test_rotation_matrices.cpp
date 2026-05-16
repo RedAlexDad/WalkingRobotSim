@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
-#include "quadropted_controller_cpp/rotation_matrices.hpp"
+
 #include <cmath>
+
+#include "quadropted_controller_cpp/rotation_matrices.hpp"
 
 TEST(RotMatrices, rotx) {
     auto m = quadropted::rotx(M_PI / 2);

@@ -1,13 +1,15 @@
 #include <gtest/gtest.h>
+
 #include <Eigen/Dense>
-#include "quadropted_controller_cpp/controllers/trot_stance.hpp"
+
 #include "quadropted_controller_cpp/controllers/trot_gait.hpp"
+#include "quadropted_controller_cpp/controllers/trot_stance.hpp"
 #include "quadropted_controller_cpp/utils/rotation_matrices.hpp"
 
 using namespace quadropted;
 
 class StepTrotCrossValidationTest : public ::testing::Test {
-protected:
+  protected:
     Eigen::MatrixXd default_stance_;
     std::unique_ptr<TrotGaitController> trot_gait_;
     std::unique_ptr<TrotStanceController> stance_ctrl_;
@@ -16,9 +18,7 @@ protected:
         double dx = 0.19;
         double dy = 0.15;
         default_stance_.resize(3, 4);
-        default_stance_ <<  dx,  dx, -dx, -dx,
-                           -dy,  dy, -dy,  dy,
-                        -0.25, -0.25, -0.25, -0.25;
+        default_stance_ << dx, dx, -dx, -dx, -dy, dy, -dy, dy, -0.25, -0.25, -0.25, -0.25;
 
         trot_gait_ = std::make_unique<TrotGaitController>(0.04, 0.18, 0.02, false, default_stance_);
         stance_ctrl_ = std::make_unique<TrotStanceController>(40, 18, 22, 0.02, 0.02);
