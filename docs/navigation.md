@@ -87,5 +87,5 @@ YAML (список):
 
 ## Ссылки
 
-- [Waypoint executor fix](reports/waypoint-executor-fix.md) — процесс разработки и отладки
-- [Waypoint collector report](reports/waypoint-collector-fix-report.md) — краткий отчёт
+- [Waypoint executor fix](../reports/waypoint-executor-fix.md) — процесс разработки и отладки
+- [Waypoint collector report](../reports/waypoint-collector-fix-report.md) — краткий отчёт
