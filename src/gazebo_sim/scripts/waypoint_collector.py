@@ -19,13 +19,11 @@ class WaypointCollector(Node):
     def __init__(self):
         super().__init__("waypoint_collector")
         self.waypoints = []
-        ns = self.get_namespace().lstrip('/')
+        ns = self.get_namespace().lstrip("/")
         self.navigator = BasicNavigator(namespace=ns)
 
         # Own ActionClient on this node (which is in the executor)
-        self._follow_wp_client = ActionClient(
-            self, FollowWaypoints, 'follow_waypoints'
-        )
+        self._follow_wp_client = ActionClient(self, FollowWaypoints, "follow_waypoints")
 
         self.navigation_active = False
         self._nav_goal_handle = None
@@ -54,7 +52,9 @@ class WaypointCollector(Node):
         )
 
         self.navigate_service = self.create_service(
-            WaypointNavigate, "/navigate_to_waypoint", self.navigate_to_waypoint_callback
+            WaypointNavigate,
+            "/navigate_to_waypoint",
+            self.navigate_to_waypoint_callback,
         )
 
         self.stop_service = self.create_service(
@@ -109,13 +109,12 @@ class WaypointCollector(Node):
             text_marker.id = i
             text_marker.type = Marker.TEXT_VIEW_FACING
             text_marker.action = Marker.ADD
-            text_marker.pose = wp.pose
-            text_marker.pose.position.z += 0.4
+            text_marker.pose.position.x = wp.pose.position.x + 0.3
+            text_marker.pose.position.y = wp.pose.position.y
+            text_marker.pose.position.z = wp.pose.position.z + 0.3
+            text_marker.pose.orientation = wp.pose.orientation
             text_marker.scale.z = 0.25
-            text_marker.color.r = 1.0
-            text_marker.color.g = 1.0
-            text_marker.color.b = 1.0
-            text_marker.color.a = 1.0
+            text_marker.color = color
             text_marker.text = str(i)
             marker_array.markers.append(text_marker)
 
@@ -210,13 +209,9 @@ class WaypointCollector(Node):
         if self._follow_wp_client.server_is_ready():
             self._do_send_goal(goal_msg)
         else:
-            self.get_logger().warn(
-                "FollowWaypoints server not ready, retrying..."
-            )
+            self.get_logger().warn("FollowWaypoints server not ready, retrying...")
             self._pending_goal = goal_msg
-            self._goal_retry_timer = self.create_timer(
-                0.5, self._retry_send_goal
-            )
+            self._goal_retry_timer = self.create_timer(0.5, self._retry_send_goal)
 
     def _retry_send_goal(self):
         if self._follow_wp_client.server_is_ready():
@@ -224,9 +219,7 @@ class WaypointCollector(Node):
             self._do_send_goal(self._pending_goal)
             self._pending_goal = None
         else:
-            self.get_logger().info(
-                "Still waiting for FollowWaypoints server..."
-            )
+            self.get_logger().info("Still waiting for FollowWaypoints server...")
 
     def _do_send_goal(self, goal_msg):
         send_goal_future = self._follow_wp_client.send_goal_async(
@@ -279,9 +272,13 @@ class WaypointCollector(Node):
             return response
 
         if idx < -1 or idx >= len(self.waypoints):
-            self.get_logger().error(f"Invalid waypoint index {idx}, have {len(self.waypoints)} waypoints")
+            self.get_logger().error(
+                f"Invalid waypoint index {idx}, have {len(self.waypoints)} waypoints"
+            )
             response.success = False
-            response.message = f"Invalid index {idx}, valid: -1..{len(self.waypoints) - 1}"
+            response.message = (
+                f"Invalid index {idx}, valid: -1..{len(self.waypoints) - 1}"
+            )
             return response
 
         if self.navigation_active:
@@ -330,8 +327,13 @@ class WaypointCollector(Node):
         if self.navigation_active and self._nav_result_future:
             if self._nav_result_future.result():
                 status = self._nav_result_future.result().status
-                if status != GoalStatus.STATUS_SUCCEEDED and status != GoalStatus.STATUS_EXECUTING:
-                    self.get_logger().info(f"Navigation completed with status: {status}")
+                if (
+                    status != GoalStatus.STATUS_SUCCEEDED
+                    and status != GoalStatus.STATUS_EXECUTING
+                ):
+                    self.get_logger().info(
+                        f"Navigation completed with status: {status}"
+                    )
                     self.navigation_active = False
 
     def _start_nav2_wait_thread(self):
