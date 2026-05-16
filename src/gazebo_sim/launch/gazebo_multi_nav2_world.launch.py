@@ -316,6 +316,15 @@ def generate_launch_description():
             remappings=remappings
         )
 
+        waypoint_collector = Node(
+            package='gazebo_sim',
+            executable='waypoint_collector.py',
+            namespace=namespace,
+            name='waypoint_collector',
+            output='screen',
+            remappings=remappings
+        )
+
         # Группировка всех действий для робота
         robot_group = GroupAction([
             node_robot_state_publisher,
@@ -325,6 +334,7 @@ def generate_launch_description():
             robot_control,
             nav2_actions,
             rviz,
+            waypoint_collector,
             # test_action
         ])
 
