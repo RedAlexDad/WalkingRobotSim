@@ -58,22 +58,18 @@ make waypoint-navigate
 
 ## Формат файла waypoints
 
-YAML:
+YAML (список):
 ```yaml
-waypoints:
-  - point: {x: 1.5, y: 1.0, z: 0.0}
-    yaw: 0.0
-  - point: {x: -0.5, y: -2.0, z: 0.0}
-    yaw: 1.57
-```
-
-JSON:
-```json
-{
-  "waypoints": [
-    {"point": {"x": 1.5, "y": 1.0, "z": 0.0}, "yaw": 0.0}
-  ]
-}
+- # 1
+  x: 2.33
+  y: -3.46
+  z: 0.0
+  yaw: 0.0
+- # 2
+  x: -0.5
+  y: -2.0
+  z: 0.0
+  yaw: 1.57
 ```
 
 Файлы хранятся в `src/gazebo_sim/config/waypoints/`.

@@ -54,12 +54,14 @@ robots:
 
 ## Waypoints
 
-Waypoints хранятся в `config/waypoints/` в формате YAML или JSON:
+Waypoints хранятся в `config/waypoints/` в формате YAML (список):
 
 ```yaml
-waypoints:
-  - point: {x: 1.0, y: 1.0, z: 0.0}
-    yaw: 0.0
+- # 1
+  x: 1.0
+  y: 1.0
+  z: 0.0
+  yaw: 0.0
 ```
 
 Загрузка:
