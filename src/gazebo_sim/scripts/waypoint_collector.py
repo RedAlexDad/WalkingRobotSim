@@ -30,6 +30,8 @@ class WaypointCollector(Node):
         self._nav_result_future = None
         self._pending_goal = None
         self._goal_retry_timer = None
+        self._current_waypoint_index = 0
+        self._resume_index = 0
 
         self.subscription = self.create_subscription(
             PoseStamped, "/custom_goal_pose", self.goal_pose_callback, 10
@@ -59,6 +61,10 @@ class WaypointCollector(Node):
 
         self.stop_service = self.create_service(
             Trigger, "/stop_navigation", self.stop_navigation_callback
+        )
+
+        self.resume_service = self.create_service(
+            Trigger, "/resume_navigation", self.resume_navigation_callback
         )
 
         self.timer = self.create_timer(0.1, self.check_navigation)
@@ -132,6 +138,7 @@ class WaypointCollector(Node):
 
         self.waypoints = []
         self.navigation_active = False
+        self._resume_index = 0
         marker_array = MarkerArray()
         marker = Marker()
         marker.header.frame_id = "map"
@@ -183,6 +190,7 @@ class WaypointCollector(Node):
             )
 
             self.navigation_active = True
+            self._resume_index = 0
             self._send_goal_async(self.waypoints)
             self.get_logger().info(
                 f"Sent {len(self.waypoints)} waypoints to FollowWaypoints action"
@@ -228,8 +236,9 @@ class WaypointCollector(Node):
         send_goal_future.add_done_callback(self._goal_response_callback)
 
     def _feedback_callback(self, feedback_msg):
+        self._current_waypoint_index = feedback_msg.feedback.current_waypoint
         self.get_logger().info(
-            f"Current waypoint: {feedback_msg.feedback.current_waypoint}"
+            f"Current waypoint: {self._current_waypoint_index}"
         )
 
     def _goal_response_callback(self, future):
@@ -249,6 +258,7 @@ class WaypointCollector(Node):
         self._nav_result_future = future
         if result.status == GoalStatus.STATUS_SUCCEEDED:
             self.get_logger().info("Navigation SUCCEEDED")
+            self._resume_index = len(self.waypoints)
         elif result.status == GoalStatus.STATUS_ABORTED:
             self.get_logger().error("Navigation FAILED (aborted)")
         elif result.status == GoalStatus.STATUS_CANCELED:
@@ -260,6 +270,7 @@ class WaypointCollector(Node):
     def cancel_navigation(self):
         if self._nav_goal_handle:
             self._nav_goal_handle.cancel_goal_async()
+        self._resume_index = self._current_waypoint_index
         self.navigation_active = False
 
     def navigate_to_waypoint_callback(self, request, response):
@@ -319,6 +330,51 @@ class WaypointCollector(Node):
             response.message = "Navigation stopped"
         except Exception as e:
             self.get_logger().error(f"Failed to stop navigation: {str(e)}")
+            response.success = False
+            response.message = str(e)
+        return response
+
+    def resume_navigation_callback(self, request, response):
+        if not self.waypoints:
+            self.get_logger().warn("No waypoints to resume")
+            response.success = False
+            response.message = "No waypoints to navigate"
+            return response
+
+        if self.navigation_active:
+            self.get_logger().warn("Navigation is already active")
+            response.success = False
+            response.message = "Navigation is already active"
+            return response
+
+        if not self.nav2_ready:
+            self.get_logger().warn("Nav2 is not ready yet")
+            response.success = False
+            response.message = "Nav2 is not ready yet"
+            return response
+
+        remaining = self.waypoints[self._resume_index:]
+        if not remaining:
+            self.get_logger().warn("No remaining waypoints to resume")
+            response.success = False
+            response.message = "No remaining waypoints"
+            return response
+
+        try:
+            self.navigation_active = True
+            self._send_goal_async(remaining)
+            self.get_logger().info(
+                f"Resumed navigation from waypoint {self._resume_index} "
+                f"({len(remaining)} remaining)"
+            )
+            response.success = True
+            response.message = (
+                f"Resumed from waypoint {self._resume_index}, "
+                f"{len(remaining)} remaining"
+            )
+        except Exception as e:
+            self.get_logger().error(f"Failed to resume navigation: {str(e)}")
+            self.navigation_active = False
             response.success = False
             response.message = str(e)
         return response

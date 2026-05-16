@@ -349,7 +349,7 @@ stand:
 		ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: STAND, robot_id: 1}\""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Режим STAND установлен${NC}\n"
 
-.PHONY: waypoint-start waypoint-clear waypoint-navigate waypoint-stop
+.PHONY: waypoint-start waypoint-clear waypoint-navigate waypoint-stop waypoint-resume
 
 ## Запустить навигацию по всем waypoints (сервис /start_navigation)
 waypoint-start:
@@ -393,6 +393,16 @@ waypoint-stop:
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
 		ros2 service call /stop_navigation std_srvs/Trigger"
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Продолжить навигацию с прерванного waypoint (сервис /resume_navigation)
+waypoint-resume:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Продолжение навигации...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /resume_navigation std_srvs/Trigger"
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
 
 ## Выполнение команды в контейнере (пример: make exec CMD="ros2 topic list")
@@ -794,6 +804,7 @@ help:
 	@printf "  ${GREEN}${BOLD}make waypoint-start${NC}               Запуск навигации по всем waypoints\n"
 	@printf "  ${GREEN}${BOLD}make waypoint-navigate INDEX=2${NC}    Навигация к конкретному waypoint\n"
 	@printf "  ${GREEN}${BOLD}make waypoint-stop${NC}                Остановка текущей навигации\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-resume${NC}              Продолжить навигацию с прерванного waypoint\n"
 	@printf "  ${GREEN}${BOLD}make waypoint-clear${NC}               Очистка waypoints и остановка\n"
 	@echo ""
 	@printf "${BOLD}Положение робота:${NC}\n"
