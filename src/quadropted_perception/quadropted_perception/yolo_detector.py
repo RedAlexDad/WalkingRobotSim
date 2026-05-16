@@ -23,7 +23,7 @@ class YOLODetector(Node):
         self.declare_parameter("model_path", "")
         self.declare_parameter("confidence_threshold", 0.5)
         self.declare_parameter("iou_threshold", 0.45)
-        self.declare_parameter("camera_topic", "/camera/image_raw")
+        self.declare_parameter("camera_topic", "/robot1/color/image_raw")
         self.declare_parameter("target_classes", [])
         self.declare_parameter("device", "cpu")
         self.declare_parameter("frame_id", "camera_link")
@@ -112,9 +112,9 @@ class YOLODetector(Node):
 
         annotated = results.plot()
         try:
-            self._pub_debug_image.publish(
-                self._bridge.cv2_to_imgmsg(annotated, encoding="bgr8")
-            )
+            debug_msg = self._bridge.cv2_to_imgmsg(annotated, encoding="bgr8")
+            debug_msg.header = msg.header
+            self._pub_debug_image.publish(debug_msg)
         except Exception as e:
             self.get_logger().error(f"Failed to publish debug image: {e}")
 

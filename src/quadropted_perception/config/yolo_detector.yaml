@@ -4,7 +4,6 @@
     model_path: ""
     confidence_threshold: 0.5
     iou_threshold: 0.45
-    camera_topic: "/camera/image_raw"
-    target_classes: []
+    camera_topic: "/robot1/color/image_raw"
     device: "cpu"
     frame_id: "camera_link"

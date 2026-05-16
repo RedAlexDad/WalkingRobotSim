@@ -168,4 +168,118 @@ yolo:
 Добавить в Dockerfile:
 - `ultralytics` + `torch` в stage `python-deps`
 - Размер образа увеличится на ~2-3 GB (из-за torch)
-- Опционально: использовать `torch --index-url https://download.pytorch.org/whl/cpu` для CPU-only
+- Использовать `torch --index-url https://download.pytorch.org/whl/cpu` для CPU-only
+
+---
+
+## 8. Отладка и устранение проблем
+
+### 8.1 setup.py — entry_points
+
+**Проблема:** `ros2 run quadropted_perception yolo_detector` не находил исполняемый файл.
+
+**Причина:** в `setup.py` отсутствовал `entry_points`, из-за чего `colcon` не регистрировал исполняемые файлы.
+
+**Решение:** добавлен `entry_points` в `setup.py`:
+```python
+entry_points={
+    "console_scripts": [
+        "yolo_detector = quadropted_perception.yolo_detector:main",
+        "visualizer = quadropted_perception.visualizer:main",
+    ],
+}
+```
+
+---
+
+### 8.2 CMakeLists.txt — установка .py вместо исполняемых файлов
+
+**Проблема:** `ros2 run` требовал файлы без расширения `.py` в `lib/package/`.
+
+**Причина:** `CMakeLists.txt` устанавливал `.py` файлы через `install(PROGRAMS ...)`. ROS 2 ищет исполняемые файлы по имени без расширения.
+
+**Решение:** созданы wrapper-скрипты в `scripts/yolo_detector` и `scripts/visualizer`:
+```python
+#!/usr/bin/env python3
+from quadropted_perception.yolo_detector import main
+main()
+```
+Установка через `install(PROGRAMS scripts/yolo_detector scripts/visualizer DESTINATION lib/${PROJECT_NAME})`.
+
+---
+
+### 8.3 Неверный топик камеры
+
+**Проблема:** YOLO подписывался на `/camera/image_raw` (дефолт), а симуляция публикует на `/robot1/color/image_raw`.
+
+**Решение:**
+- `config/yolo_detector.yaml`: `camera_topic: "/robot1/color/image_raw"`
+- `launch/yolo_detector.launch.py`: дефолт изменён
+- `yolo_detector.py`: дефолт параметра изменён на `/robot1/color/image_raw`
+
+---
+
+### 8.4 Numpy 2.x — несовместимость с cv_bridge
+
+**Проблема:** `cv_bridge` собран с numpy 1.x, но `ultralytics` тянет numpy 2.x.
+
+**Ошибка:**
+```
+A module that was compiled using NumPy 1.x cannot be run in NumPy 2.4.5
+```
+
+**Решение:** принудительная установка numpy<2 в Dockerfile:
+```dockerfile
+RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed 'numpy<2'
+```
+
+---
+
+### 8.5 opencv-python из pip сломал систему OpenCV
+
+**Проблема:** `ultralytics` установил `opencv-python` 4.13.0 (требует numpy>=2), который переопределил системный `python3-opencv` 4.6.0 (совместим с numpy 1.x). После даунгрейда numpy OpenCV перестал импортироваться.
+
+**Решение:** удалён `opencv-python` из pip, используется системный `python3-opencv`:
+```bash
+pip uninstall opencv-python -y --break-system-packages
+```
+
+---
+
+### 8.6 Torch CUDA vs CPU — torchvision несовместимость
+
+**Проблема:** `torchvision` 0.27.0 был установлен с CUDA-версией torch, но после переустановки CPU-only torch остался CUDA-совместимый torchvision.
+
+**Ошибка:**
+```
+RuntimeError: operator torchvision::nms does not exist
+```
+
+**Решение:** переустановка torch и torchvision с CPU-индекса PyTorch:
+```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu \
+    --break-system-packages --ignore-installed
+```
+
+---
+
+### 8.7 Пустой header у /detected_image
+
+**Проблема:** в RViz топик `/detected_image` показывал "no image".
+
+**Причина:** `cv2_to_imgmsg()` создаёт Image без header (stamp=0, frame_id="").
+
+**Решение:** копировать header из исходного сообщения камеры:
+```python
+debug_msg = self._bridge.cv2_to_imgmsg(annotated, encoding="bgr8")
+debug_msg.header = msg.header  # копируем timestamp и frame_id
+self._pub_debug_image.publish(debug_msg)
+```
+
+---
+
+### 8.8 YAML параметр target_classes вызывал ParameterUninitializedException
+
+**Проблема:** при старте через `ros2 launch` с `--params-file` параметр `target_classes: []` в YAML создавался как пустой массив, что конфликтовало с `declare_parameter("target_classes", [])` в коде.
+
+**Решение:** удалён `target_classes` из YAML-конфига, т.к. код объявляет его с дефолтом `[]`.

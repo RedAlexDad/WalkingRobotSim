@@ -170,6 +170,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pandas \
     PyYAML
 
+# YOLO + CPU-only torch (без CUDA)
+RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed \
+    torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip3 install --no-cache-dir --break-system-packages --ignore-installed ultralytics
+
 # ============================================================
 # ЭТАП 9: Workspace setup
 # ============================================================

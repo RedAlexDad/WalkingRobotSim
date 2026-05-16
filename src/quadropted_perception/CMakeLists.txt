@@ -11,8 +11,8 @@ ament_python_install_package(
 )
 
 install(PROGRAMS
-  quadropted_perception/yolo_detector.py
-  quadropted_perception/visualizer.py
+  scripts/yolo_detector
+  scripts/visualizer
   DESTINATION lib/${PROJECT_NAME}
 )
 

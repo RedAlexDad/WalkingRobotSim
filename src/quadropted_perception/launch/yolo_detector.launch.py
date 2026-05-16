@@ -14,7 +14,7 @@ def generate_launch_description():
         DeclareLaunchArgument("model_name", default_value="yolov8n.pt"),
         DeclareLaunchArgument("model_path", default_value=""),
         DeclareLaunchArgument("confidence_threshold", default_value="0.5"),
-        DeclareLaunchArgument("camera_topic", default_value="/camera/image_raw"),
+        DeclareLaunchArgument("camera_topic", default_value="/robot1/color/image_raw"),
         DeclareLaunchArgument("device", default_value="cpu"),
 
         Node(

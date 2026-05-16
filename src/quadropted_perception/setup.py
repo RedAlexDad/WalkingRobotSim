@@ -11,4 +11,10 @@ setup(
     maintainer_email='boss6852@gmail.com',
     description='YOLO object detection for quadruped robot',
     license='MIT',
+    entry_points={
+        'console_scripts': [
+            'yolo_detector = quadropted_perception.yolo_detector:main',
+            'visualizer = quadropted_perception.visualizer:main',
+        ],
+    },
 )
