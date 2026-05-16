@@ -564,4 +564,46 @@ def cancel_navigation(self):
 - `6c31924` — fix: исправить resume после повторного stop
   (добавлен _resume_offset, вычисление абсолютного индекса)
 
+---
+
+# Восьмая итерация: загрузка waypoints из JSON-файла
+
+## Проблема
+
+Waypoints можно было расставлять только вручную кликами в RViz. Для
+воспроизводимых сценариев нужна загрузка из файла.
+
+## Реализация
+
+1. **Новый сервис `LoadWaypoints.srv`** в `quadropted_msgs`:
+   ```
+   string file_path
+   ---
+   bool success
+   string message
+   ```
+
+2. **Обработчик `load_waypoints_callback`**:
+   - Читает JSON-файл по указанному пути
+   - Конвертирует `yaw` в кватернион (`z = sin(yaw/2)`, `w = cos(yaw/2)`)
+   - Создаёт `PoseStamped` для каждой точки
+   - Публикует маркеры
+   - Автоматически отменяет активную навигацию, если есть
+
+3. **Формат JSON**:
+   ```json
+   [
+     {"x": 2.5, "y": 1.0, "z": 0.0, "yaw": 0.0},
+     {"x": 3.0, "y": 2.5, "z": 0.0, "yaw": 1.57}
+   ]
+   ```
+
+4. **Makefile**: `make waypoint-load FILE=waypoints.json`
+   - Путь в контейнере, например `/root/ws/waypoints.json`
+
+5. **CMakeLists.txt** `quadropted_msgs` добавлен `LoadWaypoints.srv`
+
+## Коммиты
+- `370abb1` — feat: добавить загрузку waypoints из JSON-файла
+
 
