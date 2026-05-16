@@ -225,6 +225,16 @@ class WaypointCollector(Node):
 
         data = None
         _, ext = os.path.splitext(file_path)
+        if not ext:
+            yaml_path = file_path + ".yaml"
+            if os.path.exists(yaml_path):
+                file_path = yaml_path
+                ext = ".yaml"
+            else:
+                json_path = file_path + ".json"
+                if os.path.exists(json_path):
+                    file_path = json_path
+                    ext = ".json"
         try:
             if ext in (".yaml", ".yml"):
                 with open(file_path, "r") as f:

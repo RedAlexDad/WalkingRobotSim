@@ -631,15 +631,24 @@ Waypoints можно было расставлять только вручную
 - Сервис `GetWaypoints.srv`: возвращает `Waypoint[] waypoints`
 - Makefile: `make waypoint-get` с tab-разделённым выводом
 
+### Автоподстановка расширения при загрузке
+- Если в `FILE=` не указано расширение, скрипт пробует `.yaml`, затем `.json`
+- `make waypoint-load FILE=test` → находит `test.yaml`
+
+### Тестовый файл waypoints
+- Создан `config/waypoints/test.yaml` с 3 точками для проверки загрузки
+
 ## Файлы
 - `src/quadropted_msgs/msg/Waypoint.msg` — новое сообщение
 - `src/quadropted_msgs/srv/GetWaypoints.srv` — новый сервис
 - `src/quadropted_msgs/CMakeLists.txt` — добавлены Waypoint.msg и GetWaypoints.srv
 - `src/gazebo_sim/config/waypoints/default.yaml` — новый формат
-- `src/gazebo_sim/scripts/waypoint_collector.py` — YAML-парсинг, GetWaypoints, /custom_waypoints при publish_markers()
+- `src/gazebo_sim/config/waypoints/test.yaml` — тестовый набор точек
+- `src/gazebo_sim/scripts/waypoint_collector.py` — YAML-парсинг, GetWaypoints, автоподстановка расширения, /custom_waypoints при publish_markers()
 - `Makefile` — `make waypoint-get`
 
 ## Коммиты
 - `a314e64` — refactor: перейти с JSON на YAML для waypoints
+- `cb28251` — feat: добавить сервис GetWaypoints и YAML для waypoints
 
 
