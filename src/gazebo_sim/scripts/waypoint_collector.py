@@ -102,6 +102,23 @@ class WaypointCollector(Node):
             marker.color = color
             marker_array.markers.append(marker)
 
+            text_marker = Marker()
+            text_marker.header.frame_id = "map"
+            text_marker.header.stamp = self.get_clock().now().to_msg()
+            text_marker.ns = "waypoint_labels"
+            text_marker.id = i
+            text_marker.type = Marker.TEXT_VIEW_FACING
+            text_marker.action = Marker.ADD
+            text_marker.pose = wp.pose
+            text_marker.pose.position.z += 0.4
+            text_marker.scale.z = 0.25
+            text_marker.color.r = 1.0
+            text_marker.color.g = 1.0
+            text_marker.color.b = 1.0
+            text_marker.color.a = 1.0
+            text_marker.text = str(i)
+            marker_array.markers.append(text_marker)
+
         self.marker_publisher.publish(marker_array)
         self.get_logger().info(
             f"Published {len(self.waypoints)} markers to /waypoint_markers"
@@ -124,6 +141,13 @@ class WaypointCollector(Node):
         marker.id = 0
         marker.action = Marker.DELETEALL
         marker_array.markers.append(marker)
+        label_marker = Marker()
+        label_marker.header.frame_id = "map"
+        label_marker.header.stamp = self.get_clock().now().to_msg()
+        label_marker.ns = "waypoint_labels"
+        label_marker.id = 0
+        label_marker.action = Marker.DELETEALL
+        marker_array.markers.append(label_marker)
         self.marker_publisher.publish(marker_array)
         self.get_logger().info("Waypoints and markers cleared via service call")
         response.success = True
