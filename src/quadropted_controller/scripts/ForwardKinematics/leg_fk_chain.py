@@ -4,9 +4,8 @@
 Вынесено из ForwardKinematics/robot_FK.py при декомпозиции.
 """
 
-from math import cos, sin
-
 import numpy as np
+from math import sin, cos
 
 
 def _build_rotation_x(alpha):

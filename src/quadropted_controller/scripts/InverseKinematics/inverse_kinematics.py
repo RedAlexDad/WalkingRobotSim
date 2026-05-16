@@ -4,8 +4,8 @@
 Декомпозированная версия InverseKinematics/robot_IK.py.
 """
 
-from .joint_angles import compute_all_joint_angles
 from .local_positions import compute_local_positions
+from .joint_angles import compute_all_joint_angles
 
 
 class InverseKinematics:

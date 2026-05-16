@@ -4,8 +4,8 @@
 """
 
 import tf_transformations
-from geometry_msgs.msg import Quaternion, TransformStamped
 from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Quaternion, TransformStamped
 from visualization_msgs.msg import Marker, MarkerArray
 
 
