@@ -441,4 +441,99 @@ def cancel_navigation(self):
     self.navigation_active = False
 ```
 
+---
+
+# Шестая итерация: текстовые метки waypoints в RViz
+
+## Проблема
+
+После добавления TEXT_VIEW_FACING маркеров с номерами индексов (commit `9886b5e`)
+метки не были видны в RViz.
+
+## Коренные причины
+
+1. **Белый текст на белой карте** — цвет текста был `(1.0, 1.0, 1.0)`, а map
+   в RViz был включён и имел белый фон.
+2. **Shared reference на Pose** — `text_marker.pose = wp.pose` присваивал
+   ссылку на тот же объект Pose, а не копию. Из-за этого `position.z += 0.4`
+   мутировало оригинальный waypoint.
+3. **Дрифт позиции при каждом publish** — из-за shared reference каждый вызов
+   `publish_markers()` добавлял ещё +0.4 к z-waypoint'а.
+
+## Исправление
+
+- Цвет текста теперь совпадает с цветом сферы (red/green/blue по индексу)
+- Позиция копируется через независимые поля (не ссылка):
+  ```python
+  text_marker.pose.position.x = wp.pose.position.x + 0.3
+  text_marker.pose.position.y = wp.pose.position.y
+  text_marker.pose.position.z = wp.pose.position.z + 0.3
+  text_marker.pose.orientation = wp.pose.orientation
+  ```
+- Текст смещён на +0.3 по x (вправо) и +0.3 по z (вверх), чтобы не
+  перекрываться со сферой
+
+Простое правило: в ROS 2 Python `msg.field = other.field` копирует ссылку,
+а не значение. Для независимой копии нужно присваивать поля по одному
+или использовать `copy.deepcopy`.
+
+## Коммиты
+- `9886b5e` — feat: добавить текстовые метки с номерами waypoints в RViz
+  (оригинальная реализация, белый текст, дрифт)
+- `7c4241b` — fix: исправить отображение номеров waypoints в RViz
+  (цвет + offset + независимые поля)
+
+---
+
+# Седьмая итерация: возобновление навигации после остановки
+
+## Проблема
+
+После `make waypoint-stop` не было способа продолжить маршрут с прерванного
+места — `make waypoint-start` начинал все waypoints сначала.
+
+## Реализация
+
+Добавлены:
+
+1. **Сервис `/resume_navigation` (Trigger)** — принимает оставшиеся waypoints
+   от `_resume_index` и отправляет их в FollowWaypoints.
+
+2. **Отслеживание текущего waypoint** через `_feedback_callback` от
+   FollowWaypoints:
+   ```python
+   def _feedback_callback(self, feedback_msg):
+       self._current_waypoint_index = (
+           self._resume_offset + feedback_msg.feedback.current_waypoint
+       )
+   ```
+
+3. **`_resume_offset`** — смещение от начала `self.waypoints`, чтобы
+   пересчитывать относительный индекс из feedback в абсолютный:
+   - `start_navigation` → offset = 0
+   - `resume_navigation` → offset = `_resume_index`
+   - `navigate_to_waypoint` с idx → offset = idx (или 0 для -1)
+
+4. **Makefile**: `make waypoint-resume` — вызывает `/resume_navigation`
+
+## Баг: сброс resume после повторного stop
+
+После первого stop → resume → stop, повторный resume снова начинал с waypoint 0.
+
+Причина: `resume_navigation` отправлял **подмножество** waypoints
+(`self.waypoints[self._resume_index:]`). FollowWaypoints в feedback отдавал
+индекс **относительно** этого подмножества (0, 1, 2...). `cancel_navigation`
+сохраняла этот относительный индекс как `_resume_index`, поэтому после
+повторного stop `_resume_index` оказывался 0.
+
+Исправление: введён `_resume_offset`, который хранит начало текущего
+подмножества. Feedback складывается с offset, давая абсолютный индекс
+в `self.waypoints`.
+
+## Коммиты
+- `ee3e542` — feat: добавить возобновление навигации после остановки
+  (оригинальная реализация с багом offset)
+- `6c31924` — fix: исправить resume после повторного stop
+  (добавлен _resume_offset, вычисление абсолютного индекса)
+
 
