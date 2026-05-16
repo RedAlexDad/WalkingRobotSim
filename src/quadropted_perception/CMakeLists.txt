@@ -20,6 +20,7 @@ install(DIRECTORY
   launch
   config
   models
+  rviz
   DESTINATION share/${PROJECT_NAME}/
 )
 

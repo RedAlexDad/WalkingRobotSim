@@ -2,10 +2,10 @@
 
 .PHONY: yolo yolo-detector yolo-visualizer
 
-## Запуск YOLO детектора
+## Запуск YOLO детектора (фоново)
 yolo: yolo-detector
 
-## Запуск YOLO детектора (инференс)
+## Запуск YOLO детектора (инференс, фоновый процесс)
 yolo-detector:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск YOLO детектора...${NC}\n"
@@ -14,11 +14,17 @@ yolo-detector:
 		source /root/ws/install/setup.bash && \
 		ros2 run quadropted_perception yolo_detector"
 
-## Запуск визуализации детекций в RViz
+## Запуск визуализации детекций: RViz + visualizer (split: raw / detected)
 yolo-visualizer:
 	$(require-container)
+	$(check-x11)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск визуализации детекций...${NC}\n"
 	@docker exec -d $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
 		source /root/ws/install/setup.bash && \
 		ros2 run quadropted_perception visualizer"
+	@sleep 1
+	@docker exec -d $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
+		source /root/ws/install/setup.bash && \
+		rviz2 -d /root/ws/src/quadropted_perception/rviz/yolo_detection.rviz"

@@ -133,11 +133,27 @@ Detection[] detections
 - Реализовать visualizer.py (маркеры в RViz)
 - Добавить конфиг RViz для отображения детекций
 
-### Этап 5 — Интеграция с симуляцией
+### Этап 5 — Split-screen визуализация (raw camera + detected)
 
-- Добавить камеру в модель робота (URDF/SDF), если ещё нет
-- Настроить Gazebo камеру на роботе
-- Проверить end-to-end: Gazebo → YOLO → RViz
+- Создать `rviz/yolo_detection.rviz` с двумя Image-дисплеями:
+  - `Camera (raw)` — `/robot1/color/image_raw`
+  - `Detected (bbox)` — `/detected_image`
+- Также отображать маркеры детекций из visualizer (`/detection_markers`)
+- Запуск через `make yolo-visualizer`:
+  1. `yolo_detector` — инференс (bg, `make yolo`)
+  2. `visualizer` — маркеры bbox (bg)
+  3. `rviz2 -d yolo_detection.rviz` — GUI (foreground)
+
+### Этап 6 — Разделение запуска: симуляция и YOLO
+
+YOLO **не** встроен в launch-файлы симуляции. Запускается отдельно:
+
+1. `make gazebo` / `make gazebo-py` — симуляция без YOLO
+2. `make yolo` — YOLO детектор (фоново, `docker exec -d`)
+3. `make yolo-visualizer` — visualizer + RViz split-screen
+
+Это снижает нагрузку на CPU при старте и даёт гибкость: можно запускать YOLO
+только когда нужно распознавание, без перезапуска симуляции.
 
 ---
 
@@ -152,14 +168,40 @@ Detection[] detections
 
 ---
 
-## 6. Makefile цель
+## 6. Makefile цели
+
+### `make yolo` — запуск YOLO детектора (фоново)
 
 ```makefile
-## Запуск YOLO детектора
-yolo:
-    @$(call require-container)
-    @$(call exec, ros2 launch quadropted_perception yolo_detector.launch.py)
+yolo-detector:
+	$(require-container)
+	@docker exec -d $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
+		source /root/ws/install/setup.bash && \
+		ros2 run quadropted_perception yolo_detector"
 ```
+
+### `make yolo-visualizer` — RViz split-screen + маркеры
+
+```makefile
+yolo-visualizer:
+	$(require-container)
+	$(check-x11)
+	@docker exec -d $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
+		source /root/ws/install/setup.bash && \
+		ros2 run quadropted_perception visualizer"
+	@sleep 1
+	@docker exec -d $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
+		source /root/ws/install/setup.bash && \
+		rviz2 -d /root/ws/src/quadropted_perception/rviz/yolo_detection.rviz"
+```
+
+Экран разделён на две части:
+- **Слева:** сырое изображение с камеры (`/robot1/color/image_raw`)
+- **Справа:** изображение с нарисованными bbox (`/detected_image`)
+- **Маркеры:** bbox и подписи в 3D-сцене (`/detection_markers`)
 
 ---
 
