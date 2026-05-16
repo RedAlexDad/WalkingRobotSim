@@ -1,15 +1,12 @@
 # makefiles/yolo.mk
 
-.PHONY: yolo yolo-detector yolo-visualizer
+.PHONY: yolo-detector yolo-visualizer
 
-## Запуск YOLO детектора (фоново)
-yolo: yolo-detector
-
-## Запуск YOLO детектора (инференс, фоновый процесс)
+## Запуск YOLO детектора (инференс, вывод логов)
 yolo-detector:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск YOLO детектора...${NC}\n"
-	@docker exec -d $(CONTAINER_NAME) bash -c "\
+	@docker exec -it $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
 		source /root/ws/install/setup.bash && \
 		ros2 run quadropted_perception yolo_detector"

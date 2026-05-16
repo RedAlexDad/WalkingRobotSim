@@ -149,7 +149,7 @@ Detection[] detections
 YOLO **не** встроен в launch-файлы симуляции. Запускается отдельно:
 
 1. `make gazebo` / `make gazebo-py` — симуляция без YOLO
-2. `make yolo` — YOLO детектор (фоново, `docker exec -d`)
+2. `make yolo-detector` — YOLO детектор (лог в терминал)
 3. `make yolo-visualizer` — visualizer + RViz split-screen
 
 Это снижает нагрузку на CPU при старте и даёт гибкость: можно запускать YOLO
@@ -170,12 +170,12 @@ YOLO **не** встроен в launch-файлы симуляции. Запус
 
 ## 6. Makefile цели
 
-### `make yolo` — запуск YOLO детектора (фоново)
+### `make yolo-detector` — запуск YOLO детектора (лог в терминал)
 
 ```makefile
 yolo-detector:
 	$(require-container)
-	@docker exec -d $(CONTAINER_NAME) bash -c "\
+	@docker exec -it $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
 		source /root/ws/install/setup.bash && \
 		ros2 run quadropted_perception yolo_detector"
