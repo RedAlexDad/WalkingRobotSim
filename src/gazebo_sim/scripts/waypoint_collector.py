@@ -17,10 +17,30 @@ import threading
 import json
 import math
 import os
+import yaml
 
 
 def _get_waypoints_dir():
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config", "waypoints")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(script_dir, "..", "..", "share", "gazebo_sim", "config", "waypoints"),
+        os.path.join(script_dir, "..", "config", "waypoints"),
+    ]
+    candidate = None
+    dir_name = os.path.dirname(script_dir)
+    while True:
+        candidate = os.path.join(dir_name, "config", "waypoints")
+        if os.path.isdir(candidate):
+            return candidate
+        parent = os.path.dirname(dir_name)
+        if parent == dir_name:
+            break
+        dir_name = parent
+    for c in candidates:
+        c = os.path.normpath(c)
+        if os.path.isdir(c):
+            return c
+    return os.path.normpath(candidates[0])
 
 
 class WaypointCollector(Node):
@@ -185,14 +205,20 @@ class WaypointCollector(Node):
     def load_waypoints_callback(self, request, response):
         file_path = request.file_path
         if not file_path:
-            file_path = "default.json"
+            file_path = "default.yaml"
 
         if not os.path.isabs(file_path):
             file_path = os.path.join(_get_waypoints_dir(), file_path)
 
+        data = None
+        _, ext = os.path.splitext(file_path)
         try:
-            with open(file_path, "r") as f:
-                data = json.load(f)
+            if ext in (".yaml", ".yml"):
+                with open(file_path, "r") as f:
+                    data = yaml.safe_load(f)
+            else:
+                with open(file_path, "r") as f:
+                    data = json.load(f)
         except Exception as e:
             self.get_logger().error(f"Failed to read file {file_path}: {e}")
             response.success = False
@@ -201,7 +227,7 @@ class WaypointCollector(Node):
 
         if not isinstance(data, list):
             response.success = False
-            response.message = "JSON must be an array of waypoints"
+            response.message = "Waypoints file must be an array"
             return response
 
         if self.navigation_active:
