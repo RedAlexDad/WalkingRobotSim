@@ -16,6 +16,11 @@ from action_msgs.msg import GoalStatus
 import threading
 import json
 import math
+import os
+
+
+def _get_waypoints_dir():
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config", "waypoints")
 
 
 class WaypointCollector(Node):
@@ -178,13 +183,20 @@ class WaypointCollector(Node):
         }
 
     def load_waypoints_callback(self, request, response):
+        file_path = request.file_path
+        if not file_path:
+            file_path = "default.json"
+
+        if not os.path.isabs(file_path):
+            file_path = os.path.join(_get_waypoints_dir(), file_path)
+
         try:
-            with open(request.file_path, "r") as f:
+            with open(file_path, "r") as f:
                 data = json.load(f)
         except Exception as e:
-            self.get_logger().error(f"Failed to read file: {e}")
+            self.get_logger().error(f"Failed to read file {file_path}: {e}")
             response.success = False
-            response.message = f"Failed to read file: {e}"
+            response.message = f"Failed to read file {file_path}: {e}"
             return response
 
         if not isinstance(data, list):
@@ -218,11 +230,11 @@ class WaypointCollector(Node):
             self.waypoints.append(stamped)
 
         self.get_logger().info(
-            f"Loaded {len(self.waypoints)} waypoints from {request.file_path}"
+            f"Loaded {len(self.waypoints)} waypoints from {file_path}"
         )
         self.publish_markers()
         response.success = True
-        response.message = f"Loaded {len(self.waypoints)} waypoints"
+        response.message = f"Loaded {len(self.waypoints)} waypoints from {file_path}"
         return response
 
     def start_navigation_callback(self, request, response):

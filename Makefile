@@ -405,14 +405,15 @@ waypoint-resume:
 		ros2 service call /resume_navigation std_srvs/Trigger"
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
 
-## Загрузить waypoints из JSON-файла (пример: make waypoint-load FILE=waypoints.json)
+## Загрузить waypoints из JSON-файла (пример: make waypoint-load FILE=test.json)
 waypoint-load:
 	$(require-container)
-	@if [ -z "$(FILE)" ]; then \
-		printf "${RED}${BOLD}[✗]${NC} ${RED}Укажите файл: make waypoint-load FILE=waypoints.json${NC}\n"; \
-		exit 1; \
-	fi
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Загрузка waypoints из $(FILE)...${NC}\n"
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Загрузка waypoints..."
+ifneq ($(FILE),)
+	@printf " из $(FILE)...${NC}\n"
+else
+	@printf " (по умолчанию)...${NC}\n"
+endif
 	@docker exec $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
