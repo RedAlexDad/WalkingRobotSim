@@ -73,7 +73,36 @@ TF публикует только EKF.
 
 ---
 
-## Методика
+## Результат
+
+### Реальная причина дрифта
+Дрифт **не был связан** с IMU топиком или `enable_odom_tf`.
+
+**Первичная причина** — **circular import** в `QuadrupedOdometry/__init__.py`:
+- Импорт `from .node_main import MainLoop` стоял до `from .odometry_update import update_odometry`
+- `node_main.py` делает `from QuadrupedOdometry import update_odometry` — но модуль ещё не инициализирован
+- → `QuadrupedOdometryNode.py` падает при старте: `ImportError: cannot import name 'update_odometry'`
+- → нет топика `odom` → EKF не публикует TF → Nav2 не получает `base_link → odom` → нет траекторий
+
+**Вторичная причина** — переписанный `local_positions.py`:
+- Изменён формат выхода с `(4,3)` (строки = ноги) на `(3,4)` (столбцы = ноги)
+- `compute_all_joint_angles` пытался обработать оба формата через `is_new_format`
+- Контроллеры (StandController, TrotGaitController) продолжали передавать `(4,3)` → некорректные joint angles
+
+### Что было исправлено
+1. **IMU топик** — `/{ns}/imu` → `/{ns}/imu_plugin/out` (параметр в launch, node использует хардкод)
+2. **enable_odom_tf** — `True` → `False` (EKF публикует TF, не дублировать)
+3. **waypoint_collector** добавлен в Python launch
+4. **quadropted_controller заменён на main** — исправлен circular import, возвращён рабочий IK
+
+### Коммиты
+```
+48cc83b fix: исправить IMU топик и отключить дублирование TF в Python launch
+c74b5e1 feat: добавить waypoint_collector в Python launch
+ef9d9b1 refactor: заменить quadropted_controller на версию из main
+```
+
+### Методика
 - Каждый шаг = отдельный коммит
 - После каждого шага — тест (`make gazebo-py`)
 - Отчёт дополняется в `docs/waypoint-executor-fix.md`

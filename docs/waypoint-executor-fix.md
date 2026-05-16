@@ -652,3 +652,5 @@ Waypoints можно было расставлять только вручную
 - `cb28251` — feat: добавить сервис GetWaypoints и YAML для waypoints
 
 
+
+
