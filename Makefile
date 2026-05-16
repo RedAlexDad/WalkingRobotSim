@@ -349,6 +349,82 @@ stand:
 		ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: STAND, robot_id: 1}\""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Режим STAND установлен${NC}\n"
 
+.PHONY: waypoint-start waypoint-clear waypoint-navigate waypoint-stop waypoint-resume waypoint-load waypoint-get
+
+## Запустить навигацию по всем waypoints (сервис /start_navigation)
+waypoint-start:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск навигации по waypoints...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /start_navigation std_srvs/Trigger"
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Очистить все waypoints (сервис /clear_waypoints)
+waypoint-clear:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Очистка waypoints...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /clear_waypoints std_srvs/Trigger"
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Навигация к конкретному waypoint по индексу (пример: make waypoint-navigate INDEX=2)
+waypoint-navigate:
+	$(require-container)
+	@if [ -z "$(INDEX)" ]; then \
+		printf "${RED}${BOLD}[✗]${NC} ${RED}Укажите индекс: make waypoint-navigate INDEX=2${NC}\n"; \
+		exit 1; \
+	fi
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Навигация к waypoint $(INDEX)...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /navigate_to_waypoint quadropted_msgs/srv/WaypointNavigate \"{index: $(INDEX)}\""
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Остановить текущую навигацию (сервис /stop_navigation)
+waypoint-stop:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Остановка навигации...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /stop_navigation std_srvs/Trigger"
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Продолжить навигацию с прерванного waypoint (сервис /resume_navigation)
+waypoint-resume:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Продолжение навигации...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /resume_navigation std_srvs/Trigger"
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Загрузить waypoints из JSON-файла (пример: make waypoint-load FILE=test.json)
+waypoint-load:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Загрузка waypoints..."
+ifneq ($(FILE),)
+	@printf " из $(FILE)...${NC}\n"
+else
+	@printf " (по умолчанию)...${NC}\n"
+endif
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /load_waypoints quadropted_msgs/srv/LoadWaypoints \"{file_path: '$(FILE)'}\""
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Получить текущие waypoints (сервис /get_waypoints)
+waypoint-get:
+	$(require-container)
+	@docker exec $(CONTAINER_NAME) bash -c 'source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; ros2 service call /get_waypoints quadropted_msgs/srv/GetWaypoints "{}" 2>/dev/null' | python3 -c "import sys,re; d=sys.stdin.read(); m=re.findall(r'x=([-\d.]+),\s*y=([-\d.]+),\s*z=([-\d.]+),\s*yaw=([-\d.]+)',d); [print(str(i)+chr(9)+str(round(float(x),3))+chr(9)+str(round(float(y),3))+chr(9)+str(round(float(z),3))+chr(9)+str(round(float(yaw),3))) for i,(x,y,z,yaw) in enumerate(m)]"
+
 ## Выполнение команды в контейнере (пример: make exec CMD="ros2 topic list")
 exec:
 	$(require-container)
@@ -744,9 +820,18 @@ help:
 	@printf "  ${GREEN}${BOLD}make trot${NC}           Режим бега рысью (TROT)\n"
 	@printf "  ${GREEN}${BOLD}make crawl${NC}          Режим ползания (CRAWL)\n"
 	@echo ""
+	@printf "${BOLD}Waypoint навигация:${NC}\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-start${NC}               Запуск навигации по всем waypoints\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-navigate INDEX=2${NC}    Навигация к конкретному waypoint\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-stop${NC}                Остановка текущей навигации\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-resume${NC}              Продолжить навигацию с прерванного waypoint\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-load FILE=wp.yaml${NC}   Загрузить waypoints из файла\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-get${NC}                 Получить текущие waypoints\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-clear${NC}               Очистка waypoints и остановка\n"
+	@echo ""
 	@printf "${BOLD}Положение робота:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make set-pose X=1.0 Y=0.0 Z=0.0 YAW=0.0${NC}   Установка положения\n"
-	@printf "  ${GREEN}${BOLD}make reset-pose${NC}                            Сброс положения в начало\n"
+	@printf "  ${GREEN}${BOLD}make reset-pose${NC}                           Сброс положения в начало\n"
 	@echo ""
 	@printf "${BOLD}Тестирование:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make test${NC}             Полный цикл тестирования\n"
@@ -755,9 +840,9 @@ help:
 	@printf "  ${GREEN}${BOLD}make test-clean${NC}       Очистка после тестов\n"
 	@echo ""
 	@printf "${BOLD}Тесты корректности и производительности:${NC}\n"
-	@printf "  ${GREEN}${BOLD}make test-correctness${NC}     Запуск тестов корректности\n"
-	@printf "  ${GREEN}${BOLD}make test-benchmark${NC}      Замер производительности Python\n"
-	@printf "  ${GREEN}${BOLD}make benchmark${NC}            Запуск бенчмарка Python + C++ с таблицей\n"
+	@printf "  ${GREEN}${BOLD}make test-correctness${NC}    Запуск тестов корректности\n"
+	@printf "  ${GREEN}${BOLD}make test-benchmark${NC}	   Замер производительности Python\n"
+	@printf "  ${GREEN}${BOLD}make benchmark${NC}           Запуск бенчмарка Python + C++ с таблицей\n"
 	@printf "  ${GREEN}${BOLD}make benchmark-python${NC}    Только Python бенчмарк\n"
 	@printf "  ${GREEN}${BOLD}make benchmark-cpp${NC}       Только C++ бенчмарк\n"
 	@echo ""
