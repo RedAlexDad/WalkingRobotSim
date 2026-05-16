@@ -18,6 +18,8 @@ set(msg_files
   "msg/RobotModeCommand.msg"
   "msg/RobotFootContact.msg"
   "msg/Waypoint.msg"
+  "msg/Detection.msg"
+  "msg/DetectionArray.msg"
 )
 
 set(srv_files
