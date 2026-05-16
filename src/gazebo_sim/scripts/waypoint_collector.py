@@ -32,6 +32,7 @@ class WaypointCollector(Node):
         self._goal_retry_timer = None
         self._current_waypoint_index = 0
         self._resume_index = 0
+        self._resume_offset = 0
 
         self.subscription = self.create_subscription(
             PoseStamped, "/custom_goal_pose", self.goal_pose_callback, 10
@@ -139,6 +140,7 @@ class WaypointCollector(Node):
         self.waypoints = []
         self.navigation_active = False
         self._resume_index = 0
+        self._resume_offset = 0
         marker_array = MarkerArray()
         marker = Marker()
         marker.header.frame_id = "map"
@@ -191,6 +193,7 @@ class WaypointCollector(Node):
 
             self.navigation_active = True
             self._resume_index = 0
+            self._resume_offset = 0
             self._send_goal_async(self.waypoints)
             self.get_logger().info(
                 f"Sent {len(self.waypoints)} waypoints to FollowWaypoints action"
@@ -236,7 +239,9 @@ class WaypointCollector(Node):
         send_goal_future.add_done_callback(self._goal_response_callback)
 
     def _feedback_callback(self, feedback_msg):
-        self._current_waypoint_index = feedback_msg.feedback.current_waypoint
+        self._current_waypoint_index = (
+            self._resume_offset + feedback_msg.feedback.current_waypoint
+        )
         self.get_logger().info(
             f"Current waypoint: {self._current_waypoint_index}"
         )
@@ -311,6 +316,7 @@ class WaypointCollector(Node):
                 label = str(idx)
 
             self.navigation_active = True
+            self._resume_offset = idx if idx != -1 else 0
             self._send_goal_async(targets)
             self.get_logger().info(f"Navigating to waypoint index {label}")
             response.success = True
@@ -362,6 +368,7 @@ class WaypointCollector(Node):
 
         try:
             self.navigation_active = True
+            self._resume_offset = self._resume_index
             self._send_goal_async(remaining)
             self.get_logger().info(
                 f"Resumed navigation from waypoint {self._resume_index} "
