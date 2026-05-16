@@ -291,12 +291,6 @@ class WaypointCollector(Node):
         return response
 
     def stop_navigation_callback(self, request, response):
-        if not self.navigation_active:
-            self.get_logger().info("No active navigation to stop")
-            response.success = True
-            response.message = "No active navigation"
-            return response
-
         try:
             self.cancel_navigation()
             self.get_logger().info("Navigation stopped via /stop_navigation")

@@ -385,3 +385,60 @@ colcon build --packages-select gazebo_sim
 - `src/gazebo_sim/config/robots.yaml` — spawn координаты робота
 - `src/gazebo_sim/maps/cafe_world_map.yaml` — карта
 - `src/gazebo_sim/world/cafe.world` — мир Gazebo
+
+---
+
+# Пятая итерация: stop_navigation не работал во время активной навигации
+
+## Проблема
+
+После запуска навигации (`/start_navigation`) вызов `/stop_navigation` возвращал:
+```
+success: True
+message: 'No active navigation'
+```
+
+Стоп не срабатывал, пока робот не доедет до всех точек — только после завершения маршрута `navigation_active` сбрасывался в `False`, и стоп ничего не делал.
+
+## Коренная причина
+
+В `stop_navigation_callback` была проверка:
+```python
+if not self.navigation_active:
+    response.success = True
+    response.message = "No active navigation"
+    return response
+```
+
+Если `navigation_active` оказывался `False` (из-за `_result_callback`, `check_navigation` или отсутствия goal handle), стоп немедленно выходил, даже не пытаясь отменить goal.
+
+## Исправление
+
+Проверка `navigation_active` убрана — `stop_navigation_callback` всегда вызывает `cancel_navigation()`, которая сама проверяет наличие `_nav_goal_handle` и отменяет goal через `cancel_goal_async()`:
+
+```python
+def stop_navigation_callback(self, request, response):
+    try:
+        self.cancel_navigation()
+        self.get_logger().info("Navigation stopped via /stop_navigation")
+        response.success = True
+        response.message = "Navigation stopped"
+    except Exception as e:
+        ...
+    return response
+```
+
+Флаг `navigation_active` используется теперь только для:
+- Индикации состояния (запрет повторного `/start_navigation`, пока активен)
+- `navigate_to_waypoint_callback` — отмена предыдущей навигации перед новой
+- Визуализации в логах
+
+Сам `cancel_navigation()` остался без изменений:
+```python
+def cancel_navigation(self):
+    if self._nav_goal_handle:
+        self._nav_goal_handle.cancel_goal_async()
+    self.navigation_active = False
+```
+
+
