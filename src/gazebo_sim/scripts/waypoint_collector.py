@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pyright: reportAttributeAccessIssue=false, reportOptionalMemberAccess=false
 
 import rclpy
 from rclpy.node import Node
