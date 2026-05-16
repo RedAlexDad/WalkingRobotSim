@@ -5,15 +5,17 @@ import rclpy
 from rclpy.node import Node
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.action import ActionClient
-from geometry_msgs.msg import PoseStamped, PoseArray
+from geometry_msgs.msg import PoseStamped, PoseArray, Pose
 from visualization_msgs.msg import Marker, MarkerArray
 from nav2_msgs.action import FollowWaypoints
 from nav2_simple_commander.robot_navigator import BasicNavigator
 from std_msgs.msg import ColorRGBA
 from std_srvs.srv import Trigger
-from quadropted_msgs.srv import WaypointNavigate
+from quadropted_msgs.srv import WaypointNavigate, LoadWaypoints
 from action_msgs.msg import GoalStatus
 import threading
+import json
+import math
 
 
 class WaypointCollector(Node):
@@ -67,6 +69,10 @@ class WaypointCollector(Node):
 
         self.resume_service = self.create_service(
             Trigger, "/resume_navigation", self.resume_navigation_callback
+        )
+
+        self.load_service = self.create_service(
+            LoadWaypoints, "/load_waypoints", self.load_waypoints_callback
         )
 
         self.timer = self.create_timer(0.1, self.check_navigation)
@@ -161,6 +167,62 @@ class WaypointCollector(Node):
         self.get_logger().info("Waypoints and markers cleared via service call")
         response.success = True
         response.message = "Waypoints cleared successfully"
+        return response
+
+    def _yaw_to_quat(self, yaw):
+        return {
+            "x": 0.0,
+            "y": 0.0,
+            "z": math.sin(yaw / 2.0),
+            "w": math.cos(yaw / 2.0),
+        }
+
+    def load_waypoints_callback(self, request, response):
+        try:
+            with open(request.file_path, "r") as f:
+                data = json.load(f)
+        except Exception as e:
+            self.get_logger().error(f"Failed to read file: {e}")
+            response.success = False
+            response.message = f"Failed to read file: {e}"
+            return response
+
+        if not isinstance(data, list):
+            response.success = False
+            response.message = "JSON must be an array of waypoints"
+            return response
+
+        if self.navigation_active:
+            self.cancel_navigation()
+
+        self.waypoints = []
+        for i, wp_data in enumerate(data):
+            pose = Pose()
+            pose.position.x = float(wp_data.get("x", 0.0))
+            pose.position.y = float(wp_data.get("y", 0.0))
+            pose.position.z = float(wp_data.get("z", 0.0))
+
+            if "yaw" in wp_data:
+                quat = self._yaw_to_quat(float(wp_data["yaw"]))
+                pose.orientation.x = quat["x"]
+                pose.orientation.y = quat["y"]
+                pose.orientation.z = quat["z"]
+                pose.orientation.w = quat["w"]
+            else:
+                pose.orientation.w = 1.0
+
+            stamped = PoseStamped()
+            stamped.header.frame_id = "map"
+            stamped.header.stamp = self.get_clock().now().to_msg()
+            stamped.pose = pose
+            self.waypoints.append(stamped)
+
+        self.get_logger().info(
+            f"Loaded {len(self.waypoints)} waypoints from {request.file_path}"
+        )
+        self.publish_markers()
+        response.success = True
+        response.message = f"Loaded {len(self.waypoints)} waypoints"
         return response
 
     def start_navigation_callback(self, request, response):

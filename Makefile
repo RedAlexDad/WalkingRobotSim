@@ -349,7 +349,7 @@ stand:
 		ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: STAND, robot_id: 1}\""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Режим STAND установлен${NC}\n"
 
-.PHONY: waypoint-start waypoint-clear waypoint-navigate waypoint-stop waypoint-resume
+.PHONY: waypoint-start waypoint-clear waypoint-navigate waypoint-stop waypoint-resume waypoint-load
 
 ## Запустить навигацию по всем waypoints (сервис /start_navigation)
 waypoint-start:
@@ -403,6 +403,20 @@ waypoint-resume:
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
 		ros2 service call /resume_navigation std_srvs/Trigger"
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Загрузить waypoints из JSON-файла (пример: make waypoint-load FILE=waypoints.json)
+waypoint-load:
+	$(require-container)
+	@if [ -z "$(FILE)" ]; then \
+		printf "${RED}${BOLD}[✗]${NC} ${RED}Укажите файл: make waypoint-load FILE=waypoints.json${NC}\n"; \
+		exit 1; \
+	fi
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Загрузка waypoints из $(FILE)...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 service call /load_waypoints quadropted_msgs/srv/LoadWaypoints \"{file_path: '$(FILE)'}\""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
 
 ## Выполнение команды в контейнере (пример: make exec CMD="ros2 topic list")
@@ -805,6 +819,7 @@ help:
 	@printf "  ${GREEN}${BOLD}make waypoint-navigate INDEX=2${NC}    Навигация к конкретному waypoint\n"
 	@printf "  ${GREEN}${BOLD}make waypoint-stop${NC}                Остановка текущей навигации\n"
 	@printf "  ${GREEN}${BOLD}make waypoint-resume${NC}              Продолжить навигацию с прерванного waypoint\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-load FILE=wp.json${NC}   Загрузить waypoints из JSON-файла\n"
 	@printf "  ${GREEN}${BOLD}make waypoint-clear${NC}               Очистка waypoints и остановка\n"
 	@echo ""
 	@printf "${BOLD}Положение робота:${NC}\n"
