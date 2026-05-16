@@ -6,7 +6,7 @@ Docker-контейнеризацией, Nav2 навигацией и CI/CD па
 Возможности:
 - Физическая симуляция в Gazebo Sim с динамикой четырёхногого робота
 - Две реализации контроллера ходьбы: **Python** и **C++** (53.5x быстрее)
-- Навигация по waypoints через Nav2 + кастомный RViz инструмент
+- [Навигация по waypoints](docs/navigation.md) через Nav2 + кастомный RViz инструмент
 - Одометрия на основе кинематики ног, EKF фильтрация с IMU
 - Мультироботная симуляция с изолированными namespace
 - Docker образ с 6-stage кэшируемой сборкой
@@ -15,13 +15,13 @@ Docker-контейнеризацией, Nav2 навигацией и CI/CD па
 
 ## Содержание
 
-- [Архитектура проекта](#архитектура-проекта)
+- [Архитектура проекта](docs/architecture.md)
 - [Быстрый старт](#быстрый-старт)
 - [Управление симуляцией](#управление-симуляцией)
-- [Waypoint навигация](#waypoint-навигация)
+- [Waypoint навигация](docs/navigation.md)
 - [Режимы работы робота](#режимы-работы-робота)
 - [Python vs C++](#python-vs-c)
-- [CI/CD и тестирование](#cicd-и-тестирование)
+- [CI/CD](docs/ci-cd.md)
 - [Технические детали](#технические-детали)
 - [Документация](#документация)
 - [Благодарности](#благодарности)
@@ -29,6 +29,8 @@ Docker-контейнеризацией, Nav2 навигацией и CI/CD па
 ---
 
 ## Архитектура проекта
+
+[Полное описание архитектуры](docs/architecture.md)
 
 ```
 WalkingRobotSim/
@@ -43,12 +45,10 @@ WalkingRobotSim/
 │   ├── quadropted_msgs/         # ROS 2 сообщения (Waypoint, RobotVelocity и др.)
 │   ├── rviz_waypoint_tool/      # Кастомный RViz инструмент для waypoints
 │   └── tests/                   # Интеграционные тесты Python vs C++
-├── docs/                        # Документация и отчёты
+├── docs/                        # Документация
+├── reports/                     # Отчёты и анализ
 └── .github/workflows/           # GitHub Actions CI/CD
 ```
-
-[Детальная архитектура C++ пакета](docs/performance-optimization-report.md)
-[Структура Docker сборки](src/docker/README.md)
 
 ---
 
@@ -68,7 +68,7 @@ WalkingRobotSim/
 git clone https://github.com/RedAlexDad/WalkingRobotSim.git
 cd WalkingRobotSim
 
-# Сборка и запуск контейнера
+# Сборка + запуск контейнера
 make deploy
 
 # Python контроллер (основной режим)
@@ -78,7 +78,8 @@ make gazebo-py
 make gazebo-cpp
 ```
 
-[Полное руководство по запуску](src/docker/README.md)
+[Docker окружение](src/docker/README.md)
+[Запуск симуляции](src/gazebo_sim/README.md)
 
 ---
 
@@ -98,7 +99,7 @@ make gazebo-cpp
 | `make gazebo` | Запуск симуляции (дефолтный контроллер) |
 | `make gazebo-py` | Запуск с Python контроллером |
 | `make gazebo-cpp` | Запуск с C++ контроллером |
-| `make teleop` | Управление с клавиатуры (`teleop_twist_keyboard`) |
+| `make teleop` | Управление с клавиатуры |
 
 Полный список целей:
 ```bash
@@ -117,11 +118,13 @@ make help
 
 Поддерживается одновременная работа нескольких роботов. Каждый имеет собственный namespace и Nav2. Настройка в `robot.config` параметрах launch файла.
 
-[Настройка мультироботной симуляции](src/gazebo_sim/README.md)
+[Подробнее о мультироботном запуске](src/gazebo_sim/README.md)
 
 ---
 
 ## Waypoint навигация
+
+[Полное описание](docs/navigation.md)
 
 Система навигации позволяет расставлять точки в RViz через WaypointTool и запускать маршрут.
 
@@ -136,27 +139,6 @@ make help
 | `make waypoint-clear` | Очистить все waypoints |
 | `make waypoint-load FILE=test` | Загрузить waypoints из YAML/JSON файла |
 | `make waypoint-get` | Показать текущие waypoints |
-
-### Формат waypoints
-
-Waypoints хранятся в YAML (с комментариями) или JSON:
-```yaml
-# config/waypoints/default.yaml
-waypoints:
-  - point: {x: 1.5, y: 1.0, z: 0.0}
-    yaw: 0.0
-  - point: {x: -0.5, y: -2.0, z: 0.0}
-    yaw: 1.57
-```
-
-### Архитектура
-
-- `waypoint_collector.py` — сбор и управление waypoints, сервис `/get_waypoints`
-- `rviz_waypoint_tool/` — кастомный RViz инструмент для расстановки точек
-- Nav2 `waypoint_follower` — асинхронный ActionServer FollowWaypoints
-
-[Полный отчёт разработки waypoint-навигации](docs/waypoint-executor-fix.md)
-[Краткий отчёт](docs/waypoint-collector-fix-report.md)
 
 ---
 
@@ -199,7 +181,7 @@ ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehavi
 - `up` — встать (REST), не двигаться
 - `sit` — сесть (STAND)
 
-[Сравнение реализации gait в Python и C++](docs/gait-switch-comparison.md)
+[Сравнение реализации gait в Python и C++](reports/gait-switch-comparison.md)
 
 ---
 
@@ -220,41 +202,27 @@ ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehavi
 - Одометрия с O(1) скользящим средним
 - PID контроллер
 
-[Полный бенчмарк и отчёт](docs/benchmark-python-cpp.md)
-[Отчёт об оптимизации](docs/performance-optimization-report.md)
-[Результаты кросс-валидации](docs/python_vs-cpp-cross-validation.md)
+[Полный бенчмарк и отчёт](reports/benchmark-python-cpp.md)
+[Отчёт об оптимизации](reports/performance-optimization-report.md)
+[Результаты кросс-валидации](reports/python_vs-cpp-cross-validation.md)
 
 ---
 
-## CI/CD и тестирование
+## CI/CD
 
-### GitHub Actions
+[Полное описание](docs/ci-cd.md)
 
-Два workflow:
-- **CI** — сборка Docker, линтинг Python/C++/YAML, C++ unit тесты
-- **Simulation test** — интеграционные тесты в Gazebo, проверка топиков
+Два workflow GitHub Actions:
 
-Триггеры: push в `main`/`jazzy`, PR в `main`/`jazzy`.
+| Workflow | Описание | Время |
+|----------|----------|-------|
+| **CI** | Docker build, линтинг (Python/C++/YAML), C++ unit тесты | 5-10 мин |
+| **Simulation Test** | Интеграционные тесты в контейнере | 15-20 мин |
 
-[Детали CI/CD пайплайна](docs/ci-cd-improvement-plan.md)
-
-### Локальное тестирование
-
+Локальные проверки:
 ```bash
-# Полный цикл
-./test-workflows.sh test
-
-# Unit тесты
-make test-correctness   # Python old vs new (34 теста)
-make test-cpp           # C++ gtest (27 тестов)
-make test-cross         # Python vs C++ кросс-тест (12 тестов)
-
-# Бенчмарк
-make benchmark          # Сводная таблица Python vs C++
-
-# CI проверки
-make ci-lint            # Линтинг всех языков
-make ci-test-cpp        # C++ unit тесты
+make ci-lint       # Линтинг всех языков
+make ci-test-cpp   # C++ unit тесты
 ```
 
 ---
@@ -275,7 +243,7 @@ make ci-test-cpp        # C++ unit тесты
 - **Версия:** Jazzy (совместимость с Humble)
 - **DDS:** CycloneDDS
 - **Симулятор:** Gazebo Sim 8
-- **Навигация:** Nav2 (controller_server, planner_server, bt_navigator, waypoint_follower)
+- **Навигация:** Nav2
 - **Контроллеры:** ros2_control (JointGroupPositionController)
 - **Локализация:** AMCL, EKF (robot_localization)
 
@@ -288,27 +256,29 @@ make ci-test-cpp        # C++ unit тесты
 
 ## Документация
 
-### Отчёты и анализ
+### docs/ — документация
 
-- [Разработка waypoint навигации](docs/waypoint-executor-fix.md) — полный процесс, 9 итераций
-- [Сравнение gait Python vs C++](docs/gait-switch-comparison.md)
-- [Бенчмарк Python vs C++](docs/benchmark-python-cpp.md) — 53.5x ускорение
-- [Отчёт об оптимизации производительности](docs/performance-optimization-report.md)
-- [Кросс-валидация Python vs C++](docs/python_vs-cpp-cross-validation.md) — 12/12 тестов
-- [План устранения дрифта одометрии](docs/python-odometry-drift-plan.md)
+| Файл | О чём |
+|------|-------|
+| [architecture.md](docs/architecture.md) | Архитектура проекта, топики, пакеты |
+| [navigation.md](docs/navigation.md) | Waypoint навигация, инструменты, форматы |
+| [ci-cd.md](docs/ci-cd.md) | CI/CD пайплайн, GitHub Actions |
 
-### Внутренние руководства
+### reports/ — отчёты и анализ
 
-- [`gazebo_sim/README.md`](src/gazebo_sim/README.md) — детали launch файлов и конфигурации
-- [`src/docker/QUICK_START.md`](src/docker/README.md) — Docker гайд
-- [`docs/rebuild-vs-restart.md`](docs/rebuild-vs-restart.md) — когда пересобирать vs перезапускать
+| Файл | О чём |
+|------|-------|
+| [waypoint-executor-fix.md](reports/waypoint-executor-fix.md) | Разработка waypoint навигации, 9 итераций |
+| [gait-switch-comparison.md](reports/gait-switch-comparison.md) | Сравнение gait Python vs C++ |
+| [benchmark-python-cpp.md](reports/benchmark-python-cpp.md) | Бенчмарк 53.5x ускорение |
+| [performance-optimization-report.md](reports/performance-optimization-report.md) | Оптимизация производительности C++ |
+| [python_vs-cpp-cross-validation.md](reports/python_vs-cpp-cross-validation.md) | Кросс-валидация, 12/12 тестов |
+| [python-odometry-drift-plan.md](reports/python-odometry-drift-plan.md) | План устранения дрифта одометрии |
 
-### Внешние ссылки
+### Внутренние пакеты
 
-- [ROS 2 Jazzy Documentation](https://docs.ros.org/en/jazzy/)
-- [Gazebo Sim](http://gazebosim.org/)
-- [Nav2](https://navigation.ros.org/)
-- [Unitree Robotics](https://www.unitree.com/)
+- [Docker окружение](src/docker/README.md)
+- [Запуск симуляции](src/gazebo_sim/README.md)
 
 ---
 
