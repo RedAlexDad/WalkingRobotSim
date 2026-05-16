@@ -43,10 +43,17 @@ def generate_launch_description():
         )
     )
 
+    yolo_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('quadropted_perception'),
+                         'launch', 'yolo_detector.launch.py')
+        )
+    )
+
     launch_after_pause = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=pause,
-            on_exit=[multi_nav2_launch]
+            on_exit=[multi_nav2_launch, yolo_launch]
         )
     )
 
