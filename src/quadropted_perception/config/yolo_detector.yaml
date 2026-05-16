@@ -1,7 +1,6 @@
 /yolo_detector:
   ros__parameters:
-    model_name: "yolov8n.pt"
-    model_path: "/root/ws/src/quadropted_perception/models/yolov8n.pt"
+    model: "yolov8n.pt"
     confidence_threshold: 0.5
     iou_threshold: 0.45
     camera_topic: "/robot1/color/image_raw"

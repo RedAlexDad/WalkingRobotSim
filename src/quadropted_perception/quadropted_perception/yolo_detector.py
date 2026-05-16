@@ -3,9 +3,9 @@ import os
 import cv2
 import numpy as np
 import rclpy
+from ament_index_python.packages import get_package_share_directory
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from std_msgs.msg import Header
 from cv_bridge import CvBridge
 from ultralytics import YOLO
 from quadropted_msgs.msg import Detection, DetectionArray
@@ -19,8 +19,7 @@ class YOLODetector(Node):
         self._model = None
         self._model_path = None
 
-        self.declare_parameter("model_name", "yolov8n.pt")
-        self.declare_parameter("model_path", "")
+        self.declare_parameter("model", "yolov8n.pt")
         self.declare_parameter("confidence_threshold", 0.5)
         self.declare_parameter("iou_threshold", 0.45)
         self.declare_parameter("camera_topic", "/robot1/color/image_raw")
@@ -28,8 +27,21 @@ class YOLODetector(Node):
         self.declare_parameter("device", "cpu")
         self.declare_parameter("frame_id", "camera_link")
 
-        model_name = self.get_parameter("model_name").value
-        model_path = self.get_parameter("model_path").value
+        model_name = self.get_parameter("model").value or "yolov8n.pt"
+
+        models_dir = os.path.join(
+            get_package_share_directory("quadropted_perception"), "models"
+        )
+        local_path = os.path.join(models_dir, model_name)
+        if os.path.isfile(local_path):
+            resolved_path = local_path
+        else:
+            resolved_path = model_name
+            self.get_logger().warn(
+                f"Model not found locally: {local_path}, using ultralytics default"
+            )
+        self._model_path = resolved_path
+
         self._conf = self.get_parameter("confidence_threshold").value
         self._iou = self.get_parameter("iou_threshold").value
         camera_topic = self.get_parameter("camera_topic").value
@@ -37,7 +49,6 @@ class YOLODetector(Node):
         device = self.get_parameter("device").value
         self._frame_id = self.get_parameter("frame_id").value
 
-        resolved_path = self._resolve_model(model_path, model_name)
         self.get_logger().info(f"Loading YOLO model: {resolved_path} (device: {device})")
         self._model = YOLO(resolved_path)
         self._model.to(device)
@@ -50,28 +61,9 @@ class YOLODetector(Node):
         )
 
         self.get_logger().info(
-            f"YOLO detector ready — model: {resolved_path}, topic: {camera_topic}, "
+            f"YOLO detector ready — model: {self._model_path}, topic: {camera_topic}, "
             f"conf: {self._conf}, iou: {self._iou}"
         )
-
-    def _resolve_model(self, model_path, model_name):
-        if model_path:
-            path = os.path.expanduser(model_path)
-            if os.path.isfile(path):
-                self._model_path = path
-                return path
-            self.get_logger().warn(f"model_path not found: {path}, falling back to model_name")
-
-        models_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "..", "models"
-        )
-        local_path = os.path.join(models_dir, model_name)
-        if os.path.isfile(local_path):
-            self._model_path = local_path
-            return local_path
-
-        self._model_path = model_name
-        return model_name
 
     def _image_callback(self, msg):
         try:
