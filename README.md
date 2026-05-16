@@ -40,6 +40,7 @@ WalkingRobotSim/
 │   ├── gazebo_sim/              # Launch файлы, миры Gazebo, waypoints, SDF
 │   ├── go1_description/         # URDF описание робота Unitree Go1
 │   ├── go2_description/         # URDF описание робота Unitree Go2
+│   ├── quadrapted_perception/   # YOLO детектор + визуализация RViz
 │   ├── quadropted_controller/   # Python контроллер (RobotController, одометрия)
 │   ├── quadropted_controller_cpp/ # C++ контроллер (53.5x ускорение)
 │   ├── quadropted_msgs/         # ROS 2 сообщения (Waypoint, RobotVelocity и др.)
@@ -99,6 +100,8 @@ make gazebo-cpp
 | `make gazebo` | Запуск симуляции (дефолтный контроллер) |
 | `make gazebo-py` | Запуск с Python контроллером |
 | `make gazebo-cpp` | Запуск с C++ контроллером |
+| `make yolo-detector`    | YOLO распознавание объектов (лог в терминал) |
+| `make yolo-visualizer`  | RViz split-screen: камера + детекции |
 | `make teleop` | Управление с клавиатуры |
 
 Полный список целей:
@@ -139,6 +142,39 @@ make help
 | `make waypoint-clear` | Очистить все waypoints |
 | `make waypoint-load FILE=test` | Загрузить waypoints из YAML/JSON файла |
 | `make waypoint-get` | Показать текущие waypoints |
+
+---
+
+---
+
+## YOLO Object Detection
+
+Распознавание объектов через YOLO (Ultralytics) с камеры робота.
+
+### Архитектура
+
+```
+Gazebo Camera ──→ /robot1/color/image_raw ──→ yolo_detector ──→ /detected_image
+                                                         │
+                                                         └──→ /detections ──→ visualizer ──→ RViz markers
+```
+
+### Запуск
+
+```bash
+make yolo-detector     # YOLO детектор (лог в терминал)
+make yolo-visualizer   # RViz split-screen: сырая камера + детекции с bbox
+```
+
+### Визуализация
+
+RViz показывает два изображения:
+- **Camera (raw)** — сырое изображение с камеры
+- **Detected (bbox)** — изображение с нарисованными bounding boxes
+
+Маркеры детекций отображаются в 3D сцене (зелёные bbox + подписи).
+
+[Подробнее о YOLO](docs/yolo.md)
 
 ---
 
@@ -262,6 +298,7 @@ make ci-test-cpp   # C++ unit тесты
 |------|-------|
 | [architecture.md](docs/architecture.md) | Архитектура проекта, топики, пакеты |
 | [navigation.md](docs/navigation.md) | Waypoint навигация, инструменты, форматы |
+| [yolo.md](docs/yolo.md) | YOLO object detection |
 | [ci-cd.md](docs/ci-cd.md) | CI/CD пайплайн, GitHub Actions |
 
 ### reports/ — отчёты и анализ
@@ -279,8 +316,6 @@ make ci-test-cpp   # C++ unit тесты
 
 - [Docker окружение](src/docker/README.md)
 - [Запуск симуляции](src/gazebo_sim/README.md)
-
----
 
 ## Благодарности
 
