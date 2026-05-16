@@ -29,6 +29,9 @@ class YOLODetector(Node):
 
         model_name = self.get_parameter("model").value or "yolov8n.pt"
 
+        if "." not in model_name:
+            model_name += ".pt"
+
         models_dir = os.path.join(
             get_package_share_directory("quadropted_perception"), "models"
         )
