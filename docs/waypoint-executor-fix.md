@@ -606,4 +606,40 @@ Waypoints можно было расставлять только вручную
 ## Коммиты
 - `370abb1` — feat: добавить загрузку waypoints из JSON-файла
 
+---
+
+# Девятая итерация: YAML вместо JSON, сервис GetWaypoints, публикация /custom_waypoints
+
+## Изменения
+
+### YAML для waypoints
+- Файл `default.json` заменён на `default.yaml` с поддержкой комментариев
+- `waypoint_collector.py` определяет формат по расширению: `.yaml`/`.yml` → `yaml.safe_load`, `.json` → `json.load`
+- Дефолт: `default.yaml`
+
+### Поиск директории конфигов
+- `_get_waypoints_dir()` ищет `config/waypoints/`:
+  1. В install tree: `script/../../share/gazebo_sim/config/waypoints/`
+  2. В source tree: поднимается вверх от скрипта
+  3. Legacy: `script/../config/waypoints/`
+
+### Публикация /custom_waypoints (PoseArray)
+- Теперь публикуется при каждом изменении списка (добавление, очистка, загрузка), а не только при старте навигации
+
+### Новый сервис /get_waypoints
+- Сообщение `quadropted_msgs/msg/Waypoint.msg`: `float64 x, y, z, yaw`
+- Сервис `GetWaypoints.srv`: возвращает `Waypoint[] waypoints`
+- Makefile: `make waypoint-get` с tab-разделённым выводом
+
+## Файлы
+- `src/quadropted_msgs/msg/Waypoint.msg` — новое сообщение
+- `src/quadropted_msgs/srv/GetWaypoints.srv` — новый сервис
+- `src/quadropted_msgs/CMakeLists.txt` — добавлены Waypoint.msg и GetWaypoints.srv
+- `src/gazebo_sim/config/waypoints/default.yaml` — новый формат
+- `src/gazebo_sim/scripts/waypoint_collector.py` — YAML-парсинг, GetWaypoints, /custom_waypoints при publish_markers()
+- `Makefile` — `make waypoint-get`
+
+## Коммиты
+- `a314e64` — refactor: перейти с JSON на YAML для waypoints
+
 

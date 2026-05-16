@@ -11,7 +11,8 @@ from nav2_msgs.action import FollowWaypoints
 from nav2_simple_commander.robot_navigator import BasicNavigator
 from std_msgs.msg import ColorRGBA
 from std_srvs.srv import Trigger
-from quadropted_msgs.srv import WaypointNavigate, LoadWaypoints
+from quadropted_msgs.srv import WaypointNavigate, LoadWaypoints, GetWaypoints
+from quadropted_msgs.msg import Waypoint
 from action_msgs.msg import GoalStatus
 import threading
 import json
@@ -23,7 +24,9 @@ import yaml
 def _get_waypoints_dir():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     candidates = [
-        os.path.join(script_dir, "..", "..", "share", "gazebo_sim", "config", "waypoints"),
+        os.path.join(
+            script_dir, "..", "..", "share", "gazebo_sim", "config", "waypoints"
+        ),
         os.path.join(script_dir, "..", "config", "waypoints"),
     ]
     candidate = None
@@ -100,6 +103,10 @@ class WaypointCollector(Node):
             LoadWaypoints, "/load_waypoints", self.load_waypoints_callback
         )
 
+        self.get_service = self.create_service(
+            GetWaypoints, "/get_waypoints", self.get_waypoints_callback
+        )
+
         self.timer = self.create_timer(0.1, self.check_navigation)
 
         self.nav2_ready = False
@@ -161,6 +168,12 @@ class WaypointCollector(Node):
         self.get_logger().info(
             f"Published {len(self.waypoints)} markers to /waypoint_markers"
         )
+
+        pose_array = PoseArray()
+        pose_array.header.frame_id = "map"
+        pose_array.header.stamp = self.get_clock().now().to_msg()
+        pose_array.poses = [wp.pose for wp in self.waypoints]
+        self.waypoint_publisher.publish(pose_array)
 
     def clear_waypoints_callback(self, request, response):
         try:
@@ -263,6 +276,23 @@ class WaypointCollector(Node):
         response.message = f"Loaded {len(self.waypoints)} waypoints from {file_path}"
         return response
 
+    def get_waypoints_callback(self, request, response):
+        response.success = True
+        response.message = f"{len(self.waypoints)} waypoints"
+        response.waypoints = []
+        for wp in self.waypoints:
+            w = Waypoint()
+            w.x = wp.pose.position.x
+            w.y = wp.pose.position.y
+            w.z = wp.pose.position.z
+            q = wp.pose.orientation
+            w.yaw = math.atan2(
+                2.0 * (q.w * q.z + q.x * q.y),
+                1.0 - 2.0 * (q.y * q.y + q.z * q.z),
+            )
+            response.waypoints.append(w)
+        return response
+
     def start_navigation_callback(self, request, response):
         if not self.waypoints:
             self.get_logger().warn("No waypoints available to start navigation")
@@ -343,9 +373,7 @@ class WaypointCollector(Node):
         self._current_waypoint_index = (
             self._resume_offset + feedback_msg.feedback.current_waypoint
         )
-        self.get_logger().info(
-            f"Current waypoint: {self._current_waypoint_index}"
-        )
+        self.get_logger().info(f"Current waypoint: {self._current_waypoint_index}")
 
     def _goal_response_callback(self, future):
         goal_handle = future.result()
@@ -460,7 +488,7 @@ class WaypointCollector(Node):
             response.message = "Nav2 is not ready yet"
             return response
 
-        remaining = self.waypoints[self._resume_index:]
+        remaining = self.waypoints[self._resume_index :]
         if not remaining:
             self.get_logger().warn("No remaining waypoints to resume")
             response.success = False

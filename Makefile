@@ -349,7 +349,7 @@ stand:
 		ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: STAND, robot_id: 1}\""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Режим STAND установлен${NC}\n"
 
-.PHONY: waypoint-start waypoint-clear waypoint-navigate waypoint-stop waypoint-resume waypoint-load
+.PHONY: waypoint-start waypoint-clear waypoint-navigate waypoint-stop waypoint-resume waypoint-load waypoint-get
 
 ## Запустить навигацию по всем waypoints (сервис /start_navigation)
 waypoint-start:
@@ -419,6 +419,11 @@ endif
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
 		ros2 service call /load_waypoints quadropted_msgs/srv/LoadWaypoints \"{file_path: '$(FILE)'}\""
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Команда отправлена${NC}\n"
+
+## Получить текущие waypoints (сервис /get_waypoints)
+waypoint-get:
+	$(require-container)
+	@docker exec $(CONTAINER_NAME) bash -c 'source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; ros2 service call /get_waypoints quadropted_msgs/srv/GetWaypoints "{}" 2>/dev/null' | python3 -c "import sys,re; d=sys.stdin.read(); m=re.findall(r'x=([-\d.]+),\s*y=([-\d.]+),\s*z=([-\d.]+),\s*yaw=([-\d.]+)',d); [print(str(i)+chr(9)+str(round(float(x),3))+chr(9)+str(round(float(y),3))+chr(9)+str(round(float(z),3))+chr(9)+str(round(float(yaw),3))) for i,(x,y,z,yaw) in enumerate(m)]"
 
 ## Выполнение команды в контейнере (пример: make exec CMD="ros2 topic list")
 exec:
@@ -820,7 +825,8 @@ help:
 	@printf "  ${GREEN}${BOLD}make waypoint-navigate INDEX=2${NC}    Навигация к конкретному waypoint\n"
 	@printf "  ${GREEN}${BOLD}make waypoint-stop${NC}                Остановка текущей навигации\n"
 	@printf "  ${GREEN}${BOLD}make waypoint-resume${NC}              Продолжить навигацию с прерванного waypoint\n"
-	@printf "  ${GREEN}${BOLD}make waypoint-load FILE=wp.json${NC}   Загрузить waypoints из JSON-файла\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-load FILE=wp.yaml${NC}   Загрузить waypoints из файла\n"
+	@printf "  ${GREEN}${BOLD}make waypoint-get${NC}                 Получить текущие waypoints\n"
 	@printf "  ${GREEN}${BOLD}make waypoint-clear${NC}               Очистка waypoints и остановка\n"
 	@echo ""
 	@printf "${BOLD}Положение робота:${NC}\n"
