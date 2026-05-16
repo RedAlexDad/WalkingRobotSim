@@ -1,3 +1,31 @@
+# Разработка waypoint-навигации для WalkingRobotSim
+
+## Цель
+
+Разработать и отладить систему навигации робота по waypoint'ам через RViz
+(WaypointTool) + `waypoint_collector.py` + Nav2 FollowWaypoints action server.
+Система должна позволять:
+
+- Расставлять waypoints кликами в RViz (кастомный инструмент WaypointTool)
+- Запускать навигацию по всем точкам
+- Останавливать навигацию на ходу
+- Продолжать маршрут с прерванного места
+- Переходить к конкретному waypoint по индексу
+- Очищать все waypoints
+- Управление через Makefile цели
+
+## Инструменты
+
+- `src/rviz_waypoint_tool/src/custom_goal_tool.cpp` — кастомный RViz инструмент,
+  публикует клик в `/custom_goal_pose`
+- `src/gazebo_sim/scripts/waypoint_collector.py` — основной скрипт: сбор точек,
+  управление навигацией, публикация маркеров
+- `src/gazebo_sim/launch/nav2/navigation_launch.py` — launch Nav2
+- `src/gazebo_sim/config/nav2_params.yaml` — параметры Nav2
+- `Makefile` — цели `waypoint-*`
+
+---
+
 # Исправление конфликта executor в waypoint_collector.py
 
 ## Проблема
