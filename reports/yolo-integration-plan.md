@@ -233,6 +233,13 @@ A module that was compiled using NumPy 1.x cannot be run in NumPy 2.4.5
 RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed 'numpy<2'
 ```
 
+Также pinned в секции python-deps: `numpy` → `'numpy<2'`.
+
+После правки запускать даунгрейд вручную в контейнере:
+```bash
+pip install --break-system-packages 'numpy<2'
+```
+
 ---
 
 ### 8.5 opencv-python из pip сломал систему OpenCV
@@ -242,6 +249,12 @@ RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed 'nump
 **Решение:** удалён `opencv-python` из pip, используется системный `python3-opencv`:
 ```bash
 pip uninstall opencv-python -y --break-system-packages
+```
+
+В Dockerfile добавлен шаг удаления `opencv-python` после установки ultralytics:
+```dockerfile
+RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed ultralytics \
+    && pip3 uninstall --break-system-packages -y opencv-python
 ```
 
 ---
