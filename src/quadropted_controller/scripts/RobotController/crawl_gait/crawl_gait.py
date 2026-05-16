@@ -8,10 +8,9 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from RoboticsUtilities.rotation_matrices import rotz
-
 from ..GaitController import GaitController
-from .crawl_stance import CrawlStanceController
 from .crawl_swing import CrawlSwingController
+from .crawl_stance import CrawlStanceController
 
 
 class CrawlGaitController(GaitController):

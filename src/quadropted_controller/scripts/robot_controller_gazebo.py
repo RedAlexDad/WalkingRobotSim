@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 # Author: lnotspotl, abutalipovvv
-import numpy as np
 import rclpy
-from InverseKinematics import InverseKinematics
 from rclpy.node import Node
-from RobotController import Robot
 from std_msgs.msg import Float64MultiArray
-
 from quadropted_msgs.msg import RobotModeCommand, RobotVelocity
 from quadropted_msgs.srv import RobotBehaviorCommand
+from InverseKinematics import InverseKinematics
+from RobotController import Robot
+import numpy as np
 
 USE_IMU = True
 RATE = 60
@@ -55,7 +54,7 @@ class RobotControllerNode(Node):
 
         # Флаг для ленивой смены контроллера (вызывается только при изменении)
         self._controller_change_needed = False
-
+        
         # Счётчик тиков для debug логов (каждые 60 тиков = 1 сек)
         self._debug_tick_count = 0
 

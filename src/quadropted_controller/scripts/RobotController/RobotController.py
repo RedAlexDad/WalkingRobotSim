@@ -2,16 +2,14 @@
 # Author: lnotspotl, abutalipovvv
 import numpy as np
 import tf_transformations  # Используем tf2 вместо tf
+from .StateCommand import State, Command, BehaviorState
+from .RestController import RestController
+from .trot_gait.trot_gait import TrotGaitController
+from .crawl_gait.crawl_gait import CrawlGaitController
+from .StandController import StandController
 from geometry_msgs.msg import Twist
-
 from quadropted_msgs.msg import RobotModeCommand, RobotVelocity
 from quadropted_msgs.srv import RobotBehaviorCommand
-
-from .crawl_gait.crawl_gait import CrawlGaitController
-from .RestController import RestController
-from .StandController import StandController
-from .StateCommand import BehaviorState, Command, State
-from .trot_gait.trot_gait import TrotGaitController
 
 
 class Robot:

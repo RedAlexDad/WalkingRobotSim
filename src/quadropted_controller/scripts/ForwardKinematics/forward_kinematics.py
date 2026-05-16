@@ -5,9 +5,8 @@
 """
 
 import numpy as np
-
 from .leg_base_positions import get_leg_base_position
-from .leg_fk_chain import build_homog_transform, compute_leg_fk_chain
+from .leg_fk_chain import compute_leg_fk_chain, build_homog_transform
 
 
 class ForwardKinematics:

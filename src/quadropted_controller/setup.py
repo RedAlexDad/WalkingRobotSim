@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Setup.py для регистрации entry points."""
-from setuptools import find_packages, setup
+from setuptools import setup, find_packages
 
 setup(
     name='quadropted_controller',
