@@ -53,11 +53,11 @@ ROS 2 node на Python. Подписывается на топик камеры,
 
 | Параметр | Тип | По умолчанию | Описание |
 |----------|-----|-------------|----------|
-| `model_name` | string | `"yolov8n.pt"` | Название модели (скачается ultralytics или локальный путь) |
-| `model_path` | string | `""` | Путь к локальной модели. Если указан — приоритет над model_name |
+| `model` | string | `"yolov8n.pt"` | Имя файла модели в `models/`. Если нет локально — автозагрузка Ultralytics |
+| `fps` | int | `0` | Троттлинг: макс FPS (0 = без лимита, все кадры) |
 | `confidence_threshold` | float | `0.5` | Порог уверенности |
 | `iou_threshold` | float | `0.45` | Порог NMS |
-| `camera_topic` | string | `"/camera/image_raw"` | Входной топик изображения |
+| `camera_topic` | string | `"/robot1/color/image_raw"` | Входной топик изображения |
 | `target_classes` | int[] | `[]` | Фильтр по классам (пусто — все) |
 | `device` | string | `"cpu"` | `"cpu"` или `"cuda:0"` |
 | `frame_id` | string | `"camera_link"` | Frame_id для детекций |
@@ -96,11 +96,11 @@ Detection[] detections
 
 ## 3. Загрузка модели
 
-Приоритет загрузки:
+Единый параметр `model` — имя файла (с расширением `.pt` или без). Поиск:
 
-1. Если `model_path` не пустой — загрузить файл по указанному пути
-2. Если `model_name` — загрузить через ultralytics (авто-скачивание) или из `models/`
-3. Поиск модели сначала в папке `src/quadropted_perception/models/`, затем через ultralytics hub
+1. `share/quadropted_perception/models/<имя>.pt` — локальный файл в пакете
+2. Если не найден — Ultralytics auto-download (через `YOLO(<имя>)`)
+3. Если расширения нет — автоматически добавляется `.pt`
 
 Поддерживаемые форматы: `.pt` (PyTorch), `.onnx`, `.engine` (TensorRT).
 
@@ -172,13 +172,28 @@ YOLO **не** встроен в launch-файлы симуляции. Запус
 
 ### `make yolo-detector` — запуск YOLO детектора (лог в терминал)
 
+**Аргументы:**
+- `MODEL=<name>` — имя модели (по умолчанию `yolov8n.pt`)
+- `FPS=<n>` — троттлинг детекций (0 = без лимита)
+
 ```makefile
 yolo-detector:
 	$(require-container)
 	@docker exec -it $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
 		source /root/ws/install/setup.bash && \
-		ros2 run quadropted_perception yolo_detector"
+		ros2 run quadropted_perception yolo_detector \
+			$(if $(or $(MODEL),$(FPS)),--ros-args) \
+			$(if $(MODEL),-p model:=${MODEL}) \
+			$(if $(FPS),-p fps:=${FPS})"
+```
+
+Примеры:
+```bash
+make yolo-detector                     # YOLOv8n, все кадры (30 FPS)
+make yolo-detector MODEL=yolov9t       # YOLOv9 tiny
+make yolo-detector FPS=10              # 10 детекций/с, меньше CPU
+make yolo-detector MODEL=yolov9t FPS=5 # лёгкая модель, 5 кадров/с
 ```
 
 ### `make yolo-visualizer` — RViz split-screen + маркеры
@@ -338,3 +353,45 @@ self._pub_debug_image.publish(debug_msg)
 **Проблема:** при старте через `ros2 launch` с `--params-file` параметр `target_classes: []` в YAML создавался как пустой массив, что конфликтовало с `declare_parameter("target_classes", [])` в коде.
 
 **Решение:** удалён `target_classes` из YAML-конфига, т.к. код объявляет его с дефолтом `[]`.
+
+---
+
+### 8.9 FPS троттлинг — снижение нагрузки CPU
+
+**Проблема:** камера настроена на 30 FPS. YOLO делает инференс на каждый кадр, загружая CPU на 100%.
+
+**Решение:** добавлен параметр `fps` в `yolo_detector.py`. Если `fps > 0`, callback пропускает кадры, пришедшие раньше интервала `1/fps`:
+
+```python
+now = time.monotonic()
+if self._min_interval > 0 and (now - self._last_time) < self._min_interval:
+    return
+self._last_time = now
+```
+
+Параметр передаётся через Makefile:
+```bash
+make yolo-detector FPS=10   # 10 детекций/с
+make yolo-detector FPS=5    # 5 детекций/с — минимум CPU
+```
+
+---
+
+### 8.10 План: синхронизация FPS камеры и YOLO
+
+**Текущий статус:** камера всегда 30 FPS, YOLO троттлинг только пропускает кадры, bridge всё равно передаёт 30 кадров/с.
+
+**План:** пробросить `FPS` из Makefile → launch → xacro → `update_rate` камеры, чтобы камера в Gazebo публиковала столько же FPS, сколько обрабатывает YOLO.
+
+**Нужные изменения:**
+1. `gazebo.xacro` — сделать `update_rate` аргументом макроса сенсоров
+2. `robot.xacro` — пробросить camera_fps аргумент
+3. `description.launch.py` — принять camera_fps, передать в xacro
+4. `gazebo_multi_nav2_world.launch.py` — принять camera_fps, передать в description.launch
+5. `Makefile` — передать `FPS` в launch-файл мира + в YOLO
+
+**Использование после реализации:**
+```bash
+make yolo-detector FPS=10          # камера 10 Гц + YOLO 10 детекций/с
+make yolo-detector MODEL=yolov9t FPS=5  # в лёгком режиме
+make yolo-detector FPS=0           # без троттлинга (30 FPS)
