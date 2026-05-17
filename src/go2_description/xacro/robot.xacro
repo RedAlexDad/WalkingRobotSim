@@ -1,8 +1,10 @@
 <?xml version="1.0"?>
 
-<robot name="robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+<robot name="robot"
+    xmlns:xacro="http://www.ros.org/wiki/xacro">
 
     <xacro:arg name="DEBUG" default="false"/>
+    <xacro:arg name="camera_fps" default="10"/>
 
     <xacro:include filename="$(find go2_description)/xacro/const.xacro"/>
     <xacro:include filename="$(find go2_description)/xacro/materials.xacro"/>
@@ -10,7 +12,7 @@
     <!-- <xacro:include filename="$(find go2_description)/xacro/stairs.xacro"/> -->
     <xacro:include filename="$(find go2_description)/xacro/gazebo.xacro"/>
     <!-- <xacro:include filename="$(find go2_description)/launch/stairs.urdf.xacro"/> -->
-    <xacro:robot_gazebo_sensors robot_name="$(arg robot_name)"/>
+    <xacro:robot_gazebo_sensors robot_name="$(arg robot_name)" camera_fps="$(arg camera_fps)"/>
 
     <!-- <xacro:stairs stairs="15" xpos="0" ypos="0" zpos="0" /> -->
 
@@ -25,7 +27,7 @@
             <parent link="world"/>
             <child link="base_link"/>
         </joint>
-    </xacro:if> 
+    </xacro:if>
 
     <link name="base_link">
         <visual>
@@ -59,15 +61,13 @@
         <inertial>
             <origin rpy="0 0 0" xyz="${trunk_com_x} ${trunk_com_y} ${trunk_com_z}"/>
             <mass value="${trunk_mass}"/>
-            <inertia
-                ixx="${trunk_ixx}" ixy="${trunk_ixy}" ixz="${trunk_ixz}"
-                iyy="${trunk_iyy}" iyz="${trunk_iyz}"
-                izz="${trunk_izz}"/>  
+            <inertia ixx="${trunk_ixx}" ixy="${trunk_ixy}" ixz="${trunk_ixz}" iyy="${trunk_iyy}" iyz="${trunk_iyz}" izz="${trunk_izz}"/>
         </inertial>
     </link>
 
     <joint name='laser_scan' type='fixed'>
-        <parent link="base_link"/>,
+        <parent link="base_link"/>
+,
         <child link="laser_frame"/>
         <origin xyz="0.22 0.0 0.095" rpy="0 0 0" />
     </joint>
@@ -198,9 +198,9 @@
             </geometry>
         </collision>
     </link>
-    <xacro:leg name="rf" mirror="-1" mirror_dae= "False" front_hind="1"  front_hind_dae="True"  />
-    <xacro:leg name="lf" mirror="1"  mirror_dae="True"   front_hind="1"  front_hind_dae="True"  />
-    <xacro:leg name="rh" mirror="-1" mirror_dae="False"  front_hind="-1" front_hind_dae="False" />
-    <xacro:leg name="lh" mirror="1"  mirror_dae="True"   front_hind="-1" front_hind_dae="False" />
+    <xacro:leg name="rf" mirror="-1" mirror_dae= "False" front_hind="1" front_hind_dae="True" />
+    <xacro:leg name="lf" mirror="1" mirror_dae="True" front_hind="1" front_hind_dae="True" />
+    <xacro:leg name="rh" mirror="-1" mirror_dae="False" front_hind="-1" front_hind_dae="False" />
+    <xacro:leg name="lh" mirror="1" mirror_dae="True" front_hind="-1" front_hind_dae="False" />
 
 </robot>

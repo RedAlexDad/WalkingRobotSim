@@ -377,24 +377,31 @@ make yolo-detector FPS=5    # 5 детекций/с — минимум CPU
 
 ---
 
-### 8.10 План: синхронизация FPS камеры и YOLO
+### 8.10 Реализовано: синхронизация FPS камеры и YOLO  ✅
 
-**Текущий статус:** камера всегда 30 FPS, YOLO троттлинг только пропускает кадры, bridge всё равно передаёт 30 кадров/с.
+**Что сделано:** `FPS` пробрасывается через всю цепочку в `update_rate` камеры в Gazebo.
 
-**План:** пробросить `FPS` из Makefile → launch → xacro → `update_rate` камеры, чтобы камера в Gazebo публиковала столько же FPS, сколько обрабатывает YOLO.
+**Файлы и изменения:**
 
-**Нужные изменения:**
-1. `gazebo.xacro` — сделать `update_rate` аргументом макроса сенсоров
-2. `robot.xacro` — пробросить camera_fps аргумент
-3. `description.launch.py` — принять camera_fps, передать в xacro
-4. `gazebo_multi_nav2_world.launch.py` — принять camera_fps, передать в description.launch
-5. `Makefile` — передать `FPS` в launch-файл мира + в YOLO
+| Уровень | Файл | Изменение |
+|---------|------|-----------|
+| xacro | `gazebo.xacro` | Макросу добавлен `camera_fps` (default 10), `<update_rate>${camera_fps}</update_rate>` |
+| xacro | `robot.xacro` | Добавлен `camera_fps` xacro arg, передаётся в gazebo macro |
+| launch (мир) | `gazebo_multi_nav2_world.launch.py` | Объявлен `camera_fps` launch arg; через `OpaqueFunction` пробрасывается в `xacro.process_file()` |
+| launch (cpp) | `gazebo_multi_nav2_cpp.launch.py` | Аналогично |
+| launch (py) | `launch_python.launch.py` | Принимает `camera_fps`, передаёт в мир |
+| launch (cpp) | `launch_cpp.launch.py` | Аналогично |
+| Makefile | `simulation.mk` | `make gazebo FPS=5` → `camera_fps:=5` → `update_rate=5` |
 
-**Использование после реализации:**
+**Важно:** `description.launch.py` (standalone) не участвует — `генерирует описание только для РФ, без мира`.
+
+**Использование:**
 ```bash
-make yolo-detector FPS=10          # камера 10 Гц + YOLO 10 детекций/с
-make yolo-detector MODEL=yolov9t FPS=5  # в лёгком режиме
-make yolo-detector FPS=0           # без троттлинга (30 FPS)
+make gazebo FPS=10                     # камера 10 Гц
+make gazebo-py FPS=5                   # Python контроллер, камера 5 Гц
+make yolo-detector FPS=10              # YOLO тоже 10 детекций/с — синхрон
+make gazebo FPS=5 MODEL=yolov9t        # комбо: камера 5 + лёгкая модель
+```
 
 ---
 

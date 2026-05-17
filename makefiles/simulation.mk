@@ -2,7 +2,7 @@
 
 .PHONY: gazebo gazebo-py gazebo-cpp teleop set-pose reset-pose kill-ros exec test-aliases save-logs
 
-## Запуск Gazebo симуляции (C++ контроллер)
+## Запуск Gazebo симуляции (Python контроллер)
 gazebo:
 	$(require-container)
 	$(check-x11)
@@ -10,7 +10,9 @@ gazebo:
 	@docker exec -it $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 launch gazebo_sim launch.launch.py use_sim_time:=true gui:=true"
+		ros2 launch gazebo_sim launch_python.launch.py \
+			use_sim_time:=true gui:=true \
+			$(if $(FPS),camera_fps:=${FPS})"
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
@@ -22,7 +24,9 @@ gazebo-py:
 	@docker exec -it $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 launch gazebo_sim launch_python.launch.py use_sim_time:=true gui:=true"
+		ros2 launch gazebo_sim launch_python.launch.py \
+			use_sim_time:=true gui:=true \
+			$(if $(FPS),camera_fps:=${FPS})"
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
@@ -34,7 +38,9 @@ gazebo-cpp:
 	@docker exec -it $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 launch gazebo_sim launch_cpp.launch.py use_sim_time:=true gui:=true"
+		ros2 launch gazebo_sim launch_cpp.launch.py \
+			use_sim_time:=true gui:=true \
+			$(if $(FPS),camera_fps:=${FPS})"
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
