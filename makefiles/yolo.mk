@@ -9,7 +9,10 @@ yolo-detector:
 	@docker exec -it $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
 		source /root/ws/install/setup.bash && \
-		ros2 run quadropted_perception yolo_detector$(if $(MODEL), --ros-args -p model:=${MODEL})"
+		ros2 run quadropted_perception yolo_detector \
+			$(if $(or $(MODEL),$(FPS)),--ros-args) \
+			$(if $(MODEL),-p model:=${MODEL}) \
+			$(if $(FPS),-p fps:=${FPS})"
 
 ## Запуск визуализации детекций: RViz + visualizer (split: raw / detected)
 yolo-visualizer:
