@@ -61,6 +61,15 @@ C++ версия контроллера, 53.5x быстрее Python. Полна
 - Одометрия с O(1) скользящим средним
 - PID контроллер
 
+### quadropted_perception (YOLO Object Detection)
+
+Распознавание объектов через YOLO (Ultralytics).
+
+- `yolo_detector.py` — ROS 2 node, подписка на камеру, инференс YOLO, публикация детекций
+- `visualizer.py` — визуализация bounding boxes в RViz через MarkerArray
+- `config/yolo_detector.yaml` — параметры (модель, пороги, топики)
+- `rviz/yolo_detection.rviz` — RViz конфиг split-screen (raw камера + детекции)
+
 ### quadropted_msgs
 
 Кастомные ROS 2 сообщения:
@@ -99,6 +108,10 @@ URDF модели: линки, джойнты, инерциальные пара
 | `/robot1/joint_commands`         | `std_msgs/Float64MultiArray` | Controller → ros2_control     |
 | `/robot1/robot_mode`             | `RobotModeCommand`           | Пользователь → GaitManager    |
 | `/robot1/robot_behavior_command` | `RobotBehaviorCommand`       | Пользователь → GaitManager    |
+| `/robot1/color/image_raw`        | `sensor_msgs/Image`          | Gazebo → YOLO детектор        |
+| `/detections`                    | `DetectionArray`             | YOLO → visualizer             |
+| `/detected_image`                | `sensor_msgs/Image`          | YOLO → RViz (с bbox)          |
+| `/detection_markers`             | `visualization_msgs/MarkerArray` | visualizer → RViz          |
 
 ---
 
@@ -117,4 +130,5 @@ URDF модели: линки, джойнты, инерциальные пара
 - [Docker окружение](../src/docker/README.md)
 - [Запуск симуляции](../src/gazebo_sim/README.md)
 - [Навигация по waypoints](navigation.md)
+- [YOLO object detection](yolo.md)
 - [CI/CD](ci-cd.md)

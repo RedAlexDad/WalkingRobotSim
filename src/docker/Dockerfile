@@ -165,10 +165,19 @@ FROM ros-tools AS python-deps
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip3 install --no-cache-dir --break-system-packages \
     git+https://github.com/ruffsl/colcon-cache.git \
-    numpy \
+    'numpy<2' \
     scipy \
     pandas \
     PyYAML
+
+# YOLO + CPU-only torch (без CUDA)
+# Важно: numpy фиксируем <2 из-за несовместимости cv_bridge (собран под numpy 1.x)
+# opencv-python из pip удаляем — используем системный python3-opencv
+RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed \
+    torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip3 install --no-cache-dir --break-system-packages --ignore-installed ultralytics \
+    && pip3 uninstall --break-system-packages -y opencv-python \
+    && pip3 install --no-cache-dir --break-system-packages 'numpy<2'
 
 # ============================================================
 # ЭТАП 9: Workspace setup
