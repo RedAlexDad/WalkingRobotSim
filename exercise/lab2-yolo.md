@@ -86,6 +86,13 @@ make yolo-detector MODEL=yolov8m
 make yolo-detector MODEL=yolov8l
 ```
 
+**Своя предобученная модель**: поместите файл `.pt` в директорию `src/quadropted_perception/models/` (создайте, если нет) и укажите имя без расширения:
+
+```bash
+# Например, для файла src/quadropted_perception/models/my_custom.pt
+make yolo-detector MODEL=my_custom
+```
+
 ### Шаг 5. Проверка работы детекции
 
 Проверьте топики:
