@@ -94,7 +94,7 @@ exec:
 		printf "Пример: make exec CMD='ros2 topic list'\n"; \
 		exit 1; \
 	fi
-	@docker exec -it $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash && source /root/ws/install/setup.bash && $(CMD)"
+	@docker exec -i $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash && source /root/ws/install/setup.bash && $(CMD)"
 
 ## Проверка алиасов в контейнере
 test-aliases:
