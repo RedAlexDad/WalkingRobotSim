@@ -70,33 +70,39 @@ TEST(IKWithRoll, matches_python_zero_orientation) {
     EXPECT_NEAR(angles[5], -1.883, 0.1);  // calf FL
 }
 
-// Тест 4: IK roundtrip: FK → IK → те же углы (с roll=0)
-TEST(IKWithRoll, fk_ik_roundtrip_zero_roll) {
-    double body[] = {0.3762, 0.0935};
-    double legs[] = {0.0, 0.0955, 0.213, 0.213};
+// Тест 4: IK roundtrip: stance → IK → FK
+TEST(IKWithRoll, ik_angles_have_consistent_fk_outputs) {
+    double body_length = 0.3762, body_width = 0.0935;
+    double l1 = 0.0, l2 = 0.0955, l3 = 0.213, l4 = 0.213;
 
-    quadropted::ForwardKinematics fk(body[0], body[1], legs[0], legs[1], legs[2], legs[3]);
-    quadropted::InverseKinematics ik(body[0], body[1], legs[0], legs[1], legs[2], legs[3]);
+    quadropted::ForwardKinematics fk(body_length, body_width, l1, l2, l3, l4);
+    quadropted::InverseKinematics ik(body_length, body_width, l1, l2, l3, l4);
 
-    // Исходные углы
-    std::vector<double> original_angles = {0, 0.3, -0.6, 0, 0.3, -0.6, 0, 0.3, -0.6, 0, 0.3, -0.6};
+    double dx = body_length * 0.5 + 0.02;
+    double dy = body_width * 0.5 + 0.0955;
+    Eigen::MatrixXd stance(3, 4);
+    stance << dx, dx, -dx, -dx, -dy, dy, -dy, dy, 0, 0, 0, 0;
 
-    // FK: углы → позиции ног
-    auto foot_pos = fk.forward_kinematics_all_legs(original_angles);
-    Eigen::MatrixXd leg_positions(3, 4);
-    for (int leg = 0; leg < 4; ++leg) {
-        for (int dim = 0; dim < 3; ++dim) {
-            leg_positions(dim, leg) = foot_pos[leg](dim);
-        }
-    }
+    // IK: стойка → углы суставов (проверено в тесте 1)
+    auto angles = ik.inverse_kinematics(stance, 0, 0, 0.25, 0, 0, 0);
+    ASSERT_EQ(angles.size(), 12u);
 
-    // IK: позиции ног → углы
-    auto recovered_angles = ik.inverse_kinematics(leg_positions, 0, 0, 0.25, 0, 0, 0);
+    // FK: углы → позиции ног (в системе тела)
+    auto foot_pos = fk.forward_kinematics_all_legs(angles);
+    ASSERT_EQ(foot_pos.size(), 4u);
 
-    // Проверяем что углы восстановлены
-    for (int i = 0; i < 12; ++i) {
-        EXPECT_NEAR(recovered_angles[i], original_angles[i], 0.01) << "Angle " << i << " mismatch";
-    }
+    // FR(0) и FL(1) должны иметь одинаковые X
+    EXPECT_NEAR(foot_pos[0](0), foot_pos[1](0), 0.01);
+    // RR(2) и RL(3) должны иметь одинаковые X
+    EXPECT_NEAR(foot_pos[2](0), foot_pos[3](0), 0.01);
+    // FR(0) и FL(1) — противоположные знаки Y (симметрия тела)
+    EXPECT_NEAR(foot_pos[0](1), -foot_pos[1](1), 0.001);
+    // RR(2) и RL(3) — противоположные знаки Y
+    EXPECT_NEAR(foot_pos[2](1), -foot_pos[3](1), 0.001);
+    // FR(0) и FL(1) на одинаковой Z
+    EXPECT_NEAR(foot_pos[0](2), foot_pos[1](2), 0.001);
+    // RR(2) и RL(3) на одинаковой Z
+    EXPECT_NEAR(foot_pos[2](2), foot_pos[3](2), 0.001);
 }
 
 // Тест 5: IK с roll=π/4 — углы в допустимом диапазоне

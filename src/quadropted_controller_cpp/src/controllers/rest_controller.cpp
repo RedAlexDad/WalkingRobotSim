@@ -6,16 +6,16 @@
 
 namespace quadropted {
 
-RestController::RestController(Eigen::MatrixXd default_stance)
-    : default_stance_(std::move(default_stance)), pid_(0.75, 2.29, 0.0), use_imu_(false), pid_last_time_(0.0) {}
+RestController::RestController(FootMatrix default_stance)
+    : default_stance_(default_stance), pid_(0.75, 2.29, 0.0), use_imu_(false), pid_last_time_(0.0) {}
 
 void RestController::reset() {
     pid_.reset(0.0);
     pid_last_time_ = 0.0;
 }
 
-Eigen::MatrixXd RestController::step(const State& state, const Command& cmd) {
-    Eigen::MatrixXd temp = default_stance_;
+FootMatrix RestController::step(const State& state, const Command& cmd) {
+    FootMatrix temp = default_stance_;
     temp.row(2).setConstant(cmd.robot_height);
 
     if (use_imu_) {

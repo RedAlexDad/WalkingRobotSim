@@ -3,7 +3,7 @@
 namespace quadropted {
 
 CrawlGaitController::CrawlGaitController(double stance_time, double swing_time, double time_step,
-                                         Eigen::MatrixXd default_stance)
+                                         FootMatrix default_stance)
     : GaitController(stance_time, swing_time, time_step,
                      (Eigen::MatrixXi(4, 8) << 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1,
                       1, 1, 1, 1, 1, 0, 1, 1)
@@ -18,22 +18,21 @@ void CrawlGaitController::reset() {
     first_cycle_ = true;
 }
 
-Eigen::MatrixXd CrawlGaitController::step(int ticks, const Eigen::MatrixXd& current,
-                                          const Eigen::Vector3d& cmd_vel) const {
-    Eigen::MatrixXd new_foot_locations(3, 4);
+FootMatrix CrawlGaitController::step(int ticks, const FootMatrix& current, const Eigen::Vector3d& cmd_vel,
+                                     double robot_height) const {
+    FootMatrix new_foot_locations{FootMatrix::Zero()};
 
     Eigen::VectorXi contact_modes = contacts(ticks);
+    int sub = subphase_ticks(ticks);
+    double swing_prop = static_cast<double>(sub) * inv_swing_ticks_;
 
     for (int leg_index = 0; leg_index < 4; ++leg_index) {
         int contact_mode = contact_modes(leg_index);
         if (contact_mode == 1) {
-            // Stance — возвращаем текущую позицию
             new_foot_locations.col(leg_index) = current.col(leg_index);
         } else {
-            // Swing
-            double swing_prop = static_cast<double>(subphase_ticks(ticks)) / static_cast<double>(swing_ticks());
             new_foot_locations.col(leg_index) =
-                swing_.next_foot_location(swing_prop, leg_index, current, cmd_vel, first_cycle_);
+                swing_.next_foot_location(swing_prop, leg_index, current, cmd_vel, robot_height);
         }
     }
 

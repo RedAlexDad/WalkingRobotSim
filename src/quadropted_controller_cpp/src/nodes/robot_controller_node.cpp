@@ -38,7 +38,6 @@ class RobotControllerNode : public rclcpp::Node {
         double dx_front = body[0] * 0.5 + 0.02;  // 0.2081 — передние лапы
         double dx_back = body[0] * 0.5 + 0.0;    // 0.1881 — задние лапы
         double dy = body[1] * 0.5 + legs[1];
-        default_stance_.resize(3, 4);
         default_stance_ << dx_front, dx_front, -dx_back, -dx_back, -dy, dy, -dy, dy, 0, 0, 0, 0;
 
         state_.foot_locations = default_stance_;
@@ -270,27 +269,23 @@ class RobotControllerNode : public rclcpp::Node {
         }
     }
 
-    Eigen::MatrixXd step_trot(State& state, const Command& cmd) {
-        state.ticks++;  // Инкрементируем каждый тик
-        // При нулевой скорости — стабильная стойка
+    FootMatrix step_trot(State& state, const Command& cmd) {
+        state.ticks++;
         bool has_command =
             std::abs(cmd.velocity[0]) > 1e-4 || std::abs(cmd.velocity[1]) > 1e-4 || std::abs(cmd.yaw_rate[2]) > 1e-4;
         if (!has_command) {
-            // Плавное возвращение к default_stance (как в Python autoRest)
-            Eigen::MatrixXd result = default_stance_;
+            FootMatrix result = default_stance_;
             result.row(2).setConstant(cmd.robot_height);
-            // Lerp: 90% текущая позиция + 10% к целевой = плавный переход за ~20 шагов
             constexpr double alpha = 0.1;
             return state.foot_locations * (1.0 - alpha) + result * alpha;
         }
 
-        // Use TrotGaitController's step method for unified stance/swing logic
-        Eigen::MatrixXd new_foot_locations =
+        FootMatrix new_foot_locations =
             trot_gait_->step(state.ticks, state.foot_locations,
                              Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]}, cmd.robot_height);
 
         // DEBUG: показываем foot locations
-        if (state.ticks % 60 == 0) {
+        if (verbose_ && state.ticks % 60 == 0) {
             RCLCPP_INFO(
                 get_logger(),
                 "[DEBUG] foot_locs: FR=(%.4f,%.4f,%.4f) FL=(%.4f,%.4f,%.4f) RR=(%.4f,%.4f,%.4f) RL=(%.4f,%.4f,%.4f)",
@@ -305,13 +300,9 @@ class RobotControllerNode : public rclcpp::Node {
             auto comp = trot_gait_->pid_controller().run(state.imu_roll, state.imu_pitch, this->now().seconds());
             Eigen::Matrix3d rot = rotxyz(-comp[0], -comp[1], 0);
             new_foot_locations = rot * new_foot_locations;
-            if (false)
-                RCLCPP_DEBUG(get_logger(), "[DEBUG] IMU comp: roll=%.3f pitch=%.3f comp_x=%.3f comp_y=%.3f",
-                             state.imu_roll, state.imu_pitch, -comp[0], -comp[1]);
         }
 
-        // DEBUG: каждые 60 тиков
-        if (state.ticks % 60 == 0) {
+        if (verbose_ && state.ticks % 60 == 0) {
             Eigen::VectorXi contacts = trot_gait_->contacts(state.ticks);
             RCLCPP_INFO(get_logger(), "[DEBUG] TROT step: ticks=%d contacts=[%d,%d,%d,%d]", state.ticks, contacts(0),
                         contacts(1), contacts(2), contacts(3));
@@ -320,14 +311,12 @@ class RobotControllerNode : public rclcpp::Node {
         return new_foot_locations;
     }
 
-    Eigen::MatrixXd step_crawl(State& state, const Command& cmd) {
+    FootMatrix step_crawl(State& state, const Command& cmd) {
         state.ticks++;
-        // При нулевой скорости — стабильная стойка
         bool has_command =
             std::abs(cmd.velocity[0]) > 1e-4 || std::abs(cmd.velocity[1]) > 1e-4 || std::abs(cmd.yaw_rate[2]) > 1e-4;
         if (!has_command) {
-            // Плавное возвращение к default_stance
-            Eigen::MatrixXd result = default_stance_;
+            FootMatrix result = default_stance_;
             result.row(2).setConstant(cmd.robot_height);
             constexpr double alpha = 0.1;
             return state.foot_locations * (1.0 - alpha) + result * alpha;
@@ -335,7 +324,7 @@ class RobotControllerNode : public rclcpp::Node {
 
         Eigen::VectorXi contacts = crawl_gait_->contacts(state.ticks);
         int phase_idx = crawl_gait_->phase_index(state.ticks);
-        Eigen::MatrixXd new_foot_locations = Eigen::MatrixXd::Zero(3, 4);
+        FootMatrix new_foot_locations{FootMatrix::Zero()};
 
         for (int leg = 0; leg < 4; ++leg) {
             if (contacts(leg) == 1) {
@@ -370,12 +359,12 @@ class RobotControllerNode : public rclcpp::Node {
         return new_foot_locations;
     }
 
-    Eigen::MatrixXd step_rest(State& state, const Command& cmd) {
+    FootMatrix step_rest(State& state, const Command& cmd) {
         state.ticks++;
         return rest_ctrl_->step(state, cmd);
     }
 
-    Eigen::MatrixXd step_stand(State& state, Command& cmd) {
+    FootMatrix step_stand(State& state, Command& cmd) {
         // NOTE: state.ticks НЕ инкрементируется здесь (как в Python StandController)
         // ticks инкрементируется только в step_trot() и step_crawl()
 
@@ -423,7 +412,7 @@ class RobotControllerNode : public rclcpp::Node {
         }
 
         // Run controller
-        Eigen::MatrixXd leg_positions;
+        FootMatrix leg_positions;
         if (use_trot_) {
             leg_positions = step_trot(state_, command_);
         } else if (use_crawl_) {
@@ -487,7 +476,7 @@ class RobotControllerNode : public rclcpp::Node {
     bool use_stand_ = false;
     int startup_grace_ = 120;  // 2 секунды задержки при старте
 
-    Eigen::MatrixXd default_stance_;
+    FootMatrix default_stance_;
     State state_;
     Command command_;
 

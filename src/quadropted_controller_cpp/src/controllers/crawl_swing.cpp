@@ -1,20 +1,24 @@
+#include <algorithm>
+#include <cassert>
+
 #include "quadropted_controller_cpp/controllers/crawl_swing.hpp"
+#include "quadropted_controller_cpp/utils/rotation_matrices.hpp"
 
 namespace quadropted {
 
 CrawlSwingController::CrawlSwingController(int swing_ticks, double time_step, double z_leg_lift,
-                                           Eigen::MatrixXd default_stance, int phase_length, int stance_ticks,
+                                           FootMatrix default_stance, int phase_length, int stance_ticks,
                                            double body_shift_y)
     : swing_ticks_(swing_ticks),
       time_step_(time_step),
       z_leg_lift_(z_leg_lift),
-      default_stance_(std::move(default_stance)),
+      default_stance_(default_stance),
       phase_length_(phase_length),
       stance_ticks_(stance_ticks),
       body_shift_y_(body_shift_y) {}
 
 Eigen::Vector3d CrawlSwingController::raibert_touchdown_location(int leg_index, const Eigen::Vector3d& cmd_vel,
-                                                                 bool shifted_left) const {
+                                                                  bool shifted_left) const noexcept {
     // Python: delta_pos_2d = command.velocity * phase_length * time_step
     double total_time = phase_length_ * time_step_;
     Eigen::Vector3d delta_pos;
@@ -31,16 +35,12 @@ Eigen::Vector3d CrawlSwingController::raibert_touchdown_location(int leg_index, 
     return rotation * default_stance_.col(leg_index) + delta_pos + shift_correction;
 }
 
-double CrawlSwingController::swing_height(double swing_prop) const {
-    if (swing_prop < 0.5) {
-        return (swing_prop / 0.5) * z_leg_lift_;
-    } else {
-        return z_leg_lift_ * (1.0 - (swing_prop - 0.5) / 0.5);
-    }
+double CrawlSwingController::swing_height(double swing_prop) const noexcept {
+    return 2.0 * z_leg_lift_ * std::min(swing_prop, 1.0 - swing_prop);
 }
 
 Eigen::Vector3d CrawlSwingController::next_foot_location(double swing_prop, int leg_index,
-                                                         const Eigen::MatrixXd& current, const Eigen::Vector3d& cmd_vel,
+                                                         const FootMatrix& current, const Eigen::Vector3d& cmd_vel,
                                                          double robot_height) const {
     assert(swing_prop >= 0.0 && swing_prop <= 1.0);
 

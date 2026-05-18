@@ -4,21 +4,22 @@
 
 namespace quadropted {
 
+using FootMatrix = Eigen::Matrix<double, 3, 4>;
+
 enum class BehaviorState { REST = 0, TROT, CRAWL, STAND };
 
 struct State {
     double body_height = 0.25;
-    Eigen::MatrixXd foot_locations;  // (3, 4)
+    FootMatrix foot_locations{FootMatrix::Zero()};
     std::array<double, 3> body_local_position{0, 0, 0};
     std::array<double, 3> body_local_orientation{0, 0, 0};
     double imu_roll = 0, imu_pitch = 0;
     int ticks = 0;
     BehaviorState behavior_state = BehaviorState::REST;
-    double robot_height = -0.25;  // FIX: отрицательная как в Python StateCommand.py
+    double robot_height = -0.25;
 
-    State() : foot_locations(Eigen::MatrixXd::Zero(3, 4)) {}
-    explicit State(double height)
-        : body_height(height), robot_height(-height), foot_locations(Eigen::MatrixXd::Zero(3, 4)) {}
+    State() = default;
+    explicit State(double height) : body_height(height), robot_height(-height) {}
 };
 
 struct Command {

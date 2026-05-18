@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "quadropted_controller_cpp/utils/math_utils.hpp"
+#include "quadropted_controller_cpp/utils/rotation_matrices.hpp"
 
 namespace quadropted {
 

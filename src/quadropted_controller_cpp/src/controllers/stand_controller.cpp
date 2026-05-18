@@ -5,18 +5,20 @@
 
 namespace quadropted {
 
-StandController::StandController(Eigen::MatrixXd default_stance) : default_stance_(std::move(default_stance)) {}
+StandController::StandController(FootMatrix default_stance) : default_stance_(default_stance) {}
 
-Eigen::MatrixXd StandController::run(State& state, Command& cmd) const {
-    Eigen::MatrixXd temp = default_stance_;
+FootMatrix StandController::run(State& state, Command& cmd) const {
+    FootMatrix temp = default_stance_;
     temp.row(2).setConstant(cmd.robot_height);
 
     Eigen::Vector3d linear_vel(cmd.velocity[0], cmd.velocity[1], cmd.velocity[2]);
     Eigen::Vector3d angular_vel(cmd.yaw_rate[0], cmd.yaw_rate[1], cmd.yaw_rate[2]);
 
     // Clamp velocities
-    linear_vel = linear_vel.cwiseMax(-max_linear_velocity_).cwiseMin(max_linear_velocity_);
-    angular_vel = angular_vel.cwiseMax(-max_angular_velocity_).cwiseMin(max_angular_velocity_);
+    for (int i = 0; i < 3; ++i) {
+        linear_vel[i] = std::clamp(linear_vel[i], -max_linear_velocity_, max_linear_velocity_);
+        angular_vel[i] = std::clamp(angular_vel[i], -max_angular_velocity_, max_angular_velocity_);
+    }
 
     // Проверка на stop (все скорости близки к нулю)
     bool has_command = std::abs(linear_vel.x()) > 1e-4 || std::abs(linear_vel.y()) > 1e-4 ||

@@ -8,19 +8,23 @@ namespace quadropted {
 
 class RestController {
   public:
-    explicit RestController(Eigen::MatrixXd default_stance);
-    Eigen::MatrixXd step(const State& state, const Command& cmd);
-    const Eigen::MatrixXd& default_stance() const { return default_stance_; }
-    PIDController& pid() { return pid_; }
-    bool use_imu() const { return use_imu_; }
-    void set_use_imu(bool v) { use_imu_ = v; }
+    explicit RestController(FootMatrix default_stance);
+    FootMatrix step(const State& state, const Command& cmd);
+    const FootMatrix& default_stance() const { return default_stance_; }
     void reset();
+    PIDController& pid() { return pid_; }
 
   private:
-    Eigen::MatrixXd default_stance_;
-    PIDController pid_;
-    mutable bool use_imu_;
-    mutable double pid_last_time_ = 0.0;
+    mutable int step_ = 0;
+    mutable double start_height_ = 0.0;
+    mutable double target_height_ = 0.0;
+    mutable FootMatrix target_stance_{FootMatrix::Zero()};
+    mutable bool initial_ = true;
+    mutable bool initialized_ = false;
+    FootMatrix default_stance_{FootMatrix::Zero()};
+    PIDController pid_{0.0, 0.0, 0.0};
+    bool use_imu_ = false;
+    double pid_last_time_ = 0.0;
 };
 
 }  // namespace quadropted

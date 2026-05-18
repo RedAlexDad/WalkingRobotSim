@@ -1,4 +1,6 @@
 #pragma once
+#include <Eigen/Dense>
+
 #include "quadropted_controller_cpp/controllers/gait_controller.hpp"
 #include "quadropted_controller_cpp/controllers/pid_controller.hpp"
 #include "quadropted_controller_cpp/controllers/trot_stance.hpp"
@@ -9,9 +11,9 @@ namespace quadropted {
 class TrotGaitController : public GaitController {
   public:
     TrotGaitController(double stance_time, double swing_time, double time_step, bool use_imu,
-                       Eigen::MatrixXd default_stance);
-    Eigen::MatrixXd step(int ticks, const Eigen::MatrixXd& current, const Eigen::Vector3d& cmd_vel,
-                         double robot_height) const;
+                       FootMatrix default_stance);
+    FootMatrix step(int ticks, const FootMatrix& current, const Eigen::Vector3d& cmd_vel,
+                    double robot_height) const override;
     bool use_imu() const { return use_imu_; }
     TrotSwingController& swing_controller() { return swing_; }
     PIDController& pid_controller() { return pid_; }

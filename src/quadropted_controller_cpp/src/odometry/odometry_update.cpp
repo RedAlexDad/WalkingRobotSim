@@ -4,8 +4,8 @@
 
 namespace quadropted {
 
-double normalize_angle(double angle) {
-    return std::atan2(std::sin(angle), std::cos(angle));
+double normalize_angle(double angle) noexcept {
+    return std::remainder(angle, 2.0 * M_PI);
 }
 
 void update_odometry(OdometryState& state, double dt, double contact_count_coeff) {
