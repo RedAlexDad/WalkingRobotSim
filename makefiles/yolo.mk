@@ -10,9 +10,10 @@ yolo-detector:
 		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
 		source /root/ws/install/setup.bash && \
 		ros2 run quadropted_perception yolo_detector \
-			$(if $(or $(MODEL),$(FPS)),--ros-args) \
+			$(if $(or $(MODEL),$(FPS),$(CONF)),--ros-args) \
 			$(if $(MODEL),-p model:=${MODEL}) \
-			$(if $(FPS),-p fps:=${FPS})"
+			$(if $(FPS),-p fps:=${FPS}) \
+			$(if $(CONF),-p confidence_threshold:=${CONF})"
 
 ## Запуск визуализации детекций: RViz + visualizer (split: raw / detected)
 yolo-visualizer:

@@ -172,13 +172,12 @@ ros2 topic echo /detections --once
 
 ### Шаг 9. Эксперимент с confidence threshold
 
-Для модели `yolov8n` измените параметр `confidence_threshold` в файле `config/yolo_detector.yaml`:
+Для модели `yolov8n` измените порог уверенности через параметр `CONF`:
 
-```yaml
-/yolo_detector:
-  ros__parameters:
-    confidence_threshold: 0.5   # по умолчанию
-    # Поменяйте на 0.2, 0.5, 0.8
+```bash
+make yolo-detector CONF=0.2   # низкий порог — больше детекций, возможны ложные
+make yolo-detector CONF=0.5   # по умолчанию
+make yolo-detector CONF=0.8   # высокий порог — только уверенные детекции
 ```
 
 Для каждого значения запишите количество детекций и оцените качество (ложные срабатывания / пропуски).
