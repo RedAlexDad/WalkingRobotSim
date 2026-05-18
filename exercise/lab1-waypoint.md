@@ -214,8 +214,6 @@ make waypoint-start
 
 Наблюдайте движение робота в RViz. Дождитесь завершения навигации.
 
-![](images/lab1_navigation.png)
-
 ### Шаг 10. Создание второго маршрута
 
 Создайте второй файл `test_route.yaml` с другим расположением точек (например, зигзагообразный маршрут). Повторите шаги 7-9, загружая его через `make waypoint-load FILE=test_route`.
@@ -224,13 +222,22 @@ make waypoint-start
 
 Запустите навигацию по одному из маршрутов (`make waypoint-start`). Во время движения робота добавьте в симуляцию препятствие на пути робота:
 
+#### Создание динамического препятствия
+
+![](images/lab1_after_obstacle.png)
+
 1. В окне Gazebo выберите вкладку **Insert** (слева)
 2. Выберите **Model Database → simple shapes → unit box**
+
+![](images/lab1_gazebo_models.png)
+
 3. Разместите куб на пути движения робота
 
-![](images/lab1_obstacle.png)
+![](images/lab1_obstacle_gazebo.png)
 
 Наблюдайте, как Nav2 перестраивает траекторию (costmap обновляется). Попробуйте переместить куб в другое место.
+
+![](images/lab1_obstacle_rviz.png)
 
 ## Результат ЛР1
 

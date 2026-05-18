@@ -117,7 +117,7 @@ ros2 topic echo /detections
 
 ![](images/lab2_gazebo_web_models.png)
 
-Дополнительные 3D-модели: [Gazebo Fuel](https://app.gazebosim.org/fuel/models). Инструкция по добавлению — [Fuel Insert](https://gazebosim.org/docs/latest/fuel_insert/).
+Дополнительные 3D-модели: [Gazebo Fuel](https://app.gazebosim.org/fuel/models). Инструкция по добавлению — [Fuel Insert](https://gazebosim.org/docs/harmonic/fuel_insert//).
 
 ### Шаг 6. Визуализация в RViz
 
