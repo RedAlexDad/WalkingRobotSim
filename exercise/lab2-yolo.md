@@ -184,13 +184,16 @@ make yolo-detector CONF=0.8   # высокий порог — только ув�
 
 ### Шаг 10. Эксперимент с FPS
 
-В конфиге `yolo_detector.yaml` добавьте параметр:
+Для модели `yolov8n` измените частоту детекции через параметр `FPS`:
 
-```yaml
-fps: 10
+```bash
+make yolo-detector FPS=2
+make yolo-detector FPS=5
+make yolo-detector FPS=10
+make yolo-detector FPS=30
 ```
 
-Проведите замеры для разных значений `fps` (2, 5, 10, 30) с моделью `yolov8n`:
+Проведите замеры для разных значений `FPS` (2, 5, 10, 30) с моделью `yolov8n`:
 
 | FPS | CPU нагрузка | Загруженность топика `/detected_image` |
 | --- | ------------ | -------------------------------------- |
