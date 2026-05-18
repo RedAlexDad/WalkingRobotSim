@@ -9,6 +9,7 @@ from launch.actions import (
     ExecuteProcess,
     GroupAction,
     IncludeLaunchDescription,
+    OpaqueFunction,
     RegisterEventHandler,
 )
 from launch.conditions import IfCondition
@@ -17,6 +18,25 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import ComposableNodeContainer, Node, SetRemap
 from launch_ros.descriptions import ComposableNode
+
+
+def _create_robot_state_publisher(
+    context, xacro_file, robot_name, camera_fps, use_sim_time, namespace, remappings
+):
+    fps = camera_fps.perform(context)
+    mappings = {"robot_name": robot_name, "camera_fps": fps}
+    robot_desc = xacro.process_file(xacro_file, mappings=mappings).toxml()
+    params = {"robot_description": robot_desc, "use_sim_time": use_sim_time}
+    return [
+        Node(
+            package="robot_state_publisher",
+            executable="robot_state_publisher",
+            output="screen",
+            namespace=namespace,
+            parameters=[params],
+            remappings=remappings,
+        )
+    ]
 
 
 def generate_launch_description():
@@ -46,6 +66,14 @@ def generate_launch_description():
 
     ld.add_action(declare_enable_rviz)
     ld.add_action(declare_use_sim_time)
+
+    camera_fps = LaunchConfiguration('camera_fps', default='30')
+    declare_camera_fps = DeclareLaunchArgument(
+        name='camera_fps',
+        default_value='30',
+        description='Camera update rate (FPS)'
+    )
+    ld.add_action(declare_camera_fps)
 
     remappings_initial = [
         ("/tf", "tf"),
@@ -101,16 +129,10 @@ def generate_launch_description():
         namespace = robot['name']
         robot_name = robot['name']
         xacro_file = os.path.join(os.path.join(get_package_share_directory('go2_description')), 'xacro', 'robot.xacro') ## CHANGE ME!!!!
-        robot_desc = xacro.process_file(xacro_file, mappings={'robot_name': robot_name}).toxml()
-        params_robot_state_publisher = {'robot_description': robot_desc, 'use_sim_time': use_sim_time}
 
-        node_robot_state_publisher = Node(
-            package='robot_state_publisher',
-            executable='robot_state_publisher',
-            output='screen',
-            namespace=namespace,
-            parameters=[params_robot_state_publisher],
-            remappings=remappings
+        node_robot_state_publisher = OpaqueFunction(
+            function=_create_robot_state_publisher,
+            args=[xacro_file, robot_name, camera_fps, use_sim_time, namespace, remappings]
         )
 
         spawn_entity = Node(

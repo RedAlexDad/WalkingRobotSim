@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-    <xacro:macro  name="robot_gazebo_sensors" params="robot_name">
+    <xacro:macro name="robot_gazebo_sensors" params="robot_name camera_fps:=10">
 
         <gazebo>
             <plugin name="gz_ros2_control::GazeboSimROS2ControlPlugin" filename="libgz_ros2_control-system.so">
@@ -18,7 +18,7 @@
             <hardware>
                 <plugin>gz_ros2_control/GazeboSimSystem</plugin>
             </hardware>
-            
+
             <joint name="lf_hip_joint">
                 <command_interface name="position"/>
                 <state_interface name="position"/>
@@ -37,7 +37,7 @@
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
             </joint>
-            
+
             <joint name="rf_hip_joint">
                 <command_interface name="position"/>
                 <state_interface name="position"/>
@@ -103,10 +103,10 @@
                 <update_rate>100</update_rate>
                 <visualize>false</visualize>
                 <topic>/${robot_name}/imu_plugin/out</topic>
-                    <plugin filename="libgz-sim-imu-system.so" name="gz::sim::systems::Imu">
+                <plugin filename="libgz-sim-imu-system.so" name="gz::sim::systems::Imu">
                 </plugin>
                 <pose>0 0 0 0 0 0</pose>
-                <gz_frame_id>imu_link</gz_frame_id> <!-- Добавьте этот тег для указания кадра -->
+                <gz_frame_id>imu_link</gz_frame_id>                <!-- Добавьте этот тег для указания кадра -->
             </sensor>
         </gazebo>
 
@@ -143,7 +143,7 @@
             <sensor name="camera" type="camera">
                 <pose> 0 0 0 0 0 0 </pose>
                 <visualize>true</visualize>
-                <update_rate>30</update_rate>
+                <update_rate>${camera_fps}</update_rate>
                 <camera>
                     <camera_info_topic>/${robot_name}/color/camera_info</camera_info_topic>
                     <horizontal_fov>1.089</horizontal_fov>

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import time
 import cv2
 import numpy as np
 import rclpy
@@ -20,6 +21,7 @@ class YOLODetector(Node):
         self._model_path = None
 
         self.declare_parameter("model", "yolov8n.pt")
+        self.declare_parameter("fps", 0)
         self.declare_parameter("confidence_threshold", 0.5)
         self.declare_parameter("iou_threshold", 0.45)
         self.declare_parameter("camera_topic", "/robot1/color/image_raw")
@@ -45,6 +47,10 @@ class YOLODetector(Node):
             )
         self._model_path = resolved_path
 
+        fps = self.get_parameter("fps").value
+        self._min_interval = 1.0 / fps if fps > 0 else 0.0
+        self._last_time = 0.0
+
         self._conf = self.get_parameter("confidence_threshold").value
         self._iou = self.get_parameter("iou_threshold").value
         camera_topic = self.get_parameter("camera_topic").value
@@ -67,8 +73,15 @@ class YOLODetector(Node):
             f"YOLO detector ready — model: {self._model_path}, topic: {camera_topic}, "
             f"conf: {self._conf}, iou: {self._iou}"
         )
+        if self._min_interval > 0:
+            self.get_logger().info(f"Throttling to {fps} FPS (min interval: {self._min_interval:.3f}s)")
 
     def _image_callback(self, msg):
+        now = time.monotonic()
+        if self._min_interval > 0 and (now - self._last_time) < self._min_interval:
+            return
+        self._last_time = now
+
         try:
             cv_image = self._bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
         except Exception as e:

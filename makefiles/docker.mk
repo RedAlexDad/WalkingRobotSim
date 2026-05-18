@@ -139,19 +139,33 @@ shell:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Подключение к контейнеру $(CONTAINER_NAME)...${NC}\n"
 	@docker exec -it $(CONTAINER_NAME) bash -c "\
-		echo 'alias sim=\"ros2 launch gazebo_sim launch.py use_sim_time:=true gui:=true\"' >> ~/.bashrc && \
+		echo 'alias sim=\"ros2 launch gazebo_sim launch_cpp.launch.py use_sim_time:=true gui:=true\"' >> ~/.bashrc && \
 		echo 'alias teleop=\"ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel\"' >> ~/.bashrc && \
 		echo 'alias topics=\"ros2 topic list\"' >> ~/.bashrc && \
 		echo 'alias nodes=\"ros2 node list\"' >> ~/.bashrc && \
+		echo 'alias services=\"ros2 service list\"' >> ~/.bashrc && \
+		echo 'alias actions=\"ros2 action list\"' >> ~/.bashrc && \
+		echo 'alias waypoints=\"ros2 service call /robot1/get_waypoints quadropted_msgs/srv/GetWaypoints\"' >> ~/.bashrc && \
+		echo 'alias nav-start=\"ros2 service call /robot1/start_navigation std_srvs/srv/Trigger\"' >> ~/.bashrc && \
+		echo 'alias nav-stop=\"ros2 service call /robot1/stop_navigation std_srvs/srv/Trigger\"' >> ~/.bashrc && \
+		echo 'alias nav-clear=\"ros2 service call /robot1/clear_waypoints std_srvs/srv/Trigger\"' >> ~/.bashrc && \
+		echo 'alias detect=\"ros2 launch quadropted_perception yolo_detector.launch.py\"' >> ~/.bashrc && \
 		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
 		source /root/ws/install/setup.bash && \
 		export PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\[\033[01;31m\](ROS $(ROS_DISTRO))\[\033[00m\]\$$ ' && \
 		printf '${GREEN}${BOLD}ROS $(ROS_DISTRO) окружение настроено!${NC}\n' && \
 		printf '${CYAN}Доступные команды:${NC}\n' && \
-		echo '   sim          - Запуск Gazebo симуляции' && \
-		echo '   teleop       - Управление роботом' && \
-		echo '   topics       - Список топиков' && \
-		echo '   nodes        - Список узлов' && \
+		echo '   sim          - Запуск Gazebo симуляции (в контейнере)' && \
+		echo '   teleop       - Управление роботом с клавиатуры' && \
+		echo '   topics       - ros2 topic list' && \
+		echo '   nodes        - ros2 node list' && \
+		echo '   services     - ros2 service list' && \
+		echo '   actions      - ros2 action list' && \
+		echo '   waypoints    - Показать текущие путевые точки' && \
+		echo '   nav-start    - Запустить навигацию по waypoint' && \
+		echo '   nav-stop     - Остановить навигацию' && \
+		echo '   nav-clear    - Очистить waypoint' && \
+		echo '   detect       - Запустить YOLO детектор' && \
 		source ~/.bashrc && \
 		exec bash"
 
