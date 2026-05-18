@@ -90,8 +90,8 @@ reset-pose:
 exec:
 	$(require-container)
 	@if [ -z "$(CMD)" ]; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Укажите команду для выполнения${NC}\n"; \
-		printf "Пример: make exec CMD='ros2 topic list'\n"; \
+		printf "${RED}${BOLD}[x]${NC} ${RED}Укажите команду для выполнения${NC}\n" >&2; \
+		printf "Пример: make exec CMD='ros2 topic list'\n" >&2; \
 		exit 1; \
 	fi
 	@docker exec -i $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash && source /root/ws/install/setup.bash && $(CMD)"

@@ -146,7 +146,7 @@ ros2 topic hz /detections
 В отдельном терминале запустите мониторинг CPU (на хосте):
 
 ```bash
-make exec CMD="top -b -n 30 -d 1 | grep yolo" > yolo_cpu.log
+make exec CMD="top -b -n 10 -d 1 | grep -E 'python|yolo'" > yolo_cpu.log
 ```
 
 **Метрика 3: Количество и классы детекций**
