@@ -89,8 +89,13 @@ ros2 service list | grep waypoint
 
 1. В RViz на верхней панели инструментов найдите кнопку `Waypoint Tool` (иконка с точками).
 2. Выберите её.
+
+![](images/lab1_waypoint_button.png)
+
 3. Кликните левой кнопкой мыши по карте в 3 разных местах.
 4. В RViz появятся сферы с подписями (Waypoint 0, Waypoint 1, Waypoint 2).
+
+![](images/lab1_waypoint_in_rviz.png)
 
 Проверьте, что waypoint добавились (в контейнере):
 
@@ -103,6 +108,8 @@ ros2 service call /get_waypoints quadropted_msgs/srv/GetWaypoints
 ```bash
 make waypoint-get
 ```
+
+![](images/lab1_waypoint_cmd.png)
 
 ### Шаг 4. Навигация по вручную заданным точкам
 
@@ -207,6 +214,8 @@ make waypoint-start
 
 Наблюдайте движение робота в RViz. Дождитесь завершения навигации.
 
+![](images/lab1_navigation.png)
+
 ### Шаг 10. Создание второго маршрута
 
 Создайте второй файл `test_route.yaml` с другим расположением точек (например, зигзагообразный маршрут). Повторите шаги 7-9, загружая его через `make waypoint-load FILE=test_route`.
@@ -218,6 +227,8 @@ make waypoint-start
 1. В окне Gazebo выберите вкладку **Insert** (слева)
 2. Выберите **Model Database → simple shapes → unit box**
 3. Разместите куб на пути движения робота
+
+![](images/lab1_obstacle.png)
 
 Наблюдайте, как Nav2 перестраивает траекторию (costmap обновляется). Попробуйте переместить куб в другое место.
 
