@@ -1,5 +1,6 @@
 #include <cmath>
 #include <geometry_msgs/msg/twist.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 #include <quadropted_msgs/msg/robot_foot_contact.hpp>
 #include <quadropted_msgs/msg/robot_mode_command.hpp>
 #include <quadropted_msgs/msg/robot_velocity.hpp>
@@ -99,7 +100,6 @@ class RobotControllerNode : public rclcpp::Node {
         // IMU subscription — обновляем roll/pitch для компенсации
         imu_sub_ =
             create_subscription<sensor_msgs::msg::Imu>("imu", 10, [this](const sensor_msgs::msg::Imu::SharedPtr msg) {
-                // Конвертируем quaternion в euler angles
                 double w = msg->orientation.w;
                 double x = msg->orientation.x;
                 double y = msg->orientation.y;
@@ -108,6 +108,13 @@ class RobotControllerNode : public rclcpp::Node {
                 state_.imu_pitch = std::asin(2.0 * (w * y - z * x));
                 if (false)
                     RCLCPP_DEBUG(get_logger(), "[DEBUG] IMU: roll=%.4f pitch=%.4f", state_.imu_roll, state_.imu_pitch);
+            });
+
+        // Odometry subscription — обновляем body_local_position для обратной связи
+        odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
+            "odom", 10, [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
+                state_.body_local_position[0] = msg->pose.pose.position.x;
+                state_.body_local_position[1] = msg->pose.pose.position.y;
             });
 
         mode_sub_ = create_subscription<quadropted_msgs::msg::RobotModeCommand>(
@@ -490,6 +497,7 @@ class RobotControllerNode : public rclcpp::Node {
     rclcpp::Publisher<quadropted_msgs::msg::RobotFootContact>::SharedPtr foot_contact_pub_;
     rclcpp::Subscription<quadropted_msgs::msg::RobotVelocity>::SharedPtr velocity_sub_;
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
     rclcpp::Subscription<quadropted_msgs::msg::RobotModeCommand>::SharedPtr mode_sub_;
     rclcpp::Service<quadropted_msgs::srv::RobotBehaviorCommand>::SharedPtr behavior_srv_;
     rclcpp::TimerBase::SharedPtr timer_;
