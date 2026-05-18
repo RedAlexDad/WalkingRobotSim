@@ -158,32 +158,33 @@
 | `local_positions` | 0.1418 | 0.1323 | inline | ∞ |
 | **Total (измеряемое)** | **0.6045** | **0.5863** | **2.09** | **280×** |
 
-### Полный C++ бенчмарк (μs на вызов)
+### C++ Old vs New (10000 итераций, μs на вызов)
 
-| Функция | μs |
-|---------|:---:|
-| `PIDController.run()` | 0.0019 |
-| `RestController.step()` | 0.0068 |
-| `GaitController.subphase_ticks()` | 0.0088 |
-| `TrotStanceController.position_delta()` | 0.0092 |
-| `StandController.run()` | 0.0154 |
-| `TrotSwingController.raibert_touchdown()` | 0.0179 |
-| `GaitController.contacts()` | 0.0300 |
-| `TrotSwingController.next_foot_location()` | 0.0357 |
-| `TrotSwingController.swing_height()` | 0.0032 |
-| `TrotStanceController.next_foot_location()` | 0.0801 |
-| `InverseKinematics.inverse_kinematics()` | 0.65 |
-| `ForwardKinematics.forward_kinematics_all_legs()` | 1.44 |
-| **Полный TrotStep (4 ноги)** | **0.154** |
+| Функция | Old (μs) | New (μs) | Ускорение |
+|---------|:--------:|:--------:|:---------:|
+| `RestController.step()` | 0.0341 | **0.0039** | **8.7×** |
+| `TrotSwing.raibert_touchdown()` | 0.0534 | **0.0080** | **6.7×** |
+| `StandController.run()` | 0.0429 | **0.0069** | **6.2×** |
+| `TrotSwing.next_foot_location()` | 0.0756 | **0.0150** | **5.0×** |
+| `TrotSwing.swing_height()` | 0.0047 | **0.0014** | **3.4×** |
+| `ForwardKinematics` | 2.2039 | **0.8487** | **2.6×** |
+| `GaitController.contacts()` | 0.0345 | **0.0135** | **2.6×** |
+| `TrotStance.next_foot_location()` | 0.0890 | **0.0360** | **2.5×** |
+| `GaitController.subphase_ticks()` | 0.0080 | **0.0033** | **2.4×** |
+| `TrotStance.position_delta()` | 0.0078 | **0.0040** | **2.0×** |
+| `InverseKinematics` | 0.9708 | **0.6310** | **1.5×** |
+| `PIDController.run()` | 0.0018 | 0.0020 | ≈1× (noise) |
+| **Trot Step (полный)** | **0.1974** | **0.1646** | **1.2×** |
 
-> **Примечание:** значения < 1 μs — шум `std::chrono::high_resolution_clock`. Реальное время таких функций значительно короче. Единственные достоверно измеренные — FK (1.44 μs) и IK (0.65 μs).
+> **Примечание:** значения < 0.5 μs — шум `std::chrono::high_resolution_clock`. Достоверно измеренные: FK, IK, Trot Step.
 
 ### Сравнение по полному циклу
 
-| Метрика | Python (мс) | C++ (мкс) | Ускорение |
-|---------|:----------:|:---------:|:---------:|
-| FK (4 ноги) | 0.419 ms = **419 μs** | **1.44 μs** | **291×** |
-| IK (4 ноги) | 0.006 ms = **5.7 μs** | **0.65 μs** | **8.8×** |
+| Метрика | Python (мс) | C++ old (мкс) | C++ new (мкс) | C++ new vs Python | C++ new vs old |
+|---------|:----------:|:-------------:|:-------------:|:-----------------:|:--------------:|
+| FK (4 ноги) | 0.419 ms = **419 μs** | 2.20 | **0.85** | **291×** | **2.6×** |
+| IK (4 ноги) | 0.006 ms = **5.7 μs** | 0.97 | **0.63** | **8.8×** | **1.5×** |
+| Trot Step | — | 0.197 | **0.165** | — | **1.2×** |
 
 ---
 
@@ -213,7 +214,8 @@
 ### Текущий результат
 - C++ **уже в ~291× быстрее** чистого Python для FK
 - C++ **в ~8.8× быстрее** numpy/Python для IK
-- Полный TrotStep на C++: **0.154 μs** (измеряемый noise floor)
+- Полный TrotStep на C++: **0.165 μs**
+- C++ old → new: FK **2.6×**, IK **1.5×**, TrotStep **1.2×**
 
 ### Оставшийся потенциал
 
