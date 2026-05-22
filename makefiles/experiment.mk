@@ -22,13 +22,13 @@ experiment-stop:
 		ros2 service call /stop_experiment std_srvs/Trigger"
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Результаты сохранены${NC}\n"
 
-## Показать путь к файлу с результатами эксперимента
+## Скопировать результаты эксперимента на хост
 experiment-result:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Результаты экспериментов (в контейнере):${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "ls -la /tmp/experiments/ 2>/dev/null || echo 'Файлов нет'"
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Скопировать на хост:${NC}\n"
-	@printf "  ${BOLD}docker cp $(CONTAINER_NAME):/tmp/experiments .${NC}\n"
+	@mkdir -p experiments
+	@docker cp $(CONTAINER_NAME):/tmp/experiments/. experiments/ 2>/dev/null || true
+	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Результаты скопированы в experiments/${NC}\n"
+	@ls -la experiments/
 
 ## Полный цикл: загрузить маршрут + эксперимент + старт навигации
 experiment-run:

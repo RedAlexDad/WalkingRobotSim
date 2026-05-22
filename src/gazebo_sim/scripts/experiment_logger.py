@@ -60,9 +60,6 @@ class ExperimentLogger(Node):
 
         self._last_position = current
 
-        if self._experiment_active:
-            self._trajectory.append(current)
-
     def _start_callback(self, request, response):
         if self._experiment_active:
             response.success = False
@@ -147,7 +144,8 @@ class ExperimentLogger(Node):
         self.get_logger().info(f"Results saved to {filename}")
 
     def _log_timer_callback(self):
-        pass
+        if self._experiment_active and self._last_position is not None:
+            self._trajectory.append(self._last_position)
 
     def set_waypoints_count(self, count):
         self._waypoints_count = count
