@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import time
+from datetime import datetime
 import cv2
 import numpy as np
 import rclpy
@@ -19,6 +20,7 @@ class YOLODetector(Node):
         self._bridge = CvBridge()
         self._model = None
         self._model_path = None
+        self._last_detections = []
 
         self.declare_parameter("model", "yolov8n.pt")
         self.declare_parameter("fps", 0)
@@ -28,6 +30,8 @@ class YOLODetector(Node):
         self.declare_parameter("target_classes", [])
         self.declare_parameter("device", "cpu")
         self.declare_parameter("frame_id", "camera_link")
+        self.declare_parameter("log_interval_sec", 0.0)
+        self.declare_parameter("log_file", "")
 
         model_name = self.get_parameter("model").value or "yolov8n.pt"
 
@@ -57,6 +61,20 @@ class YOLODetector(Node):
         self._target_classes = self.get_parameter("target_classes").value
         device = self.get_parameter("device").value
         self._frame_id = self.get_parameter("frame_id").value
+
+        log_interval = self.get_parameter("log_interval_sec").value
+        log_file = self.get_parameter("log_file").value
+        self._log_file = log_file if log_file else None
+        self._log_buffer = ""
+
+        if self._log_file:
+            os.makedirs(os.path.dirname(self._log_file) or ".", exist_ok=True)
+            with open(self._log_file, "w") as f:
+                f.write("timestamp,class_id,class_name,confidence,center_x,center_y,width,height\n")
+            self.get_logger().info(f"Detection logging enabled → {self._log_file}")
+
+        if log_interval > 0 and self._log_file:
+            self.create_timer(log_interval, self._log_timer_callback)
 
         self.get_logger().info(f"Loading YOLO model: {resolved_path} (device: {device})")
         self._model = YOLO(resolved_path)
@@ -117,6 +135,7 @@ class YOLODetector(Node):
                 detections_msg.detections.append(d)
 
         self._pub_detections.publish(detections_msg)
+        self._last_detections = detections_msg.detections
 
         annotated = results.plot()
         try:
@@ -125,6 +144,20 @@ class YOLODetector(Node):
             self._pub_debug_image.publish(debug_msg)
         except Exception as e:
             self.get_logger().error(f"Failed to publish debug image: {e}")
+
+    def _log_timer_callback(self):
+        if not self._log_file:
+            return
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S.%f")[:23]
+        with open(self._log_file, "a") as f:
+            if not self._last_detections:
+                f.write(f"{timestamp},,,,no detections\n")
+                return
+            for d in self._last_detections:
+                f.write(
+                    f"{timestamp},{d.class_id},{d.class_name},{d.confidence:.3f},"
+                    f"{d.center_x:.1f},{d.center_y:.1f},{d.width:.1f},{d.height:.1f}\n"
+                )
 
     @property
     def model_path(self):
