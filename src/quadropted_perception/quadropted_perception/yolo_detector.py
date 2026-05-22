@@ -30,7 +30,7 @@ class YOLODetector(Node):
         self.declare_parameter("target_classes", [])
         self.declare_parameter("device", "cpu")
         self.declare_parameter("frame_id", "camera_link")
-        self.declare_parameter("log_interval_sec", 0.0)
+        self.declare_parameter("log_interval_sec", 0)
         self.declare_parameter("log_file", "")
 
         model_name = self.get_parameter("model").value or "yolov8n.pt"
@@ -62,7 +62,7 @@ class YOLODetector(Node):
         device = self.get_parameter("device").value
         self._frame_id = self.get_parameter("frame_id").value
 
-        log_interval = self.get_parameter("log_interval_sec").value
+        log_interval = float(self.get_parameter("log_interval_sec").value)
         log_file = self.get_parameter("log_file").value
         self._log_file = log_file if log_file else None
         self._log_buffer = ""
