@@ -347,6 +347,19 @@ def generate_launch_description():
             remappings=remappings
         )
 
+        experiment_logger = Node(
+            package='gazebo_sim',
+            executable='experiment_logger.py',
+            namespace=namespace,
+            name='experiment_logger',
+            output='screen',
+            parameters=[{
+                'odom_topic': f'/{namespace}/odom',
+                'output_dir': '/tmp/experiments',
+            }],
+            remappings=remappings
+        )
+
         # Группировка всех действий для робота
         robot_group = GroupAction([
             node_robot_state_publisher,
@@ -357,6 +370,7 @@ def generate_launch_description():
             nav2_actions,
             rviz,
             waypoint_collector,
+            experiment_logger,
             # test_action
         ])
 

@@ -27,6 +27,7 @@ install(DIRECTORY
 install(PROGRAMS
   src/test_action.py
   scripts/waypoint_collector.py
+  scripts/experiment_logger.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -62,6 +62,7 @@ include makefiles/simulation.mk
 include makefiles/controller.mk
 include makefiles/navigation.mk
 include makefiles/yolo.mk
+include makefiles/experiment.mk
 include makefiles/ci.mk
 include makefiles/test.mk
 

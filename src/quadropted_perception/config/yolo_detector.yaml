@@ -6,3 +6,5 @@
     camera_topic: "/robot1/color/image_raw"
     device: "cpu"
     frame_id: "camera_link"
+    log_interval_sec: 0.0
+    log_file: ""

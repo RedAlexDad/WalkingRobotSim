@@ -16,7 +16,7 @@ from launch.actions import (
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import SetParameter
+from launch_ros.actions import Node, SetParameter
 
 
 def generate_launch_description():
@@ -77,5 +77,18 @@ def generate_launch_description():
             )
         )
     )
+
+    experiment_logger = Node(
+        package='gazebo_sim',
+        executable='experiment_logger.py',
+        namespace='robot1',
+        name='experiment_logger',
+        output='screen',
+        parameters=[{
+            'odom_topic': '/robot1/odom',
+            'output_dir': '/tmp/experiments',
+        }],
+    )
+    ld.add_action(experiment_logger)
 
     return ld
