@@ -12,8 +12,7 @@ IMAGE_NAME      := walking_robot_sim:latest
 DOCKER_DIR      := $(CURDIR)/src/docker
 PROJECT_ROOT    := $(CURDIR)
 ROS_DISTRO      := jazzy
-COMPOSE         := docker compose
-COMPOSE_FILE    := $(DOCKER_DIR)/compose.yml
+COMPOSE         := docker compose -f $(CURDIR)/compose.yml
 
 # ════════════════════════════════════════════════════════════
 # ЦВЕТА

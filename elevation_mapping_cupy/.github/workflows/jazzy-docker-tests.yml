@@ -1,0 +1,47 @@
+name: Jazzy (Docker)
+
+on:
+  push:
+    branches: [ "ros2", "jazzy" ]
+  pull_request:
+    branches: [ "main", "ros2", "jazzy" ]
+  workflow_dispatch:
+
+jobs:
+  build_test:
+    # Requires a GPU-capable self-hosted runner with Docker + NVIDIA container runtime.
+    runs-on: [ self-hosted, Linux, X64 ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image (Jazzy)
+        run: |
+          set -euo pipefail
+          docker build -f docker/Dockerfile.x64 -t elevation_mapping_cupy:jazzy .
+
+      - name: Colcon build + test inside container
+        run: |
+          set -euo pipefail
+
+          WS=/tmp/ros2_ws_emcupy
+          rm -rf "$WS"
+          mkdir -p "$WS/src"
+          cp -a "$GITHUB_WORKSPACE" "$WS/src/elevation_mapping_cupy"
+
+          docker run --rm --gpus all --net=host \
+            -v "$WS":/ws -w /ws elevation_mapping_cupy:jazzy bash -lc '
+              set -e
+              source /opt/ros/jazzy/setup.bash
+              colcon build --symlink-install \
+                --build-base build_jazzy --install-base install_jazzy \
+                --packages-select elevation_map_msgs elevation_mapping_cupy \
+                --packages-ignore-regex "^grid_map.*" \
+                --event-handlers console_direct+
+              source install_jazzy/setup.bash
+              colcon test --packages-select elevation_mapping_cupy \
+                --build-base build_jazzy --install-base install_jazzy \
+                --packages-ignore-regex "^grid_map.*" \
+                --event-handlers console_direct+
+              colcon test-result --verbose --test-result-base build_jazzy
+            '
+

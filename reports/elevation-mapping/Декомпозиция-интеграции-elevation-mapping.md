@@ -11,75 +11,112 @@
 ## Этап 0. Подготовка окружения и изучение референса
 
 ### Задачи
-- [ ] Изучить архитектуру elevation_mapping_cupy (документация, примеры)
-- [ ] Запустить golden path тест из README (synthetic_depth_demo.launch.py)
-- [ ] Проверить, что Docker-сборка работает на твоей машине
-- [ ] Выяснить, есть ли NVIDIA GPU и CUDA (без CuPy не запустится)
+- [x] Изучить архитектуру elevation_mapping_cupy (документация, примеры)
+- [x] Запустить golden path тест из README (synthetic_depth_demo.launch.py) — работает
+- [x] Проверить, что Docker-сборка работает на твоей машине
+- [x] Выяснить, есть ли NVIDIA GPU и CUDA (GTX 1650 Ti + CUDA 12.8)
 - [ ] Прочитать paper "Elevation Mapping for Locomotion and Navigation using GPU" (Miki et al., IROS 2022)
 
 ### Артефакты
 - Конспект архитектуры elevation_mapping_cupy
-- Результаты тестового прогона
+- Результаты тестового прогона (41/41 тестов пройдено)
 
-### Время
-~1 неделя
+### Комментарии
+- Dockerfile пришлось фиксить: `numpy<2`, PyTorch `cu126` вместо `cu121`
+- CuPy JIT падает на numpy 2.x с CC 7.5 (GTX 1650 Ti) — решено `numpy<2`
 
 ---
 
 ## Этап 1. Интеграция в Docker-сборку проекта
 
 ### Задачи
-- [ ] Добавить elevation_mapping_cupy как подмодуль / зависимость в Dockerfile
-- [ ] Собрать образ с поддержкой CUDA + CuPy
-- [ ] Проверить совместимость с существующим образом (ros:jazzy-desktop)
-- [ ] Настроить DDS (CycloneDDS) для передачи сообщений между контейнером и Gazebo
+- [x] Скопировать elevation_mapping_cupy (без .git) в корень WalkingRobotSim
+- [x] Добавить Cyclone DDS в Dockerfile GPU-образа
+- [x] Создать корневой compose.yml с двумя сервисами: simulator + elevation_mapping
+- [x] Собрать GPU-образ с поддержкой CUDA + CuPy + Cyclone DDS
+- [x] Настроить host network для передачи сообщений между контейнерами
+- [x] Обновить Makefile и test.mk для новой структуры
 
-### Артефакты
-- Обновлённый Dockerfile (если необходимо)
-- Рабочий контейнер с elevation_mapping_cupy
+### Архитектурное решение: два контейнера
+
+```
+WalkingRobotSim/
+├── compose.yml                      # Корневой compose — оба сервиса
+├── elevation_mapping_cupy/          # Копия репозитория (без .git)
+├── src/
+│   ├── docker/
+│   │   ├── Dockerfile               # Simulator (CPU, 6-stage)
+│   │   └── Dockerfile.x64           # (orig) — используется через build context
+│   ├── gazebo_sim/
+│   ├── go2_description/
+│   └── ...
+├── Makefile                         # DOCKER_DIR → $(CURDIR)
+└── makefiles/test.mk                # проверяет корневой compose.yml
+```
+
+**Почему два контейнера, а не один:**
+- Simulator: `osrf/ros:jazzy-desktop`, CPU-only, 6-stage Dockerfile
+- Elevation: `nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04`, GPU, отдельный Dockerfile
+- Общаются через host network + Cyclone DDS (`ROS_DOMAIN_ID=0`)
+- Не нужно пересобирать основной образ (30 мин) при изменениях GPU-части
 
 ### Время
-~1 неделя
+~1 неделя (факт: ~1.5 недели с учётом отладки)
 
 ---
 
-## Этап 2. Подключение LiDAR топиков Unitree к elevation_mapping
+## Этап 2. Подключение depth-камеры Unitree к elevation_mapping
+
+### Мотивация смены источника данных
+
+Изначально планировалось использовать LiDAR `/robot1/scan` (LaserScan).
+Однако LaserScan — это 2D, а elevation_mapping принимает PointCloud2.
+Варианты:
+1. Конвертировать LaserScan → PointCloud2 через `laser_geometry::LaserProjection`
+2. Добавить depth-камеру в Go2, которая публикует PointCloud2 напрямую
+
+**Выбран вариант 2** — depth-камера даёт 3D облако точек с глубиной,
+не требует дополнительной конвертации и лучше подходит для карты высот.
 
 ### Задачи
-- [ ] Определить, какие LiDAR топики публикует симулятор Unitree в Gazebo
-- [ ] Настроить input_sources в конфиге elevation_mapping для приёма PointCloud2
-- [ ] Настроить robot_pose_topic (топик с pose + covariance)
-- [ ] Настроить TF дерево: map → odom → base_link → lidar_frame
+- [x] Добавить depth_camera sensor в gazebo.xacro — PointCloud2 на `/${robot_name}/depth/points`
+- [x] Настроить gz_bridge.yaml для проброса depth-топиков
+- [x] Настроить gazebo_multi_nav2_world.launch.py (inline bridge)
+- [x] Создать terrain_test.world с рельефом (ramps, steps, bumps)
+- [x] Переключить launch_python.launch.py на terrain_test.world
+- [x] Верифицировать, что go2_description подхватывается через symlink-install
+- [x] Создать конфиг elevation_mapping для Go2 depth (go2_depth.yaml)
+- [ ] Запустить симуляцию + elevation_mapping_node вместе
+- [ ] Верифицировать приём PointCloud2 в elevation_mapping_node
 - [ ] Подобрать параметры sensor_model (noise model, cutoff depths)
-- [ ] Калибровать min_variance, max_variance под LiDAR Unitree
+- [ ] Калибровать min_variance, max_variance под depth-камеру Go2
 
 ### Конфигурация
-Пример конфига `config/elevation_mapping.yaml`:
+`elevation_mapping_cupy/config/setups/go2/go2_depth.yaml`:
 ```yaml
-elevation_mapping:
+/elevation_mapping_node:
   ros__parameters:
-    input_sources:
-      lidar:
-        type: pointcloud
-        topic: /robot1/points
-        queue_size: 1
-        publish_on_update: true
-    robot_pose_topic: /robot1/robot_state/pose
-    base_frame_id: robot1/base_link
-    map_frame_id: robot1/elevation_map
-    track_point_frame_id: robot1/base_link
-    length_in_x: 5.0
-    length_in_y: 5.0
-    resolution: 0.05
-    fused_map_publishing_rate: 5.0
+    map_frame: "odom"
+    base_frame: "base_link"
+    corrected_map_frame: "odom"
+    subscribers:
+      depth:
+        topic_name: "/robot1/depth/points"
+        data_type: "pointcloud"
+    publishers:
+      elevation_map:
+        layers: ["elevation", "variance", "traversability"]
+        basic_layers: ["elevation"]
+        fps: 10.0
 ```
 
 ### Артефакты
-- Конфигурационный файл elevation_mapping для Unitree
-- Запуск elevation_mapping_node как composable node в launch файле
+- Конфигурационный файл elevation_mapping для Go2 depth (go2_depth.yaml)
+- Depth-камера в URDF Go2 (gazebo.xacro)
+- Terrain-тестовый мир (terrain_test.world)
 
 ### Время
-~1.5 недели
+~1.5 недели (факт: 1 неделя, часть работ выполнена)
 
 ---
 
@@ -103,7 +140,7 @@ elevation_mapping:
 - Тесты сегментации на записях из симуляции
 
 ### Время
-~1 неделя
+~1 неделя (с учётом опыта с depth-камерой)
 
 ---
 
@@ -236,18 +273,18 @@ else:  # безопасная
 
 ## Итого по времени
 
-| Этап | Недель |
-|---|---|
-| 0. Подготовка | 1 |
-| 1. Docker-интеграция | 1 |
-| 2. Подключение LiDAR | 1.5 |
-| 3. Ground segmentation | 1 |
-| 4. Gradient + cost function | 1.5 |
-| 5. Адаптация походки | 1.5 |
-| 6. Terrain-aware planning | 2 |
-| 7. Сбор метрик | 1 |
-| 8. Оформление главы | 1 |
-| **Итого** | **~11.5 недель** |
+| Этап | Недель | Статус |
+|---|---|---|
+| 0. Подготовка | 1 | ✅ Выполнен (кроме paper) |
+| 1. Docker-интеграция | 1 | ✅ Выполнен |
+| 2. Подключение depth-камеры | 1.5 | 🔄 В работе (75%) |
+| 3. Ground segmentation | 1 | ⏳ Ожидает |
+| 4. Gradient + cost function | 1.5 | ⏳ Ожидает |
+| 5. Адаптация походки | 1.5 | ⏳ Ожидает |
+| 6. Terrain-aware planning | 2 | ⏳ Ожидает |
+| 7. Сбор метрик | 1 | ⏳ Ожидает |
+| 8. Оформление главы | 1 | ⏳ Ожидает |
+| **Итого** | **~11.5 недель** | **~2.5 недели выполнено** |
 
 ---
 
@@ -255,8 +292,8 @@ else:  # безопасная
 
 ```mermaid
 graph TD
-    A[Этап 0: Подготовка] --> B[Этап 1: Docker]
-    B --> C[Этап 2: LiDAR]
+    A[Этап 0: Подготовка] --> B[Этап 1: Docker-интеграция]
+    B --> C[Этап 2: Depth-камера]
     C --> D[Этап 3: Ground seg]
     C --> E[Этап 4: Traversability]
     D --> E
@@ -269,6 +306,25 @@ graph TD
 
 ---
 
+## Ключевые изменения по ходу работ
+
+### Проблема: Gazebo Harmonic `gpu_lidar` публикует LaserScan, а elevation_mapping требует PointCloud2
+**Решение:** Добавлена depth-камера в Go2 (gazebo.xacro), публикует PointCloud2 напрямую
+
+### Проблема: Разные базовые образы (CPU vs GPU)
+**Решение:** Два контейнера с host network + Cyclone DDS, общаются как ROS 2 ноды
+
+### Проблема: CuPy несовместим с numpy 2.x на GTX 1650 Ti (CC 7.5)
+**Решение:** Пин `numpy<2` в Dockerfile
+
+### Проблема: Разные RMW реализации (simulator на Cyclone DDS, elevation на Fast DDS)
+**Решение:** Cyclone DDS установлен в GPU-образ, `RMW_IMPLEMENTATION=rmw_cyclonedds_cpp` для обоих
+
+### Проблема: elevation_mapping_cupy v2.1.0 собирает torch c `cu121` — несовместимо с CUDA 12.8
+**Решение:** PyTorch index `cu126` вместо `cu121`
+
+---
+
 ## Стек технологий
 
 - ROS 2 Jazzy (Ubuntu 24.04)
@@ -277,5 +333,6 @@ graph TD
 - grid_map (C++ библиотека)
 - Nav2 (планирование)
 - Unitree Go2 (робот)
-- NVIDIA GPU + CUDA 12.x
-- Docker + docker-compose
+- NVIDIA GTX 1650 Ti + CUDA 12.8
+- Docker + Docker Compose (two-container architecture)
+- Cyclone DDS (межконтейнерная связь)

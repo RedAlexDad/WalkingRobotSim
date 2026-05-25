@@ -165,7 +165,9 @@ def generate_launch_description():
                 f'/{namespace}/color/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
                 f'/{namespace}/color/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
                 f'/{namespace}/color/image_rect@sensor_msgs/msg/Image@gz.msgs.Image',
-                # f'/{namespace}/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock'
+                f'/{namespace}/depth/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudWithSizes',
+                f'/{namespace}/depth/depth_image@sensor_msgs/msg/Image@gz.msgs.Image',
+                f'/{namespace}/depth/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
             ]
         )
         start_gazebo_ros_image_bridge_cmd = Node(

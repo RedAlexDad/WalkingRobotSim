@@ -40,7 +40,7 @@ def generate_launch_description():
         )
     )
 
-    world_file = os.path.join(pkg_path, "world", "cafe.world")
+    world_file = os.path.join(pkg_path, "world", "terrain_test.world")
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(

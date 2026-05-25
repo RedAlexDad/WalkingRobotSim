@@ -1,0 +1,2 @@
+# Keep this file for the docs CI workflow.
+# The documentation is intentionally lightweight and should not require GPU/CuPy.

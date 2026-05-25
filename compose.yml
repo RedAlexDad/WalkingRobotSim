@@ -1,0 +1,95 @@
+x-basic: &basic
+  ipc: host
+  stdin_open: true
+  network_mode: host
+  tty: true
+  privileged: true
+  environment:
+    DISPLAY:
+    XAUTHORITY: "/root/.Xauthority"
+    QT_X11_NO_MITSHM: "1"
+    XDG_RUNTIME_DIR:
+  volumes:
+    - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    - ${HOME}/.Xauthority:/root/.Xauthority
+
+x-env-gui: &env_gui
+  DISPLAY:
+  XAUTHORITY: "/root/.Xauthority"
+  QT_X11_NO_MITSHM: "1"
+  XDG_RUNTIME_DIR:
+
+x-env-ros: &env_ros
+  RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+  ROS_DOMAIN_ID: 0
+  ROS_DISTRO: jazzy
+  CYCLONEDDS_URI: file:///cyclonedds.xml
+
+services:
+  simulator:
+    <<: *basic
+    image: walking_robot_sim:latest
+    container_name: walking_robot_sim
+    command: bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && tail -f /dev/null"
+    environment:
+      <<: [*env_gui, *env_ros]
+      GAZEBO_RESOURCE_PATH: "/usr/share/gazebo-11"
+      GZ_SIM_RESOURCE_PATH: "/root/ws/src/gazebo_sim/models/"
+      GAZEBO_MODEL_PATH: "/usr/share/gazebo-11/models/:/opt/ros/jazzy/share/turtlebot3_gazebo/models/"
+      WORKSPACE_DIR: "/root/ws"
+      ROS_LOG_DIR: "/root/ws/logs"
+    build:
+      context: .
+      dockerfile: src/docker/Dockerfile
+      args:
+        BASE_IMG: osrf/ros:jazzy-desktop
+        ROS_DISTRO: jazzy
+      target: final
+    volumes:
+      - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
+      - ./logs/gazebo:/root/ws/logs
+      - ./data/gazebo:/root/ws/data
+      - project_src:/root/ws/src/
+    restart: unless-stopped
+
+  elevation_mapping:
+    image: elevation_mapping_cupy:jazzy
+    container_name: elevation_mapping
+    profiles: ["elevation"]
+    <<: *basic
+    group_add:
+      - "44"
+    environment:
+      <<: *env_gui
+      RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+      ROS_DOMAIN_ID: 0
+      ROS_DISTRO: jazzy
+    build:
+      context: ./elevation_mapping_cupy
+      dockerfile: docker/Dockerfile.x64
+    volumes:
+      - ${HOME}/ros2_ws:/ws:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: >
+      bash -c '
+        set -e;
+        source /opt/ros/jazzy/setup.bash;
+        source /ws/install/setup.bash;
+        echo "Elevation mapping node ready. Subscribing to /robot1/depth/points";
+        ros2 launch elevation_mapping_cupy elevation_mapping.launch.py \
+          robot_config:=go2/go2_depth.yaml launch_rviz:=true;
+      '
+
+volumes:
+  project_src:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./src

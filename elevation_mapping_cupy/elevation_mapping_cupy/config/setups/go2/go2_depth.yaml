@@ -1,0 +1,16 @@
+/elevation_mapping_node:
+  ros__parameters:
+    map_frame: "odom"
+    base_frame: "base_link"
+    corrected_map_frame: "odom"
+
+    subscribers:
+      depth:
+        topic_name: "/robot1/depth/points"
+        data_type: "pointcloud"
+
+    publishers:
+      elevation_map:
+        layers: ["elevation", "variance", "traversability"]
+        basic_layers: ["elevation"]
+        fps: 10.0

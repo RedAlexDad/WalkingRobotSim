@@ -67,8 +67,8 @@ check-structure:
 		printf "${RED}${BOLD}[x]${NC} ${RED}Директория src/docker не найдена${NC}\n"; \
 		exit 1; \
 	fi
-	@if [ ! -f "$(PROJECT_ROOT)/src/docker/compose.yml" ]; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Файл src/docker/compose.yml не найден${NC}\n"; \
+	@if [ ! -f "$(PROJECT_ROOT)/compose.yml" ]; then \
+		printf "${RED}${BOLD}[x]${NC} ${RED}Файл compose.yml не найден${NC}\n"; \
 		exit 1; \
 	fi
 	@if [ ! -f "$(PROJECT_ROOT)/src/docker/Dockerfile" ]; then \
@@ -90,19 +90,11 @@ check-structure:
 test-yaml:
 	@if command -v yamllint &> /dev/null; then \
 		printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Проверка синтаксиса YAML...${NC}\n"; \
-		if yamllint $(DOCKER_DIR)/compose.yml; then \
+		if yamllint $(PROJECT_ROOT)/compose.yml; then \
 			printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Синтаксис compose.yml корректен${NC}\n"; \
 		else \
 			printf "${RED}${BOLD}[x]${NC} ${RED}Обнаружены ошибки в синтаксисе compose.yml${NC}\n"; \
 			exit 1; \
-		fi; \
-		if [ -f "$(DOCKER_DIR)/compose.multistage.yml" ]; then \
-			if yamllint $(DOCKER_DIR)/compose.multistage.yml; then \
-				printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Синтаксис compose.multistage.yml корректен${NC}\n"; \
-			else \
-				printf "${RED}${BOLD}[x]${NC} ${RED}Обнаружены ошибки в синтаксисе compose.multistage.yml${NC}\n"; \
-				exit 1; \
-			fi; \
 		fi; \
 		if [ -d "$(PROJECT_ROOT)/.github/workflows" ]; then \
 			if yamllint $(PROJECT_ROOT)/.github/workflows/; then \
@@ -140,12 +132,16 @@ setup: check-x11
 	fi
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Docker Compose найден: $$(docker compose version --short)${NC}\n"
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Проверка структуры проекта...${NC}\n"
-	@for file in "docker/Dockerfile" "docker/compose.yml" "docker/cyclonedds.xml"; do \
+	@for file in "docker/Dockerfile" "docker/cyclonedds.xml"; do \
 		if [ ! -f "$(PROJECT_ROOT)/src/$$file" ]; then \
 			printf "${RED}${BOLD}[x]${NC} ${RED}Файл не найден: $$file${NC}\n"; \
 			exit 1; \
 		fi; \
-	done
+	done; \
+	if [ ! -f "$(PROJECT_ROOT)/compose.yml" ]; then \
+		printf "${RED}${BOLD}[x]${NC} ${RED}Файл compose.yml не найден${NC}\n"; \
+		exit 1; \
+	fi
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Структура проекта верна${NC}\n"
 	@echo ""
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Информация о системе:${NC}\n"
