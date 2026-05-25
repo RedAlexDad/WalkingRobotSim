@@ -65,7 +65,7 @@ def generate_launch_description():
             core_param_path,
             robot_param_path,
             {'use_sim_time': use_sim_time}
-        ]
+        ],
     )
 
     rviz_node = Node(
