@@ -65,34 +65,47 @@ WalkingRobotSim/
 
 ---
 
-## Этап 2. Подключение depth-камеры Unitree к elevation_mapping
+## Этап 2. Подключение 3D LiDAR к elevation_mapping
 
 ### Мотивация смены источника данных
 
-Изначально планировалось использовать LiDAR `/robot1/scan` (LaserScan).
-Однако LaserScan — это 2D, а elevation_mapping принимает PointCloud2.
-Варианты:
-1. Конвертировать LaserScan → PointCloud2 через `laser_geometry::LaserProjection`
-2. Добавить depth-камеру в Go2, которая публикует PointCloud2 напрямую
+Изначально планировалось использовать depth-камеру (PointCloud2 напрямую).
+Однако depth-камера в Gazebo Harmonic через `ros_gz_bridge` публикует
+`Image` (depth image), а не `PointCloud2`. Конвертация depth → PointCloud2
+требует ресурсов и на GPU 4GB даёт плохой FPS.
 
-**Выбран вариант 2** — depth-камера даёт 3D облако точек с глубиной,
-не требует дополнительной конвертации и лучше подходит для карты высот.
+**Решено: использовать 3D LiDAR (gpu_lidar с 16 вертикальными лучами).**
+
+Проблема: Gazebo `gpu_lidar` публикует LaserScan (2D-структура), даже с
+16 вертикальными углами. ROS 2 `sensor_msgs/LaserScan` не имеет полей
+`vertical_angle_min/max` — они теряются при бридже.
+
+**Решение: C++ конвертер `laser_to_cloud_converter.cc`**:
+
+```
+gpu_lidar → gz.msgs.LaserScan → (C++ via gz::transport::Node)
+→ gz.msgs.PointCloudPacked → ros_gz_bridge → sensor_msgs/PointCloud2
+→ elevation_mapping_node
+```
+
+Читает `gz.msgs.LaserScan` напрямую через `gz::transport::Node` (сохраняя
+`vertical_angle_*`), проецирует в 3D, публикует `gz.msgs.PointCloudPacked`.
 
 ### Задачи
-- [x] Добавить depth_camera sensor в gazebo.xacro — PointCloud2 на `/${robot_name}/depth/points`
-- [x] Настроить gz_bridge.yaml для проброса depth-топиков
-- [x] Настроить gazebo_multi_nav2_world.launch.py (inline bridge)
+- [x] Переключить gpu_lidar с 1-beam на 16-beam: vertical samples 16, -15°..+15°
+- [x] Написать C++ конвертер laser_to_cloud_converter.cc (gz::transport Node)
+- [x] Интегрировать конвертер в CMakeLists.txt (find_package gz-* vendor cmake)
+- [x] Собрать конвертер через colcon (бинарник в install/gazebo_sim/lib/)
+- [x] Удалить depth-камеру из gazebo.xacro и gz_bridge.yaml
+- [x] Обновить launch: убрать depth bridge, заменить Python на C++ ExecuteProcess
 - [x] Создать terrain_test.world с рельефом (ramps, steps, bumps)
-- [x] Переключить launch_python.launch.py на terrain_test.world
-- [x] Верифицировать, что go2_description подхватывается через symlink-install
-- [x] Создать конфиг elevation_mapping для Go2 depth (go2_depth.yaml)
+- [x] Переименовать конфиг: go2_depth.yaml → go2_lidar3d.yaml (topic /robot1/scan/points)
 - [ ] Запустить симуляцию + elevation_mapping_node вместе
 - [ ] Верифицировать приём PointCloud2 в elevation_mapping_node
-- [ ] Подобрать параметры sensor_model (noise model, cutoff depths)
-- [ ] Калибровать min_variance, max_variance под depth-камеру Go2
+- [ ] Подобрать параметры sensor_model под 3D LiDAR (16-beam)
 
 ### Конфигурация
-`elevation_mapping_cupy/config/setups/go2/go2_depth.yaml`:
+`elevation_mapping_cupy/config/setups/go2/go2_lidar3d.yaml`:
 ```yaml
 /elevation_mapping_node:
   ros__parameters:
@@ -101,7 +114,7 @@ WalkingRobotSim/
     corrected_map_frame: "odom"
     subscribers:
       depth:
-        topic_name: "/robot1/depth/points"
+        topic_name: "/robot1/scan/points"
         data_type: "pointcloud"
     publishers:
       elevation_map:
@@ -111,12 +124,13 @@ WalkingRobotSim/
 ```
 
 ### Артефакты
-- Конфигурационный файл elevation_mapping для Go2 depth (go2_depth.yaml)
-- Depth-камера в URDF Go2 (gazebo.xacro)
-- Terrain-тестовый мир (terrain_test.world)
+- Конфигурационный файл elevation_mapping для Go2 3D LiDAR (go2_lidar3d.yaml)
+- C++ конвертер laser_to_cloud_converter.cc (живёт в src/gazebo_sim/src/)
+- Launch file с ExecuteProcess для конвертера + бридж PointCloudPacked→PointCloud2
+- Gazebo world с рельефом (terrain_test.world)
 
 ### Время
-~1.5 недели (факт: 1 неделя, часть работ выполнена)
+~1.5 недели (факт: ~1.5 недели из-за переключения с depth на LiDAR)
 
 ---
 
@@ -277,14 +291,14 @@ else:  # безопасная
 |---|---|---|
 | 0. Подготовка | 1 | ✅ Выполнен (кроме paper) |
 | 1. Docker-интеграция | 1 | ✅ Выполнен |
-| 2. Подключение depth-камеры | 1.5 | 🔄 В работе (75%) |
+| 2. Подключение 3D LiDAR | 1.5 | 🔄 В работе (80%) |
 | 3. Ground segmentation | 1 | ⏳ Ожидает |
 | 4. Gradient + cost function | 1.5 | ⏳ Ожидает |
 | 5. Адаптация походки | 1.5 | ⏳ Ожидает |
 | 6. Terrain-aware planning | 2 | ⏳ Ожидает |
 | 7. Сбор метрик | 1 | ⏳ Ожидает |
 | 8. Оформление главы | 1 | ⏳ Ожидает |
-| **Итого** | **~11.5 недель** | **~2.5 недели выполнено** |
+| **Итого** | **~11.5 недель** | **~3 недели выполнено** |
 
 ---
 
@@ -293,7 +307,7 @@ else:  # безопасная
 ```mermaid
 graph TD
     A[Этап 0: Подготовка] --> B[Этап 1: Docker-интеграция]
-    B --> C[Этап 2: Depth-камера]
+    B --> C[Этап 2: 3D LiDAR]
     C --> D[Этап 3: Ground seg]
     C --> E[Этап 4: Traversability]
     D --> E
@@ -309,7 +323,8 @@ graph TD
 ## Ключевые изменения по ходу работ
 
 ### Проблема: Gazebo Harmonic `gpu_lidar` публикует LaserScan, а elevation_mapping требует PointCloud2
-**Решение:** Добавлена depth-камера в Go2 (gazebo.xacro), публикует PointCloud2 напрямую
+**Решение (v1):** Добавлена depth-камера в Go2 — отказались, т.к. Gazebo публикует Image, а не PointCloud2
+**Решение (v2):** Переключились на 3D LiDAR (gpu_lidar с 16 vertical samples) + C++ конвертер LaserScan→PointCloudPacked через gz::transport
 
 ### Проблема: Разные базовые образы (CPU vs GPU)
 **Решение:** Два контейнера с host network + Cyclone DDS, общаются как ROS 2 ноды

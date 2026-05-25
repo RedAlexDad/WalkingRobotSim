@@ -165,25 +165,12 @@ def generate_launch_description():
                 f'/{namespace}/color/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
                 f'/{namespace}/color/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
                 f'/{namespace}/color/image_rect@sensor_msgs/msg/Image@gz.msgs.Image',
-                f'/{namespace}/depth/depth_image@sensor_msgs/msg/Image@gz.msgs.Image',
-                f'/{namespace}/depth/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
+                f'/{namespace}/scan/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
             ]
         )
-        laser_to_pointcloud = Node(
-            package='gazebo_sim',
-            executable='laser_to_pointcloud.py',
-            namespace=namespace,
-            name='laser_to_pointcloud',
+        laser_to_cloud_converter = ExecuteProcess(
+            cmd=[f'{pkg_path}/lib/gazebo_sim/laser_to_cloud_converter'],
             output='screen',
-            parameters=[{
-                'use_sim_time': True,
-                'input_scan': f'/{namespace}/scan',
-                'output_cloud': f'/{namespace}/scan/points',
-                'vertical_samples': 16,
-                'vertical_angle_min': -0.26,
-                'vertical_angle_max': 0.26,
-                'range_max': 12.0,
-            }]
         )
 
         start_gazebo_ros_image_bridge_cmd = Node(
@@ -383,7 +370,7 @@ def generate_launch_description():
             node_robot_state_publisher,
             spawn_entity,
             ros_gz_bridge,
-            laser_to_pointcloud,
+            laser_to_cloud_converter,
             start_gazebo_ros_image_bridge_cmd,
             robot_control,
             nav2_actions,
