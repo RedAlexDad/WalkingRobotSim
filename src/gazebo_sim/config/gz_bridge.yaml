@@ -4,12 +4,6 @@
   gz_type_name: "gz.msgs.Clock"
   direction: GZ_TO_ROS
 
-- ros_topic_name: "/robot1/depth/points"
-  gz_topic_name: "/robot1/depth/points"
-  ros_type_name: "sensor_msgs/msg/PointCloud2"
-  gz_type_name: "gz.msgs.PointCloudWithSizes"
-  direction: GZ_TO_ROS
-
 - ros_topic_name: "/robot1/depth/depth_image"
   gz_topic_name: "/robot1/depth/depth_image"
   ros_type_name: "sensor_msgs/msg/Image"

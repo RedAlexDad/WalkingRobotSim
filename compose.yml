@@ -81,9 +81,9 @@ services:
         set -e;
         source /opt/ros/jazzy/setup.bash;
         source /ws/install/setup.bash;
-        echo "Elevation mapping node ready. Subscribing to /robot1/depth/points";
+        echo "Elevation mapping node ready. Subscribing to /robot1/scan/points";
         ros2 launch elevation_mapping_cupy elevation_mapping.launch.py \
-          robot_config:=go2/go2_depth.yaml launch_rviz:=true;
+          robot_config:=go2/go2_lidar3d.yaml launch_rviz:=true;
       '
 
 volumes:

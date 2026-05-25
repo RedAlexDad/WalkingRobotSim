@@ -165,11 +165,23 @@ def generate_launch_description():
                 f'/{namespace}/color/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
                 f'/{namespace}/color/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
                 f'/{namespace}/color/image_rect@sensor_msgs/msg/Image@gz.msgs.Image',
-                f'/{namespace}/depth/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudWithSizes',
                 f'/{namespace}/depth/depth_image@sensor_msgs/msg/Image@gz.msgs.Image',
                 f'/{namespace}/depth/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
             ]
         )
+        laser_to_pointcloud = Node(
+            package='laser_geometry',
+            executable='laser_scan_to_point_cloud',
+            namespace=namespace,
+            name='laser_to_pointcloud',
+            output='screen',
+            parameters=[{'use_sim_time': True}],
+            remappings=[
+                ('/scan_in', f'/{namespace}/scan'),
+                ('/cloud_out', f'/{namespace}/scan/points')
+            ]
+        )
+
         start_gazebo_ros_image_bridge_cmd = Node(
             package='ros_gz_image',
             executable='image_bridge',
@@ -367,6 +379,7 @@ def generate_launch_description():
             node_robot_state_publisher,
             spawn_entity,
             ros_gz_bridge,
+            laser_to_pointcloud,
             start_gazebo_ros_image_bridge_cmd,
             robot_control,
             nav2_actions,

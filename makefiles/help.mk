@@ -59,7 +59,6 @@ help:
 	@printf "  ${GREEN}${BOLD}make build-stage STAGE=ros-core${NC}   Сборка конкретного этапа\n"
 	@printf "  ${GREEN}${BOLD}make build-stage-list${NC}             Показать доступные этапы\n"
 	@echo ""
-	@echo ""
 	@printf "${BOLD}Elevation Mapping:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make elevation${NC}                   Запуск карты высот (GPU + RViz)\n"
 	@printf "  ${GREEN}${BOLD}make elevation-logs${NC}              Логи elevation mapping\n"
@@ -72,7 +71,7 @@ help:
 	@printf "  ${GREEN}${BOLD}make benchmark${NC}            Бенчмарк Python + C++\n"
 	@printf "  ${GREEN}${BOLD}make ci-lint${NC}              Линтинг всех языков\n"
 	@printf "  ${GREEN}${BOLD}make ci-test-cpp${NC}          C++ unit тесты\n"
-
+	@echo ""
 	@printf "${BOLD}Прочее:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make exec CMD='ros2 topic list'${NC}   Выполнение команды\n"
 	@printf "  ${GREEN}${BOLD}make setup${NC}                        Начальная настройка\n"
