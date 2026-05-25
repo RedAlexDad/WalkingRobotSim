@@ -72,6 +72,8 @@ services:
       dockerfile: docker/Dockerfile.x64
     volumes:
       - ./elevation_mapping_cupy/elevation_mapping_cupy/launch/elevation_mapping.launch.py:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/launch/elevation_mapping.launch.py:ro
+      - ./elevation_mapping_cupy/elevation_mapping_cupy/config/core/core_param.yaml:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/config/core/core_param.yaml:ro
+      - ./elevation_mapping_cupy/elevation_mapping_cupy/config/setups/go2/go2_lidar3d.yaml:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/config/setups/go2/go2_lidar3d.yaml:ro
       - ./src/gazebo_sim/scripts/tf_relay.py:/tf_relay.py:ro
       - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
     deploy:
