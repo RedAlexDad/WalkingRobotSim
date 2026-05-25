@@ -23,7 +23,17 @@ build-no-cache:
 ## Запуск контейнера
 up:
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск контейнера $(CONTAINER_NAME)...${NC}\n"
-	@cd $(DOCKER_DIR) && $(COMPOSE) up -d
+	@cd $(DOCKER_DIR) && $(COMPOSE) up -d 2>&1 || { \
+		if docker ps -a --format '{{.Names}}' | grep -Fxq '$(CONTAINER_NAME)'; then \
+			printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Контейнер $(CONTAINER_NAME) уже существует, удаляем и повторяем...${NC}\n"; \
+			docker rm -f $(CONTAINER_NAME) >/dev/null 2>&1; \
+			sleep 1; \
+			$(COMPOSE) up -d; \
+		else \
+			printf "${RED}${BOLD}[x]${NC} ${RED}Неизвестная ошибка запуска${NC}\n"; \
+			exit 1; \
+		fi; \
+	}
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Ожидание инициализации ROS окружения...${NC}\n"
 	@attempt=0; \
 	while [ $$attempt -lt 30 ]; do \

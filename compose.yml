@@ -68,7 +68,7 @@ services:
       context: ./elevation_mapping_cupy
       dockerfile: docker/Dockerfile.x64
     volumes:
-      - ${HOME}/ros2_ws:/ws:ro
+      - ./elevation_mapping_cupy/elevation_mapping_cupy/config:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/config:ro
     deploy:
       resources:
         reservations:
