@@ -170,16 +170,20 @@ def generate_launch_description():
             ]
         )
         laser_to_pointcloud = Node(
-            package='laser_geometry',
-            executable='laser_scan_to_point_cloud',
+            package='gazebo_sim',
+            executable='laser_to_pointcloud.py',
             namespace=namespace,
             name='laser_to_pointcloud',
             output='screen',
-            parameters=[{'use_sim_time': True}],
-            remappings=[
-                ('/scan_in', f'/{namespace}/scan'),
-                ('/cloud_out', f'/{namespace}/scan/points')
-            ]
+            parameters=[{
+                'use_sim_time': True,
+                'input_scan': f'/{namespace}/scan',
+                'output_cloud': f'/{namespace}/scan/points',
+                'vertical_samples': 16,
+                'vertical_angle_min': -0.26,
+                'vertical_angle_max': 0.26,
+                'range_max': 12.0,
+            }]
         )
 
         start_gazebo_ros_image_bridge_cmd = Node(

@@ -28,6 +28,7 @@ install(PROGRAMS
   src/test_action.py
   scripts/waypoint_collector.py
   scripts/experiment_logger.py
+  scripts/laser_to_pointcloud.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
