@@ -89,6 +89,9 @@ RUN --mount=type=cache,target=/home/${USERNAME}/.cache/pip,sharing=locked \
 
 RUN echo "source /ws/install/setup.bash" >> /home/${USERNAME}/.bashrc
 
+# XDG runtime dir for RViz/Qt
+RUN mkdir -p /run/user/${USER_UID} && chmod 0700 /run/user/${USER_UID} && chown ${USER_UID}:${USER_GID} /run/user/${USER_UID}
+
 WORKDIR /ws
 USER ${USERNAME}
 

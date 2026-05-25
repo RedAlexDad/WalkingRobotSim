@@ -64,6 +64,8 @@ services:
       RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
       ROS_DOMAIN_ID: 0
       ROS_DISTRO: jazzy
+      MESA_GLSL_CACHE_DISABLE: "true"
+      QT_QPA_PLATFORM: "xcb"
     build:
       context: ./elevation_mapping_cupy
       dockerfile: docker/Dockerfile.x64
@@ -81,8 +83,11 @@ services:
         source /opt/ros/jazzy/setup.bash;
         source /ws/install/setup.bash;
         echo "Elevation mapping node ready. Subscribing to /robot1/scan/points";
+        ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map odom &
         ros2 launch elevation_mapping_cupy elevation_mapping.launch.py \
-          robot_config:=go2/go2_lidar3d.yaml launch_rviz:=true;
+          robot_config:=go2/go2_lidar3d.yaml launch_rviz:=true \
+          use_sim_time:=true \
+          rviz_config:=/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/rviz/go2_elevation.rviz;
       '
 
 volumes:

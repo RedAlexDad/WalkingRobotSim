@@ -16,6 +16,7 @@ elevation-build:
 
 ## Запуск elevation mapping в фоне (без логов)
 elevation-bg:
+	@xhost +local: >/dev/null 2>&1 || true
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск elevation mapping в фоне...${NC}\n"
 	@$(COMPOSE) up -d elevation_mapping
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Elevation mapping запущен${NC}\n"
@@ -23,12 +24,14 @@ elevation-bg:
 
 ## Запуск elevation mapping с логами (foreground)
 elevation:
+	@xhost +local: >/dev/null 2>&1 || true
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск elevation mapping с логами...${NC}\n"
 	@$(COMPOSE) up elevation_mapping
 
 ## Запуск только RViz в elevation контейнере
 elevation-rviz:
 	$(require-elevation)
+	@xhost +local: >/dev/null 2>&1 || true
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск RViz в elevation контейнере...${NC}\n"
 	@docker exec -it elevation_mapping bash -c '\
 		source /opt/ros/jazzy/setup.bash; \
