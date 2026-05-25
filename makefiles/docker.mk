@@ -1,26 +1,9 @@
 # makefiles/docker.mk
 
-.PHONY: deploy build up up-bg down restart clean status logs shell deploy-no-cache build-stage build-stage-list build-elevation elevation elevation-logs
+.PHONY: deploy build up up-bg down restart clean status logs shell deploy-no-cache build-stage build-stage-list
 
 ## Сборка и запуск контейнера (рекомендуется)
 deploy: build up
-
-## Сборка GPU-образа для elevation mapping
-build-elevation:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Сборка elevation_mapping образа...${NC}\n"
-	@$(COMPOSE) build elevation_mapping
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Образ elevation_mapping собран${NC}\n"
-
-## Запуск elevation mapping с RViz (требует запущенного симулятора)
-elevation:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск elevation mapping (GPU + RViz)...${NC}\n"
-	@$(COMPOSE) up -d elevation_mapping
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Elevation mapping запущен${NC}\n"
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Логи: make elevation-logs${NC}\n"
-
-## Логи elevation mapping
-elevation-logs:
-	@$(COMPOSE) logs -f elevation_mapping
 
 ## Сборка и запуск контейнера без кэша
 deploy-no-cache: build-no-cache up
