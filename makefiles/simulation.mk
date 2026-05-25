@@ -2,19 +2,8 @@
 
 .PHONY: gazebo gazebo-py gazebo-cpp teleop set-pose reset-pose kill-ros exec test-aliases save-logs
 
-## Запуск Gazebo симуляции (Python контроллер)
-gazebo:
-	$(require-container)
-	$(check-x11)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Gazebo симуляции (ROS $(ROS_DISTRO) + Gazebo Harmonic)...${NC}\n"
-	@docker exec -it $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 launch gazebo_sim launch_python.launch.py \
-			use_sim_time:=true gui:=true \
-			$(if $(FPS),camera_fps:=${FPS})"
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
-	@$(MAKE) save-logs
+## Запуск Gazebo симуляции (C++ контроллер)
+gazebo: gazebo-cpp
 
 ## Запуск Gazebo симуляции с Python контроллером
 gazebo-py:
