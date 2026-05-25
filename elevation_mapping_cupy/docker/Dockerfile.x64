@@ -78,7 +78,18 @@ RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /home/${USERNAME}/.bashrc
 # rosdep init must run once (as root) inside the image.
 RUN rosdep init || true
 
-WORKDIR /home/${USERNAME}/workspace
+# Build the workspace as part of the image
+SHELL ["/bin/bash", "-c"]
+COPY --chown=${USER_UID}:${USER_GID} elevation_mapping_cupy /ws/src/elevation_mapping_cupy
+RUN --mount=type=cache,target=/home/${USERNAME}/.cache/pip,sharing=locked \
+    source /opt/ros/${ROS_DISTRO}/setup.bash \
+    && cd /ws \
+    && colcon build --packages-select elevation_mapping_cupy \
+    && rm -rf /ws/src
+
+RUN echo "source /ws/install/setup.bash" >> /home/${USERNAME}/.bashrc
+
+WORKDIR /ws
 USER ${USERNAME}
 
 CMD ["bash"]
