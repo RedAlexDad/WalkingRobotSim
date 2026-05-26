@@ -1,0 +1,85 @@
+# syntax=docker/dockerfile:1.4
+
+FROM osrf/ros:jazzy-desktop
+
+ARG ROS_DISTRO=jazzy
+ARG USERNAME=ubuntu
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8 \
+    TZ=UTC \
+    ROS_DISTRO=${ROS_DISTRO}
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    apt update && apt install -y --no-install-recommends \
+      locales tzdata \
+      curl gnupg2 lsb-release \
+      sudo git \
+      build-essential cmake \
+      python3-pip python3-venv \
+    && locale-gen en_US.UTF-8 \
+    && update-locale LC_ALL=${LC_ALL} LANG=${LANG} \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    apt update && apt install -y --no-install-recommends \
+      ros-${ROS_DISTRO}-ros-base \
+      ros-${ROS_DISTRO}-rviz2 \
+      ros-${ROS_DISTRO}-tf-transformations \
+      ros-${ROS_DISTRO}-grid-map-msgs \
+      ros-${ROS_DISTRO}-grid-map-rviz-plugin \
+      ros-${ROS_DISTRO}-pcl-ros \
+      ros-${ROS_DISTRO}-rosbag2-py \
+      ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
+      ros-${ROS_DISTRO}-cyclonedds \
+      ros-${ROS_DISTRO}-rosbag2-storage-mcap \
+      ros-${ROS_DISTRO}-ament-cmake \
+      ros-${ROS_DISTRO}-ament-cmake-python \
+      ros-${ROS_DISTRO}-ament-cmake-ros \
+      ros-${ROS_DISTRO}-launch-testing \
+      ros-${ROS_DISTRO}-launch-testing-ament-cmake \
+      python3-colcon-common-extensions \
+      python3-rosdep \
+      python3-vcstool \
+      python3-opencv \
+      python3-scipy \
+      python3-shapely \
+      python3-ruamel.yaml \
+      python3-matplotlib \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m pip install --no-cache-dir --break-system-packages -U \
+      torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
+      "numpy<2" \
+      simple-parsing
+
+RUN if ! getent group ${USER_GID} >/dev/null; then groupadd --gid ${USER_GID} ${USERNAME}; fi \
+    && if ! id -u ${USERNAME} >/dev/null 2>&1; then useradd -m -s /bin/bash --uid ${USER_UID} --gid ${USER_GID} ${USERNAME}; fi \
+    && echo "${USERNAME} ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
+    && chmod 0440 /etc/sudoers.d/${USERNAME}
+
+RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /home/${USERNAME}/.bashrc
+
+RUN rosdep init || true
+
+SHELL ["/bin/bash", "-c"]
+COPY --chown=${USER_UID}:${USER_GID} elevation_mapping_cupy /ws/src/elevation_mapping_cupy
+RUN --mount=type=cache,target=/home/${USERNAME}/.cache/pip,sharing=locked \
+    source /opt/ros/${ROS_DISTRO}/setup.bash \
+    && cd /ws \
+    && colcon build --packages-select elevation_mapping_cupy \
+    && rm -rf /ws/src
+
+RUN echo "source /ws/install/setup.bash" >> /home/${USERNAME}/.bashrc
+
+RUN mkdir -p /run/user/${USER_UID} && chmod 0700 /run/user/${USER_UID} && chown ${USER_UID}:${USER_GID} /run/user/${USER_UID}
+
+WORKDIR /ws
+USER ${USERNAME}
+
+CMD ["bash"]

@@ -99,6 +99,46 @@ services:
           rviz_config:=/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/rviz/go2_elevation.rviz;
       '
 
+  elevation_mapping_cpu:
+    image: elevation_mapping_cupy:cpu-jazzy
+    container_name: elevation_mapping_cpu
+    profiles: ["cpu"]
+    <<: *basic
+    group_add:
+      - "44"
+    environment:
+      <<: *env_gui
+      RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+      ROS_DOMAIN_ID: 0
+      ROS_DISTRO: jazzy
+      CYCLONEDDS_URI: file:///cyclonedds.xml
+      MESA_GLSL_CACHE_DISABLE: "true"
+      QT_QPA_PLATFORM: "xcb"
+    build:
+      context: ./elevation_mapping_cupy
+      dockerfile: docker/Dockerfile.cpu
+    volumes:
+      - ./elevation_mapping_cupy/elevation_mapping_cupy/launch/elevation_mapping.launch.py:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/launch/elevation_mapping.launch.py:ro
+      - ./elevation_mapping_cupy/elevation_mapping_cupy/config/core/core_param.yaml:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/config/core/core_param.yaml:ro
+      - ./elevation_mapping_cupy/elevation_mapping_cupy/config/setups/go2/go2_lidar3d.yaml:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/config/setups/go2/go2_lidar3d.yaml:ro
+      - ./src/gazebo_sim/scripts/tf_relay.py:/tf_relay.py:ro
+      - ./src/gazebo_sim/scripts/ground_segmenter.py:/ground_segmenter.py:ro
+      - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
+    command: >
+      bash -c '
+        set -e;
+        source /opt/ros/jazzy/setup.bash;
+        source /ws/install/setup.bash;
+        echo "Elevation mapping node ready (CPU). Ground segmenter -> /ground_cloud";
+        ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map odom &
+        python3 /tf_relay.py &
+        python3 /ground_segmenter.py &
+        ros2 launch elevation_mapping_cupy elevation_mapping.launch.py \
+          robot_config:=go2/go2_lidar3d.yaml launch_rviz:=true \
+          use_sim_time:=true \
+          rviz_config:=/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/rviz/go2_elevation.rviz;
+      '
+
 volumes:
   project_src:
     driver: local
