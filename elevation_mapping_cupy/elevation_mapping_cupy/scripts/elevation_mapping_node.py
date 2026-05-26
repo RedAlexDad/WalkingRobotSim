@@ -1,31 +1,33 @@
 #!/usr/bin/env python3
 import math
-import numpy as np
 import os
-from pathlib import Path
 from functools import partial
+from pathlib import Path
 from typing import Dict, List
 
+import numpy as np
 import rclpy
+import rosbag2_py
+import tf2_py as tf2
+import tf2_ros
+from ament_index_python.packages import get_package_share_directory
+from elevation_mapping_cupy.elevation_mapping import GridGeometry
+from elevation_mapping_cupy.gridmap_utils import (
+    decode_multiarray_to_rows_cols, encode_layer_to_multiarray)
+from geometry_msgs.msg import Quaternion, Vector3
+from grid_map_msgs.msg import GridMap
+from grid_map_msgs.srv import ProcessFile, SetGridMap
+from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import QoSPresetProfiles
-from ament_index_python.packages import get_package_share_directory
+from rclpy.serialization import deserialize_message, serialize_message
 from sensor_msgs.msg import PointCloud2, PointField
-from tf_transformations import quaternion_matrix
-import tf2_ros
-import tf2_py as tf2
-from rclpy.duration import Duration
-from rclpy.serialization import serialize_message, deserialize_message
-from grid_map_msgs.msg import GridMap
-from grid_map_msgs.srv import SetGridMap, ProcessFile
-from geometry_msgs.msg import Vector3, Quaternion
 from std_msgs.msg import Float32MultiArray
-from std_msgs.msg import MultiArrayLayout as MAL
 from std_msgs.msg import MultiArrayDimension as MAD
-import rosbag2_py
+from std_msgs.msg import MultiArrayLayout as MAL
+from tf_transformations import quaternion_matrix
+
 from elevation_mapping_cupy import ElevationMap, Parameter
-from elevation_mapping_cupy.elevation_mapping import GridGeometry
-from elevation_mapping_cupy.gridmap_utils import encode_layer_to_multiarray, decode_multiarray_to_rows_cols
 
 PDC_DATATYPE = {
     "1": np.int8,

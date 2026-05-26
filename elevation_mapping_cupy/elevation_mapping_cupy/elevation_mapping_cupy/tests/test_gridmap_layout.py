@@ -1,16 +1,21 @@
-import numpy as np
-from std_msgs.msg import Float32MultiArray, MultiArrayLayout, MultiArrayDimension
-
 import elevation_mapping_cupy.gridmap_utils as emn
+import numpy as np
+from std_msgs.msg import Float32MultiArray, MultiArrayDimension, MultiArrayLayout
 
 
-def _make_manual_gridmap_column(rows: int, cols: int) -> tuple[np.ndarray, Float32MultiArray]:
+def _make_manual_gridmap_column(
+    rows: int, cols: int
+) -> tuple[np.ndarray, Float32MultiArray]:
     """Build a Float32MultiArray with GridMap-style column-major layout."""
     data = np.arange(rows * cols, dtype=np.float32).reshape((rows, cols))
     msg = Float32MultiArray()
     msg.layout = MultiArrayLayout()
-    msg.layout.dim.append(MultiArrayDimension(label="column_index", size=cols, stride=rows * cols))
-    msg.layout.dim.append(MultiArrayDimension(label="row_index", size=rows, stride=rows))
+    msg.layout.dim.append(
+        MultiArrayDimension(label="column_index", size=cols, stride=rows * cols)
+    )
+    msg.layout.dim.append(
+        MultiArrayDimension(label="row_index", size=rows, stride=rows)
+    )
     msg.data = data.flatten(order="F").tolist()
     return data, msg
 

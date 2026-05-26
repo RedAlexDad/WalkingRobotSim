@@ -6,38 +6,24 @@ import math
 import os
 import threading
 from dataclasses import dataclass
-from typing import Dict, List, Any, Tuple, Union, Optional
-
-import numpy as np
-
-from elevation_mapping_cupy.traversability_filter import (
-    get_filter_chainer,
-    get_filter_torch,
-)
-from elevation_mapping_cupy.parameter import Parameter
-
-from elevation_mapping_cupy.kernels import (
-    add_points_kernel,
-)
-
-from elevation_mapping_cupy.kernels import sum_kernel
-from elevation_mapping_cupy.kernels import error_counting_kernel
-from elevation_mapping_cupy.kernels import average_map_kernel
-from elevation_mapping_cupy.kernels import dilation_filter_kernel
-from elevation_mapping_cupy.kernels import normal_filter_kernel
-from elevation_mapping_cupy.kernels import polygon_mask_kernel
-
-from elevation_mapping_cupy.map_initializer import MapInitializer
-from elevation_mapping_cupy.plugins.plugin_manager import PluginManager
-from elevation_mapping_cupy.traversability_polygon import (
-    get_masked_traversability,
-    is_traversable,
-    calculate_area,
-    transform_to_map_position,
-    transform_to_map_index,
-)
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import cupy as cp
+import numpy as np
+from elevation_mapping_cupy.kernels import (add_points_kernel,
+                                            average_map_kernel,
+                                            dilation_filter_kernel,
+                                            error_counting_kernel,
+                                            normal_filter_kernel,
+                                            polygon_mask_kernel, sum_kernel)
+from elevation_mapping_cupy.map_initializer import MapInitializer
+from elevation_mapping_cupy.parameter import Parameter
+from elevation_mapping_cupy.plugins.plugin_manager import PluginManager
+from elevation_mapping_cupy.traversability_filter import (get_filter_chainer,
+                                                          get_filter_torch)
+from elevation_mapping_cupy.traversability_polygon import (
+    calculate_area, get_masked_traversability, is_traversable,
+    transform_to_map_index, transform_to_map_position)
 
 xp = cp
 pool = cp.cuda.MemoryPool(cp.cuda.malloc_managed)

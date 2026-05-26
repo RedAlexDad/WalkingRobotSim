@@ -2,9 +2,11 @@
 # Copyright (c) 2022, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-import cupy as cp
 import string
 from typing import List
+
+import cupy as cp
+
 from .plugin_manager import PluginBase
 
 
@@ -20,7 +22,12 @@ class RobotCentricElevation(PluginBase):
     """
 
     def __init__(
-        self, cell_n: int = 100, resolution: float = 0.05, threshold: float = 0.4, use_threshold: bool = 0, **kwargs
+        self,
+        cell_n: int = 100,
+        resolution: float = 0.05,
+        threshold: float = 0.4,
+        use_threshold: bool = 0,
+        **kwargs,
     ):
         super().__init__()
         self.width = cell_n
@@ -30,8 +37,7 @@ class RobotCentricElevation(PluginBase):
         self.base_elevation_kernel = cp.ElementwiseKernel(
             in_params="raw U map, raw U mask, raw U R",
             out_params="raw U newmap",
-            preamble=string.Template(
-                """
+            preamble=string.Template("""
                 __device__ int get_map_idx(int idx, int layer_n) {
                     const int layer = ${width} * ${height};
                     return layer * layer_n + idx;
@@ -60,10 +66,10 @@ class RobotCentricElevation(PluginBase):
                                      float r0, float r1, float r2) {
                     return r0 * x + r1 * y + r2 * z ;
                 }
-                """
-            ).substitute(width=self.width, height=self.height, resolution=resolution),
-            operation=string.Template(
-                """
+                """).substitute(
+                width=self.width, height=self.height, resolution=resolution
+            ),
+            operation=string.Template("""
                 U rz = map[get_map_idx(i, 0)];
                 U valid = mask[get_map_idx(i, 0)];
                 if (valid > 0.5) {
@@ -82,8 +88,7 @@ class RobotCentricElevation(PluginBase):
                         newmap[get_map_idx(i, 0)] = z_b;
                     }
                 }
-                """
-            ).substitute(threshold=threshold, use_threshold=int(use_threshold)),
+                """).substitute(threshold=threshold, use_threshold=int(use_threshold)),
             name="base_elevation_kernel",
         )
 
@@ -116,6 +121,10 @@ class RobotCentricElevation(PluginBase):
         # check that transform is a ndarray
         self.min_filtered = elevation_map[0].copy()
         self.base_elevation_kernel(
-            elevation_map[0], elevation_map[2], rotation, self.min_filtered, size=(self.width * self.height),
+            elevation_map[0],
+            elevation_map[2],
+            rotation,
+            self.min_filtered,
+            size=(self.width * self.height),
         )
         return self.min_filtered

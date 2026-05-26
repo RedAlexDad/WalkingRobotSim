@@ -2,9 +2,10 @@
 # Copyright (c) 2022, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-import cupy as cp
 import string
 from typing import List
+
+import cupy as cp
 
 from .plugin_manager import PluginBase
 
@@ -26,7 +27,9 @@ class MaxFilter(PluginBase):
         The number of iteration to repeat the same filter.
     """
 
-    def __init__(self, cell_n: int = 100, dilation_size: int = 5, iteration_n: int = 5, **kwargs):
+    def __init__(
+        self, cell_n: int = 100, dilation_size: int = 5, iteration_n: int = 5, **kwargs
+    ):
         super().__init__()
         self.iteration_n = iteration_n
         self.width = cell_n
@@ -36,8 +39,7 @@ class MaxFilter(PluginBase):
         self.max_filter_kernel = cp.ElementwiseKernel(
             in_params="raw U map, raw U mask",
             out_params="raw U newmap, raw U newmask",
-            preamble=string.Template(
-                """
+            preamble=string.Template("""
                 __device__ int get_map_idx(int idx, int layer_n) {
                     const int layer = ${width} * ${height};
                     return layer * layer_n + idx;
@@ -59,10 +61,8 @@ class MaxFilter(PluginBase):
                     }
                     return true;
                 }
-                """
-            ).substitute(width=self.width, height=self.height),
-            operation=string.Template(
-                """
+                """).substitute(width=self.width, height=self.height),
+            operation=string.Template("""
                 U valid = mask[get_map_idx(i, 0)];
                 if (valid < 0.5) {
                     U max_value = -1000000.0;
@@ -82,8 +82,7 @@ class MaxFilter(PluginBase):
                         newmask[get_map_idx(i, 0)] = 0.6;
                     }
                 }
-                """
-            ).substitute(dilation_size=dilation_size),
+                """).substitute(dilation_size=dilation_size),
             name="max_filter_kernel",
         )
 
@@ -107,5 +106,7 @@ class MaxFilter(PluginBase):
             # If there's no more mask, break
             if (self.max_filtered_mask > 0.5).all():
                 break
-        max_filtered = cp.where(self.max_filtered_mask > 0.5, self.max_filtered.copy(), cp.nan)
+        max_filtered = cp.where(
+            self.max_filtered_mask > 0.5, self.max_filtered.copy(), cp.nan
+        )
         return max_filtered

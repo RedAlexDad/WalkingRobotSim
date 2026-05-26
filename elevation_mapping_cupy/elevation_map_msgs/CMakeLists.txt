@@ -4,7 +4,7 @@ project(elevation_map_msgs)
 find_package(ament_cmake REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(std_msgs REQUIRED)  # Added std_msgs
+find_package(std_msgs REQUIRED) # Added std_msgs
 
 set(msg_files
   "msg/Statistics.msg"

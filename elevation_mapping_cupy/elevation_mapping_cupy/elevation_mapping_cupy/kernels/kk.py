@@ -2,12 +2,15 @@
 # Copyright (c) 2023, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-import cupy as cp
 import string
+
+import cupy as cp
 
 
 def sum_kernel(
-    resolution, width, height,
+    resolution,
+    width,
+    height,
 ):
     """Sums the semantic values of the classes for the exponentiala verage or for the average.
 
@@ -23,16 +26,13 @@ def sum_kernel(
     sum_kernel = cp.ElementwiseKernel(
         in_params="raw U p, raw U R, raw U t, raw W pcl_chan, raw W map_lay, raw W pcl_channels",
         out_params="raw U map, raw U newmap",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
                 __device__ int get_map_idx(int idx, int layer_n) {
                     const int layer = ${width} * ${height};
                     return layer * layer_n + idx;
                 }
-            """
-        ).substitute(resolution=resolution, width=width, height=height),
-        operation=string.Template(
-            """
+            """).substitute(resolution=resolution, width=width, height=height),
+        operation=string.Template("""
             U id = floorf(i/pcl_channels[1]);
             int layer = i % pcl_channels[1];
             U idx = p[id * pcl_channels[0]];
@@ -44,30 +44,28 @@ def sum_kernel(
                     atomicAdd(&newmap[get_map_idx(idx, map_lay[layer])], feat);
                 }
             }
-            """
-        ).substitute(),
+            """).substitute(),
         name="sum_kernel",
     )
     return sum_kernel
 
 
 def sum_compact_kernel(
-    resolution, width, height,
+    resolution,
+    width,
+    height,
 ):
     # input the list of layers, amount of channels can slo be input through kernel
     sum_compact_kernel = cp.ElementwiseKernel(
         in_params="raw U p, raw U R, raw U t, raw W pcl_chan, raw W map_lay, raw W pcl_channels",
         out_params=" raw U newmap",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
                 __device__ int get_map_idx(int idx, int layer_n) {
                     const int layer = ${width} * ${height};
                     return layer * layer_n + idx;
                 }
-            """
-        ).substitute(resolution=resolution, width=width, height=height),
-        operation=string.Template(
-            """
+            """).substitute(resolution=resolution, width=width, height=height),
+        operation=string.Template("""
             U id = floorf(i/pcl_channels[1]);
             int layer = i % pcl_channels[1];
             U idx = p[id * pcl_channels[0]];
@@ -79,30 +77,28 @@ def sum_compact_kernel(
                     atomicAdd(&newmap[get_map_idx(idx, layer)], feat);
                 }
             }
-            """
-        ).substitute(),
+            """).substitute(),
         name="sum_compact_kernel",
     )
     return sum_compact_kernel
 
 
 def sum_max_kernel(
-    resolution, width, height,
+    resolution,
+    width,
+    height,
 ):
     # input the list of layers, amount of channels can slo be input through kernel
     sum_max_kernel = cp.ElementwiseKernel(
         in_params="raw U p, raw U max_pt, raw T max_id, raw W pcl_chan, raw W map_lay, raw W pcl_channels",
         out_params=" raw U newmap",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
                 __device__ int get_map_idx(int idx, int layer_n) {
                     const int layer = ${width} * ${height};
                     return layer * layer_n + idx;
                 }
-            """
-        ).substitute(resolution=resolution, width=width, height=height),
-        operation=string.Template(
-            """
+            """).substitute(resolution=resolution, width=width, height=height),
+        operation=string.Template("""
             U idx = p[i * pcl_channels[0]];
             U valid = p[i * pcl_channels[0] + 1];
             U inside = p[i * pcl_channels[0] + 2];
@@ -116,30 +112,28 @@ def sum_max_kernel(
                     }
                 }
             }
-            """
-        ).substitute(),
+            """).substitute(),
         name="sum_max_kernel",
     )
     return sum_max_kernel
 
 
 def alpha_kernel(
-    resolution, width, height,
+    resolution,
+    width,
+    height,
 ):
     # input the list of layers, amount of channels can slo be input through kernel
     alpha_kernel = cp.ElementwiseKernel(
         in_params="raw U p, raw W pcl_chan, raw W map_lay, raw W pcl_channels",
         out_params="raw U newmap",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
                 __device__ int get_map_idx(int idx, int layer_n) {
                     const int layer = ${width} * ${height};
                     return layer * layer_n + idx;
                 }
-            """
-        ).substitute(resolution=resolution, width=width, height=height),
-        operation=string.Template(
-            """
+            """).substitute(resolution=resolution, width=width, height=height),
+        operation=string.Template("""
             U id = floorf(i/pcl_channels[1]);
             int layer = i % pcl_channels[1];
             U idx = p[id * pcl_channels[0]];
@@ -157,29 +151,26 @@ def alpha_kernel(
                     atomicAdd(&newmap[get_map_idx(idx, arg_max)], theta_max);
                 }
             }
-            """
-        ).substitute(),
+            """).substitute(),
         name="alpha_kernel",
     )
     return alpha_kernel
 
 
 def average_kernel(
-    width, height,
+    width,
+    height,
 ):
     average_kernel = cp.ElementwiseKernel(
         in_params="raw V newmap, raw W pcl_chan, raw W map_lay, raw W pcl_channels, raw U new_elmap",
         out_params="raw U map",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
             __device__ int get_map_idx(int idx, int layer_n) {
                 const int layer = ${width} * ${height};
                 return layer * layer_n + idx;
             }
-            """
-        ).substitute(width=width, height=height),
-        operation=string.Template(
-            """
+            """).substitute(width=width, height=height),
+        operation=string.Template("""
             U id = floorf(i/pcl_channels[1]);
             int layer = i % pcl_channels[1];
             U cnt = new_elmap[get_map_idx(id, 2)];
@@ -187,29 +178,26 @@ def average_kernel(
                 U feat = newmap[get_map_idx(id,  map_lay[layer])]/(1*cnt);
                 map[get_map_idx(id,  map_lay[layer])] = feat;
             }
-            """
-        ).substitute(),
+            """).substitute(),
         name="average_map_kernel",
     )
     return average_kernel
 
 
 def bayesian_inference_kernel(
-    width, height,
+    width,
+    height,
 ):
     bayesian_inference_kernel = cp.ElementwiseKernel(
         in_params=" raw W pcl_chan, raw W map_lay, raw W pcl_channels, raw U new_elmap",
         out_params="raw U newmap, raw U sum_mean, raw U map",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
             __device__ int get_map_idx(int idx, int layer_n) {
                 const int layer = ${width} * ${height};
                 return layer * layer_n + idx;
             }
-            """
-        ).substitute(width=width, height=height),
-        operation=string.Template(
-            """
+            """).substitute(width=width, height=height),
+        operation=string.Template("""
             U id = floorf(i/pcl_channels[1]);
             int layer = i % pcl_channels[1];
             U cnt = new_elmap[get_map_idx(id, 2)];
@@ -223,29 +211,27 @@ def bayesian_inference_kernel(
                     map[get_map_idx(id,  map_lay[layer])] = feat_new;
                     newmap[get_map_idx(id,  map_lay[layer])] = sigma_new;
             }
-            """
-        ).substitute(),
+            """).substitute(),
         name="bayesian_inference_kernel",
     )
     return bayesian_inference_kernel
 
 
 def class_average_kernel(
-    width, height, alpha,
+    width,
+    height,
+    alpha,
 ):
     class_average_kernel = cp.ElementwiseKernel(
         in_params="raw V newmap, raw W pcl_chan, raw W map_lay, raw W pcl_channels, raw U new_elmap",
         out_params="raw U map",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
             __device__ int get_map_idx(int idx, int layer_n) {
                 const int layer = ${width} * ${height};
                 return layer * layer_n + idx;
             }
-            """
-        ).substitute(width=width, height=height),
-        operation=string.Template(
-            """
+            """).substitute(width=width, height=height),
+        operation=string.Template("""
             U id = floorf(i/pcl_channels[1]);
             int layer = i % pcl_channels[1];
             U cnt = new_elmap[get_map_idx(id, 2)];
@@ -260,21 +246,22 @@ def class_average_kernel(
                     map[get_map_idx(id,  map_lay[layer])] = val;
                 }
             }
-            """
-        ).substitute(alpha=alpha,),
+            """).substitute(
+            alpha=alpha,
+        ),
         name="class_average_kernel",
     )
     return class_average_kernel
 
 
 def add_color_kernel(
-    width, height,
+    width,
+    height,
 ):
     add_color_kernel = cp.ElementwiseKernel(
         in_params="raw T p, raw U R, raw U t, raw W pcl_chan, raw W map_lay, raw W pcl_channels",
         out_params="raw V color_map",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
             __device__ int get_map_idx(int idx, int layer_n) {
                 const int layer = ${width} * ${height};
                 return layer * layer_n + idx;
@@ -294,10 +281,8 @@ def add_color_kernel(
                 unsigned int blues = ( color & blue);
                 return blues;
             }
-            """
-        ).substitute(width=width, height=height),
-        operation=string.Template(
-            """
+            """).substitute(width=width, height=height),
+        operation=string.Template("""
             U id = floorf(i/pcl_channels[1]);
             int layer = i % pcl_channels[1];
             U idx = p[id * pcl_channels[0]];
@@ -310,21 +295,20 @@ def add_color_kernel(
                     atomicAdd(&color_map[get_map_idx(idx, layer*3 + 2)], get_b(color));
                     atomicAdd(&color_map[get_map_idx(idx, pcl_channels[1]*3)], 1);
             }
-            """
-        ).substitute(width=width),
+            """).substitute(width=width),
         name="add_color_kernel",
     )
     return add_color_kernel
 
 
 def color_average_kernel(
-    width, height,
+    width,
+    height,
 ):
     color_average_kernel = cp.ElementwiseKernel(
         in_params="raw V color_map, raw W pcl_chan, raw W map_lay, raw W pcl_channels",
         out_params="raw U map",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
             __device__ int get_map_idx(int idx, int layer_n) {
                 const int layer = ${width} * ${height};
                 return layer * layer_n + idx;
@@ -344,10 +328,8 @@ def color_average_kernel(
                 unsigned int blues = (color & blue);
                 return blues;
             }
-            """
-        ).substitute(width=width, height=height),
-        operation=string.Template(
-            """
+            """).substitute(width=width, height=height),
+        operation=string.Template("""
             U id = floorf(i/pcl_channels[1]);
             int layer = i % pcl_channels[1];
             unsigned int cnt = color_map[get_map_idx(id, pcl_channels[1]*3)];
@@ -368,12 +350,10 @@ def color_average_kernel(
                     float rgb_ = __uint_as_float(rgb);
                     map[get_map_idx(id,  map_lay[layer])] = rgb_;
             }
-            """
-        ).substitute(),
+            """).substitute(),
         name="color_average_kernel",
     )
     return color_average_kernel
-
 
 
 def map_utils(
@@ -387,8 +367,7 @@ def map_utils(
     ramped_height_range_b,
     ramped_height_range_c,
 ):
-    util_preamble = string.Template(
-        """
+    util_preamble = string.Template("""
         __device__ float16 clamp(float16 x, float16 min_x, float16 max_x) {
 
             return max(min(x, max_x), min_x);
@@ -477,8 +456,7 @@ def map_utils(
             return product;
        }
 
-        """
-    ).substitute(
+        """).substitute(
         resolution=resolution,
         width=width,
         height=height,
@@ -525,8 +503,7 @@ def add_points_kernel(
             ramped_height_range_b,
             ramped_height_range_c,
         ),
-        operation=string.Template(
-            """
+        operation=string.Template("""
             U rx = p[i * 3];
             U ry = p[i * 3 + 1];
             U rz = p[i * 3 + 2];
@@ -630,12 +607,11 @@ def add_points_kernel(
             p[i * 3]= idx;
             p[i * 3 + 1] = is_valid(x, y, z, t[0], t[1], t[2]);
             p[i * 3 + 2] = is_inside(idx);
-            """
-        ).substitute(
+            """).substitute(
             mahalanobis_thresh=mahalanobis_thresh,
             outlier_variance=outlier_variance,
             wall_num_thresh=wall_num_thresh,
-            ray_step=resolution / 2 ** 0.5,
+            ray_step=resolution / 2**0.5,
             max_ray_length=max_ray_length,
             cleanup_step=cleanup_step,
             cleanup_cos_thresh=cleanup_cos_thresh,
@@ -675,8 +651,7 @@ def error_counting_kernel(
             ramped_height_range_b,
             ramped_height_range_c,
         ),
-        operation=string.Template(
-            """
+        operation=string.Template("""
             U rx = p[i * 3];
             U ry = p[i * 3 + 1];
             U rz = p[i * 3 + 2];
@@ -704,8 +679,7 @@ def error_counting_kernel(
                 atomicAdd(&newmap[get_map_idx(idx, 3)], 1.0);
             }
             atomicAdd(&newmap[get_map_idx(idx, 4)], 1.0);
-            """
-        ).substitute(
+            """).substitute(
             mahalanobis_thresh=mahalanobis_thresh,
             outlier_variance=outlier_variance,
             traversability_inlier=traversability_inlier,
@@ -719,16 +693,13 @@ def average_map_kernel(width, height, max_variance, initial_variance):
     average_map_kernel = cp.ElementwiseKernel(
         in_params="raw U newmap",
         out_params="raw U map",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
             __device__ int get_map_idx(int idx, int layer_n) {
                 const int layer = ${width} * ${height};
                 return layer * layer_n + idx;
             }
-            """
-        ).substitute(width=width, height=height),
-        operation=string.Template(
-            """
+            """).substitute(width=width, height=height),
+        operation=string.Template("""
             U h = map[get_map_idx(i, 0)];
             U v = map[get_map_idx(i, 1)];
             U valid = map[get_map_idx(i, 2)];
@@ -752,8 +723,9 @@ def average_map_kernel(width, height, max_variance, initial_variance):
                 map[get_map_idx(i, 1)] = ${initial_variance};
                 map[get_map_idx(i, 2)] = 0;
             }
-            """
-        ).substitute(max_variance=max_variance, initial_variance=initial_variance),
+            """).substitute(
+            max_variance=max_variance, initial_variance=initial_variance
+        ),
         name="average_map_kernel",
     )
     return average_map_kernel
@@ -763,8 +735,7 @@ def dilation_filter_kernel(width, height, dilation_size):
     dilation_filter_kernel = cp.ElementwiseKernel(
         in_params="raw U map, raw U mask",
         out_params="raw U newmap, raw U newmask",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
             __device__ int get_map_idx(int idx, int layer_n) {
                 const int layer = ${width} * ${height};
                 return layer * layer_n + idx;
@@ -786,10 +757,8 @@ def dilation_filter_kernel(width, height, dilation_size):
                 }
                 return true;
             }
-            """
-        ).substitute(width=width, height=height),
-        operation=string.Template(
-            """
+            """).substitute(width=width, height=height),
+        operation=string.Template("""
             U h = map[get_map_idx(i, 0)];
             U valid = mask[get_map_idx(i, 0)];
             newmap[get_map_idx(i, 0)] = h;
@@ -812,8 +781,7 @@ def dilation_filter_kernel(width, height, dilation_size):
                     newmask[get_map_idx(i, 0)] = 1.0;
                 }
             }
-            """
-        ).substitute(dilation_size=dilation_size),
+            """).substitute(dilation_size=dilation_size),
         name="dilation_filter_kernel",
     )
     return dilation_filter_kernel
@@ -823,8 +791,7 @@ def normal_filter_kernel(width, height, resolution):
     normal_filter_kernel = cp.ElementwiseKernel(
         in_params="raw U map, raw U mask",
         out_params="raw U newmap",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
             __device__ int get_map_idx(int idx, int layer_n) {
                 const int layer = ${width} * ${height};
                 return layer * layer_n + idx;
@@ -849,10 +816,8 @@ def normal_filter_kernel(width, height, resolution):
             __device__ float resolution() {
                 return ${resolution};
             }
-            """
-        ).substitute(width=width, height=height, resolution=resolution),
-        operation=string.Template(
-            """
+            """).substitute(width=width, height=height, resolution=resolution),
+        operation=string.Template("""
             U h = map[get_map_idx(i, 0)];
             U valid = mask[get_map_idx(i, 0)];
             if (valid > 0.5) {
@@ -869,8 +834,7 @@ def normal_filter_kernel(width, height, resolution):
                 newmap[get_map_idx(i, 1)] = ny / norm;
                 newmap[get_map_idx(i, 2)] = nz / norm;
             }
-            """
-        ).substitute(),
+            """).substitute(),
         name="normal_filter_kernel",
     )
     return normal_filter_kernel
@@ -880,8 +844,7 @@ def polygon_mask_kernel(width, height, resolution):
     polygon_mask_kernel = cp.ElementwiseKernel(
         in_params="raw U polygon, raw U center_x, raw U center_y, raw int16 polygon_n, raw U polygon_bbox",
         out_params="raw U mask",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
             __device__ struct Point
             {
                 int x;
@@ -972,10 +935,8 @@ def polygon_mask_kernel(width, height, resolution):
                 return ${width} * idx_x + idx_y;
             }
 
-            """
-        ).substitute(width=width, height=height, resolution=resolution),
-        operation=string.Template(
-            """
+            """).substitute(width=width, height=height, resolution=resolution),
+        operation=string.Template("""
             // Point p = {get_idx_x(i, center_x[0]), get_idx_y(i, center_y[0])};
             Point p = {get_idx_x(i), get_idx_y(i)};
             Point extreme = {100000, p.y};
@@ -1017,15 +978,15 @@ def polygon_mask_kernel(width, height, resolution):
                 if (intersect_cnt % 2 == 0) { mask[i] = 0; }
                 else { mask[i] = 1; }
             }
-            """
-        ).substitute(a=1),
+            """).substitute(a=1),
         name="polygon_mask_kernel",
     )
     return polygon_mask_kernel
 
 
-
-def image_to_map_correspondence_kernel(resolution, width, height, tolerance_z_collision):
+def image_to_map_correspondence_kernel(
+    resolution, width, height, tolerance_z_collision
+):
     """
     This function calculates the correspondence between the image and the map.
     It takes in the resolution, width, height, and tolerance_z_collision as parameters.
@@ -1034,8 +995,7 @@ def image_to_map_correspondence_kernel(resolution, width, height, tolerance_z_co
     _image_to_map_correspondence_kernel = cp.ElementwiseKernel(
         in_params="raw U map, raw U x1, raw U y1, raw U z1, raw U P, raw U K, raw U D, raw U image_height, raw U image_width, raw U center",
         out_params="raw U uv_correspondence, raw B valid_correspondence",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
             __device__ int get_map_idx(int idx, int layer_n) {
                 const int layer = ${width} * ${height};
                 return layer * layer_n + idx;
@@ -1048,10 +1008,8 @@ def image_to_map_correspondence_kernel(resolution, width, height, tolerance_z_co
                 float dy = y0-y1;
                 return sqrt( dx*dx + dy*dy);
             }
-            """
-        ).substitute(width=width, height=height, resolution=resolution),
-        operation=string.Template(
-            """
+            """).substitute(width=width, height=height, resolution=resolution),
+        operation=string.Template("""
             int cell_idx = get_map_idx(i, 0);
             
             // return if gridcell has no valid height
@@ -1169,8 +1127,12 @@ def image_to_map_correspondence_kernel(resolution, width, height, tolerance_z_co
             uv_correspondence[get_map_idx(i, 0)] = u;
             uv_correspondence[get_map_idx(i, 1)] = v;
             valid_correspondence[get_map_idx(i, 0)] = is_valid;
-            """
-        ).substitute(height=height, width=width, resolution=resolution, tolerance_z_collision=tolerance_z_collision),
+            """).substitute(
+            height=height,
+            width=width,
+            resolution=resolution,
+            tolerance_z_collision=tolerance_z_collision,
+        ),
         name="image_to_map_correspondence_kernel",
     )
     return _image_to_map_correspondence_kernel
@@ -1185,16 +1147,13 @@ def average_correspondences_to_map_kernel(width, height):
     _average_correspondences_to_map_kernel = cp.ElementwiseKernel(
         in_params="raw U sem_map, raw U map_idx, raw U image_mono, raw U uv_correspondence, raw B valid_correspondence, raw U image_height, raw U image_width",
         out_params="raw U new_sem_map",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
             __device__ int get_map_idx(int idx, int layer_n) {
                 const int layer = ${width} * ${height};
                 return layer * layer_n + idx;
             }
-            """
-        ).substitute(width=width, height=height),
-        operation=string.Template(
-            """
+            """).substitute(width=width, height=height),
+        operation=string.Template("""
             int cell_idx = get_map_idx(i, 0);
             if (valid_correspondence[cell_idx]){
                 int cell_idx_2 = get_map_idx(i, 1);
@@ -1204,8 +1163,7 @@ def average_correspondences_to_map_kernel(width, height):
                 new_sem_map[get_map_idx(i, map_idx)] = sem_map[get_map_idx(i, map_idx)];
             }
             
-            """
-        ).substitute(),
+            """).substitute(),
         name="average_correspondences_to_map_kernel",
     )
     return _average_correspondences_to_map_kernel
@@ -1220,16 +1178,13 @@ def exponential_correspondences_to_map_kernel(width, height, alpha):
     _exponential_correspondences_to_map_kernel = cp.ElementwiseKernel(
         in_params="raw U sem_map, raw U map_idx, raw U image_mono, raw U uv_correspondence, raw B valid_correspondence, raw U image_height, raw U image_width",
         out_params="raw U new_sem_map",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
             __device__ int get_map_idx(int idx, int layer_n) {
                 const int layer = ${width} * ${height};
                 return layer * layer_n + idx;
             }
-            """
-        ).substitute(width=width, height=height),
-        operation=string.Template(
-            """
+            """).substitute(width=width, height=height),
+        operation=string.Template("""
             int cell_idx = get_map_idx(i, 0);
             if (valid_correspondence[cell_idx]){
                 int cell_idx_2 = get_map_idx(i, 1);
@@ -1239,8 +1194,7 @@ def exponential_correspondences_to_map_kernel(width, height, alpha):
                 new_sem_map[get_map_idx(i, map_idx)] = sem_map[get_map_idx(i, map_idx)];
             }
             
-            """
-        ).substitute(alpha=alpha),
+            """).substitute(alpha=alpha),
         name="exponential_correspondences_to_map_kernel",
     )
     return _exponential_correspondences_to_map_kernel
@@ -1255,16 +1209,13 @@ def color_correspondences_to_map_kernel(width, height):
     _color_correspondences_to_map_kernel = cp.ElementwiseKernel(
         in_params="raw U sem_map, raw U map_idx, raw U image_rgb, raw U uv_correspondence, raw B valid_correspondence, raw U image_height, raw U image_width",
         out_params="raw U new_sem_map",
-        preamble=string.Template(
-            """
+        preamble=string.Template("""
             __device__ int get_map_idx(int idx, int layer_n) {
                 const int layer = ${width} * ${height};
                 return layer * layer_n + idx;
             }
-            """
-        ).substitute(width=width, height=height),
-        operation=string.Template(
-            """
+            """).substitute(width=width, height=height),
+        operation=string.Template("""
             int cell_idx = get_map_idx(i, 0);
             if (valid_correspondence[cell_idx]){
                 int cell_idx_2 = get_map_idx(i, 1);
@@ -1283,8 +1234,7 @@ def color_correspondences_to_map_kernel(width, height):
             }else{
                 new_sem_map[get_map_idx(i, map_idx)] = sem_map[get_map_idx(i, map_idx)];
             }
-            """
-        ).substitute(),
+            """).substitute(),
         name="color_correspondences_to_map_kernel",
     )
     return _color_correspondences_to_map_kernel

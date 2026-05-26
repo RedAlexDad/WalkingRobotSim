@@ -3,13 +3,13 @@
 /elevation_mapping_node:
   ros__parameters:
     # Small map for fast testing
-    resolution: 0.1                    # 10cm resolution
-    map_length: 4.0                    # 4m x 4m map (40x40 cells)
+    resolution: 0.1 # 10cm resolution
+    map_length: 4.0 # 4m x 4m map (40x40 cells)
 
     # Frame configuration
-    map_frame: 'map'
-    base_frame: 'base_link'
-    corrected_map_frame: 'map'
+    map_frame: "map"
+    base_frame: "base_link"
+    corrected_map_frame: "map"
 
     # Fast update rates for responsive testing
     update_variance_fps: 10.0
@@ -21,9 +21,9 @@
 
     # Minimal filtering - we want raw data for testing
     sensor_noise_factor: 0.01
-    mahalanobis_thresh: 10.0           # Accept most points
-    min_valid_distance: 0.0            # Accept all distances
-    max_height_range: 100.0            # Accept all heights
+    mahalanobis_thresh: 10.0 # Accept most points
+    min_valid_distance: 0.0 # Accept all distances
+    max_height_range: 100.0 # Accept all heights
 
     # Disable features that complicate testing
     enable_edge_sharpen: false
@@ -35,10 +35,10 @@
     enable_normal_arrow_publishing: false
 
     # Services / bags (used by save_map + load_map integration tests)
-    masked_replace_service_mask_layer_name: 'mask'
-    save_map_default_topic: 'elevation_map'
-    save_map_storage_id: 'mcap'
-    service_namespace: '/elevation_mapping_cupy'
+    masked_replace_service_mask_layer_name: "mask"
+    save_map_default_topic: "elevation_map"
+    save_map_storage_id: "mcap"
+    service_namespace: "/elevation_mapping_cupy"
 
     # Basic variance settings
     initial_variance: 10.0
@@ -49,7 +49,7 @@
 
     # Other required parameters
     drift_compensation_variance_inlier: 0.1
-    checker_layer: 'elevation'
+    checker_layer: "elevation"
     max_drift: 0.1
     drift_compensation_alpha: 0.1
     traversability_inlier: 0.9
@@ -79,8 +79,8 @@
 
     # Initializer - disabled for cleaner test
     use_initializer_at_start: false
-    initialize_method: 'linear'
-    initialize_frame_id: ['base_link']
+    initialize_method: "linear"
+    initialize_frame_id: ["base_link"]
     initialize_tf_offset: [0.0]
     dilation_size_initialize: 2
     initialize_tf_grid_size: 1.0
@@ -90,12 +90,12 @@
     # Single pointcloud subscriber
     subscribers:
       test_sensor:
-        topic_name: '/test_pointcloud'
+        topic_name: "/test_pointcloud"
         data_type: pointcloud
 
     # Single publisher for testing
     publishers:
       elevation_map:
-        layers: ['elevation']
-        basic_layers: ['elevation']
+        layers: ["elevation"]
+        basic_layers: ["elevation"]
         fps: 10.0

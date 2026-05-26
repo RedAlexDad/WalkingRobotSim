@@ -2,12 +2,13 @@
 # Copyright (c) 2022, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-import cupy as cp
-from typing import List
-import cupyx.scipy.ndimage as ndimage
-import numpy as np
-import cv2 as cv
 import logging
+from typing import List
+
+import cupy as cp
+import cupyx.scipy.ndimage as ndimage
+import cv2 as cv
+import numpy as np
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -77,7 +78,9 @@ class Inpainting(PluginBase):
             else:
                 # Replace NaNs with the minimum elevation value.
                 safe_elevation = cp.where(finite_elevation, elevation, h_min)
-                scaled = cp.asnumpy((safe_elevation - h_min) * 255.0 / denom).astype("uint8")
+                scaled = cp.asnumpy((safe_elevation - h_min) * 255.0 / denom).astype(
+                    "uint8"
+                )
                 dst = cv.inpaint(scaled, mask_np, 1, self.method)
                 h_inpainted = dst.astype(np.float32) * denom / 255.0 + h_min
                 filled = cp.asarray(h_inpainted, dtype=cp.float32)

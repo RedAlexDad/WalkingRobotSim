@@ -8,11 +8,13 @@ This test suite was created to prevent regression of the axis swap bug
 where forward robot movement (X) was incorrectly causing sideways map shift (Y).
 """
 
-import pytest
-import numpy as np
-import cupy as cp
 from pathlib import Path
-from elevation_mapping_cupy import parameter, elevation_mapping
+
+import cupy as cp
+import numpy as np
+import pytest
+
+from elevation_mapping_cupy import elevation_mapping, parameter
 
 # Get absolute paths to config files
 _TEST_DIR = Path(__file__).parent
@@ -59,13 +61,15 @@ class TestShiftMapXY:
         new_col = center_idx + shift_amount
 
         # Marker should be at new column position, same row
-        assert float(elmap_shift.elevation_map[0, center_idx, new_col]) == 1.0, \
-            f"Marker should be at (row={center_idx}, col={new_col}) after X shift"
+        assert (
+            float(elmap_shift.elevation_map[0, center_idx, new_col]) == 1.0
+        ), f"Marker should be at (row={center_idx}, col={new_col}) after X shift"
 
         # Marker should NOT be at swapped position (wrong axis)
         new_row_wrong = center_idx + shift_amount
-        assert float(elmap_shift.elevation_map[0, new_row_wrong, center_idx]) == 0.0, \
-            f"Marker should NOT be at (row={new_row_wrong}, col={center_idx}) - X shift should not affect rows"
+        assert (
+            float(elmap_shift.elevation_map[0, new_row_wrong, center_idx]) == 0.0
+        ), f"Marker should NOT be at (row={new_row_wrong}, col={center_idx}) - X shift should not affect rows"
 
     def test_shift_y_only_affects_rows(self, elmap_shift):
         """
@@ -88,13 +92,15 @@ class TestShiftMapXY:
         new_row = center_idx + shift_amount
 
         # Marker should be at new row position, same column
-        assert float(elmap_shift.elevation_map[0, new_row, center_idx]) == 1.0, \
-            f"Marker should be at (row={new_row}, col={center_idx}) after Y shift"
+        assert (
+            float(elmap_shift.elevation_map[0, new_row, center_idx]) == 1.0
+        ), f"Marker should be at (row={new_row}, col={center_idx}) after Y shift"
 
         # Marker should NOT be at swapped position (wrong axis)
         new_col_wrong = center_idx + shift_amount
-        assert float(elmap_shift.elevation_map[0, center_idx, new_col_wrong]) == 0.0, \
-            f"Marker should NOT be at (row={center_idx}, col={new_col_wrong}) - Y shift should not affect columns"
+        assert (
+            float(elmap_shift.elevation_map[0, center_idx, new_col_wrong]) == 0.0
+        ), f"Marker should NOT be at (row={center_idx}, col={new_col_wrong}) - Y shift should not affect columns"
 
     def test_diagonal_shift(self, elmap_shift):
         """Diagonal shift should affect both axes correctly."""
@@ -111,8 +117,9 @@ class TestShiftMapXY:
         expected_row = center_idx + shift_y
         expected_col = center_idx + shift_x
 
-        assert float(elmap_shift.elevation_map[0, expected_row, expected_col]) == 1.0, \
-            f"Marker should be at (row={expected_row}, col={expected_col}) after diagonal shift"
+        assert (
+            float(elmap_shift.elevation_map[0, expected_row, expected_col]) == 1.0
+        ), f"Marker should be at (row={expected_row}, col={expected_col}) after diagonal shift"
 
     def test_negative_shift(self, elmap_shift):
         """Negative shifts should work correctly."""
@@ -129,8 +136,9 @@ class TestShiftMapXY:
         expected_row = center_idx + shift_y
         expected_col = center_idx + shift_x
 
-        assert float(elmap_shift.elevation_map[0, expected_row, expected_col]) == 1.0, \
-            f"Marker should be at (row={expected_row}, col={expected_col}) after negative shift"
+        assert (
+            float(elmap_shift.elevation_map[0, expected_row, expected_col]) == 1.0
+        ), f"Marker should be at (row={expected_row}, col={expected_col}) after negative shift"
 
     def test_zero_shift_no_change(self, elmap_shift):
         """Zero shift should not modify the map."""
@@ -144,8 +152,9 @@ class TestShiftMapXY:
         elmap_shift.shift_map_xy(cp.array([0, 0], dtype=cp.float32))
 
         # Map should be unchanged
-        assert cp.allclose(elmap_shift.elevation_map, original_map), \
-            "Zero shift should not modify the map"
+        assert cp.allclose(
+            elmap_shift.elevation_map, original_map
+        ), "Zero shift should not modify the map"
 
 
 class TestMoveTo:
@@ -170,10 +179,12 @@ class TestMoveTo:
 
         # Map center should have updated
         new_center = cp.asnumpy(elmap_shift.center)
-        assert new_center[0] > initial_center[0], \
-            "Map center X should increase when robot moves +X"
-        assert abs(new_center[1] - initial_center[1]) < 1e-6, \
-            "Map center Y should not change for X-only movement"
+        assert (
+            new_center[0] > initial_center[0]
+        ), "Map center X should increase when robot moves +X"
+        assert (
+            abs(new_center[1] - initial_center[1]) < 1e-6
+        ), "Map center Y should not change for X-only movement"
 
     def test_move_to_y_positive(self, elmap_shift):
         """
@@ -187,10 +198,12 @@ class TestMoveTo:
         elmap_shift.move_to(np.array([0.0, move_distance, 0.0], dtype=np.float32), R)
 
         new_center = cp.asnumpy(elmap_shift.center)
-        assert new_center[1] > initial_center[1], \
-            "Map center Y should increase when robot moves +Y"
-        assert abs(new_center[0] - initial_center[0]) < 1e-6, \
-            "Map center X should not change for Y-only movement"
+        assert (
+            new_center[1] > initial_center[1]
+        ), "Map center Y should increase when robot moves +Y"
+        assert (
+            abs(new_center[0] - initial_center[0]) < 1e-6
+        ), "Map center X should not change for Y-only movement"
 
     def test_move_to_preserves_relative_data(self, elmap_shift):
         """
@@ -213,8 +226,9 @@ class TestMoveTo:
         # The marker was at col = center + 10, after shifting -5, it should be at center + 5
         expected_new_col = marker_col - int(0.5 / resolution)
 
-        assert float(elmap_shift.elevation_map[0, center_idx, expected_new_col]) == 1.0, \
-            "Marker should maintain relative world position after robot movement"
+        assert (
+            float(elmap_shift.elevation_map[0, center_idx, expected_new_col]) == 1.0
+        ), "Marker should maintain relative world position after robot movement"
 
 
 class TestPadValue:
@@ -230,12 +244,14 @@ class TestPadValue:
         elmap_shift.shift_map_xy(cp.array([shift_amount, 0], dtype=cp.float32))
 
         # Left edge (low column indices) should be padded with 0
-        assert cp.all(elmap_shift.elevation_map[0, :, :shift_amount] == 0.0), \
-            "Left edge should be padded with 0 after positive X shift"
+        assert cp.all(
+            elmap_shift.elevation_map[0, :, :shift_amount] == 0.0
+        ), "Left edge should be padded with 0 after positive X shift"
 
         # Right edge should still have data
-        assert cp.any(elmap_shift.elevation_map[0, :, shift_amount:] != 0.0), \
-            "Right side should still have data after positive X shift"
+        assert cp.any(
+            elmap_shift.elevation_map[0, :, shift_amount:] != 0.0
+        ), "Right side should still have data after positive X shift"
 
     def test_positive_y_shift_pads_top(self, elmap_shift):
         """After positive Y shift, new cells should appear at top (low row indices)."""
@@ -247,12 +263,14 @@ class TestPadValue:
         elmap_shift.shift_map_xy(cp.array([0, shift_amount], dtype=cp.float32))
 
         # Top edge (low row indices) should be padded with 0
-        assert cp.all(elmap_shift.elevation_map[0, :shift_amount, :] == 0.0), \
-            "Top edge should be padded with 0 after positive Y shift"
+        assert cp.all(
+            elmap_shift.elevation_map[0, :shift_amount, :] == 0.0
+        ), "Top edge should be padded with 0 after positive Y shift"
 
         # Bottom should still have data
-        assert cp.any(elmap_shift.elevation_map[0, shift_amount:, :] != 0.0), \
-            "Bottom side should still have data after positive Y shift"
+        assert cp.any(
+            elmap_shift.elevation_map[0, shift_amount:, :] != 0.0
+        ), "Bottom side should still have data after positive Y shift"
 
 
 #

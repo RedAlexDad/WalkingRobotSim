@@ -2,9 +2,10 @@
 # Copyright (c) 2022, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-import cupy as cp
 import string
 from typing import List
+
+import cupy as cp
 
 from .plugin_manager import PluginBase
 
@@ -19,7 +20,9 @@ class MinFilter(PluginBase):
         **kwargs ():
     """
 
-    def __init__(self, cell_n: int = 100, dilation_size: int = 5, iteration_n: int = 5, **kwargs):
+    def __init__(
+        self, cell_n: int = 100, dilation_size: int = 5, iteration_n: int = 5, **kwargs
+    ):
         super().__init__()
         self.iteration_n = iteration_n
         self.width = cell_n
@@ -29,8 +32,7 @@ class MinFilter(PluginBase):
         self.min_filter_kernel = cp.ElementwiseKernel(
             in_params="raw U map, raw U mask",
             out_params="raw U newmap, raw U newmask",
-            preamble=string.Template(
-                """
+            preamble=string.Template("""
                 __device__ int get_map_idx(int idx, int layer_n) {
                     const int layer = ${width} * ${height};
                     return layer * layer_n + idx;
@@ -52,10 +54,8 @@ class MinFilter(PluginBase):
                     }
                     return true;
                 }
-                """
-            ).substitute(width=self.width, height=self.height),
-            operation=string.Template(
-                """
+                """).substitute(width=self.width, height=self.height),
+            operation=string.Template("""
                 U h = map[get_map_idx(i, 0)];
                 U valid = mask[get_map_idx(i, 0)];
                 if (valid < 0.5) {
@@ -76,8 +76,7 @@ class MinFilter(PluginBase):
                         newmask[get_map_idx(i, 0)] = 0.6;
                     }
                 }
-                """
-            ).substitute(dilation_size=dilation_size),
+                """).substitute(dilation_size=dilation_size),
             name="min_filter_kernel",
         )
 
@@ -114,5 +113,7 @@ class MinFilter(PluginBase):
             # If there's no more mask, break
             if (self.min_filtered_mask > 0.5).all():
                 break
-        min_filtered = cp.where(self.min_filtered_mask > 0.5, self.min_filtered.copy(), cp.nan)
+        min_filtered = cp.where(
+            self.min_filtered_mask > 0.5, self.min_filtered.copy(), cp.nan
+        )
         return min_filtered

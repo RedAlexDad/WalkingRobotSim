@@ -49,8 +49,7 @@ Visualization Manager:
       Show Arrows: true
       Show Axes: true
       Show Names: false
-      Tree:
-        {}
+      Tree: {}
       Update Interval: 0
       Value: true
     - Class: rviz_default_plugins/PointCloud2
@@ -133,4 +132,3 @@ Window Geometry:
   Width: 1400
   X: 50
   Y: 50
-

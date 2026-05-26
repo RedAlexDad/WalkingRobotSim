@@ -209,25 +209,17 @@ Visualization Manager:
         odom:
           base_footprint:
             base_link:
-              base_scan:
-                {}
-              caster_back_left_link:
-                {}
-              caster_back_right_link:
-                {}
-              imu_link:
-                {}
+              base_scan: {}
+              caster_back_left_link: {}
+              caster_back_right_link: {}
+              imu_link: {}
               realsense_link:
                 camera_rgb_frame:
-                  camera_rgb_optical_frame:
-                    {}
+                  camera_rgb_optical_frame: {}
                 realsense_depth_frame:
-                  camera_depth_optical_frame:
-                    {}
-              wheel_left_link:
-                {}
-              wheel_right_link:
-                {}
+                  camera_depth_optical_frame: {}
+              wheel_left_link: {}
+              wheel_right_link: {}
       Update Interval: 0
       Value: true
     - Class: rviz_default_plugins/Camera

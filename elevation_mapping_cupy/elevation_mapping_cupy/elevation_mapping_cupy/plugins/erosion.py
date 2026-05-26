@@ -2,11 +2,11 @@
 # Copyright (c) 2024, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-import cv2 as cv
-import cupy as cp
-import numpy as np
-
 from typing import List
+
+import cupy as cp
+import cv2 as cv
+import numpy as np
 
 from .plugin_manager import PluginBase
 
@@ -103,9 +103,15 @@ class Erosion(PluginBase):
         # Apply erosion
         layer_min = float(layer_np.min())
         layer_max = float(layer_np.max())
-        layer_np_normalized = ((layer_np - layer_min) * 255 / (layer_max - layer_min)).astype("uint8")
-        eroded_map_np = cv.erode(layer_np_normalized, kernel, iterations=self.iterations)
-        eroded_map_np = eroded_map_np.astype(np.float32) * (layer_max - layer_min) / 255 + layer_min
+        layer_np_normalized = (
+            (layer_np - layer_min) * 255 / (layer_max - layer_min)
+        ).astype("uint8")
+        eroded_map_np = cv.erode(
+            layer_np_normalized, kernel, iterations=self.iterations
+        )
+        eroded_map_np = (
+            eroded_map_np.astype(np.float32) * (layer_max - layer_min) / 255 + layer_min
+        )
         if self.reverse:
             eroded_map_np = 1 - eroded_map_np
 

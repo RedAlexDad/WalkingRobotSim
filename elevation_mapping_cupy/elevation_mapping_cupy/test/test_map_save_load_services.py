@@ -17,24 +17,21 @@ import time
 import unittest
 from threading import Event
 
-import numpy as np
-
-import rclpy
-from rclpy.executors import SingleThreadedExecutor
-from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
-
-import tf2_ros
-from geometry_msgs.msg import TransformStamped
-from sensor_msgs.msg import PointCloud2, PointField
-from grid_map_msgs.msg import GridMap
-from grid_map_msgs.srv import ProcessFile
-
 import launch
 import launch_ros
 import launch_testing
 import launch_testing.actions
+import numpy as np
+import rclpy
+import tf2_ros
 from ament_index_python.packages import get_package_share_directory
+from geometry_msgs.msg import TransformStamped
+from grid_map_msgs.msg import GridMap
+from grid_map_msgs.srv import ProcessFile
+from rclpy.executors import SingleThreadedExecutor
+from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+from sensor_msgs.msg import PointCloud2, PointField
 
 
 def _create_pointcloud2(points: np.ndarray, frame_id: str, stamp) -> PointCloud2:
@@ -56,7 +53,9 @@ def _create_pointcloud2(points: np.ndarray, frame_id: str, stamp) -> PointCloud2
     return msg
 
 
-def _create_transform(parent: str, child: str, x: float, y: float, z: float, stamp) -> TransformStamped:
+def _create_transform(
+    parent: str, child: str, x: float, y: float, z: float, stamp
+) -> TransformStamped:
     t = TransformStamped()
     t.header.stamp = stamp
     t.header.frame_id = parent
@@ -78,7 +77,9 @@ def generate_test_description():
     os.environ["FASTDDS_BUILTIN_TRANSPORTS"] = "UDPv4"
 
     pkg_share = get_package_share_directory("elevation_mapping_cupy")
-    test_config_path = os.path.join(pkg_share, "test", "config", "test_integration.yaml")
+    test_config_path = os.path.join(
+        pkg_share, "test", "config", "test_integration.yaml"
+    )
     if not os.path.exists(test_config_path):
         raise FileNotFoundError(f"Missing test config: {test_config_path}")
 
@@ -136,8 +137,12 @@ class _Fixture(Node):
             GridMap, "/elevation_mapping_node/elevation_map", self._on_gridmap, gm_qos
         )
 
-        self.save_cli = self.create_client(ProcessFile, "/elevation_mapping_cupy/save_map")
-        self.load_cli = self.create_client(ProcessFile, "/elevation_mapping_cupy/load_map")
+        self.save_cli = self.create_client(
+            ProcessFile, "/elevation_mapping_cupy/save_map"
+        )
+        self.load_cli = self.create_client(
+            ProcessFile, "/elevation_mapping_cupy/load_map"
+        )
 
     def _on_gridmap(self, msg: GridMap):
         self.last_gridmap = msg
@@ -145,7 +150,9 @@ class _Fixture(Node):
 
     def publish_tf(self, x: float, y: float, z: float = 0.0):
         stamp = self.get_clock().now().to_msg()
-        self.tf_broadcaster.sendTransform(_create_transform("map", "base_link", x, y, z, stamp))
+        self.tf_broadcaster.sendTransform(
+            _create_transform("map", "base_link", x, y, z, stamp)
+        )
 
     def publish_pointcloud_plane(self, z: float = 0.0):
         stamp = self.get_clock().now().to_msg()
@@ -167,14 +174,22 @@ class TestSaveLoadServices(unittest.TestCase):
         try:
             # Wait for services.
             t_end = time.time() + 15.0
-            while time.time() < t_end and not node.save_cli.wait_for_service(timeout_sec=0.2):
+            while time.time() < t_end and not node.save_cli.wait_for_service(
+                timeout_sec=0.2
+            ):
                 exec_.spin_once(timeout_sec=0.1)
-            self.assertTrue(node.save_cli.service_is_ready(), "save_map service not available")
+            self.assertTrue(
+                node.save_cli.service_is_ready(), "save_map service not available"
+            )
 
             t_end = time.time() + 15.0
-            while time.time() < t_end and not node.load_cli.wait_for_service(timeout_sec=0.2):
+            while time.time() < t_end and not node.load_cli.wait_for_service(
+                timeout_sec=0.2
+            ):
                 exec_.spin_once(timeout_sec=0.1)
-            self.assertTrue(node.load_cli.service_is_ready(), "load_map service not available")
+            self.assertTrue(
+                node.load_cli.service_is_ready(), "load_map service not available"
+            )
 
             # Publish some data for a short time.
             for k in range(30):
@@ -186,7 +201,9 @@ class TestSaveLoadServices(unittest.TestCase):
             t_end = time.time() + 10.0
             while time.time() < t_end and not node.gridmap_evt.is_set():
                 exec_.spin_once(timeout_sec=0.1)
-            self.assertTrue(node.gridmap_evt.is_set(), "No GridMap received before save")
+            self.assertTrue(
+                node.gridmap_evt.is_set(), "No GridMap received before save"
+            )
             node.gridmap_evt.clear()
 
             with tempfile.TemporaryDirectory() as td:
@@ -203,8 +220,12 @@ class TestSaveLoadServices(unittest.TestCase):
                 self.assertIsNotNone(fut.result(), "save_map returned no result")
                 self.assertTrue(fut.result().success, "save_map failed")
 
-                self.assertTrue(os.path.exists(fused_path), "Fused bag path not created")
-                self.assertTrue(os.path.exists(fused_path + "_raw"), "Raw bag path not created")
+                self.assertTrue(
+                    os.path.exists(fused_path), "Fused bag path not created"
+                )
+                self.assertTrue(
+                    os.path.exists(fused_path + "_raw"), "Raw bag path not created"
+                )
 
                 fut = node.load_cli.call_async(req)
                 t_end = time.time() + 30.0

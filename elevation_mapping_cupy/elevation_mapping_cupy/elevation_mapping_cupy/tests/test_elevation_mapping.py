@@ -1,11 +1,14 @@
-import pytest
-from elevation_mapping_cupy import parameter, elevation_mapping
 import cupy as cp
 import numpy as np
+import pytest
+
+from elevation_mapping_cupy import elevation_mapping, parameter
 
 
 def encode_max(maxim, index):
-    maxim, index = cp.asarray(maxim, dtype=cp.float32), cp.asarray(index, dtype=cp.uint32)
+    maxim, index = cp.asarray(maxim, dtype=cp.float32), cp.asarray(
+        index, dtype=cp.uint32
+    )
     # fuse them
     maxim = maxim.astype(cp.float16)
     maxim = maxim.view(cp.uint16)
@@ -51,11 +54,17 @@ class TestElevationMap:
     def test_input(self, elmap_ex):
         channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
         if "class_max" in elmap_ex.param.fusion_algorithms:
-            val = cp.random.rand(100000, len(channels), dtype=cp.float32).astype(cp.float16)
-            ind = cp.random.randint(0, 2, (100000, len(channels)), dtype=cp.uint32).astype(cp.float32)
+            val = cp.random.rand(100000, len(channels), dtype=cp.float32).astype(
+                cp.float16
+            )
+            ind = cp.random.randint(
+                0, 2, (100000, len(channels)), dtype=cp.uint32
+            ).astype(cp.float32)
             points = encode_max(val, ind)
         else:
-            points = cp.random.rand(100000, len(channels), dtype=elmap_ex.param.data_type)
+            points = cp.random.rand(
+                100000, len(channels), dtype=elmap_ex.param.data_type
+            )
         R = cp.random.rand(3, 3, dtype=elmap_ex.param.data_type)
         t = cp.random.rand(3, dtype=elmap_ex.param.data_type)
         elmap_ex.input_pointcloud(points, channels, R, t, 0, 0)
@@ -108,7 +117,9 @@ class TestElevationMap:
     def test_initialize_map(self, elmap_ex):
         methods = ["linear", "cubic", "nearest"]
         for method in methods:
-            points = np.array([[-4.0, 0.0, 0.0], [-4.0, 8.0, 1.0], [4.0, 8.0, 0.0], [4.0, 0.0, 0.0]])
+            points = np.array(
+                [[-4.0, 0.0, 0.0], [-4.0, 8.0, 1.0], [4.0, 8.0, 0.0], [4.0, 0.0, 0.0]]
+            )
             elmap_ex.initialize_map(points, method)
 
     def test_plugins(self, elmap_ex):

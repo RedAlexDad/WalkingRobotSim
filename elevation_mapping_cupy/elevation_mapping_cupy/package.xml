@@ -33,7 +33,7 @@
 
     <!-- Only used for semantic sensors I think -->
     <!-- <depend>python3-sklearn</depend> -->
-    
+
     <!-- Export dependencies -->
     <!-- <build_export_depend>ament_cmake_python</build_export_depend> -->
     <!-- <exec_depend>ament_cmake_python</exec_depend> -->

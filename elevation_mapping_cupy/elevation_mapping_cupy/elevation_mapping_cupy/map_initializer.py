@@ -2,15 +2,17 @@
 # Copyright (c) 2022, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-from scipy.interpolate import griddata
-import numpy as np
 import cupy as cp
+import numpy as np
+from scipy.interpolate import griddata
 
 
 class MapInitializer(object):
     def __init__(self, initial_variance, new_variance, xp=np, method="points"):
         self.methods = ["points"]
-        assert method in self.methods, "method should be chosen from {}".format(self.methods)
+        assert method in self.methods, "method should be chosen from {}".format(
+            self.methods
+        )
         self.method = method
         self.xp = xp
         self.initial_variance = initial_variance
@@ -56,9 +58,13 @@ class MapInitializer(object):
         # Update elevation map.
         elevation_map[0] = self.xp.nan_to_num(interpolated)
         elevation_map[1] = self.xp.where(
-            self.xp.invert(self.xp.isnan(interpolated)), self.new_variance, self.initial_variance
+            self.xp.invert(self.xp.isnan(interpolated)),
+            self.new_variance,
+            self.initial_variance,
         )
-        elevation_map[2] = self.xp.where(self.xp.invert(self.xp.isnan(interpolated)), 1.0, 0.0)
+        elevation_map[2] = self.xp.where(
+            self.xp.invert(self.xp.isnan(interpolated)), 1.0, 0.0
+        )
         return
 
 

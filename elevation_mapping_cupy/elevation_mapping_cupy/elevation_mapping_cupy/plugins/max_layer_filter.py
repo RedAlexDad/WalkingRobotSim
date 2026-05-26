@@ -2,10 +2,10 @@
 # Copyright (c) 2022, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-import cupy as cp
-import numpy as np
 from typing import List
 
+import cupy as cp
+import numpy as np
 from elevation_mapping_cupy.plugins.plugin_manager import PluginBase
 
 
@@ -67,7 +67,13 @@ class MaxLayerFilter(PluginBase):
         layers = []
         for it, name in enumerate(self.layers):
             layer = self.get_layer_data(
-                elevation_map, layer_names, plugin_layers, plugin_layer_names, semantic_map, semantic_layer_names, name
+                elevation_map,
+                layer_names,
+                plugin_layers,
+                plugin_layer_names,
+                semantic_map,
+                semantic_layer_names,
+                name,
             )
             if layer is None:
                 continue

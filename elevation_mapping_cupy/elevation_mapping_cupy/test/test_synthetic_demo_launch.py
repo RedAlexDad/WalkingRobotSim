@@ -18,19 +18,17 @@ import time
 import unittest
 from threading import Event
 
-import rclpy
-from rclpy.executors import SingleThreadedExecutor
-from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
-
-from grid_map_msgs.msg import GridMap
-
 import launch
 import launch_testing
 import launch_testing.actions
+import rclpy
+from ament_index_python.packages import get_package_share_directory
+from grid_map_msgs.msg import GridMap
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from ament_index_python.packages import get_package_share_directory
+from rclpy.executors import SingleThreadedExecutor
+from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 
 
 def generate_test_description():
@@ -104,7 +102,9 @@ class TestSyntheticDemoLaunch(unittest.TestCase):
         node = _GridMapWaiter()
         try:
             ok = node.wait_for_msg(timeout_s=20.0)
-            self.assertTrue(ok, "Timed out waiting for /elevation_mapping_node/elevation_map")
+            self.assertTrue(
+                ok, "Timed out waiting for /elevation_mapping_node/elevation_map"
+            )
             msg = node.last_msg
             self.assertIsNotNone(msg)
             self.assertEqual(msg.header.frame_id, "map")
@@ -124,4 +124,3 @@ class TestProcessOutput(unittest.TestCase):
             proc_info,
             allowable_exit_codes=[0, 1, -2, -15],
         )
-

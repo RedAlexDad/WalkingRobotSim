@@ -16,7 +16,9 @@ def generate_launch_description():
     setup_param_path = os.path.join(
         share_dir, "config", "setups", "synthetic", "synthetic_depth.yaml"
     )
-    rviz_config_default = PathJoinSubstitution([share_dir, "rviz", "synthetic_demo.rviz"])
+    rviz_config_default = PathJoinSubstitution(
+        [share_dir, "rviz", "synthetic_demo.rviz"]
+    )
 
     if not os.path.exists(core_param_path):
         raise FileNotFoundError(f"Missing core params: {core_param_path}")
@@ -86,4 +88,3 @@ def generate_launch_description():
             rviz_node,
         ]
     )
-

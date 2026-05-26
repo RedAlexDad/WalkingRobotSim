@@ -2,15 +2,15 @@ name: Jazzy (Docker)
 
 on:
   push:
-    branches: [ "ros2", "jazzy" ]
+    branches: ["ros2", "jazzy"]
   pull_request:
-    branches: [ "main", "ros2", "jazzy" ]
+    branches: ["main", "ros2", "jazzy"]
   workflow_dispatch:
 
 jobs:
   build_test:
     # Requires a GPU-capable self-hosted runner with Docker + NVIDIA container runtime.
-    runs-on: [ self-hosted, Linux, X64 ]
+    runs-on: [self-hosted, Linux, X64]
     steps:
       - uses: actions/checkout@v4
 
@@ -44,4 +44,3 @@ jobs:
                 --event-handlers console_direct+
               colcon test-result --verbose --test-result-base build_jazzy
             '
-
