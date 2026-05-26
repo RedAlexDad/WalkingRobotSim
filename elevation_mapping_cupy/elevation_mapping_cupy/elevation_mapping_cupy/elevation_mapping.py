@@ -24,7 +24,7 @@ from elevation_mapping_cupy.traversability_polygon import (
     calculate_area, get_masked_traversability, is_traversable,
     transform_to_map_index, transform_to_map_position)
 
-from backend import xp, GPU_AVAILABLE, cp, asnumpy, get_stream
+from .backend import xp, GPU_AVAILABLE, cp, asnumpy, get_stream
 
 if GPU_AVAILABLE:
     pool = cp.cuda.MemoryPool(cp.cuda.malloc_managed)
@@ -160,6 +160,15 @@ class ElevationMap:
 
     def get_center_position(self, position):
         """Return the position of the map center.
+
+        Args:
+            position (numpy.ndarray):
+
+        """
+        position[0][:] = asnumpy(self.center)
+
+    def get_position(self, position):
+        """Return the position of the map.
 
         Args:
             position (numpy.ndarray):
@@ -646,6 +655,8 @@ class ElevationMap:
         if name in self.layer_names:
             return True
         elif name in self.plugin_manager.layer_names:
+            return True
+        elif name in self.param.additional_layers:
             return True
         else:
             return False

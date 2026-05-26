@@ -12,7 +12,7 @@ from typing import Dict, List, Optional
 import numpy as np
 from ruamel.yaml import YAML
 
-from backend import xp, GPU_AVAILABLE
+from ..backend import xp, GPU_AVAILABLE
 
 
 @dataclass

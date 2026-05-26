@@ -7,7 +7,7 @@ from typing import List
 
 import numpy as np
 
-from backend import xp, GPU_AVAILABLE, cp
+from ..backend import xp, GPU_AVAILABLE, cp
 
 from .plugin_manager import PluginBase
 

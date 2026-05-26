@@ -1,21 +1,25 @@
-import cupy as cp
+from pathlib import Path
+
 import numpy as np
 import pytest
 
-from elevation_mapping_cupy import elevation_mapping, parameter
+from .. import elevation_mapping, parameter
+from ..backend import xp
+
+_TEST_DIR = Path(__file__).parent
+_CONFIG_DIR = _TEST_DIR.parent.parent / "config" / "core"
 
 
 def encode_max(maxim, index):
-    maxim, index = cp.asarray(maxim, dtype=cp.float32), cp.asarray(
-        index, dtype=cp.uint32
+    maxim, index = xp.asarray(maxim, dtype=xp.float32), xp.asarray(
+        index, dtype=xp.uint32
     )
-    # fuse them
-    maxim = maxim.astype(cp.float16)
-    maxim = maxim.view(cp.uint16)
-    maxim = maxim.astype(cp.uint32)
-    index = index.astype(cp.uint32)
-    mer = cp.array(cp.left_shift(index, 16) | maxim, dtype=cp.uint32)
-    mer = mer.view(cp.float32)
+    maxim = maxim.astype(xp.float16)
+    maxim = maxim.view(xp.uint16)
+    maxim = maxim.astype(xp.uint32)
+    index = index.astype(xp.uint32)
+    mer = xp.array(xp.left_shift(index, 16) | maxim, dtype=xp.uint32)
+    mer = mer.view(xp.float32)
     return mer
 
 
@@ -25,11 +29,12 @@ def elmap_ex(add_lay, fusion_alg):
     fusion_algorithms = fusion_alg
     p = parameter.Parameter(
         use_chainer=False,
-        weight_file="../../../config/weights.dat",
-        plugin_config_file="../../../config/plugin_config.yaml",
+        weight_file=str(_CONFIG_DIR / "weights.dat"),
+        plugin_config_file=str(_CONFIG_DIR / "plugin_config.yaml"),
     )
     p.subscriber_cfg["front_cam"]["channels"] = additional_layer
     p.subscriber_cfg["front_cam"]["fusion"] = fusion_algorithms
+    p.additional_layers = additional_layer
     p.update()
     e = elevation_mapping.ElevationMap(p)
     return e
@@ -49,24 +54,21 @@ def elmap_ex(add_lay, fusion_alg):
 class TestElevationMap:
     def test_init(self, elmap_ex):
         assert len(elmap_ex.layer_names) == elmap_ex.elevation_map.shape[0]
-        # assert elmap_ex.color_map is None
 
     def test_input(self, elmap_ex):
         channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
         if "class_max" in elmap_ex.param.fusion_algorithms:
-            val = cp.random.rand(100000, len(channels), dtype=cp.float32).astype(
-                cp.float16
+            val = xp.random.rand(100000, len(channels)).astype(xp.float16)
+            ind = xp.random.randint(0, 2, size=(100000, len(channels))).astype(
+                xp.float32
             )
-            ind = cp.random.randint(
-                0, 2, (100000, len(channels)), dtype=cp.uint32
-            ).astype(cp.float32)
             points = encode_max(val, ind)
         else:
-            points = cp.random.rand(
-                100000, len(channels), dtype=elmap_ex.param.data_type
+            points = xp.random.rand(100000, len(channels)).astype(
+                elmap_ex.param.data_type
             )
-        R = cp.random.rand(3, 3, dtype=elmap_ex.param.data_type)
-        t = cp.random.rand(3, dtype=elmap_ex.param.data_type)
+        R = xp.random.rand(3, 3).astype(elmap_ex.param.data_type)
+        t = xp.random.rand(3).astype(elmap_ex.param.data_type)
         elmap_ex.input_pointcloud(points, channels, R, t, 0, 0)
 
     def test_update_normal(self, elmap_ex):
@@ -75,7 +77,7 @@ class TestElevationMap:
     def test_move_to(self, elmap_ex):
         for i in range(20):
             pos = np.array([i * 0.01, i * 0.02, i * 0.01])
-            R = cp.random.rand(3, 3)
+            R = xp.random.rand(3, 3)
             elmap_ex.move_to(pos, R)
 
     def test_get_map(self, elmap_ex):
@@ -86,9 +88,8 @@ class TestElevationMap:
             "min_filter",
             "smooth",
             "inpaint",
-            "rgb",
         ]
-        data = np.zeros((elmap_ex.cell_n - 2, elmap_ex.cell_n - 2), dtype=cp.float32)
+        data = np.zeros((elmap_ex.cell_n - 2, elmap_ex.cell_n - 2), dtype=np.float32)
         for layer in layers:
             elmap_ex.get_map_with_name_ref(layer, data)
 
@@ -108,7 +109,7 @@ class TestElevationMap:
             assert elmap_ex.exists_layer(layer)
 
     def test_polygon_traversability(self, elmap_ex):
-        polygon = cp.array([[0, 0], [2, 0], [0, 2]], dtype=np.float64)
+        polygon = xp.array([[0, 0], [2, 0], [0, 2]], dtype=np.float64)
         result = np.array([0, 0, 0])
         number_polygons = elmap_ex.get_polygon_traversability(polygon, result)
         untraversable_polygon = np.zeros((number_polygons, 2))

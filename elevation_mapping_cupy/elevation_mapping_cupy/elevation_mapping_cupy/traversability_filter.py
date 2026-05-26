@@ -2,7 +2,7 @@
 # Copyright (c) 2022, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-from backend import xp, GPU_AVAILABLE, cp, asnumpy
+from .backend import xp, GPU_AVAILABLE, cp, asnumpy
 
 
 def get_filter_torch(*args, **kwargs):
@@ -121,11 +121,13 @@ def get_filter_numpy(w1, w2, w3, w_out):
             self.w_out = w_out  # (1, 12, 1, 1)
 
         def __call__(self, elevation):
+            import numpy as np
             elevation = asnumpy(elevation)
             h, w = elevation.shape
             out1 = self._apply_conv_bank(elevation, self.w1, dilation=1)
             out2 = self._apply_conv_bank(elevation, self.w2, dilation=2)
             out3 = self._apply_conv_bank(elevation, self.w3, dilation=3)
+            out1 = out1[:, 2:-2, 2:-2]
             out2 = out2[:, 1:-1, 1:-1]
             out = np.concatenate([out1, out2, out3], axis=0)
             w_out_flat = self.w_out.reshape(1, 12)

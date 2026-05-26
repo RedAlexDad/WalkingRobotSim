@@ -6,7 +6,7 @@ from typing import List
 
 import numpy as np
 
-from backend import xp, GPU_AVAILABLE
+from ..backend import xp, GPU_AVAILABLE
 
 from elevation_mapping_cupy.plugins.plugin_manager import PluginBase
 

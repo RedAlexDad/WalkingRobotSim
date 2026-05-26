@@ -7,7 +7,7 @@ from typing import List, Optional
 import cv2 as cv
 import numpy as np
 
-from backend import xp, GPU_AVAILABLE, asnumpy
+from ..backend import xp, GPU_AVAILABLE, asnumpy
 
 from .plugin_manager import PluginBase
 

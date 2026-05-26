@@ -5,7 +5,7 @@
 import numpy as np
 from scipy.interpolate import griddata
 
-from backend import xp, GPU_AVAILABLE, asnumpy
+from .backend import xp, GPU_AVAILABLE, asnumpy
 
 
 class MapInitializer(object):

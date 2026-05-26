@@ -5,7 +5,7 @@
 import numpy as np
 from shapely.geometry import MultiPoint, Polygon
 
-from backend import xp, GPU_AVAILABLE, asnumpy
+from .backend import xp, GPU_AVAILABLE, asnumpy
 
 
 def get_masked_traversability(map_array, mask, traversability):

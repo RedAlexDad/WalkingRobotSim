@@ -2,7 +2,7 @@
 # Copyright (c) 2023, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-from backend import xp, GPU_AVAILABLE, cp, scipy_ndimage, asnumpy
+from ..backend import xp, GPU_AVAILABLE, cp, scipy_ndimage, asnumpy
 import string
 import numpy as np
 

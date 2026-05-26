@@ -6,7 +6,7 @@ from typing import List
 
 import numpy as np
 
-from backend import xp, GPU_AVAILABLE, scipy_ndimage
+from ..backend import xp, GPU_AVAILABLE, scipy_ndimage
 
 from .plugin_manager import PluginBase
 

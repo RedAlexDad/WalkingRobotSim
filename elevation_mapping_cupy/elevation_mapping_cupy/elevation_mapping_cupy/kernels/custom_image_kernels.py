@@ -5,7 +5,7 @@
 import string
 
 import numpy as np
-from backend import GPU_AVAILABLE, asnumpy, cp, scipy_ndimage, xp
+from ..backend import GPU_AVAILABLE, asnumpy, cp, scipy_ndimage, xp
 
 # =====================================================================
 # CUDA kernels (only defined when GPU is available)

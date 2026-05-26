@@ -8,7 +8,7 @@ from typing import List
 import cv2 as cv
 import numpy as np
 
-from backend import xp, GPU_AVAILABLE, scipy_ndimage, asnumpy
+from ..backend import xp, GPU_AVAILABLE, scipy_ndimage, asnumpy
 
 _LOGGER = logging.getLogger(__name__)
 

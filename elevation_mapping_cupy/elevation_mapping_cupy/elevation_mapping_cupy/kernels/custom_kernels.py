@@ -5,7 +5,7 @@
 import string
 
 import numpy as np
-from backend import GPU_AVAILABLE, asnumpy, cp, scipy_ndimage, xp
+from ..backend import GPU_AVAILABLE, asnumpy, cp, scipy_ndimage, xp
 
 # =====================================================================
 # CUDA kernels (only defined when GPU is available)
@@ -894,33 +894,30 @@ def _make_average_map_cpu(width, height, max_variance, initial_variance):
 
 def _make_dilation_filter_cpu(width, height, dilation_size):
     def dilation_filter_cpu(map_, mask, newmap, newmask, size=None):
-        h = map_[0]
-        valid = mask[0]
-        newmap[0] = h
+        newmap[:] = map_
 
         from scipy.ndimage import binary_dilation
 
         struct = np.ones((2 * dilation_size + 1, 2 * dilation_size + 1), dtype=bool)
-        dilated = binary_dilation(valid > 0.5, structure=struct)
-        dilated_edges = dilated & ~(valid > 0.5)
+        dilated = binary_dilation(mask > 0.5, structure=struct)
+        dilated_edges = dilated & ~(mask > 0.5)
 
         from scipy.ndimage import distance_transform_edt
 
         dist, indices = distance_transform_edt(~dilated_edges, return_indices=True)
-        valid_h = h.copy()
-        valid_h[~(valid > 0.5)] = 0.0
-        newmap[0] = valid_h[indices[0], indices[1]]
-        newmask[0] = dilated.astype(float)
+        valid_h = map_.copy()
+        valid_h[~(mask > 0.5)] = 0.0
+        newmap[:] = valid_h[indices[0], indices[1]]
+        newmask[:] = dilated.astype(float)
 
     return dilation_filter_cpu
 
 
 def _make_normal_filter_cpu(width, height, resolution):
     def normal_filter_cpu(map_, mask, newmap, size=None):
-        h = map_[0]
-        valid = mask[0] > 0.5
+        valid = mask > 0.5
 
-        dzdy, dzdx = np.gradient(h, resolution, resolution)
+        dzdy, dzdx = np.gradient(map_, resolution, resolution)
 
         nx = -dzdx
         ny = -dzdy
