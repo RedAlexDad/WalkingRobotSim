@@ -428,7 +428,7 @@ else:  # безопасная
 | 6. Terrain-aware planning   | 2                | ⏳ Ожидает                |
 | 7. Сбор метрик              | 1                | ⏳ Ожидает                |
 | 8. Оформление главы         | 1                | ✅ Выполнен               |
-| 9. CPU/GPU adaptive backend | ~3.5             | 🟡 Выполнен частично      |
+| 9. CPU/GPU adaptive backend | ~3.5             | ✅ Выполнен               |
 | **Итого**                   | **~15.5 недель** | **Этапы 4–7 в плане**     |
 
 ---
@@ -860,8 +860,8 @@ from backend import xp, scipy_ndimage, GPU_AVAILABLE
 - [x] Добавить тест `test_backend_no_cuda.py` — мокает отсутствие CuPy
 - [x] Проверить, что карта высот на CPU визуально совпадает с GPU
       (запуск на машине с CUDA, сравнение двух выходов) — совпадает
-- [ ] Проверить производительность CPU: целевой FPS ≥ 1 (real-time не требуется
-      на CPU, но карта должна обновляться)
+- [x] Проверить производительность CPU: целевой FPS ≥ 1 (real-time не требуется
+      на CPU, но карта должна обновляться) — **~5.3 Hz** на ноутбуке (Lenovo, Intel), целевой порог превышен
 
 ### Приоритет файлов
 
@@ -929,7 +929,7 @@ from backend import xp, scipy_ndimage, GPU_AVAILABLE
 | 9.10 elevation_mapping.py      | 2 дня                | ✅ В коммите `0bb2749` |
 | 9.11 Docker CPU-образ          | 1 день               | ✅ Выполнен            |
 | 9.12 Тестирование              | 2 дня                | ✅ Выполнен            |
-| **Итого**                      | **~17 рабочих дней** | **11/12 выполнено**   |
+| **Итого**                      | **~17 рабочих дней** | **✅ 12/12 выполнено**|
 
 ---
 
@@ -938,7 +938,7 @@ from backend import xp, scipy_ndimage, GPU_AVAILABLE
 Выполнены этапы 0–3 (инфраструктура, Docker, LiDAR, ground segmentation).
 Этапы 4–7 (traversability, gait, planning, metrics) — в плане.
 Этап 8 (документация) — выполнен.
-Этап 9 (CPU/GPU adaptive backend) — выполнен частично (9 из 12 подэтапов: backend.py, плагины, plugin_manager, traversability, elevation_mapping, CPU Docker-образ).
+Этап 9 (CPU/GPU adaptive backend) — **выполнен полностью** (12 из 12 подэтапов). CPU-образ собран и протестирован: 95 pytest, визуальное совпадение карты, ~5.3 Hz на Intel.
 
 ### Программно реализовано
 
