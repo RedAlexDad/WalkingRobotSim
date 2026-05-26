@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 
-<robot name="go2" xmlns:xacro="http://www.ros.org/wiki/xacro">
+<robot name="go2"
+    xmlns:xacro="http://www.ros.org/wiki/xacro">
 
     <xacro:arg name="DEBUG" default="false"/>
 
@@ -24,7 +25,7 @@
             <parent link="world"/>
             <child link="base_link"/>
         </joint>
-    </xacro:if> 
+    </xacro:if>
 
     <link name="base_link">
         <visual>
@@ -58,10 +59,7 @@
         <inertial>
             <origin rpy="0 0 0" xyz="${trunk_com_x} ${trunk_com_y} ${trunk_com_z}"/>
             <mass value="${trunk_mass}"/>
-            <inertia
-                ixx="${trunk_ixx}" ixy="${trunk_ixy}" ixz="${trunk_ixz}"
-                iyy="${trunk_iyy}" iyz="${trunk_iyz}"
-                izz="${trunk_izz}"/>  
+            <inertia ixx="${trunk_ixx}" ixy="${trunk_ixy}" ixz="${trunk_ixz}" iyy="${trunk_iyy}" iyz="${trunk_iyz}" izz="${trunk_izz}"/>
         </inertial>
     </link>
 
@@ -119,10 +117,10 @@
     </link>
 -->
 
-    <xacro:leg name="rf" mirror="-1" mirror_dae= "False" front_hind="1"  front_hind_dae="True"  />
-    <xacro:leg name="lf" mirror="1"  mirror_dae="True"   front_hind="1"  front_hind_dae="True"  />
-    <xacro:leg name="rh" mirror="-1" mirror_dae="False"  front_hind="-1" front_hind_dae="False" />
-    <xacro:leg name="lh" mirror="1"  mirror_dae="True"   front_hind="-1" front_hind_dae="False" />
+    <xacro:leg name="rf" mirror="-1" mirror_dae= "False" front_hind="1" front_hind_dae="True" />
+    <xacro:leg name="lf" mirror="1" mirror_dae="True" front_hind="1" front_hind_dae="True" />
+    <xacro:leg name="rh" mirror="-1" mirror_dae="False" front_hind="-1" front_hind_dae="False" />
+    <xacro:leg name="lh" mirror="1" mirror_dae="True" front_hind="-1" front_hind_dae="False" />
 
     <xacro:include filename="$(find go2_description)/xacro/velodyne.xacro"/>
     <!-- <xacro:include filename="$(find go2_description)/xacro/laser.xacro"/> -->

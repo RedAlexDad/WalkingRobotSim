@@ -9,21 +9,21 @@
     </joint>
     <link name="front_laser">
         <collision>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-            <box size="0.1 0.1 0.1"/>
-        </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size="0.1 0.1 0.1"/>
+            </geometry>
         </collision>
         <visual>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-            <mesh filename="file://$(find go2_description)/meshes/hokuyo.dae"/>
-        </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="file://$(find go2_description)/meshes/hokuyo.dae"/>
+            </geometry>
         </visual>
         <inertial>
-        <mass value="1e-5"/>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
+            <mass value="1e-5"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
         </inertial>
     </link>
     <!-- <gazebo reference="front_laser">
