@@ -428,7 +428,8 @@ else:  # безопасная
 | 6. Terrain-aware planning   | 2              | ⏳ Ожидает                |
 | 7. Сбор метрик              | 1              | ⏳ Ожидает                |
 | 8. Оформление главы         | 1              | ✅ Выполнен               |
-| **Итого**                   | **~12 недель** | **Этапы 4–7 в плане**     |
+| 9. CPU/GPU adaptive backend | ~3.5           | 📋 В плане                |
+| **Итого**                   | **~15.5 недель**| **Этапы 4–7, 9 в плане**  |
 
 ---
 
@@ -560,7 +561,298 @@ graph TD
 - NVIDIA GTX 1650 Ti + CUDA 12.8
 - Docker + Docker Compose (two-container architecture)
 - Cyclone DDS (межконтейнерная связь)
-- Python 3.12, C++20, CuPy, PyTorch, numpy
+- Python 3.12, C++20, CuPy, PyTorch, NumPy, SciPy, OpenCV
+
+---
+
+## Этап 9. Адаптация elevation_mapping под CPU/GPU (backend abstraction)
+
+### Мотивация
+
+Исходный elevation_mapping_cupy **требует NVIDIA GPU с CUDA** — без неё падает
+на старте (`cupy.cuda.runtime.CUDARuntimeError: CUDA_ERROR_NO_DEVICE`).
+На машине автора (ноутбук) CUDA отсутствует, а на GTX 1650 Ti (CUDA 12.8)
+CuPy работает нестабильно (JIT-баги с NumPy 2.x, ограничение 4 GB VRAM).
+
+**Цель:** сделать elevation mapping адаптивным:
+- GPU (CuPy) — когда CUDA доступна (сохранение всей существующей функциональности)
+- CPU (NumPy/SciPy) — когда CUDA нет (полноценный fallback без потери точности)
+
+### Ключевые вызовы
+
+| № | Сложность | Суть | Чем заменить на CPU |
+|---|-----------|------|---------------------|
+| 1 | 🔴 | `cp.ElementwiseKernel` c `atomicAdd` в `add_points_kernel` | `np.add.at` + векторизованные операции |
+| 2 | 🔴 | CUDA device functions для ray casting (3D→2D проекция) | Чистый Python + NumPy math |
+| 3 | 🟡 | `cp.cuda.MemoryPool`, `cp.cuda.set_allocator`, `cp.cuda.Stream` | Guard `if GPU_AVAILABLE` |
+| 4 | 🟡 | `cupyx.scipy.ndimage` (dilation, erosion, filtering) | `scipy.ndimage` (идентичный API) |
+| 5 | 🟡 | `torch` с CUDA в `traversability_filter.py` | Чистый NumPy (conv2d, нормализация) |
+| 6 | 🟢 | `cp.where`, `cp.stack`, `cp.asnumpy`, типизация | `xp` из `backend.py` |
+| 7 | 🟢 | Импорты `import cupy as cp` в 21 файле | `from backend import xp` |
+
+### Архитектура
+
+```
+elevation_mapping_cupy/
+└── elevation_mapping_cupy/
+    └── elevation_mapping_cupy/
+        ├── backend.py              ← НОВЫЙ: адаптивный xp
+        ├── elevation_mapping.py    ← cp → xp, guarded CUDA pool
+        ├── kernels/
+        │   ├── custom_kernels.py   ← ElementwiseKernel → xp-функции
+        │   ├── custom_image_kernels.py
+        │   └── custom_semantic_kernels.py
+        ├── plugins/
+        │   ├── smooth_filter.py
+        │   ├── min_filter.py
+        │   ├── max_filter.py
+        │   ├── erosion.py
+        │   ├── inpainting.py
+        │   ├── robot_centric_elevation.py
+        │   ├── max_layer_filter.py
+        │   └── plugin_manager.py   ← type hints, adaptive imports
+        ├── traversability_filter.py  ← Torch CUDA → NumPy conv2d
+        ├── traversability_polygon.py ← cp → xp
+        └── map_initializer.py        ← cp → xp
+```
+
+### Задачи
+
+#### Этап 9.1. backend.py — ядро адаптивности
+
+- [ ] Создать `backend.py` — singleton с автоопределением CUDA
+- [ ] Экспортировать `xp` (cp при CUDA, np иначе)
+- [ ] Экспортировать `GPU_AVAILABLE: bool`
+- [ ] Экспортировать `asnumpy(x)` — `cp.asnumpy(x)` if GPU else `np.asarray(x)`
+- [ ] Экспортировать `get_stream()` — `cp.cuda.Stream.null` if GPU else `None`
+- [ ] Экспортировать `scipy_ndimage` — `cupyx.scipy.ndimage` if GPU else `scipy.ndimage`
+
+```python
+# backend.py (концепт)
+import importlib
+
+GPU_AVAILABLE = False
+xp = np
+
+def _detect_cuda():
+    ...
+    if cp_spec is not None:
+        try:
+            cp.cuda.runtime.getDeviceCount()
+            GPU_AVAILABLE = True
+            return cp
+        except cp.cuda.runtime.CUDARuntimeError:
+            pass
+    return np
+```
+
+**Критерий готовности:** `from backend import xp, GPU_AVAILABLE` работает
+и на GPU-машине, и на CPU-only.
+
+#### Этап 9.2. Рефакторинг custom_kernels.py
+
+Самый сложный файл (~710 строк). 6 `ElementwiseKernel` → CPU fallback.
+
+**Подзадачи:**
+
+- [ ] **9.2.1 `add_points_kernel`** — ядро вставки точек в карту высот.
+  - GPU: `atomicAdd` для каждого пикселя, ray casting через CUDA device functions
+  - CPU (`_add_points_cpu`): `np.add.at` для атомарности + векторизованный
+    расчёт координат `(col, row)` для всего облака точек сразу
+
+- [ ] **9.2.2 `error_counting_kernel`** — подсчёт ошибок карты.
+  - CPU: простое `np.sum(mask)` вместо kernel launch
+
+- [ ] **9.2.3 `average_map_kernel`** — усреднение высот.
+  - CPU: `scipy.ndimage.uniform_filter` или `np.cumsum` + окно
+
+- [ ] **9.2.4 `dilation_filter`** — бинарная дилатация.
+  - CPU: `scipy.ndimage.binary_dilation` (замена 1:1)
+
+- [ ] **9.2.5 `normal_filter`** — вычисление нормалей поверхности.
+  - CPU: `np.gradient` по осям → cross product → нормализация
+
+- [ ] **9.2.6 `polygon_mask_kernel`** — маска многоугольника.
+  - CPU: `matplotlib.path.Path.contains_points` или `cv2.fillPoly`
+
+**Критерий готовности:** `pytest tests/` проходит без CUDA,
+карта высот визуально совпадает с GPU-версией.
+
+#### Этап 9.3. Рефакторинг custom_image_kernels.py (~271 строка)
+
+- [ ] `image_to_map_correspondence` kernel:
+  - GPU: `ElementwiseKernel` c интерполяцией
+  - CPU (`_image_to_map_cpu`): `scipy.ndimage.map_coordinates`
+    для интерполяции изображения в координаты карты
+
+#### Этап 9.4. Рефакторинг custom_semantic_kernels.py (~375 строк)
+
+- [ ] `sum_kernel` — семантическая сумма:
+  - CPU: `np.add.at` + `np.bincount`
+- [ ] `average_map_kernel` (semantic) — усреднение семантики:
+  - CPU: `np.cumsum` / скользящее окно
+
+#### Этап 9.5. Рефакторинг plugins (7 файлов)
+
+Каждый плагин использует `cp.ElementwiseKernel` и/или `cupyx.scipy.ndimage`.
+
+- [ ] **9.5.1 `smooth_filter.py`** — `cupyx.scipy.ndimage.gaussian_filter` → `scipy.ndimage.gaussian_filter`
+- [ ] **9.5.2 `min_filter.py`** — `cupyx.scipy.ndimage.minimum_filter` → `scipy.ndimage.minimum_filter`
+- [ ] **9.5.3 `max_filter.py`** — `cupyx.scipy.ndimage.maximum_filter` → `scipy.ndimage.maximum_filter`
+- [ ] **9.5.4 `erosion.py`** — `cupyx.scipy.ndimage.binary_erosion` → `scipy.ndimage.binary_erosion`
+- [ ] **9.5.5 `inpainting.py`** — `cp.ElementwiseKernel` + `cv2.inpaint`:
+  - CPU: OpenCV `cv2.inpaint` (доступен в обоих контейнерах)
+- [ ] **9.5.6 `robot_centric_elevation.py`** — `cp` → `xp`, `cp.where` → `xp.where`
+- [ ] **9.5.7 `max_layer_filter.py`** — `cp` → `xp`, `cp.amax` → `xp.amax`
+
+**Общий принцип:** в начале каждого плагина:
+```python
+from backend import xp, scipy_ndimage, GPU_AVAILABLE
+```
+и замена `cp` → `xp`, `cupyx.scipy.ndimage` → `scipy_ndimage`.
+
+**Критерий готовности:** все плагины работают через `backend.xp`,
+тесты проходят на CPU.
+
+#### Этап 9.6. Рефакторинг plugin_manager.py
+
+- [ ] Заменить type hints `cupy.ndarray` → `np.ndarray` (или `xp.ndarray`)
+- [ ] Сделать импорты плагинов адаптивными (не требующими `cupy`)
+
+#### Этап 9.7. Рефакторинг traversability_filter.py (~100 строк)
+
+- [ ] GPU-путь: `torch` c CUDA (как есть, `torch.device('cuda')`)
+- [ ] CPU-путь (`_compute_traversability_cpu`): чистый NumPy:
+  - `scipy.signal.convolve2d` вместо `torch.nn.functional.conv2d`
+  - NumPy-нормализация вместо `torch.nn.functional.normalize`
+- [ ] Автовыбор: `device = 'cuda' if GPU_AVAILABLE and torch.cuda.is_available() else 'cpu'`
+
+#### Этап 9.8. Рефакторинг traversability_polygon.py (~77 строк)
+
+- [ ] `cp.where` → `xp.where`
+- [ ] `cp.stack` → `xp.stack`
+- [ ] `cp.asnumpy` → `asnumpy()` из backend
+- [ ] `MultiPoint(points)` → адаптивный вызов (работает и с np, и с cp)
+
+#### Этап 9.9. Рефакторинг map_initializer.py (~80 строк)
+
+- [ ] `cp` → `xp`
+- [ ] `cupyx.scipy.ndimage.map_coordinates` → `scipy_ndimage.map_coordinates`
+- [ ] `cp.interp` → `xp.interp`
+
+#### Этап 9.10. Рефакторинг elevation_mapping.py (~1228 строк)
+
+- [ ] `xp = cp` → `from backend import xp, GPU_AVAILABLE, get_stream, asnumpy`
+- [ ] Guard `cp.cuda.MemoryPool`:
+  ```python
+  if GPU_AVAILABLE:
+      import cupy as cp
+      pool = cp.cuda.MemoryPool(cp.cuda.malloc_managed)
+      cp.cuda.set_allocator(pool.malloc)
+  ```
+- [ ] Guard `cp.cuda.Stream`:
+  ```python
+  self._stream = get_stream()
+  ```
+- [ ] Все `cp.asnumpy(...)` → `asnumpy(...)`
+- [ ] Все `cp.ndarray` type hints → `xp.ndarray`
+- [ ] Импорты kernel-функций: они сами адаптивны (этапы 9.2–9.5)
+
+**Критерий готовности:** `elevation_mapping.py` импортируется и
+конфигурируется без CUDA. `pytest tests/` — все тесты зелёные.
+
+#### Этап 9.11. Docker CPU-образ
+
+- [ ] Создать `docker/Dockerfile.cpu`:
+  - Базовый образ: `osrf/ros:jazzy-desktop` (без CUDA)
+  - Установка: `python3-numpy`, `python3-scipy`, `python3-opencv`
+  - Без CuPy, без PyTorch, без CUDA toolkit
+- [ ] Добавить CPU profile в `compose.yml`:
+  ```yaml
+  elevation_mapping_cpu:
+    build:
+      context: ...
+      dockerfile: docker/Dockerfile.cpu
+    profiles: ["cpu"]
+    ...
+  ```
+- [ ] Обновить `Makefile` — цель `make up-cpu` / `make down-cpu`
+
+#### Этап 9.12. Тестирование без CUDA
+
+- [ ] Убедиться, что существующие тесты (`pytest tests/`) проходят на CPU
+- [ ] Добавить тест `test_backend_no_cuda.py` — мокает отсутствие CuPy
+- [ ] Проверить, что карта высот на CPU визуально совпадает с GPU
+  (запуск на машине с CUDA, сравнение двух выходов)
+- [ ] Проверить производительность CPU: целевой FPS ≥ 1 (real-time не требуется
+  на CPU, но карта должна обновляться)
+
+### Приоритет файлов
+
+| Приоритет | Файл | Причина |
+|-----------|------|---------|
+| 🔴 P0 | `backend.py` | Блокирует всё остальное |
+| 🔴 P0 | `custom_kernels.py` (add_points) | Без него карта не строится |
+| 🟡 P1 | `elevation_mapping.py` | Главный модуль, точки входа |
+| 🟡 P1 | `traversability_filter.py` | Вторая система координат |
+| 🟢 P2 | `custom_image_kernels.py` | Semantic layer (не критичен) |
+| 🟢 P2 | `custom_semantic_kernels.py` | Semantic layer |
+| 🟢 P2 | Plugins (7 files) | Фильтры постобработки |
+| 🔵 P3 | Docker CPU-образ | Для деплоя |
+| 🔵 P3 | `kk.py` | Не импортируется, не трогаем |
+
+### Ключевые технические решения
+
+1. **`np.add.at` вместо `atomicAdd`** — NumPy имеет встроенную атомарность
+   через `ufunc.at`. `np.add.at(map, (rows, cols), values)` ведёт себя
+   как CUDA `atomicAdd`.
+
+2. **Векторизация ray casting** — вместо одного потока на точку (CUDA),
+   CPU обрабатывает всё облако точек сразу как массивы:
+   ```python
+   cols = ((x - map_origin_x) / resolution).astype(int)
+   rows = ((y - map_origin_y) / resolution).astype(int)
+   mask = (0 <= cols) & (cols < width) & (0 <= rows) & (rows < height)
+   np.add.at(elevation_map, (rows[mask], cols[mask]), heights[mask])
+   ```
+
+3. **`scipy.ndimage` как drop-in замена `cupyx.scipy.ndimage`** —
+   идентичный API (gaussian_filter, binary_dilation, minimum_filter,
+   map_coordinates). Меняется только модуль.
+
+4. **`torch` → NumPy для traversability** — `scipy.signal.convolve2d`
+   эквивалентен `torch.nn.functional.conv2d` для 2D фильтрации.
+
+5. **`shapely`/`matplotlib` для polygon mask** — вместо CUDA-растеризации
+   многоугольников: `Path.contains_points` из matplotlib.
+
+### Риски и mitigation
+
+| Риск | Вероятность | Mitigation |
+|------|-------------|------------|
+| `np.add.at` медленнее `atomicAdd` | Высокая | Принять: CPU не обязан быть быстрым, FPS ≥ 1 |
+| Различия в floating-point между GPU/CPU | Средняя | Тест сравнения двух выходов на одной машине |
+| `scipy.ndimage` не идентичен `cupyx` | Низкая | Визуальная верификация карты |
+| Ray casting на CPU слишком медленный (>1s) | Средняя | Воксельный даунсэмпл точек перед вставкой |
+| OpenCV `inpaint` отсутствует в CPU-образе | Низкая | `pip install opencv-python-headless` |
+
+### Время
+
+| Подэтап | Оценка |
+|---------|--------|
+| 9.1 backend.py | 1 день |
+| 9.2 custom_kernels.py (все 6) | 5 дней |
+| 9.3 custom_image_kernels.py | 1 день |
+| 9.4 custom_semantic_kernels.py | 1 день |
+| 9.5 Plugins (7) | 2 дня |
+| 9.6 plugin_manager.py | 0.5 дня |
+| 9.7 traversability_filter.py | 1 день |
+| 9.8 traversability_polygon.py | 0.5 дня |
+| 9.9 map_initializer.py | 0.5 дня |
+| 9.10 elevation_mapping.py | 2 дня |
+| 9.11 Docker CPU-образ | 1 день |
+| 9.12 Тестирование | 2 дня |
+| **Итого** | **~17 рабочих дней** |
 
 ---
 
@@ -568,7 +860,8 @@ graph TD
 
 Выполнены этапы 0–3 (инфраструктура, Docker, LiDAR, ground segmentation).
 Этапы 4–7 (traversability, gait, planning, metrics) — в плане.
-Этап 8 (документация) выполнен.
+Этап 8 (документация) — выполнен.
+Этап 9 (CPU/GPU adaptive backend) — в плане.
 
 ### Программно реализовано
 
