@@ -965,3 +965,44 @@ from backend import xp, scipy_ndimage, GPU_AVAILABLE
 | `ch3_01_intro` — `ch3_13_conclusions` | 13 разделов главы 3                                 |
 
 **Формат:** академический русский, ссылки [1]…[12], таблицы 3.1–3.8, рисунки 3.1–3.4, без блоков кода.
+
+---
+
+## Корректировка №4 — RViz config, launch-файлы, xacro
+
+### RViz configs с хоста
+
+После `make elevation-rviz` RViz внутри контейнера сохраняет конфиг по кнопке Save Config:
+- `go2_elevation.rviz` — сохранён с хоста через volume (elevation-контейнер)
+- `multi_nav2_default_view.rviz` — сохранён с хоста через volume (simulator-контейнер)
+
+Конфиги находятся в `src/gazebo_sim/rviz/` на хосте, монтируются как read-only bind mount в оба контейнера.
+
+### Launch-файлы: исправлен путь к RViz config
+
+**Проблема:** `bringup_go2.launch.py` и `elevation_mapping_go2.launch.py` ссылались на `nav2_default_view.rviz`, но конфиг называется `multi_nav2_default_view.rviz`.
+
+**Fix:**
+- `src/gazebo_sim/launch/bringup_go2.launch.py:36` — `nav2_default_view.rviz` → `multi_nav2_default_view.rviz`
+- `src/elevation_mapping_cupy/elevation_mapping_cupy/launch/elevation_mapping_go2.launch.py:6` — `nav2_default_view.rviz` → `multi_nav2_default_view.rviz`
+
+### Xacro: синтаксические ошибки
+
+**Проблема:** Парсер xacro падал на двух файлах:
+- `src/unitree_go2/unitree_go2_description/xacro/leg.xacro:42` — лишний символ `0` в строке `${body_mass * 0 9.81}`
+- `src/unitree_go2/unitree_go2_description/xacro/robot.xacro:114` — лишняя запятая в конце строки `<child link="FL_hip"`
+
+**Fix:**
+- `leg.xacro:42` — удалён лишний `0`
+- `robot.xacro:114` — удалена лишняя `,`
+
+### Результат
+
+Все изменения закоммичены:
+```
+fix: исправить путь к rviz конфигу и xacro ошибки
+```
+
+- RViz теперь открывается с корректной конфигурацией с хоста
+- Xacro-файлы парсятся без ошибок
+- Launch-файлы ссылаются на существующий файл `multi_nav2_default_view.rviz`
