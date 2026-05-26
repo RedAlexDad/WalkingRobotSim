@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 import numpy as np
 import rclpy
 from rclpy.node import Node
@@ -16,6 +17,14 @@ def _read_xyz32(msg):
     xyz = np.column_stack([x, y, z])
     mask = np.isfinite(xyz).all(axis=1)
     return xyz[mask]
+
+
+def _voxel_downsample(points, voxel_size):
+    if voxel_size <= 0:
+        return points
+    key = np.floor(points / voxel_size)
+    _, unique_idx = np.unique(key, axis=0, return_index=True)
+    return points[np.sort(unique_idx)]
 
 
 def _make_cloud(header, xyz):
@@ -47,6 +56,7 @@ class GroundSegmenter(Node):
         self.declare_parameter("num_iterations", 3)
         self.declare_parameter("dist_threshold", 0.15)
         self.declare_parameter("height_margin", 0.05)
+        self.declare_parameter("voxel_size", 0.05)
 
         input_topic = self.get_parameter("input_topic").value
         ground_topic = self.get_parameter("ground_topic").value
@@ -55,6 +65,9 @@ class GroundSegmenter(Node):
         self._num_iter = self.get_parameter("num_iterations").value
         self._dist_thresh = self.get_parameter("dist_threshold").value
         self._height_margin = self.get_parameter("height_margin").value
+        self._voxel_size = self.get_parameter("voxel_size").value
+
+        self._processing = False
 
         self._sub = self.create_subscription(
             PointCloud2,
@@ -83,13 +96,22 @@ class GroundSegmenter(Node):
         return np.abs(np.dot(points - center, normal))
 
     def _callback(self, msg):
+        if self._processing:
+            return
+        self._processing = True
+        t0 = time.monotonic()
+
         try:
             points = _read_xyz32(msg)
         except Exception:
+            self._processing = False
             self.get_logger().warn("Failed to parse PointCloud2", throttle_duration=5.0)
             return
 
+        points = _voxel_downsample(points, self._voxel_size)
+
         if len(points) < self._num_lpr:
+            self._processing = False
             return
 
         idx = np.argsort(points[:, 2])
@@ -117,6 +139,13 @@ class GroundSegmenter(Node):
                 self._pub_ground.publish(_make_cloud(msg.header, ground_pts))
             if len(obstacle_pts):
                 self._pub_obstacle.publish(_make_cloud(msg.header, obstacle_pts))
+
+        elapsed = time.monotonic() - t0
+        if elapsed > 0.05:
+            self.get_logger().info(
+                f"Processed {len(points)} pts in {elapsed*1000:.0f}ms",
+                throttle_duration=5.0)
+        self._processing = False
 
 
 def main(args=None):

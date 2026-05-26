@@ -59,8 +59,8 @@
     #### Feature toggles ########
     enable_edge_sharpen: true
     enable_visibility_cleanup: false
-    enable_drift_compensation: true
-    enable_overlap_clearance: true
+    enable_drift_compensation: false
+    enable_overlap_clearance: false
     enable_pointcloud_publishing: false
     enable_drift_corrected_TF_publishing: false
     #### Traversability filter ########
