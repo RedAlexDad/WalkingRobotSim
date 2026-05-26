@@ -143,22 +143,30 @@ gpu_lidar → gz.msgs.LaserScan → (C++ via gz::transport::Node)
 
 ```
 Simulator container                    Elevation container
-┌──────────────────────┐                ┌───────────────────────┐
-│ gpu_lidar (16-beam)  │                │ tf_relay.py           │
-│   ↓                  │                │ /robot1/tf → /tf      │
-│ gz.msgs.LaserScan    │                │ /robot1/tf_static     │
-│   ↓                  │                │   → /tf_static        │
-│ C++ converter        │                │                       │
-│ (gz::transport)      │                │ static_tf map→odom    │
-│   ↓                  │                │                       │
-│ gz.msgs.PointCloud   │                │ elevation_mapping_node│
-│   ↓                  │                │   /robot1/scan/points │
-│ ros_gz_bridge        │  host network  │   → elevation_map     │
-│ → /robot1/scan/points┼────────────────┤   frame: odom         │
-│ (PointCloud2)        │  Cyclone DDS   │                       │
-│ /robot1/tf           │◄───────────────┤ RViz2                 │
-│ /robot1/tf_static    │  (via relay)   │   Fixed Frame: odom   │
-└──────────────────────┘                └───────────────────────┘
+┌──────────────────────┐                ┌─────────────────────────────┐
+│ gpu_lidar (16-beam)  │                │ tf_relay.py                 │
+│   ↓                  │                │ /robot1/tf → /tf            │
+│ gz.msgs.LaserScan    │                │ /robot1/tf_static → /static │
+│   ↓                  │                │                             │
+│ C++ converter        │                │ static_tf map→odom (0,0,0)  │
+│ (gz::transport)      │                │                             │
+│   ↓                  │                │ ground_segmenter.py         │
+│ gz.msgs.PointCloud   │                │ /robot1/scan/points         │
+│   ↓                  │  host network  │   → /ground_cloud (GPF)     │
+│ ros_gz_bridge        │  Cyclone DDS   │   → /obstacle_cloud         │
+│ → /robot1/scan/points┼────────────────┤           │            │    │
+│ (PointCloud2)        │                │           ▼            ▼    │
+│ /robot1/tf           │                │ elevation_mapping_node      │
+│ /robot1/tf_static    │◄───────────────┤   /ground_cloud     (depth) │
+│ (gz->ros bridge)     │  (tf relay)    │   /obstacle_cloud (obst.)   │
+└──────────────────────┘                │   → elevation_map           │
+                                        │   frame: odom               │
+                                        │                             │
+                                        │ RViz2                       │
+                                        │   Fixed Frame: odom         │
+                                        │   GroundCloud (white)       │
+                                        │   ObstacleCloud (red)       │
+                                        └─────────────────────────────┘
 ```
 
 ### Время
@@ -171,27 +179,92 @@ Simulator container                    Elevation container
 
 ### Задачи
 
-- [ ] Написать Python-ноду для ground segmentation
-- [ ] Алгоритм: Ground Plane Fitting (RANSAC на нижние точки)
-- [ ] Выход: два топика PointCloud2 — ground_cloud и obstacle_cloud
-- [ ] Объединить ground_cloud с elevation map
-- [ ] Тестировать на синтетических данных из Gazebo
+- [x] Написать Python-ноду для ground segmentation
+- [x] Алгоритм: Ground Plane Fitting (GPF, Zermas 2017)
+- [x] Выход: два топика PointCloud2 — `/ground_cloud` и `/obstacle_cloud`
+- [x] Переключить elevation_mapping на `/ground_cloud`
+- [x] Добавить подписку elevation_mapping на `/obstacle_cloud`
+- [x] Тестировать на синтетических данных из Gazebo
 
-### Алгоритм (Zermas 2017)
+### Алгоритм (GPF, Zermas 2017)
 
-1. Взять PointCloud2
-2. Отфильтровать по высоте (ignore_points_above/below)
-3. Запустить RANSAC на поиск плоскости земли
-4. Точки в пределах threshold от плоскости → ground, иначе → obstacle
+1. Взять PointCloud2, извлечь xyz через field offsets (устойчиво к point_step > 12)
+2. Воксельный даунсэмпл (voxel_size=0.05 м) для снижения нагрузки
+3. Взять N нижних точек (num_lpr=20) как seed
+4. Итеративно (3 итерации):
+   - SVD на seed → нормаль плоскости
+   - Все точки в пределах dist_threshold=0.15 м → ground
+5. Пост-фильтр height_margin=0.05: точки выше mean_z + 5 см → obstacle
+   (убирает точки корпуса робота, попадающие в 15 см порог плоскости)
+6. Публикация ground + obstacle как отдельные PointCloud2
+
+### Особенности реализации
+
+- **Не в отдельном пакете** — ground_segmenter.py лежит в `src/gazebo_sim/scripts/`
+  (рядом с tf_relay.py), монтируется как volume в elevation-контейнер
+- **Парсинг PointCloud2** через field offsets + uint8 reshape, а не через
+  np.dtype — работает при любых point_step (с полями intensity/ring/time)
+- **Скип фреймов** — если предыдущий кадр ещё обрабатывается, новый
+  отбрасывается (нет накопления очереди на слабом ПК)
+- **Лог времени** — при processing > 50 мс выводится предупреждение
+
+### Найденные и исправленные баги
+
+1. **PointCloud2 parsing** — `_read_xyz32` использовала `np.dtype([('x','f4'),...])`,
+   который читает строго 12-байтовые блоки. Если в PointCloud2 есть поля
+   intensity/ring (point_step > 12), чтение сбивается → мусорные xyz →
+   пиксельная карта высот.
+   **Fix:** парсинг через msg.fields → offset каждого поля.
+
+2. **SVD convergence** — `np.linalg.svd` падает с LinAlgError на вырожденных
+   наборах точек. **Fix:** try/except + return None.
+
+3. **NaN/inf в облаке** — точки с NaN или inf проваливали SVD.
+   **Fix:** `np.isfinite()` фильтр.
+
+4. **LiDAR-level точки корпуса** — LiDAR на высоте 0.095 м, dist_threshold=0.15
+   → точки корпуса (z≈0) классифицируются как ground.
+   **Fix:** пост-фильтр height_margin=0.05 — точки выше mean_z + 5 см
+   переклассифицируются в obstacle.
+
+### Производительность
+
+- Воксельный даунсэмпл 0.05 м: ~20 000 → ~500–2000 точек
+- Обработка кадра: < 50 мс на GTX 1650 Ti
+- Скип фреймов при перегрузке
+- Отключены drift_compensation и overlap_clearance (не нужны в симуляции)
+
+### Архитектурное решение: два подписчика elevation_mapping
+
+Изначально elevation_mapping подписывался только на `/ground_cloud`.
+Точки препятствий (бугорки, камни > 5 см) уходили в `/obstacle_cloud`
+и не влияли на карту высот — бугорок не отображался.
+
+**Решение:** добавлен второй подписчик в go2_lidar3d.yaml:
+
+```yaml
+subscribers:
+  depth:
+    topic_name: "/ground_cloud"
+    data_type: "pointcloud"
+  obstacle:
+    topic_name: "/obstacle_cloud"
+    data_type: "pointcloud"
+```
+
+Оба потока точек сливаются в одну карту высот: ground даёт базовый
+рельеф, obstacle повышает variance и traversability помечает как
+непроходимый.
 
 ### Артефакты
 
-- Пакет `walkingrobot_vision` с нодой `ground_segmenter`
-- Тесты сегментации на записях из симуляции
+- `src/gazebo_sim/scripts/ground_segmenter.py` — нода Ground Plane Fitting
+- `compose.yml` — mount + python3 /ground_segmenter.py в command
+- `go2_lidar3d.yaml` — subscribers: depth + obstacle
 
 ### Время
 
-~1 неделя (с учётом опыта с depth-камерой)
+~1 неделя (факт: ~2 дня, включая отладку парсинга PointCloud2)
 
 ---
 
@@ -202,7 +275,7 @@ Simulator container                    Elevation container
 - [ ] Включить фильтр NormalVectorsFilter из grid_map_filters
 - [ ] Вычислять угол наклона (slope) для каждой ячейки карты
 - [ ] Вычислять roughness (отклонение высот в окне)
-- [ ] Написать cost function: cost = w_slope * slope_cost + w_roughness * roughness_cost + w_elevation \* elevation_diff_cost
+- [ ] Написать cost function: cost = w_slope _ slope_cost + w_roughness _ roughness_cost + w_elevation \* elevation_diff_cost
 - [ ] Интегрировать cost map как дополнительный слой в elevation map
 
 ### Формула
@@ -349,13 +422,13 @@ else:  # безопасная
 | 0. Подготовка               | 1              | ✅ Выполнен (кроме paper) |
 | 1. Docker-интеграция        | 1              | ✅ Выполнен               |
 | 2. Подключение 3D LiDAR     | 1.5            | ✅ Выполнен               |
-| 3. Ground segmentation      | 1              | ⏳ Ожидает                |
+| 3. Ground segmentation      | 1              | ✅ Выполнен               |
 | 4. Gradient + cost function | 1.5            | ⏳ Ожидает                |
 | 5. Адаптация походки        | 1.5            | ⏳ Ожидает                |
 | 6. Terrain-aware planning   | 2              | ⏳ Ожидает                |
 | 7. Сбор метрик              | 1              | ⏳ Ожидает                |
 | 8. Оформление главы         | 1              | ✅ Выполнен               |
-| **Итого**                   | **~12 недель** | **Этапы 3–7 в плане**     |
+| **Итого**                   | **~12 недель** | **Этапы 4–7 в плане**     |
 
 ---
 
@@ -363,16 +436,16 @@ else:  # безопасная
 
 ```mermaid
 graph TD
-    A[Этап 0: Подготовка] --> B[Этап 1: Docker-интеграция]
-    B --> C[Этап 2: 3D LiDAR]
-    C --> D[Этап 3: Ground seg]
-    C --> E[Этап 4: Traversability]
+    A[✅ 0: Подготовка] --> B[✅ 1: Docker-интеграция]
+    B --> C[✅ 2: 3D LiDAR]
+    C --> D[✅ 3: Ground seg]
+    C --> E[⏳ 4: Traversability]
     D --> E
-    E --> F[Этап 5: Gait]
-    E --> G[Этап 6: Planner]
+    E --> F[⏳ 5: Gait]
+    E --> G[⏳ 6: Planner]
     F --> G
-    G --> H[Этап 7: Метрики]
-    H --> I[Этап 8: Глава]
+    G --> H[⏳ 7: Метрики]
+    H --> I[✅ 8: Глава]
 ```
 
 ---
@@ -420,14 +493,59 @@ graph TD
 
 **Решение:** Смонтировать `core_param.yaml` и `go2_lidar3d.yaml` как volumes в compose.yml — правки применяются без пересборки контейнера.
 
+### Проблема: PointCloud2 с дополнительными полями (intensity/ring) даёт point_step > 12
+
+**Симптом:** карта высот «пиксельная» — точки читаются со смещением.
+**Причина:** `np.dtype([('x','f4'),('y','f4'),('z','f4')])` читает строго 12-байтовые блоки, но реальный point_step = 16+.
+**Решение:** парсинг через `msg.fields` → offset каждого поля + uint8 reshape.
+
+### Проблема: SVD на вырожденном наборе точек
+
+**Симптом:** нода падает с LinAlgError.
+**Решение:** try/except + return None, None.
+
+### Проблема: LiDAR видит точки собственного корпуса как ground
+
+**Симптом:** тело робота (z≈0 в laser_frame) классифицируется как ground,
+расстояние 0.095 м < dist_threshold=0.15.
+**Решение:** пост-фильтр height_margin=0.05 — точки выше mean_z + 5 см
+переклассифицируются в obstacle.
+
+### Проблема: elevation_mapping не видит препятствия (бугорки, камни)
+
+**Симптом:** добавленный в симуляцию бугорок не отображается на карте высот.
+**Причина:** ground segmenter отправляет бугорок в `/obstacle_cloud`,
+а elevation_mapping подписан только на `/ground_cloud`.
+**Решение:** добавлен второй подписчик obstacle в go2_lidar3d.yaml.
+
+### Проблема: карта высот забывает пройденные места
+
+**Симптом:** при движении робота старые ячейки очищаются.
+**Причина:** `enable_visibility_cleanup: true` — ray tracing очищает ячейки,
+не попадающие в текущий луч.
+**Решение:** `enable_visibility_cleanup: false`.
+
+### Проблема: дрифт карты на слабом ПК
+
+**Симптом:** `/robot1/scan` дрейфует, карта смещается.
+**Причина:** ground_segmenter не успевает обработать все сканы → очередь
+растёт → точки применяются с устаревшим TF.
+**Решение:** воксельный даунсэмпл (0.05 м), скип фреймов при перегрузке,
+отключение drift_compensation (не нужна в симуляции).
+
 ### LiDAR и карта: итоговые параметры
 
 - LiDAR: 360×16 лучей, ±15° вертикально, 0.05–12 м дальность
+- `voxel_size: 0.05` — воксельный даунсэмпл точек
 - `min_valid_distance: 0.3` — игнорировать тело робота
-- `max_ray_length: 10.0` — ray tracing для visibility cleanup
+- `max_ray_length: 10.0` — ray tracing (отключён `visibility_cleanup: false`)
 - `map_length: 20.0` — карта 20×20 м, следует за роботом
 - `resolution: 0.1` — ячейка 10 см
+- `enable_drift_compensation: false` — в симуляции не нужна
+- `enable_visibility_cleanup: false` — не чистим пройденные ячейки
 - Слои: elevation, variance, traversability
+- Ground segmenter: GPF (Zermas 2017), 3 итерации, dist_threshold=0.15,
+  height_margin=0.05, num_lpr=20
 
 ---
 
@@ -448,23 +566,29 @@ graph TD
 
 ## Итоговый результат
 
-Выполнены этапы 0–2 (инфраструктура, Docker, LiDAR). Этапы 3–7 (программная реализация) — в плане. Этап 8 (документация) выполнен.
+Выполнены этапы 0–3 (инфраструктура, Docker, LiDAR, ground segmentation).
+Этапы 4–7 (traversability, gait, planning, metrics) — в плане.
+Этап 8 (документация) выполнен.
 
 ### Программно реализовано
 
 - **Два Docker-контейнера** (simulator CPU + elevation GPU) с host network + Cyclone DDS
 - **C++ конвертер** laser_to_cloud_converter.cc (gz::transport: LaserScan → PointCloudPacked)
 - **TF relay** tf_relay.py (namespaced → стандартные топики с корректным QoS)
+- **Ground segmenter** ground_segmenter.py — GPF (Zermas 2017), voxel downsample,
+  post-filter height_margin, skip фреймов при перегрузке
+- **Подписка на obstacle** — elevation_mapping получает и ground, и obstacle облака
 - **Конфигурация** core_param.yaml + go2_lidar3d.yaml как volumes для live-редактирования
 - **Настройка DDS** cyclonedds.xml (SHM off, UDP через lo, TCP_NODELAY)
+- **RViz** — GroundCloud (белый), ObstacleCloud (красный)
 
 ### Документация НИРС (выполнена)
 
 14 файлов (921 строка) в академическом стиле — описывают полный модуль, включая этапы 3–7:
 
-| Файл | Раздел |
-|------|--------|
-| `docs/NIRS/title.md` | Титул + ТЗ + аннотация + список литературы [1]…[12] |
-| `ch3_01_intro` — `ch3_13_conclusions` | 13 разделов главы 3 |
+| Файл                                  | Раздел                                              |
+| ------------------------------------- | --------------------------------------------------- |
+| `docs/NIRS/title.md`                  | Титул + ТЗ + аннотация + список литературы [1]…[12] |
+| `ch3_01_intro` — `ch3_13_conclusions` | 13 разделов главы 3                                 |
 
 **Формат:** академический русский, ссылки [1]…[12], таблицы 3.1–3.8, рисунки 3.1–3.4, без блоков кода.
