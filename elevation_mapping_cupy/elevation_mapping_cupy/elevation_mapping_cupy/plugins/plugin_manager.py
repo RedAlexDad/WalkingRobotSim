@@ -9,16 +9,18 @@ from dataclasses import dataclass
 from inspect import signature
 from typing import Dict, List, Optional
 
-import cupy as cp
+import numpy as np
 from ruamel.yaml import YAML
+
+from backend import xp, GPU_AVAILABLE
 
 
 @dataclass
 class PluginParams:
     name: str
     layer_name: str
-    fill_nan: bool = False  # fill nan to invalid region
-    is_height_layer: bool = False  # if this is a height layer
+    fill_nan: bool = False
+    is_height_layer: bool = False
 
 
 class PluginBase(ABC):
@@ -28,7 +30,6 @@ class PluginBase(ABC):
 
     def __init__(self, *args, **kwargs):
         """
-
         Args:
             plugin_params : PluginParams
             The parameter of callback
@@ -36,17 +37,16 @@ class PluginBase(ABC):
 
     def __call__(
         self,
-        elevation_map: cp.ndarray,
+        elevation_map: np.ndarray,
         layer_names: List[str],
-        plugin_layers: cp.ndarray,
+        plugin_layers: np.ndarray,
         plugin_layer_names: List[str],
-        semantic_map: cp.ndarray,
+        semantic_map: np.ndarray,
         semantic_layer_names: List[str],
         *args,
         **kwargs,
-    ) -> cp.ndarray:
-        """This gets the elevation map data and plugin layers as a cupy array.
-
+    ) -> np.ndarray:
+        """This gets the elevation map data and plugin layers as a array.
 
         Args:
             elevation_map ():
@@ -71,28 +71,28 @@ class PluginBase(ABC):
 
     def get_layer_data(
         self,
-        elevation_map: cp.ndarray,
+        elevation_map: np.ndarray,
         layer_names: List[str],
-        plugin_layers: cp.ndarray,
+        plugin_layers: np.ndarray,
         plugin_layer_names: List[str],
-        semantic_map: cp.ndarray,
+        semantic_map: np.ndarray,
         semantic_layer_names: List[str],
         name: str,
-    ) -> Optional[cp.ndarray]:
+    ) -> Optional[np.ndarray]:
         """
         Retrieve a copy of the layer data from the elevation, plugin, or semantic maps based on the layer name.
 
         Args:
-            elevation_map (cp.ndarray): The elevation map containing various layers.
+            elevation_map (np.ndarray): The elevation map containing various layers.
             layer_names (List[str]): A list of names for each layer in the elevation map.
-            plugin_layers (cp.ndarray): The plugin layers containing additional data.
+            plugin_layers (np.ndarray): The plugin layers containing additional data.
             plugin_layer_names (List[str]): A list of names for each layer in the plugin layers.
-            semantic_map (cp.ndarray): The semantic map containing various layers.
+            semantic_map (np.ndarray): The semantic map containing various layers.
             semantic_layer_names (List[str]): A list of names for each layer in the semantic map.
             name (str): The name of the layer to retrieve.
 
         Returns:
-            Optional[cp.ndarray]: A copy of the requested layer as a cupy ndarray if found, otherwise None.
+            Optional[np.ndarray]: A copy of the requested layer as an ndarray if found, otherwise None.
         """
         if name in layer_names:
             idx = layer_names.index(name)
@@ -124,18 +124,17 @@ class PluginManager(object):
         for param, extra_param in zip(plugin_params, extra_params):
             m = importlib.import_module(
                 "." + param.name, package="elevation_mapping_cupy.plugins"
-            )  # -> 'module'
+            )
             for name, obj in inspect.getmembers(m):
                 if (
                     inspect.isclass(obj)
                     and issubclass(obj, PluginBase)
                     and name != "PluginBase"
                 ):
-                    # Add cell_n to params
                     extra_param["cell_n"] = self.cell_n
                     self.plugins.append(obj(**extra_param))
-        self.layers = cp.zeros(
-            (len(self.plugins), self.cell_n, self.cell_n), dtype=cp.float32
+        self.layers = xp.zeros(
+            (len(self.plugins), self.cell_n, self.cell_n), dtype=xp.float32
         )
         self.layer_names = self.get_layer_names()
         self.plugin_names = self.get_plugin_names()
@@ -167,7 +166,7 @@ class PluginManager(object):
     def reset_layers(self):
         """Invalidate cached plugin layers so they will be recomputed on demand."""
         if hasattr(self, "layers"):
-            self.layers[...] = cp.nan
+            self.layers[...] = xp.nan
 
     def get_plugin_names(self):
         names = []
@@ -194,17 +193,15 @@ class PluginManager(object):
     def update_with_name(
         self,
         name: str,
-        elevation_map: cp.ndarray,
+        elevation_map: np.ndarray,
         layer_names: List[str],
         semantic_map=None,
         semantic_params=None,
         rotation=None,
         elements_to_shift=None,
     ):
-        # Semantic layers are optional. In this repo's supported surface we don't use them, so
-        # default to empty containers to keep plugins robust.
         if semantic_map is None:
-            semantic_map = cp.zeros((0, self.cell_n, self.cell_n), dtype=cp.float32)
+            semantic_map = xp.zeros((0, self.cell_n, self.cell_n), dtype=xp.float32)
         if semantic_params is None:
             semantic_params = []
         if elements_to_shift is None:
@@ -248,7 +245,7 @@ class PluginManager(object):
                     elements_to_shift,
                 )
 
-    def get_map_with_name(self, name: str) -> cp.ndarray:
+    def get_map_with_name(self, name: str) -> np.ndarray:
         idx = self.get_layer_index_with_name(name)
         if idx is not None:
             return self.layers[idx]
@@ -272,7 +269,7 @@ if __name__ == "__main__":
     manager.load_plugin_settings("../config/plugin_config.yaml")
     print(manager.layer_names)
     print(manager.plugin_names)
-    elevation_map = cp.zeros((7, 200, 200)).astype(cp.float32)
+    elevation_map = xp.zeros((7, 200, 200)).astype(xp.float32)
     layer_names = [
         "elevation",
         "variance",
@@ -282,8 +279,8 @@ if __name__ == "__main__":
         "upper_bound",
         "is_upper_bound",
     ]
-    elevation_map[0] = cp.random.randn(200, 200)
-    elevation_map[2] = cp.abs(cp.random.randn(200, 200))
+    elevation_map[0] = xp.random.randn(200, 200)
+    elevation_map[2] = xp.abs(xp.random.randn(200, 200))
     print("map", elevation_map[0])
     print("layer map ", manager.layers)
     manager.update_with_name("min_filter", elevation_map, layer_names)

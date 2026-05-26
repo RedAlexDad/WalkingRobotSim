@@ -2,9 +2,10 @@
 # Copyright (c) 2022, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-import cupy as cp
 import numpy as np
 from scipy.interpolate import griddata
+
+from backend import xp, GPU_AVAILABLE, asnumpy
 
 
 class MapInitializer(object):
@@ -28,8 +29,8 @@ class MapInitializer(object):
         """Initialize the map using interpolation between given points
 
         Args:
-            elevation_map (cupy._core.core.ndarray): elevation_map data.
-            points (cupy._core.core.ndarray): points used to interpolate.
+            elevation_map (np.ndarray): elevation_map data.
+            points (np.ndarray): points used to interpolate.
             method (str): method for interpolation. (nearest, linear, cubic)
 
         """
@@ -48,12 +49,10 @@ class MapInitializer(object):
         w = elevation_map.shape[1]
         h = elevation_map.shape[2]
         grid_x, grid_y = np.mgrid[0:w, 0:h]
-        if self.xp == cp:
-            points_idx = cp.asnumpy(points_idx)
-            values = cp.asnumpy(values)
+        points_idx = asnumpy(points_idx)
+        values = asnumpy(values)
         interpolated = griddata(points_idx, values, (grid_x, grid_y), method=method)
-        if self.xp == cp:
-            interpolated = cp.asarray(interpolated)
+        interpolated = xp.asarray(interpolated)
 
         # Update elevation map.
         elevation_map[0] = self.xp.nan_to_num(interpolated)
@@ -69,7 +68,7 @@ class MapInitializer(object):
 
 
 if __name__ == "__main__":
-    initializer = MapInitializer(100, 10, method="points", xp=cp)
+    initializer = MapInitializer(100, 10, method="points", xp=xp)
     m = np.zeros((4, 10, 10))
     m[0, 0:5, 2:5] = 0.3
     m[2, 0:5, 2:5] = 1.0
@@ -77,9 +76,9 @@ if __name__ == "__main__":
     print(m[0])
     print(m[1])
     print(m[2])
-    points = cp.array([[0, 0, 0.2], [8, 0, 0.2], [6, 9, 0.2]])
+    points = xp.array([[0, 0, 0.2], [8, 0, 0.2], [6, 9, 0.2]])
     # [3, 3, 0.2]])
-    m = cp.asarray(m)
+    m = xp.asarray(m)
     initializer(m, points, method="cubic")
     print(m[0])
     print(m[1])

@@ -2,25 +2,17 @@
 # Copyright (c) 2024, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-from typing import List
+from typing import List, Optional
 
-import cupy as cp
 import cv2 as cv
 import numpy as np
+
+from backend import xp, GPU_AVAILABLE, asnumpy
 
 from .plugin_manager import PluginBase
 
 
 class Erosion(PluginBase):
-    """
-    This class is used for applying erosion to an elevation map or specific layers within it.
-    Erosion is a morphological operation that is used to remove small-scale details from a binary image.
-
-    Args:
-        kernel_size (int): Size of the erosion kernel. Default is 3, which means a 3x3 square kernel.
-        iterations (int): Number of times erosion is applied. Default is 1.
-        **kwargs (): Additional keyword arguments.
-    """
 
     def __init__(
         self,
@@ -40,28 +32,14 @@ class Erosion(PluginBase):
 
     def __call__(
         self,
-        elevation_map: cp.ndarray,
+        elevation_map: np.ndarray,
         layer_names: List[str],
-        plugin_layers: cp.ndarray,
+        plugin_layers: np.ndarray,
         plugin_layer_names: List[str],
-        semantic_map: cp.ndarray,
+        semantic_map: np.ndarray,
         semantic_layer_names: List[str],
         *args,
-    ) -> cp.ndarray:
-        """
-        Applies erosion to the given elevation map.
-
-        Args:
-            elevation_map (cupy._core.core.ndarray): The elevation map to be eroded.
-            layer_names (List[str]): Names of the layers in the elevation map.
-            plugin_layers (cupy._core.core.ndarray): Layers provided by other plugins.
-            plugin_layer_names (List[str]): Names of the layers provided by other plugins.
-            *args (): Additional arguments.
-
-        Returns:
-            cupy._core.core.ndarray: The eroded elevation map.
-        """
-        # Convert the elevation map to a format suitable for erosion (if necessary)
+    ) -> np.ndarray:
         layer_data = self.get_layer_data(
             elevation_map,
             layer_names,
@@ -93,14 +71,12 @@ class Erosion(PluginBase):
                     semantic_layer_names,
                     "traversability",
                 )
-        layer_np = cp.asnumpy(layer_data)
+        layer_np = asnumpy(layer_data)
 
-        # Define the erosion kernel
         kernel = np.ones((self.kernel_size, self.kernel_size), np.uint8)
 
         if self.reverse:
             layer_np = 1 - layer_np
-        # Apply erosion
         layer_min = float(layer_np.min())
         layer_max = float(layer_np.max())
         layer_np_normalized = (
@@ -115,5 +91,4 @@ class Erosion(PluginBase):
         if self.reverse:
             eroded_map_np = 1 - eroded_map_np
 
-        # Convert back to cupy array and return
-        return cp.asarray(eroded_map_np)
+        return xp.asarray(eroded_map_np)

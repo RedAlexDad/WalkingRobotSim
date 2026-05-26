@@ -4,23 +4,14 @@
 #
 from typing import List
 
-import cupy as cp
 import numpy as np
+
+from backend import xp, GPU_AVAILABLE
+
 from elevation_mapping_cupy.plugins.plugin_manager import PluginBase
 
 
 class MaxLayerFilter(PluginBase):
-    """Applies a maximum filter to the input layers and updates the traversability map.
-    This can be used to enhance navigation by identifying traversable areas.
-
-    Args:
-        cell_n (int): The width and height of the elevation map.
-        reverse (list): A list of boolean values indicating whether to reverse the filter operation for each layer. Default is [True].
-        min_or_max (str): A string indicating whether to apply a minimum or maximum filter. Accepts "min" or "max". Default is "max".
-        layers (list): List of layers for semantic traversability. Default is ["traversability"].
-        thresholds (list): List of thresholds for each layer. If the value is bigger than a threshold, assign 1.0 otherwise 0.0. If it is False, it does not apply. Default is [False].
-        **kwargs: Additional keyword arguments.
-    """
 
     def __init__(
         self,
@@ -43,27 +34,14 @@ class MaxLayerFilter(PluginBase):
 
     def __call__(
         self,
-        elevation_map: cp.ndarray,
+        elevation_map: np.ndarray,
         layer_names: List[str],
-        plugin_layers: cp.ndarray,
+        plugin_layers: np.ndarray,
         plugin_layer_names: List[str],
-        semantic_map: cp.ndarray,
+        semantic_map: np.ndarray,
         semantic_layer_names: List[str],
         *args,
-    ) -> cp.ndarray:
-        """
-
-        Args:
-            elevation_map (cupy._core.core.ndarray):
-            layer_names (List[str]):
-            plugin_layers (cupy._core.core.ndarray):
-            plugin_layer_names (List[str]):
-            semantic_map (elevation_mapping_cupy.semantic_map.SemanticMap):
-            *args ():
-
-        Returns:
-            cupy._core.core.ndarray:
-        """
+    ) -> np.ndarray:
         layers = []
         for it, name in enumerate(self.layers):
             layer = self.get_layer_data(
@@ -78,7 +56,7 @@ class MaxLayerFilter(PluginBase):
             if layer is None:
                 continue
             if isinstance(self.default_value, float):
-                layer = cp.where(layer == 0.0, float(self.default_value), layer)
+                layer = xp.where(layer == 0.0, float(self.default_value), layer)
             elif isinstance(self.default_value, str):
                 default_layer = self.get_layer_data(
                     elevation_map,
@@ -89,26 +67,26 @@ class MaxLayerFilter(PluginBase):
                     semantic_layer_names,
                     self.default_value,
                 )
-                layer = cp.where(layer == 0, default_layer, layer)
+                layer = xp.where(layer == 0, default_layer, layer)
             if self.reverse[it]:
                 layer = 1.0 - layer
             if len(self.scales) > it and isinstance(self.scales[it], float):
                 layer = layer * float(self.scales[it])
             if isinstance(self.thresholds[it], float):
-                layer = cp.where(layer > float(self.thresholds[it]), 1, 0)
+                layer = xp.where(layer > float(self.thresholds[it]), 1, 0)
             layers.append(layer)
         if len(layers) == 0:
             print("No layers are found, returning traversability!")
             if isinstance(self.default_value, float):
-                layer = cp.ones_like(elevation_map[0])
+                layer = xp.ones_like(elevation_map[0])
                 layer *= float(self.default_value)
                 return layer
             else:
                 idx = layer_names.index("traversability")
                 return elevation_map[idx]
-        result = cp.stack(layers, axis=0)
+        result = xp.stack(layers, axis=0)
         if self.min_or_max == "min":
-            result = cp.min(result, axis=0)
+            result = xp.min(result, axis=0)
         else:
-            result = cp.max(result, axis=0)
+            result = xp.max(result, axis=0)
         return result

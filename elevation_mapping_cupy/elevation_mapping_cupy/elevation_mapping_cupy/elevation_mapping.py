@@ -8,7 +8,6 @@ import threading
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import cupy as cp
 import numpy as np
 from elevation_mapping_cupy.kernels import (add_points_kernel,
                                             average_map_kernel,
@@ -19,15 +18,17 @@ from elevation_mapping_cupy.kernels import (add_points_kernel,
 from elevation_mapping_cupy.map_initializer import MapInitializer
 from elevation_mapping_cupy.parameter import Parameter
 from elevation_mapping_cupy.plugins.plugin_manager import PluginManager
-from elevation_mapping_cupy.traversability_filter import (get_filter_chainer,
-                                                          get_filter_torch)
+from elevation_mapping_cupy.traversability_filter import (
+    get_filter_chainer, get_filter_numpy, get_filter_torch)
 from elevation_mapping_cupy.traversability_polygon import (
     calculate_area, get_masked_traversability, is_traversable,
     transform_to_map_index, transform_to_map_position)
 
-xp = cp
-pool = cp.cuda.MemoryPool(cp.cuda.malloc_managed)
-cp.cuda.set_allocator(pool.malloc)
+from backend import xp, GPU_AVAILABLE, cp, asnumpy, get_stream
+
+if GPU_AVAILABLE:
+    pool = cp.cuda.MemoryPool(cp.cuda.malloc_managed)
+    cp.cuda.set_allocator(pool.malloc)
 
 
 @dataclass
@@ -79,7 +80,6 @@ class ElevationMap:
 
     def __init__(self, param: Parameter):
         """
-
         Args:
             param (elevation_mapping_cupy.parameter.Parameter):
         """
@@ -127,17 +127,26 @@ class ElevationMap:
         # No shell substitutions in research code: param.weight_file is expected to be a real path.
         param.load_weights(param.weight_file)
 
-        if param.use_chainer:
-            self.traversability_filter = get_filter_chainer(param.w1, param.w2, param.w3, param.w_out)
+        if GPU_AVAILABLE:
+            if param.use_chainer:
+                self.traversability_filter = get_filter_chainer(
+                    param.w1, param.w2, param.w3, param.w_out
+                )
+            else:
+                self.traversability_filter = get_filter_torch(
+                    param.w1, param.w2, param.w3, param.w_out
+                )
         else:
-            self.traversability_filter = get_filter_torch(param.w1, param.w2, param.w3, param.w_out)
+            self.traversability_filter = get_filter_numpy(
+                param.w1, param.w2, param.w3, param.w_out
+            )
         self.untraversable_polygon = xp.zeros((1, 2))
 
         # Plugins
         self.plugin_manager = PluginManager(cell_n=self.cell_n)
         self.plugin_manager.load_plugin_settings(param.plugin_config_file)
 
-        self.map_initializer = MapInitializer(self.initial_variance, param.initialized_variance, xp=cp, method="points")
+        self.map_initializer = MapInitializer(self.initial_variance, param.initialized_variance, xp=xp, method="points")
 
     def clear(self):
         """Reset all the layers of the elevation & the semantic map."""
@@ -156,7 +165,7 @@ class ElevationMap:
             position (numpy.ndarray):
 
         """
-        position[0][:] = xp.asnumpy(self.center)
+        position[0][:] = asnumpy(self.center)
 
     def move(self, delta_position):
         """Shift the map along all three axes according to the input.
@@ -178,7 +187,7 @@ class ElevationMap:
 
         Args:
             position (numpy.ndarray):
-            R (cupy._core.core.ndarray):
+            R (np.ndarray):
         """
         # Shift map to the center of robot.
         self.base_rotation = xp.asarray(R, dtype=self.data_type)
@@ -195,8 +204,8 @@ class ElevationMap:
         """Create a padding of the map along x,y-axis according to amount that has shifted.
 
         Args:
-            x (cupy._core.core.ndarray):
-            shift_value (cupy._core.core.ndarray):
+            x (np.ndarray):
+            shift_value (np.ndarray):
             idx (Union[None, int, None, None]):
             value (float):
         """
@@ -223,7 +232,7 @@ class ElevationMap:
         """Shift the map along the horizontal axes according to the input.
 
         Args:
-            delta_pixel (cupy._core.core.ndarray): Shift in [x, y] order (world coordinates).
+            delta_pixel (np.ndarray): Shift in [x, y] order (world coordinates).
                 x corresponds to columns (axis 2), y corresponds to rows (axis 1).
 
         Note:
@@ -233,11 +242,11 @@ class ElevationMap:
             Since delta_pixel is [x, y], we swap to [y, x] for correct axis mapping.
         """
         # Swap [x, y] to [y, x] to match axis=(1, 2) = (rows=Y, cols=X)
-        shift_value = cp.array([delta_pixel[1], delta_pixel[0]], dtype=cp.int32)
-        if cp.abs(shift_value).sum() == 0:
+        shift_value = xp.array([delta_pixel[1], delta_pixel[0]], dtype=xp.int32)
+        if xp.abs(shift_value).sum() == 0:
             return
         with self.map_lock:
-            self.elevation_map = cp.roll(self.elevation_map, shift_value, axis=(1, 2))
+            self.elevation_map = xp.roll(self.elevation_map, shift_value, axis=(1, 2))
             self.pad_value(self.elevation_map, shift_value, value=0.0)
             self.pad_value(self.elevation_map, shift_value, idx=1, value=self.initial_variance)
             # Plugin layers are computed on-demand; invalidate cache when shifting.
@@ -247,7 +256,7 @@ class ElevationMap:
         """Shift the relevant layers along the vertical axis.
 
         Args:
-            delta_z (cupy._core.core.ndarray):
+            delta_z (np.ndarray):
         """
         with self.map_lock:
             # elevation
@@ -258,15 +267,15 @@ class ElevationMap:
     def compile_kernels(self):
         """Compile all kernels belonging to the elevation map."""
 
-        self.new_map = cp.zeros(
+        self.new_map = xp.zeros(
             (self.elevation_map.shape[0], self.cell_n, self.cell_n),
             dtype=self.data_type,
         )
-        self.traversability_input = cp.zeros((self.cell_n, self.cell_n), dtype=self.data_type)
-        self.traversability_mask_dummy = cp.zeros((self.cell_n, self.cell_n), dtype=self.data_type)
-        self.min_filtered = cp.zeros((self.cell_n, self.cell_n), dtype=self.data_type)
-        self.min_filtered_mask = cp.zeros((self.cell_n, self.cell_n), dtype=self.data_type)
-        self.mask = cp.zeros((self.cell_n, self.cell_n), dtype=self.data_type)
+        self.traversability_input = xp.zeros((self.cell_n, self.cell_n), dtype=self.data_type)
+        self.traversability_mask_dummy = xp.zeros((self.cell_n, self.cell_n), dtype=self.data_type)
+        self.min_filtered = xp.zeros((self.cell_n, self.cell_n), dtype=self.data_type)
+        self.min_filtered_mask = xp.zeros((self.cell_n, self.cell_n), dtype=self.data_type)
+        self.mask = xp.zeros((self.cell_n, self.cell_n), dtype=self.data_type)
 
         self.add_points_kernel = add_points_kernel(
             self.resolution,
@@ -316,7 +325,7 @@ class ElevationMap:
         """Deduct the map center to get the translation of a point w.r.t. the map center.
 
         Args:
-            t (cupy._core.core.ndarray): Absolute point position
+            t (np.ndarray): Absolute point position
         """
         t -= self.center
 
@@ -324,28 +333,26 @@ class ElevationMap:
         """Update map with new measurement.
 
         Args:
-            points_all (cupy._core.core.ndarray):
+            points_all (np.ndarray):
             channels (List[str]):
-            R (cupy._core.core.ndarray):
-            t (cupy._core.core.ndarray):
+            R (np.ndarray):
+            t (np.ndarray):
             position_noise (float):
             orientation_noise (float):
         """
         self.new_map *= 0.0
-        error = cp.array([0.0], dtype=cp.float32)
-        error_cnt = cp.array([0], dtype=cp.float32)
+        error = xp.array([0.0], dtype=xp.float32)
+        error_cnt = xp.array([0], dtype=xp.float32)
         points = points_all[:, :3]
 
         with self.map_lock:
             self.shift_translation_to_map_center(t)
-            
-            # Log before kernel execution
-            
+
             self.error_counting_kernel(
                 self.elevation_map,
                 points,
-                cp.array([0.0], dtype=self.data_type),
-                cp.array([0.0], dtype=self.data_type),
+                xp.array([0.0], dtype=self.data_type),
+                xp.array([0.0], dtype=self.data_type),
                 R,
                 t,
                 self.new_map,
@@ -353,7 +360,7 @@ class ElevationMap:
                 error_cnt,
                 size=(points.shape[0]),
             )
-            
+
             if (
                 self.param.enable_drift_compensation
                 and error_cnt > self.param.min_height_drift_cnt
@@ -367,10 +374,9 @@ class ElevationMap:
                 if np.abs(self.mean_error) < self.param.max_drift:
                     self.elevation_map[0] += self.mean_error * self.param.drift_compensation_alpha
 
-            
             self.add_points_kernel(
-                cp.array([0.0], dtype=self.data_type),
-                cp.array([0.0], dtype=self.data_type),
+                xp.array([0.0], dtype=self.data_type),
+                xp.array([0.0], dtype=self.data_type),
                 R,
                 t,
                 self.normal_map,
@@ -379,8 +385,6 @@ class ElevationMap:
                 self.new_map,
                 size=(points.shape[0]),
             )
-            
-            # Log after adding points
 
             self.average_map_kernel(self.new_map, self.elevation_map, size=(self.cell_n * self.cell_n))
 
@@ -398,7 +402,7 @@ class ElevationMap:
 
             traversability = self.traversability_filter(self.traversability_input)
             self.elevation_map[3][3:-3, 3:-3] = traversability.reshape(
-                (traversability.shape[2], traversability.shape[3])
+                (traversability.shape[0], traversability.shape[1])
             )
 
         # Log final state
@@ -408,19 +412,19 @@ class ElevationMap:
         """Clear overlapping areas around the map center.
 
         Args:
-            t (cupy._core.core.ndarray): Absolute point position
+            t (np.ndarray): Absolute point position
         """
 
         height_min = t[2] - self.param.overlap_clear_range_z
         height_max = t[2] + self.param.overlap_clear_range_z
         near_map = self.elevation_map[:, self.cell_min : self.cell_max, self.cell_min : self.cell_max]
-        valid_idx = ~cp.logical_or(near_map[0] < height_min, near_map[0] > height_max)
-        near_map[0] = cp.where(valid_idx, near_map[0], 0.0)
-        near_map[1] = cp.where(valid_idx, near_map[1], self.initial_variance)
-        near_map[2] = cp.where(valid_idx, near_map[2], 0.0)
-        valid_idx = ~cp.logical_or(near_map[5] < height_min, near_map[5] > height_max)
-        near_map[5] = cp.where(valid_idx, near_map[5], 0.0)
-        near_map[6] = cp.where(valid_idx, near_map[6], 0.0)
+        valid_idx = ~xp.logical_or(near_map[0] < height_min, near_map[0] > height_max)
+        near_map[0] = xp.where(valid_idx, near_map[0], 0.0)
+        near_map[1] = xp.where(valid_idx, near_map[1], self.initial_variance)
+        near_map[2] = xp.where(valid_idx, near_map[2], 0.0)
+        valid_idx = ~xp.logical_or(near_map[5] < height_min, near_map[5] > height_max)
+        near_map[5] = xp.where(valid_idx, near_map[5], 0.0)
+        near_map[6] = xp.where(valid_idx, near_map[6], 0.0)
         self.elevation_map[:, self.cell_min : self.cell_max, self.cell_min : self.cell_max] = near_map
 
     def get_additive_mean_error(self):
@@ -442,45 +446,44 @@ class ElevationMap:
     def update_upper_bound_with_valid_elevation(self):
         """Filters all invalid cell's upper_bound and is_upper_bound layers."""
         mask = self.elevation_map[2] > 0.5
-        self.elevation_map[5] = cp.where(mask, self.elevation_map[0], self.elevation_map[5])
-        self.elevation_map[6] = cp.where(mask, 0.0, self.elevation_map[6])
+        self.elevation_map[5] = xp.where(mask, self.elevation_map[0], self.elevation_map[5])
+        self.elevation_map[6] = xp.where(mask, 0.0, self.elevation_map[6])
 
     def input_pointcloud(
         self,
-        raw_points: cp._core.core.ndarray,
+        raw_points: np.ndarray,
         channels: List[str],
-        R: cp._core.core.ndarray,
-        t: cp._core.core.ndarray,
+        R: np.ndarray,
+        t: np.ndarray,
         position_noise: float,
         orientation_noise: float,
     ):
         """Input the point cloud and fuse the new measurements to update the elevation map.
 
         Args:
-            raw_points (cupy._core.core.ndarray):
+            raw_points (np.ndarray):
             channels (List[str]):
-            R  (cupy._core.core.ndarray):
-            t (cupy._core.core.ndarray):
+            R  (np.ndarray):
+            t (np.ndarray):
             position_noise (float):
             orientation_noise (float):
 
         Returns:
             None:
         """
-        raw_points = cp.asarray(raw_points, dtype=self.data_type)
-        
-        # Check for the sanity of the raw points
-        min_points = cp.min(raw_points, axis=0)
-        max_points = cp.max(raw_points, axis=0)
-        mean_points = cp.mean(raw_points, axis=0)
-                
+        raw_points = xp.asarray(raw_points, dtype=self.data_type)
+
+        min_points = xp.min(raw_points, axis=0)
+        max_points = xp.max(raw_points, axis=0)
+        mean_points = xp.mean(raw_points, axis=0)
+
         additional_channels = channels[3:]
-        raw_points = raw_points[~cp.isnan(raw_points[:, :3]).any(axis=1)]
+        raw_points = raw_points[~xp.isnan(raw_points[:, :3]).any(axis=1)]
         self.update_map_with_kernel(
             raw_points,
             additional_channels,
-            cp.asarray(R, dtype=self.data_type),
-            cp.asarray(t, dtype=self.data_type),
+            xp.asarray(R, dtype=self.data_type),
+            xp.asarray(t, dtype=self.data_type),
             position_noise,
             orientation_noise,
         )
@@ -495,7 +498,7 @@ class ElevationMap:
         """Clear the normal map and then apply the normal kernel with dilated map as input.
 
         Args:
-            dilated_map (cupy._core.core.ndarray):
+            dilated_map (np.ndarray):
         """
         with self.map_lock:
             self.normal_map *= 0.0
@@ -506,21 +509,23 @@ class ElevationMap:
                 size=(self.cell_n * self.cell_n),
             )
 
-    def process_map_for_publish(self, input_map, fill_nan=False, add_z=False, xp=cp):
+    def process_map_for_publish(self, input_map, fill_nan=False, add_z=False, xp_module=None):
         """Process the input_map according to the fill_nan and add_z flags.
 
         Args:
-            input_map (cupy._core.core.ndarray):
+            input_map (np.ndarray):
             fill_nan (bool):
             add_z (bool):
-            xp (module):
+            xp_module (module):
 
         Returns:
-            cupy._core.core.ndarray:
+            np.ndarray:
         """
+        if xp_module is None:
+            xp_module = xp
         m = input_map.copy()
         if fill_nan:
-            m = xp.where(self.elevation_map[2] > 0.5, m, xp.nan)
+            m = xp_module.where(self.elevation_map[2] > 0.5, m, xp_module.nan)
         if add_z:
             m = m + self.center[2]
         return m[1:-1, 1:-1]
@@ -548,10 +553,10 @@ class ElevationMap:
         Returns:
             traversability layer
         """
-        traversability = cp.where(
+        traversability = xp.where(
             (self.elevation_map[2] + self.elevation_map[6]) > 0.5,
             self.elevation_map[3].copy(),
-            cp.nan,
+            xp.nan,
         )
         self.traversability_buffer[3:-3, 3:-3] = traversability[3:-3, 3:-3]
         traversability = self.traversability_buffer[1:-1, 1:-1]
@@ -572,13 +577,13 @@ class ElevationMap:
             upper_bound: upper bound layer
         """
         if self.param.use_only_above_for_upper_bound:
-            valid = cp.logical_or(
-                cp.logical_and(self.elevation_map[5] > 0.0, self.elevation_map[6] > 0.5),
+            valid = xp.logical_or(
+                xp.logical_and(self.elevation_map[5] > 0.0, self.elevation_map[6] > 0.5),
                 self.elevation_map[2] > 0.5,
             )
         else:
-            valid = cp.logical_or(self.elevation_map[2] > 0.5, self.elevation_map[6] > 0.5)
-        upper_bound = cp.where(valid, self.elevation_map[5].copy(), cp.nan)
+            valid = xp.logical_or(self.elevation_map[2] > 0.5, self.elevation_map[6] > 0.5)
+        upper_bound = xp.where(valid, self.elevation_map[5].copy(), xp.nan)
         upper_bound = upper_bound[1:-1, 1:-1] + self.center[2]
         return upper_bound
 
@@ -589,13 +594,13 @@ class ElevationMap:
             is_upper_bound: layer
         """
         if self.param.use_only_above_for_upper_bound:
-            valid = cp.logical_or(
-                cp.logical_and(self.elevation_map[5] > 0.0, self.elevation_map[6] > 0.5),
+            valid = xp.logical_or(
+                xp.logical_and(self.elevation_map[5] > 0.0, self.elevation_map[6] > 0.5),
                 self.elevation_map[2] > 0.5,
             )
         else:
-            valid = cp.logical_or(self.elevation_map[2] > 0.5, self.elevation_map[6] > 0.5)
-        is_upper_bound = cp.where(valid, self.elevation_map[6].copy(), cp.nan)
+            valid = xp.logical_or(self.elevation_map[2] > 0.5, self.elevation_map[6] > 0.5)
+        is_upper_bound = xp.where(valid, self.elevation_map[6].copy(), xp.nan)
         is_upper_bound = is_upper_bound[1:-1, 1:-1]
         return is_upper_bound
 
@@ -603,12 +608,12 @@ class ElevationMap:
         """Indicate which library is used for xp.
 
         Args:
-            array (cupy._core.core.ndarray):
+            array (np.ndarray):
 
         Returns:
             module: either np or cp
         """
-        if type(array) == cp.ndarray:
+        if GPU_AVAILABLE and type(array) == cp.ndarray:
             return cp
         elif type(array) == np.ndarray:
             return np
@@ -617,17 +622,17 @@ class ElevationMap:
         """Transforms the data to float32 and if on gpu loads it to cpu.
 
         Args:
-            array (cupy._core.core.ndarray):
+            array (np.ndarray):
             data (numpy.ndarray):
             stream (Union[None, cupy.cuda.stream.Stream, None, None, None, None, None, None, None]):
         """
         if type(array) == np.ndarray:
             data[...] = array.astype(np.float32)
-        elif type(array) == cp.ndarray:
+        elif GPU_AVAILABLE and type(array) == cp.ndarray:
             if stream is not None:
-                data[...] = cp.asnumpy(array.astype(np.float32), stream=stream)
+                data[...] = asnumpy(array.astype(np.float32), stream=stream)
             else:
-                data[...] = cp.asnumpy(array.astype(np.float32))
+                data[...] = asnumpy(array.astype(np.float32))
 
     def exists_layer(self, name):
         """Check if the layer exists in elevation map or in the semantic map.
@@ -654,7 +659,6 @@ class ElevationMap:
 
         """
         use_stream = True
-        xp = cp
         with self.map_lock:
             if name == "elevation":
                 m = self.get_elevation()
@@ -686,8 +690,8 @@ class ElevationMap:
                 )
                 m = self.plugin_manager.get_map_with_name(name)
                 p = self.plugin_manager.get_param_with_name(name)
-                xp = self.xp_of_array(m)
-                m = self.process_map_for_publish(m, fill_nan=p.fill_nan, add_z=p.is_height_layer, xp=xp)
+                xp_array = self.xp_of_array(m)
+                m = self.process_map_for_publish(m, fill_nan=p.fill_nan, add_z=p.is_height_layer, xp_module=xp_array)
             else:
                 raise KeyError(f"Layer '{name}' is not in the map.")
         # Transform to align elevation_mapping_cupy with grid_map coordinate convention.
@@ -707,7 +711,7 @@ class ElevationMap:
         # m = xp.flip(m, 0)
         # m = xp.flip(m, 1)
         m = self._transform_to_grid_map_coordinate_convention(m)
-        if use_stream:
+        if GPU_AVAILABLE and use_stream:
             stream = cp.cuda.Stream(non_blocking=False)
         else:
             stream = None
@@ -727,10 +731,10 @@ class ElevationMap:
         This is equivalent to: rot90(m.T, k=2) or flip(flip(m.T, 0), 1)
 
         Args:
-            m (cupy._core.core.ndarray):
+            m (np.ndarray):
 
         Returns:
-            cupy._core.core.ndarray:
+            np.ndarray:
         """
         m = m.T
         m = xp.flip(m, 0)
@@ -750,10 +754,10 @@ class ElevationMap:
         This is equivalent to: flip(flip(m, 0), 1).T
 
         Args:
-            m (cupy._core.core.ndarray):
+            m (np.ndarray):
 
         Returns:
-            cupy._core.core.ndarray:
+            np.ndarray:
         """
         m = xp.flip(m, 0)
         m = xp.flip(m, 1)
@@ -773,7 +777,7 @@ class ElevationMap:
         maps = xp.stack([normal_x, normal_y, normal_z], axis=0)
         maps = xp.flip(maps, 1)
         maps = xp.flip(maps, 2)
-        maps = xp.asnumpy(maps)
+        maps = asnumpy(maps)
         return maps
 
     def get_normal_ref(self, normal_x_data, normal_y_data, normal_z_data):
@@ -785,10 +789,15 @@ class ElevationMap:
             normal_z_data:
         """
         maps = self.get_normal_maps()
-        self.stream = cp.cuda.Stream(non_blocking=True)
-        normal_x_data[...] = xp.asnumpy(maps[0], stream=self.stream)
-        normal_y_data[...] = xp.asnumpy(maps[1], stream=self.stream)
-        normal_z_data[...] = xp.asnumpy(maps[2], stream=self.stream)
+        if GPU_AVAILABLE:
+            self.stream = cp.cuda.Stream(non_blocking=True)
+            normal_x_data[...] = asnumpy(maps[0], stream=self.stream)
+            normal_y_data[...] = asnumpy(maps[1], stream=self.stream)
+            normal_z_data[...] = asnumpy(maps[2], stream=self.stream)
+        else:
+            normal_x_data[...] = maps[0]
+            normal_y_data[...] = maps[1]
+            normal_z_data[...] = maps[2]
 
     def get_layer(self, name):
         """Return the layer with the name input.
@@ -820,7 +829,7 @@ class ElevationMap:
         """Check if input polygons are traversable.
 
         Args:
-            polygon (cupy._core.core.ndarray):
+            polygon (np.ndarray):
             result (numpy.ndarray):
 
         Returns:
@@ -835,7 +844,7 @@ class ElevationMap:
         polygon[:, 1] = polygon[:, 1].clip(pmin[1], pmax[1])
         polygon_min = polygon.min(axis=0)
         polygon_max = polygon.max(axis=0)
-        polygon_bbox = cp.concatenate([polygon_min, polygon_max]).flatten()
+        polygon_bbox = xp.concatenate([polygon_min, polygon_max]).flatten()
         polygon_n = xp.array(polygon.shape[0], dtype=np.int16)
         clipped_area = calculate_area(polygon)
         self.polygon_mask_kernel(
@@ -852,7 +861,7 @@ class ElevationMap:
         if masked_isvalid.sum() > 0:
             t = masked.sum() / masked_isvalid.sum()
         else:
-            t = cp.asarray(0.0, dtype=self.data_type)
+            t = xp.asarray(0.0, dtype=self.data_type)
         is_safe, un_polygon = is_traversable(
             masked,
             self.param.safe_thresh,
@@ -866,7 +875,7 @@ class ElevationMap:
         if clipped_area < 0.001:
             is_safe = False
             print("requested polygon is outside of the map")
-        result[...] = np.array([is_safe, t.get(), area.get()])
+        result[...] = np.array([is_safe, t.get() if hasattr(t, 'get') else float(t), area.get() if hasattr(area, 'get') else float(area)])
         self.untraversable_polygon = un_polygon
         return untraversable_polygon_num
 
@@ -876,7 +885,7 @@ class ElevationMap:
         Args:
             untraversable_polygon (numpy.ndarray):
         """
-        untraversable_polygon[...] = xp.asnumpy(self.untraversable_polygon)
+        untraversable_polygon[...] = asnumpy(self.untraversable_polygon)
 
     def initialize_map(self, points, method="cubic"):
         """Initializes the map according to some points and using an approximation according to method.
@@ -887,7 +896,7 @@ class ElevationMap:
         """
         self.clear()
         with self.map_lock:
-            points = cp.asarray(points, dtype=self.data_type)
+            points = xp.asarray(points, dtype=self.data_type)
             indices = transform_to_map_index(points[:, :2], self.center[:2], self.cell_n, self.resolution)
             points[:, :2] = indices.astype(points.dtype)
             points[:, 2] -= self.center[2]
@@ -969,8 +978,8 @@ class ElevationMap:
         if not np.any(valid_mask):
             return
 
-        cp_mask = cp.asarray(valid_mask)
-        center_z = float(cp.asnumpy(self.center)[2])
+        cp_mask = xp.asarray(valid_mask)
+        center_z = float(asnumpy(self.center)[2])
 
         with self.map_lock:
             for name, array in layer_data.items():
@@ -982,7 +991,7 @@ class ElevationMap:
                     raise ValueError("Mismatch between mask and incoming slice dimensions.")
                 if name in ("elevation", "upper_bound"):
                     incoming_slice = incoming_slice - center_z
-                incoming_cp = cp.asarray(incoming_slice, dtype=self.data_type)
+                incoming_cp = xp.asarray(incoming_slice, dtype=self.data_type)
                 target_region = target[map_rows, map_cols]
                 before = target_region[cp_mask].copy()
                 target_region[cp_mask] = incoming_cp[cp_mask]
@@ -1024,7 +1033,7 @@ class ElevationMap:
         total_plugin_layers = len(getattr(self.plugin_manager, "layer_names", []))
 
         with self.map_lock:
-            self.center[:] = cp.asarray(center_np, dtype=self.data_type)
+            self.center[:] = xp.asarray(center_np, dtype=self.data_type)
             for name, data in raw_layers.items():
                 target = self._resolve_layer_target(name, allow_semantic_creation=False)
                 if target is None:
@@ -1032,7 +1041,7 @@ class ElevationMap:
                 incoming = data
                 if name in ("elevation", "upper_bound"):
                     incoming = incoming - center_np[2]
-                incoming_cp = cp.asarray(incoming, dtype=self.data_type)
+                incoming_cp = xp.asarray(incoming, dtype=self.data_type)
                 target[...] = incoming_cp
                 if name in getattr(self.plugin_manager, "layer_names", []):
                     provided_plugin_layers.add(name)
@@ -1070,7 +1079,7 @@ class ElevationMap:
         self, incoming_shape: Tuple[int, int], geometry: GridGeometry
     ) -> Optional[Dict[str, Tuple[slice, slice]]]:
         map_length = (self.cell_n - 2) * self.resolution
-        center_cpu = np.asarray(cp.asnumpy(self.center))
+        center_cpu = np.asarray(asnumpy(self.center))
         map_min_x = center_cpu[0] - map_length / 2.0
         map_max_x = center_cpu[0] + map_length / 2.0
         map_min_y = center_cpu[1] - map_length / 2.0
@@ -1133,7 +1142,7 @@ class ElevationMap:
 
     def _map_extent_from_slices(self, rows: slice, cols: slice) -> Dict[str, float]:
         map_length = (self.cell_n - 2) * self.resolution
-        center_cpu = np.asarray(cp.asnumpy(self.center))
+        center_cpu = np.asarray(asnumpy(self.center))
         map_min_x = center_cpu[0] - map_length / 2.0
         map_min_y = center_cpu[1] - map_length / 2.0
         x_min = map_min_x + (cols.start + 0.5) * self.resolution
@@ -1153,7 +1162,7 @@ class ElevationMap:
         col_max = cols.start + int(col_idx.max())
 
         map_length = (self.cell_n - 2) * self.resolution
-        center_cpu = np.asarray(cp.asnumpy(self.center))
+        center_cpu = np.asarray(asnumpy(self.center))
         map_min_x = center_cpu[0] - map_length / 2.0
         map_min_y = center_cpu[1] - map_length / 2.0
 
@@ -1164,7 +1173,7 @@ class ElevationMap:
         return {"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max}
 
     def _invalidate_caches(self, reset_plugins: bool = True):
-        self.traversability_buffer[...] = cp.nan
+        self.traversability_buffer[...] = xp.nan
         if reset_plugins:
             self.plugin_manager.reset_layers()
 
@@ -1208,7 +1217,7 @@ if __name__ == "__main__":
         for layer in layers:
             elevation.get_map_with_name_ref(layer, data)
         print(i)
-        polygon = cp.array([[0, 0], [2, 0], [0, 2]], dtype=param.data_type)
+        polygon = xp.array([[0, 0], [2, 0], [0, 2]], dtype=param.data_type)
         result = np.array([0, 0, 0])
         elevation.get_polygon_traversability(polygon, result)
         print(result)
