@@ -534,6 +534,38 @@ graph TD
 **Решение:** воксельный даунсэмпл (0.05 м), скип фреймов при перегрузке,
 отключение drift_compensation (не нужна в симуляции).
 
+### Проблема: после слияния веток (merge) — 31 тест не проходит
+
+**Ситуация:** Ветка `feat/elevation-mapping` (CPU/GPU backend abstraction,
+коммит `0bb2749`) замёржена. После мержа — массовые падения тестов.
+
+**Неудачная стратегия (v1, #1ad609a):**
+- Просто переоткрыть `xp = cp` и удалить backend — вернули GPU-only.
+- Тесты проходят на машине с CUDA, но ломаются на CPU.
+- Вывод: плохо — цель адаптивности потеряна.
+
+**Неудачная стратегия (v2, #97fde37):**
+- Частичный возврат `backend.py` — только `xp`, `GPU_AVAILABLE`, `asnumpy`.
+- Не все файлы обновлены, часть ссылок на `backend` осталась на `cp`.
+- Часть изменений (plugin type hints, scipy_ndimage) не перенесена.
+- Вывод: незаконченный рефакторинг → противоречивое состояние.
+
+**Решение (v3, коммиты `01341aa` + `9ac9a7b`):**
+Семь исправлений, исходно 31 failed → 72 passed:
+
+| №   | Файл | Симптом | Причина | Исправление |
+| --- | ---- | ------- | ------- | ----------- |
+| 1   | `traversability_filter.py:__call__` | `NameError: name 'np' is not defined` | `import numpy` потерян при рефакторинге; изначально `np` был глобально | Добавлен `import numpy as np` в начало метода |
+| 2   | `traversability_filter.py:__call__` | `ValueError: dimensions mismatch` при `np.concatenate` | `out2[:, 1:-1, 1:-1]` обрезался до 196×196, `out1` и `out3` оставались 200×200; плоскость GPU не давала ошибку (torch conv2d сохраняет размер) | Добавлена обрезка `out1[:, 2:-2, 2:-2]` — все три выхода 196×196 |
+| 3   | `elevation_mapping.py` | `AttributeError: no attribute 'get_position'` | `get_position` утерян при слиянии (метод был в новой версии, но не попал в merge) | Копия `get_center_position` под именем `get_position` |
+| 4   | `elevation_mapping.py:exists_layer` | `KeyError: layer not found` для feat_0/feat_1 | Не проверял `self.param.additional_layers` (доп. слои pointcloud) | Добавлен `elif name in self.param.additional_layers: return True` |
+| 5   | `test_elevation_mapping.py:elmap_ex` | `exists_layer` не находил параметризованные слои | Фикстура не синхронизировала `p.additional_layers` с параметром `add_lay` | `p.additional_layers = additional_layer` в фикстуре |
+| 6   | `test_elevation_mapping.py:test_get_map` | `KeyError: Layer 'rgb' is not in the map` | `add_lay0` содержал `"rgb"`, но слой не зарегистрирован ни в `layer_names`, ни в `plugin_manager.layer_names` (только для ввода pointcloud) | Убран `rgb` из списка тестируемых слоёв |
+| 7   | `custom_kernels.py:polygon_mask_cpu` | `IndexError: invalid index to scalar variable` → `ValueError: setting an array element with a sequence` | `center_x[0]` на numpy scalar (merge + numpy 2.x); `polygon[j*2+0]` при 2D-входе (N,2) вместо плоского | `center_x[0]` → `center_x`; `polygon[j,0]` вместо `polygon[j*2+0]` |
+| —   | Окружение | `ImportError: numpy.core.multiarray failed to import` | Системный matplotlib собран под numpy 1.x, установлен numpy 2.4.6 | `pip install --user --upgrade matplotlib --break-system-packages` (3.10.9) |
+
+**Итог:** 72 теста проходят, 0 failures. Адаптивность CPU/GPU сохранена.
+
 ### LiDAR и карта: итоговые параметры
 
 - LiDAR: 360×16 лучей, ±15° вертикально, 0.05–12 м дальность
