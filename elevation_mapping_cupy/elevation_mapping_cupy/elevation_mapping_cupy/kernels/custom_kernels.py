@@ -937,14 +937,14 @@ def _make_polygon_mask_cpu(width, height, resolution):
     ):
         from matplotlib.path import Path
 
-        cx = float(center_x[0])
-        cy = float(center_y[0])
-        n = int(polygon_n[0])
+        cx = float(center_x)
+        cy = float(center_y)
+        n = int(polygon_n)
 
         vertices = np.zeros((n, 2))
         for j in range(n):
-            col = (polygon[j * 2 + 0] - cx) / resolution + 0.5 * width
-            row = (polygon[j * 2 + 1] - cy) / resolution + 0.5 * height
+            col = (polygon[j, 0] - cx) / resolution + 0.5 * width
+            row = (polygon[j, 1] - cy) / resolution + 0.5 * height
             vertices[j] = [col, row]
 
         bbox_min_x = (polygon_bbox[0] - cx) / resolution + 0.5 * width
