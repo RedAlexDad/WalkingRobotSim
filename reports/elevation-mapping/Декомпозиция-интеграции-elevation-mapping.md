@@ -1006,3 +1006,60 @@ fix: исправить путь к rviz конфигу и xacro ошибки
 - RViz теперь открывается с корректной конфигурацией с хоста
 - Xacro-файлы парсятся без ошибок
 - Launch-файлы ссылаются на существующий файл `multi_nav2_default_view.rviz`
+
+---
+
+## Корректировка №5 — Плагины проходимости и bridge-нода elevation → costmap
+
+### Плагины (закоммичены `1ca5068`)
+
+Три плагина для расчёта проходимости по цепочке `slope → roughness → cost`:
+
+| Плагин | Файл | Суть |
+|--------|------|------|
+| `SurfaceGradient` | `plugins/surface_gradient.py` | `np.gradient` → `arctan(magnitude)` — уклон |
+| `Roughness` | `plugins/roughness.py` | `uniform_filter` → `std = sqrt(E[x²] - E[x]²)` — шероховатость |
+| `CostFunction` | `plugins/cost_function.py` | Взвешенная сумма: slope (0.4) + roughness (0.4) + elevation_diff (0.2) → cost [0,1], где 0 = проходимо |
+
+**Конфигурация:**
+- `plugin_config.yaml` — включены все три плагина в цепочку
+- `go2_lidar3d.yaml` — добавлена публикация `slope`, `roughness`, `cost` слоёв
+
+### Bridge-нода (staged, не закоммичена)
+
+**Назначение:** конвертировать слой `cost` из `GridMap` в `nav_msgs/OccupancyGrid` для подачи в Nav2 costmap.
+
+**Файлы:**
+
+| Файл | Описание |
+|------|----------|
+| `scripts/elevation_to_costmap_node.py` | Подписка на `/elevation_mapping_node/elevation_map`, извлечение слоя `cost`, декодирование → OccupancyGrid [0,100], публикация на `/elevation_costmap` |
+| `launch/elevation_to_costmap.launch.py` | Launch-файл bridge-ноды |
+| `package.xml` | Добавлен `<depend>nav_msgs</depend>` |
+| `CMakeLists.txt` | Добавлен `nav_msgs` + `install(PROGRAMS ...)` |
+
+**Маппинг cost → OccupancyGrid:**
+- `cost ≤ 0.3` → `0` (free)
+- `0.3 < cost < 0.5` → `1…99` (интерполяция)
+- `cost ≥ 0.5` → `100` (occupied)
+- `NaN` → `-1` (unknown)
+
+### Nav2 параметры
+
+В `src/gazebo_sim/config/nav2_params.yaml` добавлен слой `elevation_costmap_layer` (`nav2_costmap_2d::StaticLayer`, `/elevation_costmap`) в **plugins** global и local costmap.
+
+### Docker compose
+
+В `compose.yml`:
+- Volume mounts для `elevation_to_costmap_node.py` и launch-файла в `x-el-volumes`
+- Bridge-нода запускается фоном в `el_command`: `python3 /elevation_to_costmap_node.py &`
+
+### Детальный отчёт
+
+Создан отдельный файл `reports/elevation-mapping/elevation-to-costmap-progress.md` (66 строк) с описанием интеграции, списком файлов, ключевыми решениями и next steps.
+
+### Статус
+
+- **Плагины** — ✅ закоммичены (`1ca5068`)
+- **Bridge-нода** — ⏳ staged, ожидает коммита
+- **Сборка в Docker** — ⏳ требуется `make deploy` для верификации

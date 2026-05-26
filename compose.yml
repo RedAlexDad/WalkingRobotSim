@@ -36,8 +36,10 @@ x-el-env: &el_env
 
 x-el-volumes: &el_volumes
   - ./elevation_mapping_cupy/elevation_mapping_cupy/launch/elevation_mapping.launch.py:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/launch/elevation_mapping.launch.py:ro
+  - ./elevation_mapping_cupy/elevation_mapping_cupy/launch/elevation_to_costmap.launch.py:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/launch/elevation_to_costmap.launch.py:ro
   - ./elevation_mapping_cupy/elevation_mapping_cupy/config/core/core_param.yaml:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/config/core/core_param.yaml:ro
   - ./elevation_mapping_cupy/elevation_mapping_cupy/config/setups/go2/go2_lidar3d.yaml:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/config/setups/go2/go2_lidar3d.yaml:ro
+  - ./elevation_mapping_cupy/elevation_mapping_cupy/scripts/elevation_to_costmap_node.py:/elevation_to_costmap_node.py:ro
   - ./src/gazebo_sim/scripts/tf_relay.py:/tf_relay.py:ro
   - ./src/gazebo_sim/scripts/ground_segmenter.py:/ground_segmenter.py:ro
   - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
@@ -52,6 +54,7 @@ x-el-command: &el_command
       ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map odom &
       python3 /tf_relay.py &
       python3 /ground_segmenter.py &
+      python3 /elevation_to_costmap_node.py &
       ros2 launch elevation_mapping_cupy elevation_mapping.launch.py \
         robot_config:=go2/go2_lidar3d.yaml launch_rviz:=true \
         use_sim_time:=true \

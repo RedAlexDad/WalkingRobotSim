@@ -14,6 +14,7 @@ set(dependencies
   rclpy
   std_msgs
   sensor_msgs
+  nav_msgs
   geometry_msgs
   grid_map_msgs
   tf2_ros
@@ -23,6 +24,7 @@ ament_python_install_package(${PROJECT_NAME})
 
 install(PROGRAMS
   scripts/elevation_mapping_node.py
+  scripts/elevation_to_costmap_node.py
   scripts/synthetic_pointcloud_tf_publisher.py
   DESTINATION lib/${PROJECT_NAME}
 )

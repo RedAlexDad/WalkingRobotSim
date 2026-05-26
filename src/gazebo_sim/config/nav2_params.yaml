@@ -256,7 +256,12 @@ local_costmap:
       height: 10
       resolution: 0.05
       footprint: "[ [0.35, 0.18], [0.35, -0.18], [-0.38, -0.18], [-0.38, 0.18] ]"
-      plugins: ["static_layer", "voxel_layer", "inflation_layer"]
+      plugins: ["static_layer", "voxel_layer", "elevation_costmap_layer", "inflation_layer"]
+      elevation_costmap_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: true
+        topic: "/elevation_costmap"
+        enabled: true
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 4.0
@@ -299,7 +304,12 @@ global_costmap:
       footprint: "[ [0.35, 0.175], [0.35, -0.175], [-0.35, -0.175], [-0.35, 0.175] ]"
       resolution: 0.05
       track_unknown_space: true
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      plugins: ["static_layer", "obstacle_layer", "elevation_costmap_layer", "inflation_layer"]
+      elevation_costmap_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: true
+        topic: "/elevation_costmap"
+        enabled: true
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: true
