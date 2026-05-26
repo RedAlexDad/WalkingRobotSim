@@ -45,6 +45,31 @@ void update_odometry(OdometryState& state, double dt, double contact_count_coeff
         avg_delta_y = state.linear_velocity_y * dt;
     }
 
+    // Stall detection:
+    // If legs compute a non-zero delta but the IMU shows the body is not
+    // rotating, the robot is likely stuck (legs slip, body doesn't move).
+    double delta_mag = std::hypot(avg_delta_x, avg_delta_y);
+    bool legs_moving = delta_mag > 0.0001;
+    bool body_still = std::abs(state.imu_angular_velocity) < state.stall_ang_vel_threshold;
+
+    if (legs_moving && body_still) {
+        state.stall_consecutive_count++;
+        if (state.stall_consecutive_count >= state.stall_window) {
+            state.is_stalled = true;
+        }
+    } else {
+        state.stall_consecutive_count = 0;
+        if (state.is_stalled) {
+            if (std::abs(state.imu_angular_velocity) > state.stall_exit_ang_vel_threshold) {
+                state.is_stalled = false;
+            }
+        }
+    }
+
+    if (state.is_stalled) {
+        return;
+    }
+
     state.append_delta(avg_delta_x, avg_delta_y);
     auto avg = state.average_delta();
 

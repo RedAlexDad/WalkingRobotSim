@@ -3,7 +3,7 @@
 import math
 
 import rclpy
-from geometry_msgs.msg import Pose, TransformStamped
+from geometry_msgs.msg import Pose, PoseArray, TransformStamped
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
@@ -29,14 +29,18 @@ class GroundTruthPublisher(Node):
         self.tf_broadcaster_ = TransformBroadcaster(self)
         self.odom_pub_ = self.create_publisher(Odometry, odom_topic, 10)
 
-        reliable_qos = QoSProfile(
-            reliability=ReliabilityPolicy.RELIABLE,
+        best_effort_qos = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
             history=HistoryPolicy.KEEP_LAST,
             depth=1,
         )
         self.pose_sub_ = self.create_subscription(
-            Pose, pose_topic, self.pose_callback, reliable_qos
+            Pose, pose_topic, self.pose_callback, best_effort_qos
         )
+        self.world_poses_sub_ = self.create_subscription(
+            PoseArray, "/world_poses_info", self.world_poses_callback, best_effort_qos
+        )
+        self.robot_model_name_ = "robot1_my_bot"
 
         self.current_pose_ = None
         self.prev_pose_ = None
@@ -57,6 +61,20 @@ class GroundTruthPublisher(Node):
         self.current_pose_ = msg
         self.prev_time_ = self.current_time_
         self.current_time_ = self.get_clock().now()
+
+    def world_poses_callback(self, msg: PoseArray):
+        if self.current_pose_ is not None:
+            return
+        names = msg.header.frame_id.split(";")
+        for i, name in enumerate(names):
+            if self.robot_model_name_ in name and i < len(msg.poses):
+                self.get_logger().info(
+                    f"Using world pose fallback: model={name} "
+                    f"pos=({msg.poses[i].position.x:.3f}, {msg.poses[i].position.y:.3f})",
+                    throttle_duration=5.0,
+                )
+                self.pose_callback(msg.poses[i])
+                return
 
     def timer_callback(self):
         if self.current_pose_ is None:

@@ -51,6 +51,8 @@ void OdometryState::reset() {
     gazebo_clock_sec = 0;
     gazebo_clock_nanosec = 0;
     encoder_pos = 0;
+    is_stalled = false;
+    stall_consecutive_count = 0;
 }
 
 }  // namespace quadropted

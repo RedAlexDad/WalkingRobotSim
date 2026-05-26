@@ -9,6 +9,9 @@ namespace quadropted {
 struct OdometryState {
     double x = 0.0, y = 0.0, theta = 0.0;
     double linear_velocity_x = 0.0, linear_velocity_y = 0.0, imu_angular_velocity = 0.0;
+    double imu_linear_acceleration_x = 0.0;
+    double imu_linear_acceleration_y = 0.0;
+    double imu_linear_acceleration_z = 0.0;
 
     int filter_window_size = 14;
     std::deque<double> delta_x_queue, delta_y_queue;
@@ -21,6 +24,15 @@ struct OdometryState {
     std::array<double, 12> joint_positions{};
 
     int gazebo_clock_sec = 0, gazebo_clock_nanosec = 0, encoder_pos = 0;
+
+    // Stall detection state
+    bool is_stalled = false;
+    int stall_consecutive_count = 0;
+
+    // Stall detection thresholds
+    int stall_window = 20;
+    double stall_ang_vel_threshold = 0.05;
+    double stall_exit_ang_vel_threshold = 0.1;
 
     OdometryState() = default;
     explicit OdometryState(int window);

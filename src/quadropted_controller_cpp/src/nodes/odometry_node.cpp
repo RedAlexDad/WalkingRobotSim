@@ -8,6 +8,7 @@
 #include <quadropted_msgs/msg/robot_velocity.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
@@ -29,6 +30,9 @@ class DogOdometryNode : public rclcpp::Node {
         declare_parameter("is_gazebo", true);
         declare_parameter("filter_window_size", 14);
         declare_parameter("imu_topic", "imu_plugin/out");
+        declare_parameter("stall_window", 20);
+        declare_parameter("stall_ang_vel_threshold", 0.05);
+        declare_parameter("stall_exit_ang_vel_threshold", 0.1);
 
         verbose_ = get_parameter("verbose").as_bool();
         publish_rate_ = get_parameter("publish_rate").as_int();
@@ -49,8 +53,14 @@ class DogOdometryNode : public rclcpp::Node {
         odom_state_ = std::make_unique<quadropted::OdometryState>(filter_window);
         last_position_time_ = now();
 
+        // Stall detection thresholds
+        odom_state_->stall_window = get_parameter("stall_window").as_int();
+        odom_state_->stall_ang_vel_threshold = get_parameter("stall_ang_vel_threshold").as_double();
+        odom_state_->stall_exit_ang_vel_threshold = get_parameter("stall_exit_ang_vel_threshold").as_double();
+
         // Publishers
         odom_pub_ = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
+        stall_pub_ = create_publisher<std_msgs::msg::Bool>("stall_status", 10);
         marker_pub_ = create_publisher<visualization_msgs::msg::MarkerArray>("foot_markers", 10);
 
         // TF broadcaster
@@ -101,6 +111,9 @@ class DogOdometryNode : public rclcpp::Node {
 
         odom_state_->theta = quadropted::normalize_angle(yaw);
         odom_state_->imu_angular_velocity = -msg->angular_velocity.z;
+        odom_state_->imu_linear_acceleration_x = msg->linear_acceleration.x;
+        odom_state_->imu_linear_acceleration_y = msg->linear_acceleration.y;
+        odom_state_->imu_linear_acceleration_z = msg->linear_acceleration.z;
     }
 
     void joint_states_callback(const std_msgs::msg::Float64MultiArray::SharedPtr msg) {
@@ -220,7 +233,14 @@ class DogOdometryNode : public rclcpp::Node {
         calculate_foot_positions();
         update_odometry_step();
         publish_odometry();
+        publish_stall_status();
         publish_markers();
+    }
+
+    void publish_stall_status() {
+        std_msgs::msg::Bool msg;
+        msg.data = odom_state_->is_stalled;
+        stall_pub_->publish(msg);
     }
 
     // Members
@@ -229,6 +249,7 @@ class DogOdometryNode : public rclcpp::Node {
     rclcpp::Time last_position_time_;
 
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr stall_pub_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
