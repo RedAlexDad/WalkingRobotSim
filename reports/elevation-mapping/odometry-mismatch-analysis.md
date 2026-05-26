@@ -32,12 +32,12 @@ Gazebo Physics
 
 ### Почему odometry не знает правды
 
-| Компонент | Влияние | Комментарий |
-|-----------|---------|-------------|
-| Leg odometry (`odometry_node.cpp`) | 🔴 Интегрирует даже при stuck | Алгоритм: если foot_contact = true, то body = foot_rel - prev_foot_rel. Ноги шевелятся → odometry считает движение |
-| EKF (`ekf.yaml`) | 🔴 Доверяет leg odometry | `odom0` config: x, y, z, vx, vy, yaw_vel — все `true`. Нет внешнего источника коррекции |
-| AMCL (`nav2_amcl`) | 🟡 Правит map→odom, но медленно | Particle filter подтягивает глобальную позицию по лазерному скану, но лагает и не успевает за drift |
-| Gazebo TF bridge | 🟢 Только internal TF | Публикует `base_link→laser_frame`, не world pose |
+| Компонент                          | Влияние                         | Комментарий                                                                                                        |
+| ---------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Leg odometry (`odometry_node.cpp`) | 🔴 Интегрирует даже при stuck   | Алгоритм: если foot_contact = true, то body = foot_rel - prev_foot_rel. Ноги шевелятся → odometry считает движение |
+| EKF (`ekf.yaml`)                   | 🔴 Доверяет leg odometry        | `odom0` config: x, y, z, vx, vy, yaw_vel — все `true`. Нет внешнего источника коррекции                            |
+| AMCL (`nav2_amcl`)                 | 🟡 Правит map→odom, но медленно | Particle filter подтягивает глобальную позицию по лазерному скану, но лагает и не успевает за drift                |
+| Gazebo TF bridge                   | 🟢 Только internal TF           | Публикует `base_link→laser_frame`, не world pose                                                                   |
 
 ### Конкретный сценарий
 
@@ -52,12 +52,12 @@ Gazebo Physics
 
 ## Текущие механизмы (недостаточны)
 
-| Механизм | Что делает | Почему не спасает |
-|----------|-----------|-------------------|
-| EKF | Сглаживает leg odometry + IMU | Нет внешнего источника коррекции |
-| AMCL | Корректирует map→odom через laser scan | Дискретный, медленный, не точный для малых смещений |
-| Sliding window (14 sample) | Усредняет дельты | Сглаживает шум, не дрейф |
-| `OdometryState::reset()` | Сброс одометрии в ноль | **Никогда не вызывается** |
+| Механизм                   | Что делает                             | Почему не спасает                                   |
+| -------------------------- | -------------------------------------- | --------------------------------------------------- |
+| EKF                        | Сглаживает leg odometry + IMU          | Нет внешнего источника коррекции                    |
+| AMCL                       | Корректирует map→odom через laser scan | Дискретный, медленный, не точный для малых смещений |
+| Sliding window (14 sample) | Усредняет дельты                       | Сглаживает шум, не дрейф                            |
+| `OdometryState::reset()`   | Сброс одометрии в ноль                 | **Никогда не вызывается**                           |
 
 ## Предлагаемые решения
 
@@ -70,6 +70,7 @@ Gazebo Physics
 **Результат:** В RViz можно включить отображение ground truth и наглядно видеть дрейф.
 
 **Файлы для изменения:**
+
 - `src/gazebo_sim/config/gz_bridge.yaml` — добавить bridge entry
 - В launch-файлах можно добавить отдельный node для конвертации Pose → Odometry
 
@@ -81,6 +82,7 @@ Gazebo Physics
 Добавить в odometry node проверку: если IMU acceleration и angular velocity близки к нулю, а foot contact есть, то не интегрировать odometry.
 
 **Файлы для изменения:**
+
 - `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp`
 
 **Плюсы:** Легко, не требует новых зависимостей
@@ -92,6 +94,7 @@ Gazebo Physics
 В момент, когда расхождение ground truth и leg odometry превышает порог, вызывать сброс.
 
 **Файлы для изменения:**
+
 - `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp`
 - `quadropted_msgs/` — добавить сервис ResetOdometry.srv
 
@@ -104,6 +107,7 @@ Gazebo Physics
 При расхождении > threshold производить коррекцию или сброс одометрии.
 
 **Файлы для изменения:**
+
 - `src/gazebo_sim/config/gz_bridge.yaml` — bridge ground truth
 - `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` — подписка и коррекция
 
@@ -125,16 +129,17 @@ Gazebo Physics
 
 ## Relevant Files
 
-| Файл | Роль |
-|------|------|
-| `src/gazebo_sim/config/ekf.yaml` | Конфигурация EKF (odom0, imu0) |
-| `src/gazebo_sim/config/gz_bridge.yaml` | Bridge Gazebo↔ROS (нет ground truth) |
-| `src/gazebo_sim/launch/gazebo_multi_nav2_cpp.launch.py` | Launch-файл C++ контроллеров |
-| `src/gazebo_sim/launch/gazebo_multi_nav2_world.launch.py` | Launch-файл Python контроллеров |
-| `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | C++ нода одометрии |
-| `src/quadropted_controller_cpp/src/odometry/odometry_update.cpp` | Алгоритм leg odometry |
-| `src/quadropted_controller_cpp/include/quadropted_controller_cpp/odometry_state.hpp` | OdometryState (reset существует, но не вызывается) |
-| `compose.yml` | Docker compose |
+| Файл                                                                                    | Роль                                                                             |
+| --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `src/gazebo_sim/config/ekf.yaml`                                                        | Конфигурация EKF (odom0, imu0)                                                   |
+| `src/gazebo_sim/config/gz_bridge.yaml`                                                  | Bridge Gazebo↔ROS (нет ground truth)                                             |
+| `src/gazebo_sim/launch/gazebo_multi_nav2_cpp.launch.py`                                 | Launch-файл C++ контроллеров                                                     |
+| `src/gazebo_sim/launch/gazebo_multi_nav2_world.launch.py`                               | Launch-файл Python контроллеров                                                  |
+| `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp`                             | C++ нода одометрии                                                               |
+| `src/quadropted_controller_cpp/src/odometry/odometry_update.cpp`                        | Алгоритм leg odometry                                                            |
+| `src/quadropted_controller_cpp/include/quadropted_controller_cpp/odometry_state.hpp`    | OdometryState (реэкспорт `odometry.hpp`; `reset()` существует, но не вызывается) |
+| `src/quadropted_controller_cpp/include/quadropted_controller_cpp/odometry/odometry.hpp` | OdometryState struct (reset(), append_delta(), average_delta())                  |
+| `compose.yml`                                                                           | Docker compose                                                                   |
 
 ---
 
@@ -144,16 +149,16 @@ Gazebo Physics
 
 **Цель:** Визуализировать расхождение между Gazebo ground truth и leg odometry в RViz.
 
-| № | Задача | Файл(ы) | Оценка | Зависимости |
-|---|--------|---------|--------|-------------|
-| 1.1 | Исследовать Gazebo топики: `gz topic -l`, найти `/model/*/pose` и `/world/*/pose/info` | — | 0.5 дня | — |
-| 1.2 | Добавить bridge `/model/robot1/pose` → `/ground_truth/pose` в `gz_bridge.yaml` | `src/gazebo_sim/config/gz_bridge.yaml` | 0.5 дня | 1.1 |
-| 1.3 | Написать ноду `ground_truth_publisher.py`: Pose → Odometry + TF (gt_odom→base_link) | `src/gazebo_sim/scripts/ground_truth_publisher.py` | 1 день | 1.2 |
-| 1.4 | Добавить launch-файл для ground truth ноды | `src/gazebo_sim/launch/ground_truth.launch.py` | 0.5 дня | 1.3 |
-| 1.5 | Интегрировать в `compose.yml` (volume mount) | `compose.yml` | 0.5 дня | 1.4 |
-| 1.6 | Добавить отображение ground truth в RViz (новый дисплей Odometry) | `src/gazebo_sim/rviz/multi_nav2_default_view.rviz` | 0.5 дня | 1.3 |
-| 1.7 | Тестирование: сравнить позицию Gazebo vs RViz vs ground truth | — | 1 день | 1.5, 1.6 |
-| **Итого этап 1** | | | **~4.5 дня** | |
+| №                | Задача                                                                                       | Файл(ы)                                                                                                                                             | Оценка       | Статус                             |
+| ---------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------------------- |
+| 1.1              | Исследовать Gazebo топики: `gz topic -l`, найти `/model/*/pose` и `/world/*/pose/info`       | —                                                                                                                                                   | 0.5 дня      | ✅                                 |
+| 1.2              | Добавить bridge `/model/robot1_my_bot/pose` → `/robot1/pose_ground_truth` в `gz_bridge.yaml` | `src/gazebo_sim/config/gz_bridge.yaml`                                                                                                              | 0.5 дня      | ✅                                 |
+| 1.3              | Написать ноду `ground_truth_publisher.py`: Pose → Odometry + TF (gt_odom→base_link_gt)       | `src/gazebo_sim/scripts/ground_truth_publisher.py`                                                                                                  | 1 день       | ✅                                 |
+| 1.4              | Добавить ground_truth_publisher в launch-файлы (cpp + world)                                 | `src/gazebo_sim/launch/gazebo_multi_nav2_cpp.launch.py`, `src/gazebo_sim/launch/gazebo_multi_nav2_world.launch.py`, `src/gazebo_sim/CMakeLists.txt` | 0.5 дня      | ✅                                 |
+| 1.5              | Volume mount (compose.yml)                                                                   | `compose.yml`                                                                                                                                       | 0.5 дня      | ⏸️ Не требуется (уже смонтировано) |
+| 1.6              | Добавить отображение ground truth в RViz (TF + Odometry display)                             | `src/gazebo_sim/rviz/multi_nav2_default_view.rviz`                                                                                                  | 0.5 дня      | ✅                                 |
+| 1.7              | Тестирование: сравнить позицию Gazebo vs RViz vs ground truth                                | —                                                                                                                                                   | 1 день       | ⏳**Ожидает запуска**              |
+| **Итого этап 1** |                                                                                              |                                                                                                                                                     | **~4.5 дня** |                                    |
 
 **Критерий готовности:** В RViz видно два робота — текущий (уехавший) и ground truth (стоящий на месте). Расхождение визуально очевидно.
 
@@ -163,17 +168,18 @@ Gazebo Physics
 
 **Цель:** Не интегрировать leg odometry, когда робот физически не двигается.
 
-| № | Задача | Файл(ы) | Оценка | Зависимости |
-|---|--------|---------|--------|-------------|
-| 2.1 | Анализ IMU данных на stuck: проверить correlation между contact и отсутствием ускорения | `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | 1 день | 1.7 |
-| 2.2 | Реализовать stall detector:
-  - Если foot contact есть И linear_accel ≈ 0 И angular_vel ≈ 0 в течение N циклов → STALL
-  - При STALL не интегрировать odometry (delta = 0)
-  - При выходе из STALL восстановить интеграцию | `src/quadropted_controller_cpp/src/odometry/odometry_update.cpp` | 1.5 дня | 2.1 |
-| 2.3 | Добавить параметры stall detection в odometry node (thresholds, window) | `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | 0.5 дня | 2.2 |
-| 2.4 | Публикация статуса STALL в diagnostic топик `/stall_status` | `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | 0.5 дня | 2.2 |
-| 2.5 | Тестирование на террейне: робот упирается в стену/ступеньку, odometry не дрифтует | — | 1 день | 2.2 |
-| **Итого этап 2** | | | **~4.5 дня** | |
+| №   | Задача                                                                                  | Файл(ы)                                                     | Оценка | Зависимости |
+| --- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------ | ----------- |
+| 2.1 | Анализ IMU данных на stuck: проверить correlation между contact и отсутствием ускорения | `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | 1 день | 1.7         |
+| 2.2 | Реализовать stall detector:                                                             |
+
+- Если foot contact есть И linear_accel ≈ 0 И angular_vel ≈ 0 в течение N циклов → STALL
+- При STALL не интегрировать odometry (delta = 0)
+- При выходе из STALL восстановить интеграцию | `src/quadropted_controller_cpp/src/odometry/odometry_update.cpp` | 1.5 дня | 2.1 |
+  | 2.3 | Добавить параметры stall detection в odometry node (thresholds, window) | `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | 0.5 дня | 2.2 |
+  | 2.4 | Публикация статуса STALL в diagnostic топик `/stall_status` | `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | 0.5 дня | 2.2 |
+  | 2.5 | Тестирование на террейне: робот упирается в стену/ступеньку, odometry не дрифтует | — | 1 день | 2.2 |
+  | **Итого этап 2** | | | **~4.5 дня** | |
 
 **Критерий готовности:** При коллизии с препятствием одометрия останавливается (позиция x, y не меняется). После освобождения — возобновляется корректно.
 
@@ -183,12 +189,12 @@ Gazebo Physics
 
 **Цель:** Дать возможность внешнему наблюдателю сбросить одометрию.
 
-| № | Задача | Файл(ы) | Оценка | Зависимости |
-|---|--------|---------|--------|-------------|
-| 3.1 | Добавить сервис `ResetOdometry.srv` в `quadropted_msgs` | `src/quadropted_msgs/srv/ResetOdometry.srv` | 0.5 дня | — |
-| 3.2 | Реализовать service server в odometry node: вызов `reset()` + публикация нулевого Odometry | `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | 1 день | 3.1 |
-| 3.3 | Тестирование: вызов сервиса → одометрия обнуляется | — | 0.5 дня | 3.2 |
-| **Итого этап 3** | | | **~2 дня** | |
+| №                | Задача                                                                                     | Файл(ы)                                                     | Оценка     | Зависимости |
+| ---------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------- | ---------- | ----------- |
+| 3.1              | Добавить сервис `ResetOdometry.srv` в `quadropted_msgs`                                    | `src/quadropted_msgs/srv/ResetOdometry.srv`                 | 0.5 дня    | —           |
+| 3.2              | Реализовать service server в odometry node: вызов `reset()` + публикация нулевого Odometry | `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | 1 день     | 3.1         |
+| 3.3              | Тестирование: вызов сервиса → одометрия обнуляется                                         | —                                                           | 0.5 дня    | 3.2         |
+| **Итого этап 3** |                                                                                            |                                                             | **~2 дня** |             |
 
 **Критерий готовности:** `ros2 service call /robot1/reset_odometry std_srvs/Empty` → одометрия сбрасывается в ноль.
 
@@ -198,13 +204,13 @@ Gazebo Physics
 
 **Цель:** Автоматически корректировать odometry при расхождении с Gazebo ground truth.
 
-| № | Задача | Файл(ы) | Оценка | Зависимости |
-|---|--------|---------|--------|-------------|
-| 4.1 | Подписать odometry node на `/ground_truth/pose` | `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | 0.5 дня | 1.3, 2.2 |
-| 4.2 | Реализовать коррекцию: если ||odom_est - gt_pose|| > threshold → reset или smooth interpolation | `src/quadropted_controller_cpp/src/odometry/odometry_update.cpp` | 1.5 дня | 4.1 |
-| 4.3 | Параметр `ground_truth_topic` (опциональный, только для Gazebo) | `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | 0.5 дня | 4.2 |
-| 4.4 | Тестирование: ground truth bridge включен → drift автоматически устраняется | — | 1 день | 4.2, 4.3 |
-| **Итого этап 4** | | | **~3.5 дня** | |
+| №                | Задача                                                                      | Файл(ы)                                                     | Оценка             | Зависимости |
+| ---------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------ | ----------- | -------------------------------------------- | ---------------------------------------------------------------- | ------- | --- |
+| 4.1              | Подписать odometry node на `/ground_truth/pose`                             | `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | 0.5 дня            | 1.3, 2.2    |
+| 4.2              | Реализовать коррекцию: если                                                 |                                                             | odom_est - gt_pose |             | > threshold → reset или smooth interpolation | `src/quadropted_controller_cpp/src/odometry/odometry_update.cpp` | 1.5 дня | 4.1 |
+| 4.3              | Параметр `ground_truth_topic` (опциональный, только для Gazebo)             | `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp` | 0.5 дня            | 4.2         |
+| 4.4              | Тестирование: ground truth bridge включен → drift автоматически устраняется | —                                                           | 1 день             | 4.2, 4.3    |
+| **Итого этап 4** |                                                                             |                                                             | **~3.5 дня**       |             |
 
 **Критерий готовности:** Odometry автоматически синхронизируется с ground truth при расхождении > threshold. Дрифт не накапливается.
 
@@ -214,12 +220,12 @@ Gazebo Physics
 
 **Цель:** Улучшить коррекцию map→odom через AMCL particle filter.
 
-| № | Задача | Файл(ы) | Оценка | Зависимости |
-|---|--------|---------|--------|-------------|
-| 5.1 | Анализ текущих параметров AMCL (particles, update threshold, laser model) | `src/gazebo_sim/config/nav2_params.yaml` (секция amcl) | 0.5 дня | — |
-| 5.2 | Оптимизация: увеличить число particles, уменьшить update_min_d, alpha пересчёт | `src/gazebo_sim/config/nav2_params.yaml` | 0.5 дня | 5.1 |
-| 5.3 | Тестирование: робот на террейне, Nav2 планирует корректно | — | 1 день | 5.2 |
-| **Итого этап 5** | | | **~2 дня** | |
+| №                | Задача                                                                         | Файл(ы)                                                | Оценка     | Зависимости |
+| ---------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------ | ---------- | ----------- |
+| 5.1              | Анализ текущих параметров AMCL (particles, update threshold, laser model)      | `src/gazebo_sim/config/nav2_params.yaml` (секция amcl) | 0.5 дня    | —           |
+| 5.2              | Оптимизация: увеличить число particles, уменьшить update_min_d, alpha пересчёт | `src/gazebo_sim/config/nav2_params.yaml`               | 0.5 дня    | 5.1         |
+| 5.3              | Тестирование: робот на террейне, Nav2 планирует корректно                      | —                                                      | 1 день     | 5.2         |
+| **Итого этап 5** |                                                                                |                                                        | **~2 дня** |             |
 
 **Критерий готовности:** AMCL успевает корректировать map→odom быстрее, чем дрифт одометрии.
 
@@ -227,14 +233,14 @@ Gazebo Physics
 
 ### Сводная таблица
 
-| Этап | Описание | Оценка | Статус |
-|------|----------|--------|--------|
-| 1 | Ground Truth Bridge (диагностика) | ~4.5 дня | ⏳ Ожидает |
-| 2 | Stall Detection (заморозка odometry) | ~4.5 дня | ⏳ Ожидает |
-| 3 | Reset Odometry Service | ~2 дня | ⏳ Ожидает |
-| 4 | Automatic Ground Truth Correction | ~3.5 дня | ⏳ Ожидает |
-| 5 | AMCL Tuning | ~2 дня | ⏳ Ожидает |
-| **Итого** | | **~16.5 рабочих дней** | |
+| Этап      | Описание                             | Оценка                 | Статус                |
+| --------- | ------------------------------------ | ---------------------- | --------------------- |
+| 1         | Ground Truth Bridge (диагностика)    | ~4.5 дня               | ✅ Завершён (1.2–1.6) |
+| 2         | Stall Detection (заморозка odometry) | ~4.5 дня               | ⏳ Ожидает            |
+| 3         | Reset Odometry Service               | ~2 дня                 | ⏳ Ожидает            |
+| 4         | Automatic Ground Truth Correction    | ~3.5 дня               | ⏳ Ожидает            |
+| 5         | AMCL Tuning                          | ~2 дня                 | ⏳ Ожидает            |
+| **Итого** |                                      | **~16.5 рабочих дней** |                       |
 
 ### Приоритетность
 

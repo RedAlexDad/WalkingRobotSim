@@ -56,6 +56,7 @@ install(PROGRAMS
   scripts/waypoint_collector.py
   scripts/experiment_logger.py
   scripts/laser_to_pointcloud.py
+  scripts/ground_truth_publisher.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

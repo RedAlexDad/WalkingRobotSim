@@ -84,6 +84,8 @@ Visualization Manager:
         All Enabled: false
         base_link:
           Value: true
+        base_link_gt:
+          Value: true
         camera_face:
           Value: true
         imu_link:
@@ -107,6 +109,8 @@ Visualization Manager:
         lh_upper_leg_link:
           Value: true
         map:
+          Value: true
+        gt_odom:
           Value: true
         odom:
           Value: true
@@ -135,35 +139,30 @@ Visualization Manager:
       Show Names: false
       Tree:
         map:
+          gt_odom:
+            base_link_gt: {}
           odom:
             base_link:
-              camera_face:
-                {}
-              imu_link:
-                {}
-              laser_frame:
-                {}
+              camera_face: {}
+              imu_link: {}
+              laser_frame: {}
               trunk:
                 lf_hip_link:
                   lf_upper_leg_link:
                     lf_lower_leg_link:
-                      lf_foot_link:
-                        {}
+                      lf_foot_link: {}
                 lh_hip_link:
                   lh_upper_leg_link:
                     lh_lower_leg_link:
-                      lh_foot_link:
-                        {}
+                      lh_foot_link: {}
                 rf_hip_link:
                   rf_upper_leg_link:
                     rf_lower_leg_link:
-                      rf_foot_link:
-                        {}
+                      rf_foot_link: {}
                 rh_hip_link:
                   rh_upper_leg_link:
                     rh_lower_leg_link:
-                      rh_foot_link:
-                        {}
+                      rh_foot_link: {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -452,8 +451,7 @@ Visualization Manager:
         - Class: rviz_default_plugins/MarkerArray
           Enabled: false
           Name: Trajectories
-          Namespaces:
-            {}
+          Namespaces: {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -563,8 +561,7 @@ Visualization Manager:
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
       Name: WaypointMarkers
-      Namespaces:
-        {}
+      Namespaces: {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -575,8 +572,7 @@ Visualization Manager:
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
       Name: OldMarkerArray
-      Namespaces:
-        {}
+      Namespaces: {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -584,6 +580,33 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /robot1/waypoints
       Value: false
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz_default_plugins/Odometry
+      Color: 255; 85; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.05000000074505806
+      Name: GroundTruth Odometry
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: Arrows
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot1/ground_truth/odom
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
