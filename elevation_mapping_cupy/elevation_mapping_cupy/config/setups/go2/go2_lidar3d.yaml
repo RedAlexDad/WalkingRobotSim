@@ -8,6 +8,9 @@
       depth:
         topic_name: "/ground_cloud"
         data_type: "pointcloud"
+      obstacle:
+        topic_name: "/obstacle_cloud"
+        data_type: "pointcloud"
 
     publishers:
       elevation_map:
