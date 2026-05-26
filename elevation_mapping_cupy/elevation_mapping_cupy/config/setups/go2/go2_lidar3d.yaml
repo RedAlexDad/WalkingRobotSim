@@ -6,7 +6,7 @@
 
     subscribers:
       depth:
-        topic_name: "/robot1/scan/points"
+        topic_name: "/ground_cloud"
         data_type: "pointcloud"
 
     publishers:

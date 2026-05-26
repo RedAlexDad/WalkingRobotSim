@@ -75,6 +75,7 @@ services:
       - ./elevation_mapping_cupy/elevation_mapping_cupy/config/core/core_param.yaml:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/config/core/core_param.yaml:ro
       - ./elevation_mapping_cupy/elevation_mapping_cupy/config/setups/go2/go2_lidar3d.yaml:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/config/setups/go2/go2_lidar3d.yaml:ro
       - ./src/gazebo_sim/scripts/tf_relay.py:/tf_relay.py:ro
+      - ./src/gazebo_sim/scripts/ground_segmenter.py:/ground_segmenter.py:ro
       - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
     deploy:
       resources:
@@ -88,9 +89,10 @@ services:
         set -e;
         source /opt/ros/jazzy/setup.bash;
         source /ws/install/setup.bash;
-        echo "Elevation mapping node ready. Subscribing to /robot1/scan/points";
+        echo "Elevation mapping node ready. Ground segmenter -> /ground_cloud";
         ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map odom &
         python3 /tf_relay.py &
+        python3 /ground_segmenter.py &
         ros2 launch elevation_mapping_cupy elevation_mapping.launch.py \
           robot_config:=go2/go2_lidar3d.yaml launch_rviz:=true \
           use_sim_time:=true \
