@@ -276,7 +276,7 @@ def generate_launch_description():
         ])
 
         rviz_launch_file = os.path.join(pkg_path, 'launch', 'rviz_launch.py')
-        rviz_config_file = os.path.join(pkg_path, 'rviz', 'nav2_default_view.rviz')
+        rviz_config_file = os.path.join(pkg_path, 'rviz', 'multi_nav2_default_view.rviz')
 
         rviz = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(rviz_launch_file),
