@@ -5,6 +5,7 @@ from elevation_mapping_cupy.gridmap_utils import decode_multiarray_to_rows_cols
 from grid_map_msgs.msg import GridMap
 from nav_msgs.msg import OccupancyGrid
 from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 
 
 class ElevationToCostmapNode(Node):
@@ -26,7 +27,13 @@ class ElevationToCostmapNode(Node):
         self._occ_thresh = float(self.get_parameter("occupied_threshold").value)
 
         self._sub = self.create_subscription(GridMap, sub_topic, self._cb, 10)
-        self._pub = self.create_publisher(OccupancyGrid, pub_topic, 10)
+        latched_qos = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10,
+        )
+        self._pub = self.create_publisher(OccupancyGrid, pub_topic, latched_qos)
 
         self.get_logger().info(
             f"Bridge: {sub_topic}:{self._layer_name} -> {pub_topic} "

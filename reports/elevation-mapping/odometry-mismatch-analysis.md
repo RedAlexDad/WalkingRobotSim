@@ -127,6 +127,23 @@ Gazebo Physics
 
 Затем **решение №2 (заморозка odometry)** — самое простое и эффективное для типового случая "уперся в стену".
 
+## Lessons Learned
+
+### 1. `ground_truth_publisher.py` — shebang и create_timer
+
+При первом запуске ground truth publisher упал с ошибками:
+
+- **"Exec format error"** — отсутствовал shebang `#!/usr/bin/env python3`. Исполняемые Python-скрипты в ROS2 **обязательно** должны иметь shebang.
+- **`create_wall_timer()` не существует** — использовался C++ API (`rclcpp::WallTimer`). В Python `rclpy` нужно **`create_timer()`**.
+
+**Статус:** Исправлено в `src/gazebo_sim/scripts/ground_truth_publisher.py`.
+
+### 2. `nav2_params.yaml` — `topic` vs `map_topic` в StaticLayer
+
+Nav2 `StaticLayer` читает параметр **`map_topic`**, а не `topic`. Если указать `topic: "/elevation_costmap"`, параметр игнорируется и StaticLayer подписывается на `/map` (значение по умолчанию). Subscription count на `/elevation_costmap` остаётся 0.
+
+**Фикс:** `topic:` → `map_topic:` в обоих экземплярах (global + local costmap).
+
 ## Relevant Files
 
 | Файл                                                                                    | Роль                                                                             |
@@ -153,11 +170,11 @@ Gazebo Physics
 | ---------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------------------- |
 | 1.1              | Исследовать Gazebo топики: `gz topic -l`, найти `/model/*/pose` и `/world/*/pose/info`       | —                                                                                                                                                   | 0.5 дня      | ✅                                 |
 | 1.2              | Добавить bridge `/model/robot1_my_bot/pose` → `/robot1/pose_ground_truth` в `gz_bridge.yaml` | `src/gazebo_sim/config/gz_bridge.yaml`                                                                                                              | 0.5 дня      | ✅                                 |
-| 1.3              | Написать ноду `ground_truth_publisher.py`: Pose → Odometry + TF (gt_odom→base_link_gt)       | `src/gazebo_sim/scripts/ground_truth_publisher.py`                                                                                                  | 1 день       | ✅                                 |
+| 1.3              | Написать ноду `ground_truth_publisher.py`: Pose → Odometry + TF (gt_odom→base_link_gt)       | `src/gazebo_sim/scripts/ground_truth_publisher.py`                                                                                                  | 1 день       | ✅ (баги исправлены: shebang + create_timer) |
 | 1.4              | Добавить ground_truth_publisher в launch-файлы (cpp + world)                                 | `src/gazebo_sim/launch/gazebo_multi_nav2_cpp.launch.py`, `src/gazebo_sim/launch/gazebo_multi_nav2_world.launch.py`, `src/gazebo_sim/CMakeLists.txt` | 0.5 дня      | ✅                                 |
 | 1.5              | Volume mount (compose.yml)                                                                   | `compose.yml`                                                                                                                                       | 0.5 дня      | ⏸️ Не требуется (уже смонтировано) |
 | 1.6              | Добавить отображение ground truth в RViz (TF + Odometry display)                             | `src/gazebo_sim/rviz/multi_nav2_default_view.rviz`                                                                                                  | 0.5 дня      | ✅                                 |
-| 1.7              | Тестирование: сравнить позицию Gazebo vs RViz vs ground truth                                | —                                                                                                                                                   | 1 день       | ⏳**Ожидает запуска**              |
+| 1.7              | Тестирование: сравнить позицию Gazebo vs RViz vs ground truth                                | —                                                                                                                                                   | 1 день       | ⏳ **Заблокировано** — `make gazebo` не запускался после фиксов |
 | **Итого этап 1** |                                                                                              |                                                                                                                                                     | **~4.5 дня** |                                    |
 
 **Критерий готовности:** В RViz видно два робота — текущий (уехавший) и ground truth (стоящий на месте). Расхождение визуально очевидно.

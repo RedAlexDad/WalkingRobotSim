@@ -260,7 +260,7 @@ local_costmap:
       elevation_costmap_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: true
-        topic: "/elevation_costmap"
+        map_topic: "/elevation_costmap"
         enabled: true
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
@@ -308,7 +308,7 @@ global_costmap:
       elevation_costmap_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: true
-        topic: "/elevation_costmap"
+        map_topic: "/elevation_costmap"
         enabled: true
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"

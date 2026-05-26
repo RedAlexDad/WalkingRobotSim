@@ -1,7 +1,9 @@
+#!/usr/bin/env python3
+
 import math
 
 import rclpy
-from geometry_msgs.msg import Pose, PoseStamped, TransformStamped
+from geometry_msgs.msg import Pose, TransformStamped
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
@@ -19,11 +21,10 @@ class GroundTruthPublisher(Node):
         declare_param("pose_topic", "pose_ground_truth")
         declare_param("odom_topic", "ground_truth/odom")
 
-        publish_rate = self.get_parameter("publish_rate").value
-        self.base_frame_id_ = self.get_parameter("base_frame_id").value
-        self.odom_frame_id_ = self.get_parameter("odom_frame_id").value
-        pose_topic = self.get_parameter("pose_topic").value
-        odom_topic = self.get_parameter("odom_topic").value
+        self.base_frame_id_ = self.get_parameter("base_frame_id").get_parameter_value().string_value
+        self.odom_frame_id_ = self.get_parameter("odom_frame_id").get_parameter_value().string_value
+        pose_topic = self.get_parameter("pose_topic").get_parameter_value().string_value
+        odom_topic = self.get_parameter("odom_topic").get_parameter_value().string_value
 
         self.tf_broadcaster_ = TransformBroadcaster(self)
         self.odom_pub_ = self.create_publisher(Odometry, odom_topic, 10)
@@ -42,13 +43,13 @@ class GroundTruthPublisher(Node):
         self.prev_time_ = None
         self.current_time_ = None
 
-        timer_period = 1.0 / float(publish_rate)
-        self.timer_ = self.create_wall_timer(timer_period, self.timer_callback)
+        timer_period = 1.0 / float(self.get_parameter("publish_rate").get_parameter_value().integer_value)
+        self.timer_ = self.create_timer(timer_period, self.timer_callback)
 
         self.get_logger().info(
             f"Ground Truth Publisher started: "
             f"pose_topic={pose_topic}, odom_topic={odom_topic}, "
-            f"rate={publish_rate} Hz"
+            f"rate={self.get_parameter('publish_rate').get_parameter_value().integer_value} Hz"
         )
 
     def pose_callback(self, msg: Pose):
@@ -78,7 +79,7 @@ class GroundTruthPublisher(Node):
         odom_msg.pose.covariance[28] = diag_cov
         odom_msg.pose.covariance[35] = diag_cov
 
-        if self.prev_pose_ is not None and self.prev_time_ is not None:
+        if self.prev_pose_ is not None and self.prev_time_ is not None and self.current_time_ is not None:
             dt = (self.current_time_ - self.prev_time_).nanoseconds / 1e9
             if dt > 0:
                 vx = (self.current_pose_.position.x - self.prev_pose_.position.x) / dt
