@@ -25,9 +25,9 @@
 
 ---
 
-Студент: ИУ5Ц-21М А.В. Папин
+Студент: ИУ5Ц-21М А.В. Иванов
 
-Руководитель НИР: А.И. Канев
+Руководитель НИР: А.И. Иванов
 
 ---
 
@@ -41,7 +41,7 @@
 
 **Тема:** Разработка симуляции шагающего робота для автономной навигации
 
-**Студент:** Папин Алексей Владимирович, группа ИУ5Ц-21М
+**Студент:** Иванов Алексей Владимирович, группа ИУ5Ц-21М
 
 **Направленность НИР:** ИССЛЕДОВАТЕЛЬСКАЯ
 
@@ -51,20 +51,9 @@
 
 ## Аннотация
 
-Научно-исследовательская работа посвящена разработке модуля построения
-карты высот (Elevation Mapping) в реальном времени для шагающего робота
-Unitree Go2. В ходе работы выполнена интеграция GPU-ускоренного пакета
-elevation_mapping_cupy в среду ROS 2 Jazzy и Gazebo Harmonic с
-использованием двухконтейнерной Docker-архитектуры. Реализованы фильтрация
-облаков точек 3D LiDAR, сегментация ground/non-ground, построение цифровой
-модели высот (DEM) с вычислением gradient поверхности и roughness.
-Разработана функция стоимости пути с учётом рельефа (traversability) и
-реализована адаптация походки робота по типу местности. Проведена валидация
-модуля в симуляции Gazebo с различными сценариями рельефа.
+Научно-исследовательская работа посвящена разработке модуля построения карты высот (Elevation Mapping) в реальном времени для шагающего робота Unitree Go2. В ходе работы выполнена интеграция GPU-ускоренного пакета elevation_mapping_cupy в среду ROS 2 Jazzy и Gazebo Harmonic с использованием двухконтейнерной Docker-архитектуры. Реализованы фильтрация облаков точек 3D LiDAR, сегментация ground/non-ground, построение цифровой модели высот (DEM) с вычислением gradient поверхности и roughness. Разработана функция стоимости пути с учётом рельефа (traversability) и реализована адаптация походки робота по типу местности. Проведена валидация модуля в симуляции Gazebo с различными сценариями рельефа.
 
-**Ключевые слова:** Elevation Mapping, Unitree Go2, ROS 2, Gazebo Harmonic,
-LiDAR, ground segmentation, terrain-aware навигация, traversability, адаптивная
-походка, GPU-ускорение.
+**Ключевые слова:** Elevation Mapping, Unitree Go2, ROS 2, Gazebo Harmonic, LiDAR, ground segmentation, terrain-aware навигация, traversability, адаптивная походка, GPU-ускорение.
 
 ---
 
@@ -86,7 +75,7 @@ LiDAR, ground segmentation, terrain-aware навигация, traversability, а
 
 3.7 Ground segmentation
 
-3.8 Digital Elevation Model (DEM) и gradient поверхности
+3.8 Цифровая модель высот (DEM) и gradient поверхности
 
 3.9 Функция стоимости пути с учётом рельефа
 
@@ -100,5 +89,32 @@ LiDAR, ground segmentation, terrain-aware навигация, traversability, а
 
 ---
 
-*Примечание: Главы 1 и 2 являются введением и обзором литературы
-и разрабатываются отдельно.*
+## Список использованных источников
+
+1. Fankhauser P., Hutter M. A Universal Grid Map Library: Implementation and Use Case for Rough Terrain Navigation // Robot Operating System (ROS). — Springer, 2016.
+
+2. Zermas D., Izzat I., Papanikolopoulos N. Fast segmentation of 3D point clouds for ground vehicles // IEEE Intelligent Vehicles Symposium (IV). — 2017.
+
+3. Marder-Eppstein E. et al. The Office Marathon: Robust navigation in an indoor office environment // IEEE International Conference on Robotics and Automation (ICRA). — 2010.
+
+4. Fankhauser P. et al. Robot-Centric Elevation Mapping with Uncertainty Estimates // International Conference on Climbing and Walking Robots (CLAWAR). — 2014.
+
+5. Fankhauser P. Elevation Mapping for Locomotion of Rough Terrain Robots // PhD Thesis, ETH Zurich. — 2018.
+
+6. Unitree Go2 Technical Documentation. — Unitree Robotics, 2024.
+
+7. Open Robotics. ROS 2 Jazzy Documentation [Электронный ресурс]. — Режим доступа: https://docs.ros.org/en/jazzy/ (дата обращения: 10.05.2026).
+
+8. Eclipse Cyclone DDS Documentation [Электронный ресурс]. — Режим доступа: https://cyclonedds.io/ (дата обращения: 10.05.2026).
+
+9. Open Robotics. Gazebo Harmonic Documentation [Электронный ресурс]. — Режим доступа: https://gazebosim.org/docs/harmonic (дата обращения: 10.05.2026).
+
+10. NVIDIA CUDA Toolkit Documentation. — NVIDIA Corporation, 2024.
+
+11. Okada K. et al. GPU-Accelerated Elevation Mapping for Legged Robots // IEEE Robotics and Automation Letters. — 2023.
+
+12. Wang C. et al. Traversability Analysis for Legged Robots in Rough Terrain // IEEE International Conference on Robotics and Automation (ICRA). — 2023.
+
+---
+
+_Примечание: Главы 1 и 2 являются введением и обзором литературы и разрабатываются отдельно._

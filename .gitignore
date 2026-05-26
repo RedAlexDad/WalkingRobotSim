@@ -86,3 +86,6 @@ wheels/
 
 # Qwen
 .qwen/*
+
+# Примеры НИРС (большие PDF, не часть кода)
+docs/NIRS/examples/

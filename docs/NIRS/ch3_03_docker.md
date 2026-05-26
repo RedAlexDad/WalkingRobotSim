@@ -4,213 +4,62 @@
 
 ### 3.3.1 Базовый образ и зависимости
 
-GPU-образ собирается на основе официального образа NVIDIA CUDA:
+GPU-образ собирается на основе официального образа NVIDIA CUDA `nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.10`. Выбор версии CUDA 12.6.3 обусловлен совместимостью с NVIDIA GTX 1650 Ti (Compute Capability 7.5, архитектура Turing) и поддержкой в CuPy CUDA 12.x [10].
 
-```
-nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04
-```
+В Dockerfile установлены следующие группы зависимостей.
 
-Выбор версии CUDA 12.6.3 обусловлен совместимостью с NVIDIA GTX 1650 Ti
-(Compute Capability 7.5, архитектура Turing) и поддержкой в CuPy CUDA 12.x.
+Системные зависимости: build-essential, cmake, git для сборки C++ пакетов; python3-pip, python3-dev для Python-пакетов; поддержка X11 (libx11-dev, libgl1-mesa-dev) для RViz; языковые пакеты (locales, ru_RU.UTF-8).
 
-В Dockerfile установлены следующие группы зависимостей:
+Python-зависимости: CuPy 13.x (CUDA 12.x) — GPU-ядра для elevation mapping; numpy<2.0 — совместимость с CuPy JIT (numpy 2.0 ломает CuPy JIT); PyTorch (индекс cu126) — нейросетевые компоненты.
 
-**Системные зависимости:**
-- build-essential, cmake, git — для сборки C++ пакетов.
-- python3-pip, python3-dev — для Python-пакетов.
-- Поддержка X11 (libx11-dev, libgl1-mesa-dev) для RViz.
-- Языковые пакеты (locales, ru_RU.UTF-8).
-
-**Python-зависимости:**
-- CuPy 13.x (CUDA 12.x) — GPU-ядра для elevation mapping.
-- numpy<2.0 — совместимость с CuPy JIT (numpy 2.0 ломает CuPy JIT).
-- PyTorch (индекс cu126) — нейросетевые компоненты (опционально).
-
-**ROS 2 зависимости:**
-- ROS 2 Jazzy (base) — устанавливается через apt.
-- Cyclone DDS RMW — rmw_cyclonedds_cpp.
-- Пакеты: elevation_mapping_cupy, grid_map, rviz2.
+ROS 2-зависимости: ROS 2 Jazzy (base), устанавливаемый через apt; Cyclone DDS RMW — `rmw_cyclonedds_cpp`; пакеты `elevation_mapping_cupy`, `grid_map`, `rviz2`.
 
 ### 3.3.2 Проблемы совместимости и их решения
 
-В ходе интеграции были выявлены и решены следующие проблемы:
+В ходе интеграции были выявлены и решены следующие проблемы.
 
-**1. CuPy JIT падает на numpy 2.x с GPU CC 7.5**
+**Проблема 1: CuPy JIT падает на numpy 2.x с GPU CC 7.5**
 
-При использовании numpy>=2.0 CuPy JIT-компиляция падает с ошибкой
-`AttributeError: module 'numpy' has no attribute 'int'`.
+При использовании numpy >= 2.0 CuPy JIT-компиляция падает с ошибкой `AttributeError: module 'numpy' has no attribute 'int'`. Причина: CuPy JIT использует устаревшие атрибуты numpy (numpy.int, numpy.float), удалённые в numpy 2.0. Проблема проявляется на GPU с Compute Capability < 8.0 (включая GTX 1650 Ti CC 7.5). Решение: фиксация numpy<2.0 в requirements.txt.
 
-*Причина:* CuPy JIT использует устаревшие атрибуты numpy (numpy.int,
-numpy.float), удалённые в numpy 2.0. Проблема проявляется на GPU
-с Compute Capability < 8.0 (включая GTX 1650 Ti CC 7.5).
+**Проблема 2: PyTorch cu121 несовместим с CUDA 12.8 на хосте**
 
-*Решение:* пин numpy<2.0 в requirements.txt:
-```
-numpy<2.0
-```
+Официальные PyTorch wheels собираются для CUDA 12.1, в то время как на хосте установлена CUDA 12.8. При вызове CUDA-ядер возникает ошибка `CUDA driver version is insufficient`. Решение: использование PyTorch из индекса cu126 (собран для CUDA 12.6, совместим с 12.8 по обратной совместимости драйвера).
 
-**2. PyTorch cu121 несовместим с CUDA 12.8 на хосте**
+**Проблема 3: RViz падает с SIGSEGV в GPU-контейнере**
 
-Официальные PyTorch wheels собираются для CUDA 12.1, в то время как
-на хосте установлена CUDA 12.8. PyTorch cu121 загружает библиотеку
-libcuda.so.1 и может работать, но при вызове CUDA-ядер возникает
-ошибка `CUDA driver version is insufficient`.
+При запуске RViz в GPU-контейнере возникает segmentation fault в драйвере Mesa (Intel iGPU) при попытке доступа к шейдерному кэшу. Причина: в системе с гибридной графикой (Intel iGPU + NVIDIA dGPU) Mesa пытается кэшировать скомпилированные шейдеры, но не может создать файл в `/run/user/1000`, который не существует в контейнере. Решение: установка `MESA_GLSL_CACHE_DISABLE=true` и создание `/run/user/1000` в контейнере.
 
-*Решение:* использование PyTorch из индекса cu126 (собран для CUDA 12.6,
-совместим с 12.8 по обратной совместимости драйвера):
-```
-pip install --index-url https://download.pytorch.org/whl/cu126 torch
-```
+**Проблема 4: DDS discovery между контейнерами**
 
-**3. RViz падает с SIGSEGV в GPU-контейнере**
+Ноды в разных контейнерах не обнаруживают друг друга, хотя используют один ROS_DOMAIN_ID и host network. Причина: Cyclone DDS использует Shared Memory (SHM) транспорт, который не работает между контейнерами [8]. Решение: отключение SHM в конфигурации Cyclone DDS, что заставляет использовать UDP на lo-интерфейсе, работающий через host network.
 
-При запуске RViz в GPU-контейнере возникает segmentation fault
-в драйвере Mesa (Intel iGPU) при попытке доступа к шейдерному кэшу.
+**Проблема 5: TF на namespaced топике**
 
-*Причина:* в системе с гибридной графикой (Intel iGPU + NVIDIA dGPU)
-Mesa пытается кэшировать скомпилированные шейдеры, но не может
-создать файл в /run/user/1000 (не существует в контейнере).
-
-*Решение:*
-```bash
-MESA_GLSL_CACHE_DISABLE=true
-# Создание /run/user/1000 в контейнере
-# xhost +local: на хосте для доступа к X11
-```
-
-**4. DDS discovery между контейнерами**
-
-Node в разных контейнерах не обнаруживают друг друга, хотя используют
-один ROS_DOMAIN_ID и host network.
-
-*Причина:* Cyclone DDS использует Shared Memory (SHM) транспорт,
-который не работает между контейнерами.
-
-*Решение:*
-```xml
-<!-- cyclonedds.xml -->
-<CycloneDDS>
-    <Domain>
-        <General>
-            <Interfaces>lo</Interfaces>
-        </General>
-        <Internal>
-            <SharedMemory>
-                <Enable>false</Enable>
-            </SharedMemory>
-        </Internal>
-    </Domain>
-</CycloneDDS>
-```
-
-Отключение SHM заставляет Cyclone использовать UDP на lo interface,
-который работает через host network.
-
-**5. TF на namespaced топике**
-
-Симулятор публикует трансформации на `/robot1/tf`, а elevation_mapping_node
-слушает `/tf`.
-
-*Решение:* создан Python-скрипт `tf_relay.py`, который подписывается
-на оба namespaced топика и републикует на `/tf` и `/tf_static`
-с корректными QoS профилями (TRANSIENT_LOCAL для статических).
+Симулятор публикует трансформации на `/robot1/tf`, а elevation_mapping_node слушает `/tf`. Решение: создан Python-скрипт `tf_relay.py`, который подписывается на оба namespaced топика и републикует на `/tf` и `/tf_static` с корректными QoS-профилями.
 
 ### 3.3.3 Структура compose.yml
 
-Корневой docker-compose.yml описывает оба сервиса:
+Корневой docker-compose.yml описывает оба сервиса. Конфигурация сервиса simulator содержит: образ `walking_robot_sim:latest`, сетевой режим host, переменные окружения DISPLAY, ROS_DOMAIN_ID=0, RMW_IMPLEMENTATION, монтирование X11 Unix-сокета, исходного кода, конфигурации Cyclone DDS и устройств `/dev/dri`. Сервису предоставлены привилегии privileged для доступа к графическим устройствам.
 
-```yaml
-version: '3.8'
-services:
-  simulator:
-    image: walking_robot_sim:latest
-    build:
-      context: .
-      dockerfile: Dockerfile.sim
-    network_mode: host
-    environment:
-      - DISPLAY=${DISPLAY}
-      - ROS_DOMAIN_ID=0
-      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ./src/gazebo_sim:/ros_ws/src/gazebo_sim
-      - ./cyclonedds.xml:/cyclonedds.xml
-      - /usr/share/glvnd/egl_vendor.d:/usr/share/glvnd/egl_vendor.d:ro
-    devices:
-      - /dev/dri:/dev/dri
-    privileged: true
+Конфигурация сервиса elevation содержит: образ `elevation_mapping_cupy:latest`, сетевой режим host, переменные окружения DISPLAY, ROS_DOMAIN_ID=0, RMW_IMPLEMENTATION, NVIDIA_VISIBLE_DEVICES=all, MESA_GLSL_CACHE_DISABLE=true, монтирование X11-сокета, исходного кода elevation_mapping_cupy, конфигурационных файлов, `/run/user/1000` для X11. Сервис использует `deploy.resources.reservations.devices` для резервирования NVIDIA GPU.
 
-  elevation:
-    image: elevation_mapping_cupy:latest
-    build:
-      context: .
-      dockerfile: Dockerfile.gpu
-    network_mode: host
-    environment:
-      - DISPLAY=${DISPLAY}
-      - ROS_DOMAIN_ID=0
-      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-      - NVIDIA_VISIBLE_DEVICES=all
-      - MESA_GLSL_CACHE_DISABLE=true
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ./elevation_mapping_cupy:/ros_ws/src/elevation_mapping_cupy
-      - ./config:/ros_ws/config
-      - ./cyclonedds.xml:/cyclonedds.xml
-      - /run/user/1000:/run/user/1000
-    devices:
-      - /dev/dri:/dev/dri
-    privileged: true
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-```
+### 3.3.4 Запуск системы
 
-### 3.3.4 Инструкция по запуску
+Для запуска системы необходимо выполнить следующие шаги:
 
-Для запуска системы выполнить:
+1) предоставить доступ к X11: `xhost +local:`;
 
-```bash
-# 1. Предоставить доступ к X11
-xhost +local:
+2) собрать образы: `docker compose build`;
 
-# 2. Собрать образы (если ещё не собраны)
-docker compose build
+3) запустить оба контейнера: `docker compose up -d`;
 
-# 3. Запустить оба контейнера
-docker compose up -d
+4) войти в контейнер симулятора: `docker compose exec simulator bash`, запустить симуляцию Gazebo: `ros2 launch gazebo_sim walking_robot.launch.py`;
 
-# 4. Войти в контейнер симулятора
-docker compose exec simulator bash
+5) в отдельном терминале войти в elevation-контейнер: `docker compose exec elevation bash`, запустить elevation mapping: `ros2 launch elevation_mapping_cupy bot.launch.py`;
 
-# 5. Запустить симуляцию Gazebo
-ros2 launch gazebo_sim walking_robot.launch.py
-
-# 6. Войти в контейнер elevation (отдельный терминал)
-docker compose exec elevation bash
-
-# 7. Запустить elevation mapping
-ros2 launch elevation_mapping_cupy bot.launch.py
-
-# 8. Для визуализации
-rviz2 -d /ros_ws/config/elevation.rviz
-```
+6) для визуализации: `rviz2 -d /ros_ws/config/elevation.rviz`.
 
 ### 3.3.5 Монтирование конфигурационных файлов
 
-Для обеспечения гибкой настройки без пересборки образа конфигурационные
-файлы монтируются как volumes:
-
-- `core_param.yaml` — основные параметры elevation_mapping
-  (resolution, map_length, min_valid_distance, max_ray_length).
-- `go2_lidar3d.yaml` — robot-specific конфигурация (топики, фреймы, слои).
-- `cyclonedds.xml` — конфигурация DDS для межконтейнерной связи.
-- `elevation.rviz` — конфигурация RViz для визуализации.
-
-Это позволяет изменять параметры на лету и перезапускать ноду
-без пересборки Docker-образа.
+Для обеспечения гибкой настройки без пересборки образа конфигурационные файлы монтируются как volumes. К ним относятся: `core_param.yaml` (основные параметры elevation_mapping: resolution, map_length, min_valid_distance, max_ray_length), `go2_lidar3d.yaml` (robot-specific конфигурация: топики, фреймы, слои), `cyclonedds.xml` (конфигурация DDS для межконтейнерной связи) и `elevation.rviz` (конфигурация RViz для визуализации). Данный подход позволяет изменять параметры на лету и перезапускать ноду без пересборки Docker-образа [7].
