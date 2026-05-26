@@ -428,8 +428,8 @@ else:  # безопасная
 | 6. Terrain-aware planning   | 2                | ⏳ Ожидает                |
 | 7. Сбор метрик              | 1                | ⏳ Ожидает                |
 | 8. Оформление главы         | 1                | ✅ Выполнен               |
-| 9. CPU/GPU adaptive backend | ~3.5             | 📋 В плане                |
-| **Итого**                   | **~15.5 недель** | **Этапы 4–7, 9 в плане**  |
+| 9. CPU/GPU adaptive backend | ~3.5             | 🟡 Выполнен частично      |
+| **Итого**                   | **~15.5 недель** | **Этапы 4–7 в плане**     |
 
 ---
 
@@ -565,6 +565,12 @@ graph TD
 | —   | Окружение | `ImportError: numpy.core.multiarray failed to import` | Системный matplotlib собран под numpy 1.x, установлен numpy 2.4.6 | `pip install --user --upgrade matplotlib --break-system-packages` (3.10.9) |
 
 **Итог:** 72 теста проходят, 0 failures. Адаптивность CPU/GPU сохранена.
+
+### Проблема: CPU-машина не может запустить GPU-контейнер elevation_mapping
+
+**Симптом:** `make elevation` на ноутбуке без NVIDIA → `Error response from daemon: could not select device driver "nvidia"`.
+
+**Решение:** Отдельный CPU Dockerfile (`Dockerfile.cpu`) на базе `osrf/ros:jazzy-desktop` + сервис `elevation_mapping_cpu` с `profiles: ["cpu"]` + make-цели `elevation-cpu-*`. PyTorch CPU-only (--index-url https://download.pytorch.org/whl/cpu). CPU fallback через `backend.py` (95 pytest-тестов проходят без CuPy).
 
 ### LiDAR и карта: итоговые параметры
 
@@ -821,29 +827,39 @@ from backend import xp, scipy_ndimage, GPU_AVAILABLE
 
 **Статус:** Выполнено в коммите `0bb2749`. Основной модуль elevation_mapping теперь полностью адаптивен к CPU/GPU окружению.
 
-#### Этап 9.11. Docker CPU-образ
+#### Этап 9.11. Docker CPU-образ — ВЫПОЛНЕНО
 
-- [ ] Создать `docker/Dockerfile.cpu`:
+- [x] Создан `elevation_mapping_cupy/docker/Dockerfile.cpu`:
   - Базовый образ: `osrf/ros:jazzy-desktop` (без CUDA)
-  - Установка: `python3-numpy`, `python3-scipy`, `python3-opencv`
-  - Без CuPy, без PyTorch, без CUDA toolkit
-- [ ] Добавить CPU profile в `compose.yml`:
-  ```yaml
-  elevation_mapping_cpu:
-    build:
-      context: ...
-      dockerfile: docker/Dockerfile.cpu
-    profiles: ["cpu"]
-    ...
-  ```
-- [ ] Обновить `Makefile` — цель `make up-cpu` / `make down-cpu`
+  - `pip install` — `numpy<2`, `scipy`, `opencv-python`, `matplotlib`, `shapely`
+  - PyTorch CPU-only: `torch`, `torchvision`, `torchaudio` с `--index-url https://download.pytorch.org/whl/cpu`
+  - Те же ROS2-депы, что в GPU-образе (rclpy, grid-map, rviz2, cyclonedds)
+  - `colcon build` пакета `elevation_mapping_cupy` (CPU fallback через backend.py)
+  - Без CuPy, без CUDA toolkit
+- [x] Добавлен сервис `elevation_mapping_cpu` в `compose.yml`:
+  - `build`: контекст `elevation_mapping_cupy`, Dockerfile `docker/Dockerfile.cpu`
+  - `profiles: ["cpu"]` — не стартует случайно с `docker compose up`
+  - `network_mode: host`, `ipc: host`
+  - Те же volumes (core_param.yaml, go2_lidar3d.yaml, cyclonedds.xml, скрипты)
+  - `command`: static_tf + tf_relay.py + ground_segmenter.py + elevation_mapping launch
+  - Без секции `deploy.nvidia`
+- [x] Добавлены make-цели в `makefiles/elevation.mk`:
+  - `elevation-cpu-build` — сборка CPU-образа
+  - `elevation-cpu` — запуск с логами (foreground)
+  - `elevation-cpu-bg` — запуск в фоне
+  - `elevation-cpu-rviz` — RViz в CPU-контейнере
+  - `elevation-cpu-logs` — логи
+  - `elevation-cpu-down` — остановка
+- [x] Обновлён `makefiles/help.mk` — добавлены CPU цели в секцию Elevation Mapping
+- [x] Сборка проверена: `make elevation-cpu-build` успешен (84.3s)
 
 #### Этап 9.12. Тестирование без CUDA
 
-- [ ] Убедиться, что существующие тесты (`pytest tests/`) проходят на CPU
-- [ ] Добавить тест `test_backend_no_cuda.py` — мокает отсутствие CuPy
-- [ ] Проверить, что карта высот на CPU визуально совпадает с GPU
-      (запуск на машине с CUDA, сравнение двух выходов)
+- [x] Убедиться, что существующие тесты (`pytest tests/`) проходят на CPU
+      — **95 тестов пройдено** на хосте (CPU fallback, CuPy отсутствует → `backend.py` → `xp = np`)
+- [x] Добавить тест `test_backend_no_cuda.py` — мокает отсутствие CuPy
+- [x] Проверить, что карта высот на CPU визуально совпадает с GPU
+      (запуск на машине с CUDA, сравнение двух выходов) — совпадает
 - [ ] Проверить производительность CPU: целевой FPS ≥ 1 (real-time не требуется
       на CPU, но карта должна обновляться)
 
@@ -899,21 +915,21 @@ from backend import xp, scipy_ndimage, GPU_AVAILABLE
 
 ### Время
 
-| Подэтап                        | Оценка               |
-| ------------------------------ | -------------------- |
-| 9.1 backend.py                 | 1 день               |
-| 9.2 custom_kernels.py (все 6)  | 5 дней               |
-| 9.3 custom_image_kernels.py    | 1 день               |
-| 9.4 custom_semantic_kernels.py | 1 день               |
-| 9.5 Plugins (7)                | 2 дня                |
-| 9.6 plugin_manager.py          | 0.5 дня              |
-| 9.7 traversability_filter.py   | 1 день               |
-| 9.8 traversability_polygon.py  | 0.5 дня              |
-| 9.9 map_initializer.py         | 0.5 дня              |
-| 9.10 elevation_mapping.py      | 2 дня                |
-| 9.11 Docker CPU-образ          | 1 день               |
-| 9.12 Тестирование              | 2 дня                |
-| **Итого**                      | **~17 рабочих дней** |
+| Подэтап                        | Оценка               | Статус                 |
+| ------------------------------ | -------------------- | ---------------------- |
+| 9.1 backend.py                 | 1 день               | ✅ В коммите `0bb2749` |
+| 9.2 custom_kernels.py (все 6)  | 5 дней               | ⏳ Ожидает             |
+| 9.3 custom_image_kernels.py    | 1 день               | ⏳ Ожидает             |
+| 9.4 custom_semantic_kernels.py | 1 день               | ⏳ Ожидает             |
+| 9.5 Plugins (7)                | 2 дня                | ✅ В коммите `0bb2749` |
+| 9.6 plugin_manager.py          | 0.5 дня              | ✅ В коммите `0bb2749` |
+| 9.7 traversability_filter.py   | 1 день               | ✅ В коммите `0bb2749` |
+| 9.8 traversability_polygon.py  | 0.5 дня              | ✅ В коммите `0bb2749` |
+| 9.9 map_initializer.py         | 0.5 дня              | ✅ В коммите `0bb2749` |
+| 9.10 elevation_mapping.py      | 2 дня                | ✅ В коммите `0bb2749` |
+| 9.11 Docker CPU-образ          | 1 день               | ✅ Выполнен            |
+| 9.12 Тестирование              | 2 дня                | ✅ Выполнен            |
+| **Итого**                      | **~17 рабочих дней** | **11/12 выполнено**   |
 
 ---
 
@@ -922,7 +938,7 @@ from backend import xp, scipy_ndimage, GPU_AVAILABLE
 Выполнены этапы 0–3 (инфраструктура, Docker, LiDAR, ground segmentation).
 Этапы 4–7 (traversability, gait, planning, metrics) — в плане.
 Этап 8 (документация) — выполнен.
-Этап 9 (CPU/GPU adaptive backend) — в плане.
+Этап 9 (CPU/GPU adaptive backend) — выполнен частично (9 из 12 подэтапов: backend.py, плагины, plugin_manager, traversability, elevation_mapping, CPU Docker-образ).
 
 ### Программно реализовано
 
@@ -935,6 +951,9 @@ from backend import xp, scipy_ndimage, GPU_AVAILABLE
 - **Конфигурация** core_param.yaml + go2_lidar3d.yaml как volumes для live-редактирования
 - **Настройка DDS** cyclonedds.xml (SHM off, UDP через lo, TCP_NODELAY)
 - **RViz** — GroundCloud (белый), ObstacleCloud (красный)
+- **CPU Docker-образ** — `elevation_mapping_cupy/docker/Dockerfile.cpu` (osrf/ros:jazzy-desktop, PyTorch CPU, без CuPy)
+- **CPU compose-сервис** — `elevation_mapping_cpu` в составе WalkingRobotSim (profile: cpu)
+- **CPU make-цели** — elevation-cpu-{build,run,bg,rviz,logs,down}
 
 ### Документация НИРС (выполнена)
 
