@@ -80,6 +80,31 @@ flowchart TB
 
 — масштабирование: при необходимости можно запускать несколько elevation-контейнеров для разных роботов, используя различные ROS_DOMAIN_ID.
 
+Размещение контейнеров на одном хосте и их взаимодействие через Cyclone DDS показано на Рисунке 3.2.
+
+```mermaid
+flowchart TB
+    subgraph Host["Хост (ПК)<br/>192.168.1.100"]
+        direction TB
+        OS["ОС: Ubuntu 24.10"]
+        DOCKER["Docker Engine"]
+        subgraph Sim["Контейнер Simulator"]
+            direction TB
+            S_NODES[Ноды ROS 2:<br/>Gazebo Harmonic<br/>laser_to_cloud<br/>robot_state_publisher<br/>tf_relay<br/>ros_gz_bridge]
+        end
+        subgraph Elev["Контейнер Elevation"]
+            direction TB
+            E_NODES[Ноды ROS 2:<br/>ground_segmenter<br/>elevation_mapping_node<br/>gait_adaptor<br/>ground_truth_publisher<br/>RViz2]
+        end
+        DOCKER --- Sim
+        DOCKER --- Elev
+    end
+
+    Sim <-->|Cyclone DDS<br/>host network<br/>ROS_DOMAIN_ID=0| Elev
+```
+
+Рисунок 3.2 — Развёртывание контейнеров на хосте
+
 ### 3.2.3 Межконтейнерная связь
 
 Контейнеры общаются через общую сеть (host network) с использованием Cyclone DDS в качестве RMW-реализации [8]. Ключевые настройки: RMW_IMPLEMENTATION = `rmw_cyclonedds_cpp` для обоих контейнеров, ROS_DOMAIN_ID = 0 (единый domain ID для discovery). Конфигурационный файл Cyclone DDS монтируется в оба контейнера и содержит настройки, явно указывающие сетевой интерфейс, отключающие Shared Memory (так как контейнеры не имеют общей разделяемой памяти) и включающие трассировку для диагностики discovery.
@@ -96,7 +121,7 @@ flowchart TB
 
 ### 3.2.5 Поток данных в системе
 
-Рассмотрим поток данных от сенсора до исполнительных механизмов (Рисунок 3.2).
+Рассмотрим поток данных от сенсора до исполнительных механизмов (Рисунок 3.3).
 
 ```mermaid
 flowchart TB
@@ -113,7 +138,7 @@ flowchart TB
     A --> B --> C --> D --> E --> F --> G --> H --> I
 ```
 
-Рисунок 3.2 — Поток данных от сенсора до исполнительных механизмов
+Рисунок 3.3 — Поток данных от сенсора до исполнительных механизмов
 
 Шаг 1 — захват данных: gpu_lidar в Gazebo генерирует лазерные измерения (360×16 точек, 10 Гц). Измерения передаются как `gz.msgs.LaserScan`.
 
