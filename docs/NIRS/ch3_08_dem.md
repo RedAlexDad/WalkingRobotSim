@@ -36,8 +36,8 @@
 
 $$
 \begin{aligned}
-\mathrm{cell}_x &= \left\lfloor \frac{x - \mathrm{map\_origin}_x}{\mathrm{resolution}} \right\rfloor \\
-\mathrm{cell}_y &= \left\lfloor \frac{y - \mathrm{map\_origin}_y}{\mathrm{resolution}} \right\rfloor
+\mathrm{cell}_x &= \left\lfloor \frac{x - \mathrm{map}\_\mathrm{origin}_x}{\mathrm{resolution}} \right\rfloor \\
+\mathrm{cell}_y &= \left\lfloor \frac{y - \mathrm{map}\_\mathrm{origin}_y}{\mathrm{resolution}} \right\rfloor
 \end{aligned}
 $$
 

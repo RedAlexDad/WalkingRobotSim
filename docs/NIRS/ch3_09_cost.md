@@ -13,7 +13,7 @@ Traversability вычисляется в плагине `cost_function.py`, ко
 ### 3.9.3 Общая формула traversability
 
 $$
-\mathrm{traversability} = 1 - \bigl(w_{\mathrm{slope}} \cdot \mathrm{slope\_cost} + w_{\mathrm{roughness}} \cdot \mathrm{roughness\_cost} + w_{\mathrm{elevation}} \cdot \mathrm{elevation\_diff\_cost}\bigr)
+\mathrm{traversability} = 1 - \bigl(w_{\mathrm{slope}} \cdot \mathrm{slope}\_\mathrm{cost} + w_{\mathrm{roughness}} \cdot \mathrm{roughness}\_\mathrm{cost} + w_{\mathrm{elevation}} \cdot \mathrm{elevation}\_\mathrm{diff}\_\mathrm{cost}\bigr)
 $$,
 
 где веса по умолчанию: w_slope = 0,5, w_roughness = 0,3, w_elevation = 0,2.
@@ -24,9 +24,9 @@ $$,
 
 $$
 \begin{aligned}
-\mathrm{slope\_cost} &= \min\left(\frac{\mathrm{slope}}{\mathrm{max\_slope}}, 1.0\right), \quad \mathrm{max\_slope} = 25^\circ = 0.436\ \mathrm{рад} \\
-\mathrm{roughness\_cost} &= \min\left(\frac{\mathrm{roughness}}{\mathrm{max\_roughness}}, 1.0\right), \quad \mathrm{max\_roughness} = 0.10\ \mathrm{м} \\
-\mathrm{elevation\_diff\_cost} &= \min\left(\frac{|z - z_{\mathrm{robot}}|}{\mathrm{max\_elevation\_diff}}, 1.0\right), \quad \mathrm{max\_elevation\_diff} = 0.30\ \mathrm{м}
+\mathrm{slope}\_\mathrm{cost} &= \min\left(\frac{\mathrm{slope}}{\mathrm{max}\_\mathrm{slope}}, 1.0\right), \quad \mathrm{max}\_\mathrm{slope} = 25^\circ = 0.436\ \mathrm{рад} \\
+\mathrm{roughness}\_\mathrm{cost} &= \min\left(\frac{\mathrm{roughness}}{\mathrm{max}\_\mathrm{roughness}}, 1.0\right), \quad \mathrm{max}\_\mathrm{roughness} = 0.10\ \mathrm{м} \\
+\mathrm{elevation}\_\mathrm{diff}\_\mathrm{cost} &= \min\left(\frac{|z - z_{\mathrm{robot}}|}{\mathrm{max}\_\mathrm{elevation}\_\mathrm{diff}}, 1.0\right), \quad \mathrm{max}\_\mathrm{elevation}\_\mathrm{diff} = 0.30\ \mathrm{м}
 \end{aligned}
 $$
 
@@ -79,7 +79,7 @@ global_costmap:
 Пусть роботу нужно пройти из точки A в точку B. Планировщик использует функцию стоимости ребра графа:
 
 $$
-\mathrm{edge\_cost} = \mathrm{distance} \times \alpha + (1 - \mathrm{traversability}) \times \beta
+\mathrm{edge}\_\mathrm{cost} = \mathrm{distance} \times \alpha + (1 - \mathrm{traversability}) \times \beta
 $$
 
 где $\alpha = 1.0$ (вес расстояния), $\beta = 5.0$ (вес traversability, приоритет безопасности).

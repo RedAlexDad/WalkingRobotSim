@@ -21,7 +21,7 @@
 7) Плагины elevation mapping: разработаны surface_gradient.py (PCA gradient поверхности, окно 3×3), roughness.py (RMSE в окне 5×5), cost_function.py:
 
 $$
-\mathrm{traversability} = 1 - w_{\mathrm{slope}} \cdot \mathrm{slope\_cost} - w_{\mathrm{roughness}} \cdot \mathrm{roughness\_cost} - w_{\mathrm{elevation}} \cdot \mathrm{elevation\_diff\_cost}
+\mathrm{traversability} = 1 - w_{\mathrm{slope}} \cdot \mathrm{slope}\_\mathrm{cost} - w_{\mathrm{roughness}} \cdot \mathrm{roughness}\_\mathrm{cost} - w_{\mathrm{elevation}} \cdot \mathrm{elevation}\_\mathrm{diff}\_\mathrm{cost}
 $$
 
 с весами $w_{\mathrm{slope}} = 0.5$, $w_{\mathrm{roughness}} = 0.3$, $w_{\mathrm{elevation}} = 0.2$.

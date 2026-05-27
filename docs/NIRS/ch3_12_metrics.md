@@ -93,7 +93,7 @@ $$
 — средняя скорость:
 
 $$
-v_{\mathrm{avg}} = \frac{\mathrm{path\_length}}{\mathrm{travel\_time}}
+v_{\mathrm{avg}} = \frac{\mathrm{path}\_\mathrm{length}}{\mathrm{travel}\_\mathrm{time}}
 $$
 
 — энергозатраты: интегральная мощность приводов за время движения:
