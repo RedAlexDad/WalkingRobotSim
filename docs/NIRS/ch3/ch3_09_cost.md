@@ -8,23 +8,7 @@
 
 Traversability (проходимость) — количественная мера от 0,0 (непроходимо) до 1,0 (полностью проходимо), позволяющая planner'у выбирать не только кратчайший, но и наиболее безопасный путь [12]. Вычисляется в плагине `cost_function.py`, загружаемом как postprocessor_plugin после surface_gradient и roughness, с доступом ко всем слоям карты (elevation, variance, surface_gradient, roughness).
 
-Общая формула:
-
-$$
-\mathrm{traversability} = 1 - \bigl(w_{\mathrm{slope}} \cdot \mathrm{slopeCost} + w_{\mathrm{roughness}} \cdot \mathrm{roughnessCost} + w_{\mathrm{elevation}} \cdot \mathrm{elevationDiffCost}\bigr)
-$$
-
-где веса по умолчанию: w_slope = 0,5, w_roughness = 0,3, w_elevation = 0,2. Компоненты стоимости:
-
-$$
-\begin{aligned}
-\mathrm{slopeCost} &= \min\left(\frac{\mathrm{slope}}{\mathrm{maxSlope}}, 1.0\right), \quad \mathrm{maxSlope} = 25^\circ = 0.436\ \mathrm{рад} \\
-\mathrm{roughnessCost} &= \min\left(\frac{\mathrm{roughness}}{\mathrm{maxRoughness}}, 1.0\right), \quad \mathrm{maxRoughness} = 0.10\ \mathrm{м} \\
-\mathrm{elevationDiffCost} &= \min\left(\frac{|z - z_{\mathrm{robot}}|}{\mathrm{maxElevationDiff}}, 1.0\right), \quad \mathrm{maxElevationDiff} = 0.30\ \mathrm{м}
-\end{aligned}
-$$
-
-Для Unitree Go2 максимальный безопасный угол наклона составляет примерно 25°, что определяется конструкцией ног и положением центра масс [6]. Плагин сохраняет результат в слой `traversability`, публикуемый на `/traversability` и используемый gait_adaptor'ом и elevation_to_costmap_node.
+Математическая модель traversability, включая формулу стоимости, компоненты slopeCost/roughnessCost/elevationDiffCost и значения весов, приведена в Главе 2 (раздел 2.6). Для Unitree Go2 максимальный безопасный угол наклона составляет примерно 25°, что определяется конструкцией ног и положением центра масс [6]. Плагин сохраняет результат в слой `traversability`, публикуемый на `/traversability` и используемый gait_adaptor'ом и elevation_to_costmap_node.
 
 ### 3.9.2 Классификация типов местности
 
@@ -42,25 +26,13 @@ $$
 
 ### 3.9.3 Интеграция с Nav2 и пример расчёта
 
-Для интеграции traversability с Nav2 разработан мост `elevation_to_costmap_node.py`, который подписывается на `/elevation_map` (GridMap) и публикует `nav2_msgs/OccupancyGrid` на `/elevation_costmap`:
-
-$$
-\mathrm{cost} = 255 \times (1 - \mathrm{traversability})
-$$
-
-где cost = 0 (свободно) соответствует traversability = 1,0, cost = 254 (занято) — traversability ≈ 0,004, cost = 255 (неизвестно) — traversability = 0,0.
+ Для интеграции traversability с Nav2 разработан мост `elevation_to_costmap_node.py`, который подписывается на `/elevation_map` (GridMap) и публикует `nav2_msgs/OccupancyGrid` на `/elevation_costmap`. Формула конвертации traversability в cost (0–255) приведена в Главе 2 (раздел 2.6.4).
 
 **Известная проблема: несоответствие QoS.** При подписке на `/elevation_map` с RELIABLE + VOLATILE map не доставляется, если publisher использует RELIABLE + TRANSIENT_LOCAL. Решение: явно указать TRANSIENT_LOCAL для subscriber.
 
 **Известная проблема: сдвиг costmap.** Мост публикует costmap в frame_id = "odom", Nav2 ожидает в frame_id = "map". Статический publisher map → odom с нулевым смещением не обновляется при движении. Решение: удалить static_transform_publisher.
 
-Nav2 настроен через `nav2_params.yaml` с `map_topic: /elevation_costmap`. Планировщик (SmacPlanner 2D) использует cost для выбора пути:
-
-$$
-\mathrm{edgeCost} = \mathrm{distance} \times \alpha + (1 - \mathrm{traversability}) \times \beta
-$$
-
-где $\alpha = 1,0$, $\beta = 5,0$. Пример: прямой путь через холм (10 м, traversability 0,3) — стоимость 13,5; обход (15 м, traversability 0,9) — стоимость 15,5. Хотя прямой путь короче, при увеличении $\beta$ до 10 обход становится дешевле (15,0 < 17,0).
+ Nav2 настроен через `nav2_params.yaml` с `map_topic: /elevation_costmap`. Планировщик (SmacPlanner 2D) использует взвешенную стоимость ребра, как описано в Главе 2 (раздел 2.6.4). Пример: прямой путь через холм (10 м, traversability 0,3) — стоимость 13,5; обход (15 м, traversability 0,9) — стоимость 15,5. Хотя прямой путь короче, при увеличении $\beta$ до 10 обход становится дешевле (15,0 < 17,0).
 
 ### 3.9.4 Настройка весов
 
