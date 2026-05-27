@@ -16,21 +16,38 @@
 
 ## 2. Подчёркивания внутри `\mathrm{...}`
 
-**Проблема:** В некоторых парсерах `\_` внутри `\mathrm{...}` интерпретируется как нижний
-индекс, что даёт ошибку "Double subscripts: use braces to clarify".
+**Проблема:** GitHub markdown pre-processor преобразует `\_` → `_` внутри math-блоков.
+KaTeX воспринимает `_` как оператор нижнего индекса, и цепочка вида
+`\mathrm{elevation}\_\mathrm{diff}\_\mathrm{cost}` после обработки становится
+`\mathrm{elevation}_\mathrm{diff}_\mathrm{cost}`, что даёт "Double subscripts".
 
-**Решение:** Разбить `\mathrm{word1\_word2}` на `\mathrm{word1}\_\mathrm{word2}`.
+**Решение:** Заменить многословные имена с подчёркиваниями на camelCase внутри одного
+`\mathrm{...}`: `\mathrm{elevationDiffCost}` вместо `\mathrm{elevation}\_\mathrm{diff}\_\mathrm{cost}`.
 
 **Автоматизация:**
 ```python
-def fix_mathrm(m):
-    inner = m.group(1)
-    if r'\_' in inner:
-        parts = inner.split(r'\_')
-        return r'\mathrm{' + r'}\_\mathrm{'.join(parts) + '}'
-    return m.group(0)
+REPLACEMENTS = {
+    r'\\mathrm\{map\}_\\_\mathrm\{origin\}_x': '\\mathrm{mapOrigin}_x',
+    r'\\mathrm\{map\}_\\_\mathrm\{origin\}_y': '\\mathrm{mapOrigin}_y',
+    r'\\mathrm\{slope\}_\\_\mathrm\{cost\}': '\\mathrm{slopeCost}',
+    r'\\mathrm\{roughness\}_\\_\mathrm\{cost\}': '\\mathrm{roughnessCost}',
+    r'\\mathrm\{elevation\}_\\_\mathrm\{diff\}_\\_\mathrm\{cost\}': '\\mathrm{elevationDiffCost}',
+    r'\\mathrm\{max\}_\\_\mathrm\{slope\}': '\\mathrm{maxSlope}',
+    r'\\mathrm\{max\}_\\_\mathrm\{roughness\}': '\\mathrm{maxRoughness}',
+    r'\\mathrm\{max\}_\\_\mathrm\{elevation\}_\\_\mathrm\{diff\}': '\\mathrm{maxElevationDiff}',
+    r'\\mathrm\{edge\}_\\_\mathrm\{cost\}': '\\mathrm{edgeCost}',
+    r'\\mathrm\{terrain\}_\\_\mathrm\{type\}': '\\mathrm{terrainType}',
+    r'\\mathrm\{path\}_\\_\mathrm\{length\}': '\\mathrm{pathLength}',
+    r'\\mathrm\{travel\}_\\_\mathrm\{time\}': '\\mathrm{travelTime}',
+}
 
-content = re.sub(r'\\mathrm\{([^}]*)\}', fix_mathrm, content)
+for fpath in glob.glob('docs/NIRS/ch3_*.md'):
+    with open(fpath) as f:
+        content = f.read()
+    for old, new in REPLACEMENTS.items():
+        content = re.sub(old, new, content)
+    with open(fpath, 'w') as f:
+        f.write(content)
 ```
 
 ## 3. SI-единицы через `\si{...}`

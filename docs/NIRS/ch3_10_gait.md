@@ -14,8 +14,8 @@
 
 $$
 \begin{aligned}
-\mathrm{cell}_x &= \left\lfloor \frac{\mathrm{foot}_x - \mathrm{map}\_\mathrm{origin}_x}{\mathrm{resolution}} \right\rfloor \\
-\mathrm{cell}_y &= \left\lfloor \frac{\mathrm{foot}_y - \mathrm{map}\_\mathrm{origin}_y}{\mathrm{resolution}} \right\rfloor
+\mathrm{cell}_x &= \left\lfloor \frac{\mathrm{foot}_x - \mathrm{mapOrigin}_x}{\mathrm{resolution}} \right\rfloor \\
+\mathrm{cell}_y &= \left\lfloor \frac{\mathrm{foot}_y - \mathrm{mapOrigin}_y}{\mathrm{resolution}} \right\rfloor
 \end{aligned}
 $$
 
@@ -43,7 +43,7 @@ $$
 Вычисление агрегированной traversability:
 
 $$
-\mathrm{terrain}\_\mathrm{type} = \min(t_1, t_2, t_3, t_4)
+\mathrm{terrainType} = \min(t_1, t_2, t_3, t_4)
 $$
 
 — худшая опора определяет режим.
