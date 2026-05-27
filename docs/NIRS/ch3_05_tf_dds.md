@@ -28,6 +28,31 @@ TF-relay не буферизирует трансформации — он ра�
 
 Конфигурация Cyclone DDS включает явное указание сетевого интерфейса (lo), разрешение multicast, включение topic discovery и отключение Shared Memory транспорта (Рисунок 3.3). Отключение SHM является критическим, так как контейнеры не имеют общей разделяемой памяти, и использование SHM-транспорта приводит к невозможности discovery [8].
 
+```mermaid
+flowchart TB
+    subgraph Sim["Контейнер Simulator"]
+        N1["/robot1/scan/points<br/>PointCloud2<br/>BEST_EFFORT"]
+        N2["/robot1/tf<br/>TFMessage<br/>BEST_EFFORT"]
+    end
+
+    subgraph DDS["Cyclone DDS (host network)"]
+        IF["Интерфейс: lo<br/>Multicast: включён<br/>SHM: отключён<br/>TCP_NODELAY: да"]
+        DISC["Topic discovery<br/>ROS_DOMAIN_ID=0"]
+    end
+
+    subgraph Elev["Контейнер Elevation"]
+        S1["elevation_mapping_node<br/>sub: /robot1/scan/points"]
+        S2["tf_echo<br/>sub: /robot1/tf"]
+        S3["elevation_to_costmap_node<br/>sub: /elevation_map<br/>QoS: TRANSIENT_LOCAL"]
+    end
+
+    N1 --> IF --> S1
+    N2 --> IF --> S2
+    IF --> S3
+```
+
+Рисунок 3.3 — Схема межконтейнерной связи через Cyclone DDS
+
 ### 3.5.5 Диагностика discovery
 
 Для диагностики проблем discovery используются следующие инструменты:

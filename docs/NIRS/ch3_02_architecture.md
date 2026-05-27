@@ -6,6 +6,48 @@
 
 Разработанный модуль состоит из нескольких компонентов, взаимодействующих через ROS 2-топики и сервисы. Схема взаимодействия представлена на Рисунке 3.1.
 
+```mermaid
+graph TB
+    subgraph Sim["Контейнер Simulator"]
+        GZ[Gazebo Harmonic<br/>gpu_lidar]
+        L2C[laser_to_cloud_converter<br/>C++]
+        RSP[robot_state_publisher]
+        REL[tf_relay.py]
+        GZB[ros_gz_bridge]
+    end
+
+    subgraph Elev["Контейнер Elevation"]
+        GS[ground_segmenter.py]
+        EM[elevation_mapping_node<br/>CuPy/CUDA]
+        PL[Плагины:<br/>surface_gradient<br/>roughness<br/>cost_function]
+        CB[elevation_to_costmap_node]
+        GA[gait_adaptor]
+        RV[RViz2]
+        GT[ground_truth_publisher]
+    end
+
+    subgraph Nav2["Nav2 (planner)"]
+        SP[SmacPlanner 2D]
+    end
+
+    GZ -->|/scan| L2C
+    L2C -->|/robot1/scan/points| EM
+    RSP -->|/robot1/tf| REL
+    REL -->|/tf| EM
+    GZB -->|/robot1/ground_truth| GT
+    GZ -->|/model/robot1_my_bot/pose| GT
+    GT -->|/robot1/ground_truth| RV
+    GS -->|/ground_cloud| EM
+    GS -->|/obstacle_cloud| EM
+    EM -->|/elevation_map| CB
+    EM -->|/traversability| GA
+    CB -->|/elevation_costmap| SP
+    EM -->|/elevation_map| RV
+    EM -->|/stall_status| RV
+```
+
+Рисунок 3.1 — Схема взаимодействия компонентов системы
+
 На верхнем уровне выделяются два Docker-контейнера:
 
 1) контейнер Simulator — запускает симуляцию Gazebo Harmonic, сенсоры (трёхмерный LiDAR, IMU), robot_state_publisher, C++ конвертер LaserScan→PointCloud и TF-relay;
@@ -51,6 +93,20 @@
 ### 3.2.5 Поток данных в системе
 
 Рассмотрим поток данных от сенсора до исполнительных механизмов (Рисунок 3.2).
+
+```mermaid
+flowchart LR
+    A["Шаг 1: LiDAR<br/>захват 360×16<br/>10 Гц"] --> B["Шаг 2: laser_to_cloud<br/>LaserScan → PointCloud2"]
+    B --> C["Шаг 3: DDS<br/>Cyclone передача<br/>между контейнерами"]
+    C --> D["Шаг 4: ground_segmenter<br/>GPF RANSAC<br/>ground / obstacle"]
+    D --> E["Шаг 5: elevation_mapping<br/>GPU обновление<br/>карты высот"]
+    E --> F["Шаг 6: Плагины<br/>slope + roughness<br/>+ traversability"]
+    F --> G["Шаг 7: costmap_bridge<br/>GridMap → OccupancyGrid"]
+    G --> H["Шаг 8: Nav2<br/>SmacPlanner<br/>планирование пути"]
+    H --> I["Шаг 9: gait_adaptor<br/>адаптация походки<br/>под рельеф"]
+```
+
+Рисунок 3.2 — Поток данных от сенсора до исполнительных механизмов
 
 Шаг 1 — захват данных: gpu_lidar в Gazebo генерирует лазерные измерения (360×16 точек, 10 Гц). Измерения передаются как `gz.msgs.LaserScan`.
 
