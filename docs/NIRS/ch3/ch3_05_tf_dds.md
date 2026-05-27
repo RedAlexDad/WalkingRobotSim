@@ -8,7 +8,7 @@
 
 Правильная работа elevation_mapping_node критически зависит от наличия полного и актуального TF-дерева [4]. Модуль использует трансформации для проецирования точек облака из фрейма сенсора в фрейм карты, определения положения робота на карте высот и вычисления углов обзора для visibility cleanup.
 
-TF-дерево робота Unitree Go2 [6] имеет следующий вид: map  →  odom  →  base_link, от которого отходят laser_frame, imu_frame, foot_front_left, foot_front_right, foot_hind_left и foot_hind_right. Симулятор публикует эти трансформации на namespaced топиках: `/robot1/tf` (динамические, около 100 Гц) и `/robot1/tf_static` (статические, однократно).
+TF-дерево робота Unitree Go2 [6] имеет следующий вид: map → odom → base_link, от которого отходят laser_frame, imu_frame, foot_front_left, foot_front_right, foot_hind_left и foot_hind_right. Симулятор публикует эти трансформации на namespaced топиках: `/robot1/tf` (динамические, около 100 Гц) и `/robot1/tf_static` (статические, однократно).
 
 Модуль elevation_mapping_cupy слушает стандартные топики `/tf` и `/tf_static`. Для перенаправления трансформаций разработан TF-relay (`tf_relay.py`), который подписывается на namespaced топики с QoS BEST_EFFORT и TRANSIENT_LOCAL соответственно и републикует на стандартные топики. Relay не буферизирует трансформации — он работает как прозрачный прокси в том же контейнере, что и симулятор.
 
@@ -47,13 +47,13 @@ flowchart TB
 
 Таблица 3.2 — Типичные проблемы DDS discovery и их решения
 
-| Проблема | Причина | Решение |
-|----------|---------|---------|
-| Ноды не видны | Разные ROS_DOMAIN_ID | Установить единый ID |
-| TF не публикуется | Неправильный QoS | Использовать BEST_EFFORT |
-| PointCloud не принимается | SHM-конфликт | Отключить SHM в Cyclone |
-| Discovery медленный | Много интерфейсов | Явно указать lo interface |
-| Ground truth не приходит | RELIABLE vs BEST_EFFORT | Подписываться BEST_EFFORT, как публикует Gazebo |
+| Проблема                            | Причина                                | Решение                                           |
+| ----------------------------------- | -------------------------------------- | ------------------------------------------------- |
+| Ноды не видны                       | Разные ROS_DOMAIN_ID                   | Установить единый ID                              |
+| TF не публикуется                   | Неправильный QoS                       | Использовать BEST_EFFORT                          |
+| PointCloud не принимается           | SHM-конфликт                           | Отключить SHM в Cyclone                           |
+| Discovery медленный                 | Много интерфейсов                      | Явно указать lo interface                         |
+| Ground truth не приходит            | RELIABLE vs BEST_EFFORT                | Подписываться BEST_EFFORT, как публикует Gazebo   |
 | Elevation map не доставляется мосту | RELIABLE + VOLATILE vs TRANSIENT_LOCAL | Использовать TRANSIENT_LOCAL для subscriber моста |
 
 ### 3.5.3 Ground truth bridge и оптимизация трафика

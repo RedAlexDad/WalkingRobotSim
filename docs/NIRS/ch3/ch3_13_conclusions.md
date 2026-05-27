@@ -6,51 +6,51 @@
 
 ### 3.13.1 Основные результаты
 
-1) Docker-интеграция: разработана двухконтейнерная архитектура (CPU simulator + GPU elevation). Создан CPU-образ (Dockerfile.cpu) для отладки без GPU passthrough с отдельными make-целями (elevation-cpu, elevation-cpu-bg, elevation-cpu-build). Compose.yml реорганизован с YAML-якорями для устранения дублирования конфигурации сервисов.
+1. Docker-интеграция: разработана двухконтейнерная архитектура (CPU simulator + GPU elevation). Создан CPU-образ (Dockerfile.cpu) для отладки без GPU passthrough с отдельными make-целями (elevation-cpu, elevation-cpu-bg, elevation-cpu-build). Compose.yml реорганизован с YAML-якорями для устранения дублирования конфигурации сервисов.
 
-2) Интеграция трёхмерного LiDAR: выбран трёхмерный LiDAR (gpu_lidar 360×16) вместо depth-камеры. Написан C++ конвертер LaserScan  —  PointCloudPacked. Исправлен парсинг PointCloud2: реализована функция `_read_xyz32`, читающая данные по offset-карте полей вместо фиксированного point_step=12.
+2. Интеграция трёхмерного LiDAR: выбран трёхмерный LiDAR (gpu_lidar 360×16) вместо depth-камеры. Написан C++ конвертер LaserScan — PointCloudPacked. Исправлен парсинг PointCloud2: реализована функция `_read_xyz32`, читающая данные по offset-карте полей вместо фиксированного point_step=12.
 
-3) TF-relay: реализован прозрачный relay для перенаправления трансформаций с namespaced топиков (/robot1/tf) на стандартные (/tf, /tf_static) с корректными QoS-профилями.
+3. TF-relay: реализован прозрачный relay для перенаправления трансформаций с namespaced топиков (/robot1/tf) на стандартные (/tf, /tf_static) с корректными QoS-профилями.
 
-4) Фильтрация облака точек: настроен комплекс фильтров, включающий min_valid_distance = 0,3 для исключения тела робота, max_ray_length = 10,0, RAM-фильтр, фильтрацию Махаланобиса (порог 2,0), visibility cleanup на CUDA. Ground segmenter дополнен воксельным понижением (0,05 м), skip-frame при перегрузке коллбэков и post-filter height_margin = 0,05 для исключения точек корпуса. Исправлена обработка SVD-ошибок (LinAlgError  —  np.isfinite).
+4. Фильтрация облака точек: настроен комплекс фильтров, включающий min_valid_distance = 0,3 для исключения тела робота, max_ray_length = 10,0, RAM-фильтр, фильтрацию Махаланобиса (порог 2,0), visibility cleanup на CUDA. Ground segmenter дополнен воксельным понижением (0,05 м), skip-frame при перегрузке коллбэков и post-filter height_margin = 0,05 для исключения точек корпуса. Исправлена обработка SVD-ошибок (LinAlgError — np.isfinite).
 
-5) Ground segmentation: реализован алгоритм Ground Plane Fitting (Zermas et al., 2017) с 3 итерациями RANSAC [2]. Precision > 95%, recall > 90%. Obstacle-облако подаётся на второй вход elevation_mapping_node для увеличения variance в занятых ячейках.
+5. Ground segmentation: реализован алгоритм Ground Plane Fitting (Zermas et al., 2017) с 3 итерациями RANSAC [2]. Precision > 95%, recall > 90%. Obstacle-облако подаётся на второй вход elevation_mapping_node для увеличения variance в занятых ячейках.
 
-6) Карта высот (DEM): карта высот публикуется с кадром odom, разрешением 0,1 м, размером 20×20 м, с частотой 10 Гц. Содержит слои elevation, variance, traversability. GPU-обработка занимает менее 2 мс на кадр. CPU fallback обеспечивает ~5 Гц на чистом numpy.
+6. Карта высот (DEM): карта высот публикуется с кадром odom, разрешением 0,1 м, размером 20×20 м, с частотой 10 Гц. Содержит слои elevation, variance, traversability. GPU-обработка занимает менее 2 мс на кадр. CPU fallback обеспечивает ~5 Гц на чистом numpy.
 
- 7) Плагины elevation mapping: разработаны surface_gradient.py (PCA gradient поверхности, окно 3×3), roughness.py (RMSE в окне 5×5) и cost_function.py, реализующий traversability cost (математическая модель — Глава 2, раздел 2.6) с весами $w_{\mathrm{slope}} = 0{,}5$, $w_{\mathrm{roughness}} = 0{,}3$, $w_{\mathrm{elevation}} = 0{,}2$.
+7. Плагины elevation mapping: разработаны surface*gradient.py (PCA gradient поверхности, окно 3×3), roughness.py (RMSE в окне 5×5) и cost_function.py, реализующий traversability cost (математическая модель — Глава 2, раздел 2.6) с весами $w*{\mathrm{slope}} = 0{,}5$, $w_{\mathrm{roughness}} = 0{,}3$, $w_{\mathrm{elevation}} = 0{,}2$.
 
-8) Адаптация походки: реализовано изменение высоты шага (0,04–0,15 м), частоты (1,0–2,0 Гц), скорости (0,15–0,5 м/с), высоты корпуса (0,18–0,25 м) и типа походки (trot/crawl/crawl_slow) с плавными переходами (экспоненциальное сглаживание, α = 0,3).
+8. Адаптация походки: реализовано изменение высоты шага (0,04–0,15 м), частоты (1,0–2,0 Гц), скорости (0,15–0,5 м/с), высоты корпуса (0,18–0,25 м) и типа походки (trot/crawl/crawl_slow) с плавными переходами (экспоненциальное сглаживание, α = 0,3).
 
-9) Мост GridMap  —  OccupancyGrid для Nav2: elevation_to_costmap_node.py публикует traversability costmap на /elevation_costmap. Nav2 настроен на использование этого топика (map_topic в nav2_params.yaml).
+9. Мост GridMap — OccupancyGrid для Nav2: elevation_to_costmap_node.py публикует traversability costmap на /elevation_costmap. Nav2 настроен на использование этого топика (map_topic в nav2_params.yaml).
 
-10) Ground truth bridge: ground_truth_publisher.py получает Gazebo /model/robot1_my_bot/pose (с резервным /world_poses_info) и публикует Odometry на /robot1/ground_truth + TF gt_odom  —  base_link_gt для диагностики.
+10. Ground truth bridge: ground_truth_publisher.py получает Gazebo /model/robot1_my_bot/pose (с резервным /world_poses_info) и публикует Odometry на /robot1/ground_truth + TF gt_odom — base_link_gt для диагностики.
 
-11) Stall detection: реализован в odometry_update.cpp: если IMU angular_vel < 0,05 рад/с при delta > 0,0001, интеграция leg odometry подавляется. Параметры настройки вынесены в odometry_node.cpp. Публикуется /stall_status (std_msgs/Bool).
+11. Stall detection: реализован в odometry_update.cpp: если IMU angular_vel < 0,05 рад/с при delta > 0,0001, интеграция leg odometry подавляется. Параметры настройки вынесены в odometry_node.cpp. Публикуется /stall_status (std_msgs/Bool).
 
-12) Тестирование и анализ: проведено тестирование на 5 сценариях. RMSE карты: 0,012–0,030 м. FPS: 9,5–10,0 Гц (GPU) / ~5 Гц (CPU). Выявлены и задокументированы следующие проблемы:
+12. Тестирование и анализ: проведено тестирование на 5 сценариях. RMSE карты: 0,012–0,030 м. FPS: 9,5–10,0 Гц (GPU) / ~5 Гц (CPU). Выявлены и задокументированы следующие проблемы:
     — несоответствие QoS: Gazebo публикует с BEST_EFFORT, подписчик с RELIABLE не получает данные;
     — сдвиг costmap: статический publisher map — odom не следует за роботом;
     — дрейф leg odometry: Gazebo допускает проскальзывание ног, leg odometry дрейфует;
     — stall detection не срабатывает в REST (delta = 0, joints не движутся).
 
-13) Исправления URDF-файлов: устранены синтаксические ошибки в const.xacro, laser.xacro, leg.xacro, robot.xacro, transmission.xacro, velodyne.xacro.
+13. Исправления URDF-файлов: устранены синтаксические ошибки в const.xacro, laser.xacro, leg.xacro, robot.xacro, transmission.xacro, velodyne.xacro.
 
 Выполнение требований технического задания приведено в Таблице 3.8.
 
 Таблица 3.8 — Выполнение требований технического задания
 
-| Требование ТЗ | Статус |
-|---------------|--------|
-| Построение карты высот в реальном времени | Выполнено (10 Гц GPU / 5 Гц CPU) |
-| Фильтрация облаков точек 3D LiDAR | Выполнено (6 фильтров) |
-| Сегментация ground/non-ground | Выполнено (GPF, 3 итерации + height_margin) |
-| Цифровая модель высот | Выполнено (DEM, 0,1 м, 20×20 м) |
-| Функция стоимости пути | Выполнено (3 фактора, traversability) |
-| Адаптация походки | Выполнено (3 режима, 5 параметров) |
-| Интеграция с Nav2 | Выполнено (costmap bridge, map_topic) |
-| Одометрия и stall detection | Выполнено (GT bridge, stall detection) |
-| Валидация в симуляции | Выполнено (5 сценариев) |
+| Требование ТЗ                             | Статус                                      |
+| ----------------------------------------- | ------------------------------------------- |
+| Построение карты высот в реальном времени | Выполнено (10 Гц GPU / 5 Гц CPU)            |
+| Фильтрация облаков точек 3D LiDAR         | Выполнено (6 фильтров)                      |
+| Сегментация ground/non-ground             | Выполнено (GPF, 3 итерации + height_margin) |
+| Цифровая модель высот                     | Выполнено (DEM, 0,1 м, 20×20 м)             |
+| Функция стоимости пути                    | Выполнено (3 фактора, traversability)       |
+| Адаптация походки                         | Выполнено (3 режима, 5 параметров)          |
+| Интеграция с Nav2                         | Выполнено (costmap bridge, map_topic)       |
+| Одометрия и stall detection               | Выполнено (GT bridge, stall detection)      |
+| Валидация в симуляции                     | Выполнено (5 сценариев)                     |
 
 ### 3.13.2 Известные проблемы и ограничения
 
@@ -82,8 +82,10 @@
 - Построена DEM (0,1 м, 20×20 м), вычислены gradient (PCA, 3×3) и roughness (RMSE, 5×5).
 - Разработана traversability cost с весами 0,5/0,3/0,2 (slope/roughness/elevation).
 - Реализована адаптация походки (шаг 0,04–0,15 м, частота 1,0–2,0 Гц) для 3 классов terrain.
-- Разработан мост GridMap  —  OccupancyGrid для Nav2, настроен QoS, документирован frame shift.
+- Разработан мост GridMap — OccupancyGrid для Nav2, настроен QoS, документирован frame shift.
 - Разработан ground truth bridge для диагностики одометрии и анализа дрейфа.
 - Реализован stall detection с параметризуемыми порогами угловой скорости.
 - Создана CPU-версия Docker-образа для отладки без GPU (~5 Гц).
 - Выполнено тестирование на 5 сценариях: RMSE < 0,05 м, FPS ≥ 10 Гц, задержка < 100 мс.
+
+Разработанный модуль elevation mapping подтверждает эффективность GPU-ускоренного построения карт высот в реальном времени. Сочетание непрерывной traversability с адаптацией походки обеспечивает безопасную навигацию по пересечённой местности без нейросетевых методов и может служить основой для дальнейших исследований автономной навигации четырёхногих роботов.

@@ -54,7 +54,7 @@ flowchart TB
 
 На верхнем уровне выделяются два Docker-контейнера. Контейнер Simulator использует образ `osrf/ros:jazzy-desktop` и включает Gazebo Harmonic с gpu_lidar (16×360 лучей), ROS 2 Gazebo Bridge, C++ конвертер `laser_to_cloud_converter.cc`, robot_state_publisher и `tf_relay.py`. Контейнер Elevation использует образ `nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.10` и включает Python 3.12 с CuPy (CUDA 12.x), PyTorch 2.x, ROS 2 Jazzy с Cyclone DDS RMW, пакет `elevation_mapping_cupy` с GPU-ядрами обновления карты, библиотеку `grid_map` и RViz2.
 
-Компоненты внутри elevation-контейнера образуют конвейер обработки: LiDAR PointCloud  →  ground_seg  →  ground_cloud  →  elevation_mapping, ground_seg  →  obstacle_cloud  →  traversability, traversability  →  gait_adaptor  →  robot_controller, elevation_map  →  costmap_bridge  →  Nav2. Дополнительно разработаны вспомогательные мосты: ground_truth_publisher (Gazebo → ROS 2 odometry для диагностики) и elevation_to_costmap_node (конвертация GridMap → OccupancyGrid для Nav2).
+Компоненты внутри elevation-контейнера образуют конвейер обработки: LiDAR PointCloud → ground_seg → ground_cloud → elevation_mapping, ground_seg → obstacle_cloud → traversability, traversability → gait_adaptor → robot_controller, elevation_map → costmap_bridge → Nav2. Дополнительно разработаны вспомогательные мосты: ground_truth_publisher (Gazebo → ROS 2 odometry для диагностики) и elevation_to_costmap_node (конвертация GridMap → OccupancyGrid для Nav2).
 
 Ключевым архитектурным решением стало разделение на два Docker-контейнера, обеспечивающее следующие преимущества:
 
@@ -97,11 +97,11 @@ flowchart TB
 
 Для корректной работы elevation_mapping_node требуется полное TF-дерево, включающее трансформации между всеми фреймами робота. Используются следующие механизмы:
 
-1) robot_state_publisher в simulator-контейнере публикует статические и динамические трансформации на топики `/robot1/tf` и `/robot1/tf_static` (namespaced, так как в симуляции может быть несколько роботов);
+1. robot_state_publisher в simulator-контейнере публикует статические и динамические трансформации на топики `/robot1/tf` и `/robot1/tf_static` (namespaced, так как в симуляции может быть несколько роботов);
 
-2) tf_relay.py перепубликует эти трансформации на `/tf` и `/tf_static`, используя корректные QoS-профили (BEST_EFFORT для `/robot1/tf`, TRANSIENT_LOCAL для `/robot1/tf_static`);
+2. tf_relay.py перепубликует эти трансформации на `/tf` и `/tf_static`, используя корректные QoS-профили (BEST_EFFORT для `/robot1/tf`, TRANSIENT_LOCAL для `/robot1/tf_static`);
 
-3) статический publisher в elevation-контейнере публикует трансформацию `map` → `odom` с нулевым смещением для привязки глобальной системы координат.
+3. статический publisher в elevation-контейнере публикует трансформацию `map` → `odom` с нулевым смещением для привязки глобальной системы координат.
 
 ### 3.2.3 Поток данных и топики
 
@@ -146,16 +146,16 @@ flowchart TB
 
 Таблица 3.1 — Основные ROS 2-топики системы
 
-| Направление | Топик | Тип сообщения | Частота |
-|------------|-------|---------------|---------|
-| sim  —  elevation | /robot1/scan/points | PointCloud2 | 10 Гц |
-| sim  —  elevation | /robot1/tf | TFMessage | 100 Гц |
-| sim  —  elevation | /robot1/tf_static | TFMessage | static |
-| elevation  —  rviz | /elevation_map | GridMap | 10 Гц |
-| elevation  —  rviz | /ground_cloud | PointCloud2 | 10 Гц |
-| elevation  —  rviz | /obstacle_cloud | PointCloud2 | 10 Гц |
-| elevation  —  gait | /traversability | GridMap | 10 Гц |
-| elevation  —  nav2 | /elevation_costmap | OccupancyGrid | 10 Гц |
-| sim  —  elevation | /robot1/ground_truth | Odometry | 10 Гц |
-| elevation  —  diagnostics | /stall_status | Bool | 10 Гц |
-| gait  —  controller | /gait_params | GaitParams | 10 Гц |
+| Направление             | Топик                | Тип сообщения | Частота |
+| ----------------------- | -------------------- | ------------- | ------- |
+| sim — elevation         | /robot1/scan/points  | PointCloud2   | 10 Гц   |
+| sim — elevation         | /robot1/tf           | TFMessage     | 100 Гц  |
+| sim — elevation         | /robot1/tf_static    | TFMessage     | static  |
+| elevation — rviz        | /elevation_map       | GridMap       | 10 Гц   |
+| elevation — rviz        | /ground_cloud        | PointCloud2   | 10 Гц   |
+| elevation — rviz        | /obstacle_cloud      | PointCloud2   | 10 Гц   |
+| elevation — gait        | /traversability      | GridMap       | 10 Гц   |
+| elevation — nav2        | /elevation_costmap   | OccupancyGrid | 10 Гц   |
+| sim — elevation         | /robot1/ground_truth | Odometry      | 10 Гц   |
+| elevation — diagnostics | /stall_status        | Bool          | 10 Гц   |
+| gait — controller       | /gait_params         | GaitParams    | 10 Гц   |

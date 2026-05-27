@@ -43,6 +43,7 @@ ROS 2-зависимости: ROS 2 Jazzy (base), устанавливаемый
 ### 3.3.2 Структура compose.yml, запуск и конфигурация
 
 Корневой `compose.yml` описывает оба сервиса. Для устранения дублирования общих полей (сетевой режим, переменные окружения, монтирования) применяются YAML-якоря:
+
 ```
 &basic — базовые настройки (network_mode, restart, privileged);
 &env_gui — переменные DISPLAY, X11-монтирования;
@@ -57,14 +58,14 @@ ROS 2-зависимости: ROS 2 Jazzy (base), устанавливаемый
 
 Для запуска системы необходимо выполнить следующие шаги:
 
-1) предоставить доступ к X11: `xhost +local:`;
+1. предоставить доступ к X11: `xhost +local:`;
 
-2) собрать образы: `make simulator-build` и `make elevation-build` (или `make elevation-cpu-build`);
+2. собрать образы: `make simulator-build` и `make elevation-build` (или `make elevation-cpu-build`);
 
-3) запустить симулятор: `make simulator-bg`;
+3. запустить симулятор: `make simulator-bg`;
 
-4) в отдельном терминале запустить elevation: `make elevation-bg` (или `make elevation-cpu-bg`);
+4. в отдельном терминале запустить elevation: `make elevation-bg` (или `make elevation-cpu-bg`);
 
-5) для визуализации: `make elevation-rviz`;
+5. для визуализации: `make elevation-rviz`;
 
 Для обеспечения гибкой настройки без пересборки образа конфигурационные файлы монтируются как volumes. К ним относятся: `core_param.yaml` (основные параметры elevation_mapping: resolution, map_length, min_valid_distance, max_ray_length), `go2_lidar3d.yaml` (robot-specific конфигурация: топики, фреймы, слои), `cyclonedds.xml` (конфигурация DDS для межконтейнерной связи), `nav2_params.yaml` (параметры Nav2 planner и controller), `elevation_to_costmap.launch.py` (launch-файл моста) и `elevation.rviz` (конфигурация RViz для визуализации). Данный подход позволяет изменять параметры на лету и перезапускать ноду без пересборки Docker-образа [7].
