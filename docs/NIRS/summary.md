@@ -6,6 +6,12 @@
 - Имена файлов и разделов должны сохраняться
 - Коммиты должны быть атомарными
 
+## Правила работы с библиографией
+1. Для каждого списка литературы создать отдельный файл отслеживания верификации (`sources_verify.md`)
+2. Искать/верифицировать источники по одному, записывая результаты в этот файл
+3. Только когда ВСЕ источники текущего раздела верифицированы — массово внести правки в целевой файл (title.md)
+4. Затем перейти к следующему файлу со списком литературы
+
 ## Progress
 ### Done
 - **LaTeX fixes:** Заменены `\_` между `\mathrm{...}` на camelCase (10 паттернов в 5 файлах). AGENTS.md обновлён. Коммит `9901382`.
@@ -25,15 +31,33 @@
   - `ch3_12_metrics.md`: 8 → 4 (3.12.1 точность+производительность, 3.12.2 навигация, 3.12.3 инструменты+baseline, 3.12.4 целевые показатели)
   - `ch3_13_conclusions.md`: 5 → 3 (3.13.1 результаты+ТЗ+таблица, 3.13.2 проблемы, 3.13.3 развитие)
 - **Bug fix (ch3_08_dem.md):** Восстановлены удалённые подсекции 3.8.4 и 3.8.5 после merge (перезаписаны соседним содержимым).
+- **Confirmed DOIs (5 of 13)** для списка литературы гл.3:
+  - Fankhauser grid_map (Springer 2016): `10.1007/978-3-319-26054-9_5`
+  - Zermas GPF (ICRA 2017, а не IV): `10.1109/ICRA.2017.7989591`
+  - Marder-Eppstein Office Marathon (ICRA 2010): `10.1109/ROBOT.2010.5509725`
+  - Fankhauser CLAWAR 2014: `10.1142/9789814623353_0051`
+  - Macenski Marathon 2 (IROS 2020): `10.1109/IROS45743.2020.9341207`
+- **Confirmed URLs (3)**:
+  - ROS 2 Jazzy: https://docs.ros.org/en/jazzy/
+  - Cyclone DDS: https://cyclonedds.io/
+  - Gazebo Harmonic: https://gazebosim.org/docs/harmonic
 
 ### In Progress
-- (none)
+- **Поиск DOI для 3 источников** из списка гл.3 (см. `sources_verify_ch3.md`):
+  - **#5** Fankhauser PhD thesis (ETH 2018) — не найден в Crossref; ETH handle `10.3929/ethz-b-000489726` тоже 404
+  - **#11** Okada K. GPU-Accelerated Elevation Mapping (RA-L 2023) — не найден в Crossref по названию+автору
+  - **#12** Wang C. Traversability Analysis (ICRA 2023) — не найден в Crossref по названию+автору
 
 ### Blocked
-- (none)
+- IEEE Xplore возвращает login shell (JS-зависимая страница)
+- Web search tool (parallel.ai) возвращает 403
+- Google Scholar не индексирует точные названия из библиографии
 
 ## Next Steps
-- Пушнуть коммит на GitHub и проверить отображение
+- Создать `sources_verify_ch3.md` для отслеживания верификации источников
+- Для недостающих DOI: поискать на Semantic Scholar, ResearchGate, IEEE Xplore через API
+- После верификации всех 13 источников — внести правки в `title.md`
 
 ## Relevant Files
 - Все файлы `ch3_01_intro.md`–`ch3_13_conclusions.md` в `/home/redalexdad/GitHub/WalkingRobotSim/docs/NIRS/`
+- `title.md` — целевой файл для вставки DOI/URL
