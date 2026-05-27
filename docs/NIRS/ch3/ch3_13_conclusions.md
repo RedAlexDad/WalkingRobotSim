@@ -14,7 +14,7 @@
 
 4. Фильтрация облака точек: настроен комплекс фильтров, включающий min_valid_distance = 0,3 для исключения тела робота, max_ray_length = 10,0, RAM-фильтр, фильтрацию Махаланобиса (порог 2,0), visibility cleanup на CUDA. Ground segmenter дополнен воксельным понижением (0,05 м), skip-frame при перегрузке коллбэков и post-filter height_margin = 0,05 для исключения точек корпуса. Исправлена обработка SVD-ошибок (LinAlgError — np.isfinite).
 
-5. Ground segmentation: реализован алгоритм Ground Plane Fitting (Zermas et al., 2017) с 3 итерациями RANSAC [2]. Precision > 95%, recall > 90%. Obstacle-облако подаётся на второй вход elevation_mapping_node для увеличения variance в занятых ячейках.
+5. Ground segmentation: реализован алгоритм Ground Plane Fitting (Zermas et al., 2017) с 3 итерациями RANSAC [2, 17]. Precision > 95%, recall > 90%. Obstacle-облако подаётся на второй вход elevation_mapping_node для увеличения variance в занятых ячейках.
 
 6. Карта высот (DEM): карта высот публикуется с кадром odom, разрешением 0,1 м, размером 20×20 м, с частотой 10 Гц. Содержит слои elevation, variance, traversability. GPU-обработка занимает менее 2 мс на кадр. CPU fallback обеспечивает ~5 Гц на чистом numpy.
 
