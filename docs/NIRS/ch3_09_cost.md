@@ -13,7 +13,7 @@ Traversability вычисляется в плагине `cost_function.py`, ко
 ### 3.9.3 Общая формула traversability
 
 $$
-\text{traversability} = 1 - \bigl(w_{\text{slope}} \cdot \text{slope\_cost} + w_{\text{roughness}} \cdot \text{roughness\_cost} + w_{\text{elevation}} \cdot \text{elevation\_diff\_cost}\bigr)
+\mathrm{traversability} = 1 - \bigl(w_{\mathrm{slope}} \cdot \mathrm{slope\_cost} + w_{\mathrm{roughness}} \cdot \mathrm{roughness\_cost} + w_{\mathrm{elevation}} \cdot \mathrm{elevation\_diff\_cost}\bigr)
 $$,
 
 где веса по умолчанию: w_slope = 0,5, w_roughness = 0,3, w_elevation = 0,2.
@@ -24,9 +24,9 @@ $$,
 
 $$
 \begin{aligned}
-\text{slope\_cost} &= \min\left(\frac{\text{slope}}{\text{max\_slope}}, 1.0\right), \quad \text{max\_slope} = 25^\circ = 0.436\ \text{рад} \\
-\text{roughness\_cost} &= \min\left(\frac{\text{roughness}}{\text{max\_roughness}}, 1.0\right), \quad \text{max\_roughness} = 0.10\ \text{м} \\
-\text{elevation\_diff\_cost} &= \min\left(\frac{|z - z_{\text{robot}}|}{\text{max\_elevation\_diff}}, 1.0\right), \quad \text{max\_elevation\_diff} = 0.30\ \text{м}
+\mathrm{slope\_cost} &= \min\left(\frac{\mathrm{slope}}{\mathrm{max\_slope}}, 1.0\right), \quad \mathrm{max\_slope} = 25^\circ = 0.436\ \mathrm{рад} \\
+\mathrm{roughness\_cost} &= \min\left(\frac{\mathrm{roughness}}{\mathrm{max\_roughness}}, 1.0\right), \quad \mathrm{max\_roughness} = 0.10\ \mathrm{м} \\
+\mathrm{elevation\_diff\_cost} &= \min\left(\frac{|z - z_{\mathrm{robot}}|}{\mathrm{max\_elevation\_diff}}, 1.0\right), \quad \mathrm{max\_elevation\_diff} = 0.30\ \mathrm{м}
 \end{aligned}
 $$
 
@@ -51,7 +51,7 @@ $$
 Для интеграции traversability с Nav2 разработан мост `elevation_to_costmap_node.py`, который подписывается на топик `/elevation_map` (GridMap) и публикует `nav2_msgs/OccupancyGrid` на `/elevation_costmap`. Конвертация выполняется по формуле:
 
 $$
-\text{cost} = 255 \times (1 - \text{traversability})
+\mathrm{cost} = 255 \times (1 - \mathrm{traversability})
 $$
 
 где cost = 0 (свободно) соответствует traversability = 1,0; cost = 254 (занято) — traversability ≈ 0,004; cost = 255 (неизвестно) — traversability = 0,0.
@@ -79,7 +79,7 @@ global_costmap:
 Пусть роботу нужно пройти из точки A в точку B. Планировщик использует функцию стоимости ребра графа:
 
 $$
-\text{edge\_cost} = \text{distance} \times \alpha + (1 - \text{traversability}) \times \beta
+\mathrm{edge\_cost} = \mathrm{distance} \times \alpha + (1 - \mathrm{traversability}) \times \beta
 $$
 
 где $\alpha = 1.0$ (вес расстояния), $\beta = 5.0$ (вес traversability, приоритет безопасности).

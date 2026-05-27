@@ -9,7 +9,7 @@
 **RMSE** (Root Mean Square Error):
 
 $$
-\text{RMSE} = \sqrt{\frac{1}{N} \sum_{i=1}^{N} \bigl(z_{\text{predicted}} - z_{\text{ground truth}}\bigr)^2}
+\mathrm{RMSE} = \sqrt{\frac{1}{N} \sum_{i=1}^{N} \bigl(z_{\mathrm{predicted}} - z_{\mathrm{ground truth}}\bigr)^2}
 $$
 
 RMSE чувствителен к крупным ошибкам, штрафует выбросы квадратично. Целевое значение: < 0,05 м (5 см).
@@ -17,7 +17,7 @@ RMSE чувствителен к крупным ошибкам, штрафует
 **MAE** (Mean Absolute Error):
 
 $$
-\text{MAE} = \frac{1}{N} \sum_{i=1}^{N} \bigl|z_{\text{predicted}} - z_{\text{ground truth}}\bigr|
+\mathrm{MAE} = \frac{1}{N} \sum_{i=1}^{N} \bigl|z_{\mathrm{predicted}} - z_{\mathrm{ground truth}}\bigr|
 $$
 
 MAE — средняя абсолютная ошибка, менее чувствительна к выбросам. Целевое значение: < 0,03 м (3 см).
@@ -25,7 +25,7 @@ MAE — средняя абсолютная ошибка, менее чувст�
 **Max Error:**
 
 $$
-\text{Max Error} = \max_{i} \bigl|z_{\text{predicted}} - z_{\text{ground truth}}\bigr|
+\mathrm{Max Error} = \max_{i} \bigl|z_{\mathrm{predicted}} - z_{\mathrm{ground truth}}\bigr|
 $$
 
 — максимальное отклонение, показатель худшего случая. Целевое значение: < 0,10 м (10 см).
@@ -33,7 +33,7 @@ $$
 **Coverage:**
 
 $$
-\text{Coverage} = \frac{N_{\text{valid}}}{N_{\text{total}}} \times 100\%
+\mathrm{Coverage} = \frac{N_{\mathrm{valid}}}{N_{\mathrm{total}}} \times 100\%
 $$
 
 — процент ячеек карты, для которых есть хотя бы одно измерение. Целевое значение: > 90% после 10 секунд сканирования.
@@ -63,7 +63,7 @@ CPU usage — загрузка CPU в elevation-контейнере (не вк�
 — дрейф позиции: средняя ошибка положения относительно ground truth:
 
 $$
-\text{drift} = \frac{1}{N} \sum_{i=1}^{N} \bigl\|\text{pos}_{\text{odom}} - \text{pos}_{\text{gt}}\bigr\|
+\mathrm{drift} = \frac{1}{N} \sum_{i=1}^{N} \bigl\|\mathrm{pos}_{\mathrm{odom}} - \mathrm{pos}_{\mathrm{gt}}\bigr\|
 $$
 
 Целевое значение: < 0,05 м/с. Измерение: сравнение /odom и /robot1/ground_truth;
@@ -93,13 +93,13 @@ $$
 — средняя скорость:
 
 $$
-v_{\text{avg}} = \frac{\text{path\_length}}{\text{travel\_time}}
+v_{\mathrm{avg}} = \frac{\mathrm{path\_length}}{\mathrm{travel\_time}}
 $$
 
 — энергозатраты: интегральная мощность приводов за время движения:
 
 $$
-\text{energy} = \sum_{i} \tau_i \cdot \omega_i \cdot \Delta t
+\mathrm{energy} = \sum_{i} \tau_i \cdot \omega_i \cdot \Delta t
 $$
 
 где $\tau_i$ — момент $i$-го привода, $\omega_i$ — угловая скорость $i$-го привода, измерение из joint_states;

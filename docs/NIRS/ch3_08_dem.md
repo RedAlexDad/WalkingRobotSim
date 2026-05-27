@@ -36,8 +36,8 @@
 
 $$
 \begin{aligned}
-\text{cell}_x &= \left\lfloor \frac{x - \text{map\_origin}_x}{\text{resolution}} \right\rfloor \\
-\text{cell}_y &= \left\lfloor \frac{y - \text{map\_origin}_y}{\text{resolution}} \right\rfloor
+\mathrm{cell}_x &= \left\lfloor \frac{x - \mathrm{map\_origin}_x}{\mathrm{resolution}} \right\rfloor \\
+\mathrm{cell}_y &= \left\lfloor \frac{y - \mathrm{map\_origin}_y}{\mathrm{resolution}} \right\rfloor
 \end{aligned}
 $$
 
@@ -56,7 +56,7 @@ postprocessor_plugins: [surface_gradient, roughness, cost_function]
 Внутренний алгоритм: для каждой ячейки (i, j) в окне 3×3 вычисляется вектор нормали методом главных компонент (PCA). Для 9 точек формируется матрица ковариации, вычисляются собственные значения и собственные векторы. Собственный вектор, соответствующий минимальному собственному значению, является нормалью к поверхности $\mathbf{n} = (n_x, n_y, n_z)$. Угол наклона (slope) и направление наклона (aspect):
 
 $$
-\text{slope} = \arccos(|n_z|), \qquad \text{aspect} = \operatorname{atan2}(n_y, n_x)
+\mathrm{slope} = \arccos(|n_z|), \qquad \mathrm{aspect} = \mathrm{atan2}(n_y, n_x)
 $$
 
 Плагин сохраняет результат в слой `surface_gradient` карты GridMap. Дополнительно вычисляется направление уклона (aspect layer). Значение gradient нормализовано: 0,0 — горизонтальная поверхность, 1,0 — вертикальная стена.
@@ -66,10 +66,10 @@ $$
 Шероховатость поверхности реализована как плагин `roughness.py`. Вычисляется как среднеквадратичное отклонение высот в окне $N \times N$ (по умолчанию $N = 5$, что составляет $0{,}5 \times 0{,}5$ м при разрешении $0{,}1$ м):
 
 $$
-\text{roughness}(i,j) = \sqrt{\frac{1}{N^2} \sum_{\substack{k = i-m \\ l = j-m}}^{i+m,\,j+m} \bigl(z(k,l) - z_{\text{avg}}\bigr)^2}, \quad m = \left\lfloor\frac{N}{2}\right\rfloor
+\mathrm{roughness}(i,j) = \sqrt{\frac{1}{N^2} \sum_{\substack{k = i-m \\ l = j-m}}^{i+m,\,j+m} \bigl(z(k,l) - z_{\mathrm{avg}}\bigr)^2}, \quad m = \left\lfloor\frac{N}{2}\right\rfloor
 $$
 
-где $z_{\text{avg}}$ — средняя высота в окне $N \times N$ вокруг ячейки $(i, j)$.
+где $z_{\mathrm{avg}}$ — средняя высота в окне $N \times N$ вокруг ячейки $(i, j)$.
 
 Плагин сохраняет результат в слой `roughness`. Интерпретация roughness: менее 0,01 м — ровная дорога, пол; 0,01–0,03 м — гладкий асфальт, бетон; 0,03–0,06 м — трава, гравий, грунт; 0,06–0,10 м — мелкие камни, кочки; более 0,10 м — крупные камни, строительный мусор. В отличие от встроенной реализации grid_map, roughness.py работает с numpy (а не на CUDA), что позволяет легко модифицировать алгоритм без перекомпиляции.
 

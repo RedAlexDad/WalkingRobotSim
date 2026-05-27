@@ -21,10 +21,10 @@
 7) Плагины elevation mapping: разработаны surface_gradient.py (PCA gradient поверхности, окно 3×3), roughness.py (RMSE в окне 5×5), cost_function.py:
 
 $$
-\text{traversability} = 1 - w_{\text{slope}} \cdot \text{slope\_cost} - w_{\text{roughness}} \cdot \text{roughness\_cost} - w_{\text{elevation}} \cdot \text{elevation\_diff\_cost}
+\mathrm{traversability} = 1 - w_{\mathrm{slope}} \cdot \mathrm{slope\_cost} - w_{\mathrm{roughness}} \cdot \mathrm{roughness\_cost} - w_{\mathrm{elevation}} \cdot \mathrm{elevation\_diff\_cost}
 $$
 
-с весами $w_{\text{slope}} = 0.5$, $w_{\text{roughness}} = 0.3$, $w_{\text{elevation}} = 0.2$.
+с весами $w_{\mathrm{slope}} = 0.5$, $w_{\mathrm{roughness}} = 0.3$, $w_{\mathrm{elevation}} = 0.2$.
 
 8) Адаптация походки: реализовано изменение высоты шага (0,04–0,15 м), частоты (1,0–2,0 Гц), скорости (0,15–0,5 м/с), высоты корпуса (0,18–0,25 м) и типа походки (trot/crawl/crawl_slow) с плавными переходами (экспоненциальное сглаживание, α = 0,3).
 

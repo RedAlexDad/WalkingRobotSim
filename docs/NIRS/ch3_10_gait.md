@@ -14,12 +14,12 @@
 
 $$
 \begin{aligned}
-\text{cell}_x &= \left\lfloor \frac{\text{foot}_x - \text{map\_origin}_x}{\text{resolution}} \right\rfloor \\
-\text{cell}_y &= \left\lfloor \frac{\text{foot}_y - \text{map\_origin}_y}{\text{resolution}} \right\rfloor
+\mathrm{cell}_x &= \left\lfloor \frac{\mathrm{foot}_x - \mathrm{map\_origin}_x}{\mathrm{resolution}} \right\rfloor \\
+\mathrm{cell}_y &= \left\lfloor \frac{\mathrm{foot}_y - \mathrm{map\_origin}_y}{\mathrm{resolution}} \right\rfloor
 \end{aligned}
 $$
 
-и $\text{traversability} = \mathbf{t}[\text{cell}_y, \text{cell}_x]$. Если опора находится за пределами карты, используется значение по умолчанию 0,5 (средняя проходимость).
+и $\mathrm{traversability} = \mathbf{t}[\mathrm{cell}_y, \mathrm{cell}_x]$. Если опора находится за пределами карты, используется значение по умолчанию 0,5 (средняя проходимость).
 
 ### 3.10.3 Параметры адаптации
 
@@ -43,7 +43,7 @@ $$
 Вычисление агрегированной traversability:
 
 $$
-\text{terrain\_type} = \min(t_1, t_2, t_3, t_4)
+\mathrm{terrain\_type} = \min(t_1, t_2, t_3, t_4)
 $$
 
 — худшая опора определяет режим.
@@ -59,7 +59,7 @@ $$
 Для обеспечения плавного изменения походки используется экспоненциальное сглаживание:
 
 $$
-\text{param}_{\text{current}} = \text{param}_{\text{current}} \times (1 - \alpha) + \text{param}_{\text{target}} \times \alpha, \quad \alpha = 0.3
+\mathrm{param}_{\mathrm{current}} = \mathrm{param}_{\mathrm{current}} \times (1 - \alpha) + \mathrm{param}_{\mathrm{target}} \times \alpha, \quad \alpha = 0.3
 $$
 
 где $\alpha$ — коэффициент сглаживания. Типичное время перехода между режимами: Safe  —  Medium — около 3–4 шагов (1,5–2 с при частоте 2 Гц), Medium  —  Safe — 2–3 шага, Medium  —  Unsafe — 1–2 шага (быстрая реакция на опасность).
