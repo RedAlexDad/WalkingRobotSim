@@ -8,6 +8,7 @@ from .trot_gait.trot_gait import TrotGaitController
 from .crawl_gait.crawl_gait import CrawlGaitController
 from .StandController import StandController
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Bool
 from quadropted_msgs.msg import RobotModeCommand, RobotVelocity
 from quadropted_msgs.srv import RobotBehaviorCommand
 
@@ -63,6 +64,9 @@ class Robot:
         self.node.create_subscription(
             RobotVelocity, "robot_velocity", self.velocity_callback, 10
         )
+        self.node.create_subscription(
+            Bool, "stall_status", self.stall_callback, 10
+        )
 
         self.behavior_service = self.node.create_service(
             RobotBehaviorCommand, "robot_behavior_command", self.handle_behavior_command
@@ -113,6 +117,15 @@ class Robot:
                 self.node.get_logger().info(
                     f"Velocity command updated: linear={self.command.velocity}, angular={self.command.yaw_rate}"
                 )
+
+    def stall_callback(self, msg):
+        if msg.data and self.state.behavior_state == BehaviorState.TROT:
+            self.node.get_logger().warn("Stall detected in TROT! Switching to REST...")
+            self.command.rest_event = True
+            self.command.trot_event = False
+            self.command.crawl_event = False
+            self.command.stand_event = False
+            self.change_controller()
 
     def handle_behavior_command(self, request, response):
         command = request.command.lower()

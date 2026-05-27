@@ -51,7 +51,6 @@ x-el-command: &el_command
       source /opt/ros/jazzy/setup.bash;
       source /ws/install/setup.bash;
       echo "Elevation mapping node ready. Ground segmenter -> /ground_cloud";
-      ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map odom &
       python3 /tf_relay.py &
       python3 /ground_segmenter.py &
       python3 /elevation_to_costmap_node.py &

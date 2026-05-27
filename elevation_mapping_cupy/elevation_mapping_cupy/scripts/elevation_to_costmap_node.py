@@ -26,7 +26,16 @@ class ElevationToCostmapNode(Node):
         self._free_thresh = float(self.get_parameter("free_threshold").value)
         self._occ_thresh = float(self.get_parameter("occupied_threshold").value)
 
-        self._sub = self.create_subscription(GridMap, sub_topic, self._cb, 10)
+        self._msg_count = 0
+        self._warn_timer = self.create_timer(5.0, self._warn_if_no_data)
+
+        sub_qos = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.VOLATILE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10,
+        )
+        self._sub = self.create_subscription(GridMap, sub_topic, self._cb, sub_qos)
         latched_qos = QoSProfile(
             reliability=ReliabilityPolicy.RELIABLE,
             durability=DurabilityPolicy.TRANSIENT_LOCAL,
@@ -40,7 +49,21 @@ class ElevationToCostmapNode(Node):
             f"(free<={self._free_thresh}, occ>={self._occ_thresh})"
         )
 
+    def _warn_if_no_data(self) -> None:
+        if self._msg_count == 0:
+            self.get_logger().warn(
+                "No elevation map messages received yet. "
+                "Check that elevation_mapping_node is publishing."
+            )
+
     def _cb(self, msg: GridMap) -> None:
+        if self._msg_count == 0:
+            self.get_logger().info(
+                f"First elevation map received: frame={msg.header.frame_id}, "
+                f"layers={msg.layers}, shape={msg.data[0].layout.dim}"
+            )
+        self._msg_count += 1
+
         try:
             idx = msg.layers.index(self._layer_name)
         except ValueError:

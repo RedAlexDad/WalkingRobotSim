@@ -229,15 +229,15 @@ Stall detection реализован в `odometry_update.cpp`, скомпили�
 1. Bridge-нода не получает GridMap из-за QoS mismatch на подписке
 2. Costmap смещён из-за `static_transform_publisher map->odom = (0,0,0)`
 
-## Рекомендация (обновлённая)
+## Рекомендация (обновлённая 27.05.2026)
 
 1. ✅ **Решение 1 (Ground Truth Bridge)** — выполнено, ожидает тестирования (1.7)
 2. ✅ **Решение 2 (Stall Detection)** — выполнено, скомпилировано, ожидает тестирования
-3. ❓ **Новая проблема: физическое скольжение тела в Gazebo** — stall detection не решает стартовый дрифт. Нужно либо:
-   - Улучшать stall detection: детектить STALL не только по `delta_mag`, но и по отсутствию продвижения тела при работающих ногах (IMU-based standstill detection)
-   - Либо разбираться с физикой Gazebo (трение ног, контактные параметры, масса робота)
-4. 🔴 **Bridge-нода не получает данные** — QoS mismatch на входе (`RELIABLE + VOLATILE` vs реальный профиль elevation mapping)
-5. 🔴 **Costmap смещён** — из-за `static_transform_publisher map->odom = (0,0,0)` + elevation map в `odom` frame
+3. ✅ **Физическое скольжение тела в Gazebo** — починено: foot mu 0.6→1.0 в `gazebo.xacro`. Причина: недостаточный коэффициент трения лап о грунт (0.6 vs ground plane 50). Увеличение до 1.0 должно устранить стартовый дрифт.
+4. ✅ **Static transform map→odom removed** — удалена строка `static_transform_publisher 0 0 0 0 0 0 map odom` из `compose.yml:54`. Теперь AMCL управляет map→odom динамически.
+5. ✅ **QoS nav2 StaticLayer проверен** — `map_subscribe_transient_local: true` → `RELIABLE + TRANSIENT_LOCAL`, bridge публикует `/map` с тем же профилем. Несовместимости нет.
+6. 🔴 **Bridge-нода не получает данные** — QoS mismatch на входе (`RELIABLE + VOLATILE` vs реальный профиль elevation mapping)
+7. 🔴 **Costmap смещён** — из-за elevation map в `odom` frame (п. 4 решён, теперь AMCL корректирует map→odom)
 
 ## Lessons Learned
 
@@ -319,7 +319,10 @@ ros2 topic info /elevation_mapping_node/elevation_map -v
 ros2 topic info /elevation_costmap -v
 ```
 
-**Фикс:** Явно задать QoS профиль подписке bridge-ноды, совпадающий с профилем публикации elevation mapping node. Если elevation mapping публикует с `BEST_EFFORT`, подписка bridge должна быть `BEST_EFFORT`.
+**Фикс (27.05.2026):** Явно задан `QoSProfile(RELIABLE, VOLATILE, KEEP_LAST, depth=10)` подписке bridge-ноды. Ранее использовался целочисленный `10`, который интерпретируется как тот же профиль, но явное указание исключает неоднозначность DDS.
+
+- Добавлен watchdog-таймер (5 с) с предупреждением, если данные не приходят
+- Добавлено диагностическое логирование первого сообщения (frame, layers, shape)
 
 ### 8. Costmap смещается вверх/вправо из-за static map→odom = (0,0,0) (27.05.2026)
 
@@ -341,6 +344,21 @@ ros2 topic info /elevation_costmap -v
 2. Переключить elevation map в `map` frame (но elevation mapping рассчитан на `odom` frame)
 3. В bridge-ноде переиздавать costmap в `map` frame с подпиской на `/tf` для трансформации
 
+### 9. Стартовый дрифт вызван недостаточным трением лап (27.05.2026)
+
+Сравнение Gazebo GT (2.82, −4.09) и spawn (0, 0, 0.5) показало, что тело робота физически
+перемещается при старте. Причина — `mu1=mu2=0.6` для всех четырёх лап при `mu1=mu2=50` у
+ground plane. Коэффициент 0.6 — это как резина на льду: при циклировании ног в TROT лапы
+проскальзывают, и тело дрифтует.
+
+**Фикс:** `gazebo.xacro` — все 4 `*_foot_link`: `mu1=0.6→1.0, mu2=0.6→1.0`.
+
+### 10. Nav2 StaticLayer QoS совместим с bridge (27.05.2026)
+
+`StaticLayer` с `map_subscribe_transient_local: true` подписывается с профилем
+`RELIABLE + TRANSIENT_LOCAL`. Bridge публикует `/map` с аналогичным профилем.
+Mismatch нет — это не было причиной отсутствия costmap.
+
 ## Relevant Files
 
 | Файл                                                                                    | Роль                                                                           |
@@ -355,7 +373,8 @@ ros2 topic info /elevation_costmap -v
 | `src/quadropted_controller_cpp/src/odometry/odometry_state.cpp`                         | OdometryState::reset() — очищает stall state                                   |
 | `src/quadropted_controller_cpp/include/quadropted_controller_cpp/odometry_state.hpp`    | OdometryState (реэкспорт `odometry.hpp`)                                       |
 | `src/quadropted_controller_cpp/include/quadropted_controller_cpp/odometry/odometry.hpp` | OdometryState struct (is_stalled, stall_consecutive_count, stall_window, etc.) |
-| `compose.yml`                                                                           | Docker compose                                                                 |
+| `compose.yml`                                                                           | Docker compose (line 54 — static_transform_publisher map→odom удалён)          |
+| `src/go2_description/xacro/gazebo.xacro`                                                | URDF — foot friction mu1/mu2 изменены 0.6→1.0 (27.05.2026)                     |
 | `elevation_mapping_cupy/.../scripts/elevation_to_costmap_node.py`                       | Bridge-нода: GridMap → OccupancyGrid (QoS mismatch на входе)                   |
 | `elevation_mapping_cupy/.../launch/elevation_to_costmap.launch.py`                      | Launch bridge-ноды                                                             |
 | `elevation_mapping_cupy/config/go2_lidar3d.yaml`                                        | Elevation mapping config: `map_frame: "odom"` — причина frame shift            |
@@ -457,14 +476,14 @@ ros2 topic info /elevation_costmap -v
 
 **Цель:** Обеспечить доставку elevation costmap в Nav2 с корректным фреймом.
 
-| №                | Задача                                                                                                | Файл(ы)                                                                | Оценка       | Статус                   |
-| ---------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------ | ------------------------ |
-| 7.1              | Диагностика QoS профиля elevation mapping: `ros2 topic info /elevation_mapping_node/elevation_map -v` | —                                                                      | 0.25 дня     | 🆕 Выявлено, ожидает fix |
-| 7.2              | Исправить QoS подписки bridge-ноды на `BEST_EFFORT` (или под профиль publisher)                       | `elevation_mapping_cupy/.../scripts/elevation_to_costmap_node.py`      | 0.25 дня     | 🆕                       |
-| 7.3              | Убрать `static_transform_publisher map odom 0 0 0 0 0 0` из `el_command` или launch                   | Launch-файлы (el_command, gazebo_multi\*)                              | 0.25 дня     | 🆕                       |
-| 7.4              | Переключить elevation map в `map` frame (или bridge-нода републикует с трансформацией)                | `go2_lidar3d.yaml` или `elevation_to_costmap_node.py` + `/tf` listener | 0.5 дня      | 🆕                       |
-| 7.5              | Тестирование: `ros2 topic echo /elevation_costmap` — данные отображаются корректно                    | —                                                                      | 0.25 дня     | 🆕                       |
-| **Итого этап 7** |                                                                                                       |                                                                        | **~1.5 дня** |                          |
+| №                | Задача                                                                                                | Файл(ы)                                                                | Оценка       | Статус                                   |
+| ---------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------ | ---------------------------------------- |
+| 7.1              | Диагностика QoS профиля elevation mapping: `ros2 topic info /elevation_mapping_node/elevation_map -v` | —                                                                      | 0.25 дня     | ✅ Код совместим (оба RELIABLE+VOLATILE) |
+| 7.2              | Исправить QoS подписки bridge-ноды — явно указать RELIABLE+VOLATILE + watchdog                        | `elevation_mapping_cupy/.../scripts/elevation_to_costmap_node.py`      | 0.25 дня     | ✅ Выполнено (27.05.2026)                |
+| 7.3              | Убрать `static_transform_publisher map odom 0 0 0 0 0 0` из `el_command` или launch                   | `compose.yml:54`                                                       | 0.25 дня     | ✅ Выполнено (compose.yml:54)            |
+| 7.4              | Переключить elevation map в `map` frame (или bridge-нода републикует с трансформацией)                | `go2_lidar3d.yaml` или `elevation_to_costmap_node.py` + `/tf` listener | 0.5 дня      | 🆕 Ожидает                               |
+| 7.5              | Тестирование: `ros2 topic echo /elevation_costmap` — данные отображаются корректно                    | —                                                                      | 0.25 дня     | 🆕 Не выполнено                          |
+| **Итого этап 7** |                                                                                                       |                                                                        | **~1.5 дня** |                                          |
 
 **Критерий готовности:** В RViz elevation costmap отображается в правильном месте, совпадающем с положением робота на карте. Nav2 может планировать через costmap.
 
@@ -472,34 +491,32 @@ ros2 topic info /elevation_costmap -v
 
 ### Сводная таблица
 
-| Этап      | Описание                                | Оценка               | Статус                                         |
-| --------- | --------------------------------------- | -------------------- | ---------------------------------------------- |
-| 1         | Ground Truth Bridge (диагностика)       | ~5 дней              | ✅ Завершён (включая QoS fix + fallback)       |
-| 2         | Stall Detection (заморозка odometry)    | ~5 дней              | ✅ Реализован + скомпилирован, ⏳ тестирование |
-| 3         | Reset Odometry Service                  | ~2 дня               | ⏳ Ожидает                                     |
-| 4         | Automatic Ground Truth Correction       | ~3.5 дня             | ⏳ Ожидает                                     |
-| 5         | AMCL Tuning                             | ~2 дня               | ⏳ Ожидает                                     |
-| 6 🔴      | **Физическое скольжение тела в Gazebo** | **не оценено**       | 🆕 Новая проблема (26.05.2026)                 |
-| 7 🔴      | **Costmap bridge QoS + frame shift**    | **~1.5 дня**         | 🆕 Новая проблема (27.05.2026)                 |
-| **Итого** |                                         | **~19 рабочих дней** |                                                |
+| Этап      | Описание                                | Оценка               | Статус                                            |
+| --------- | --------------------------------------- | -------------------- | ------------------------------------------------- |
+| 1         | Ground Truth Bridge (диагностика)       | ~5 дней              | ✅ Завершён (включая QoS fix + fallback)          |
+| 2         | Stall Detection (заморозка odometry)    | ~5 дней              | ✅ Реализован + скомпилирован, ⏳ тестирование    |
+| 3         | Reset Odometry Service                  | ~2 дня               | ⏳ Ожидает                                        |
+| 4         | Automatic Ground Truth Correction       | ~3.5 дня             | ⏳ Ожидает                                        |
+| 5         | AMCL Tuning                             | ~2 дня               | ⏳ Ожидает                                        |
+| 6 ✅      | **Физическое скольжение тела в Gazebo** | **не оценено**       | ✅ Починено: foot mu 0.6→1.0 (27.05.2026)         |
+| 7 🟡      | **Costmap bridge QoS + frame shift**    | **~1.5 дня**         | 🟡 QoS починен (27.05.2026), frame shift — открыт |
+| **Итого** |                                         | **~19 рабочих дней** |                                                   |
 
-### Приоритетность
+### Приоритетность (27.05.2026)
 
 1. ✅ **Этап 1** (Ground Truth Bridge) — завершён
 2. ✅ **Этап 2** (Stall Detection) — реализован, ожидает тестирования в симуляции
-3. 🆕 **Этап 7** — **Fix costmap bridge QoS + frame shift** (критично для Nav2):
-   - Исправить QoS подписки bridge-ноды
-   - Убрать static map→odom или переключить elevation map в map frame
-4. 🆕 **Этап 6 (новый)** — Разобраться с физическим скольжением тела в Gazebo:
-   - Проверить параметры трения лап в SDF/model.sdf
-   - Уменьшить mu скольжения, увеличить mu сцепления
-   - Проверить начальную позу ног при spawn
-   - Возможно, потребуется tuning контроллера для мягкого старта
-5. **Этап 3** (Reset Service) — полезен для отладки
-6. **Этап 4** (Auto Correction) — полное автоматическое решение
-7. **Этап 5** (AMCL Tuning) — чинит только Nav2, не корень проблемы
+3. ✅ **Этап 6** (Физическое скольжение) — починено: foot mu 0.6→1.0 в gazebo.xacro
+4. ✅ **Static transform map→odom** — удалён из compose.yml:54, AMCL управляет динамически
+5. 🟡 **Этап 7** — **Costmap bridge** (частично):
+   - ✅ QoS подписки bridge-ноды — RELIABLE+VOLATILE явно
+   - ✅ Watchdog (5 с) + диагностика первого сообщения
+   - 🕐 Переключить elevation map в map frame или bridge трансформирует
+6. **Этап 3** (Reset Service) — полезен для отладки
+7. **Этап 4** (Auto Correction) — полное автоматическое решение
+8. **Этап 5** (AMCL Tuning) — чинит только Nav2, не корень проблемы
 
-**Ключевой вывод (27.05.2026):** Дрифт одометрии — лишь одна из проблем. Вторая — физическое скольжение тела робота в Gazebo. Третья — costmap bridge не получает данные из-за QoS mismatch. Четвёртая — costmap смещён из-за статического map→odom. Stall detection не решит проблему, если тело реально движется сквозь террейн. Даже при идеальной одометрии Nav2 не сможет планировать без работающего costmap bridge.
+**Ключевой вывод (27.05.2026):** Из 4 проблем решены 3 (скольжение, static map→odom, bridge QoS). 1 подтверждена как не-проблема (QoS StaticLayer). Остаётся frame shift (7.4) и интеграционный тест полного пайплайна.
 
 ### Интеграция с elevation mapping
 
