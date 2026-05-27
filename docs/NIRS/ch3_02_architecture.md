@@ -99,25 +99,18 @@ flowchart TB
 Рассмотрим поток данных от сенсора до исполнительных механизмов (Рисунок 3.2).
 
 ```mermaid
-flowchart LR
-    subgraph L[" "]
-        direction TB
-        A["Шаг 1: LiDAR<br/>захват 360×16, 10 Гц"]
-        B["Шаг 2: laser_to_cloud<br/>LaserScan → PointCloud2"]
-        C["Шаг 3: DDS<br/>Cyclone передача"]
-        D["Шаг 4: ground_segmenter<br/>GPF RANSAC"]
-        E["Шаг 5: elevation_mapping<br/>GPU карта высот"]
-        A --> B --> C --> D --> E
-    end
-    subgraph R[" "]
-        direction TB
-        F["Шаг 6: Плагины<br/>slope + roughness<br/>+ traversability"]
-        G["Шаг 7: costmap_bridge<br/>GridMap → OccupancyGrid"]
-        H["Шаг 8: Nav2<br/>SmacPlanner"]
-        I["Шаг 9: gait_adaptor<br/>адаптация походки"]
-        F --> G --> H --> I
-    end
-    E --> F
+flowchart TB
+    A["Шаг 1: LiDAR<br/>захват 360×16, 10 Гц"]
+    B["Шаг 2: laser_to_cloud<br/>LaserScan → PointCloud2"]
+    C["Шаг 3: DDS<br/>Cyclone передача"]
+    D["Шаг 4: ground_segmenter<br/>GPF RANSAC"]
+    E["Шаг 5: elevation_mapping<br/>GPU карта высот"]
+    F["Шаг 6: Плагины<br/>slope + roughness<br/>+ traversability"]
+    G["Шаг 7: costmap_bridge<br/>GridMap → OccupancyGrid"]
+    H["Шаг 8: Nav2<br/>SmacPlanner"]
+    I["Шаг 9: gait_adaptor<br/>адаптация походки"]
+
+    A --> B --> C --> D --> E --> F --> G --> H --> I
 ```
 
 Рисунок 3.2 — Поток данных от сенсора до исполнительных механизмов
