@@ -5844,6 +5844,918 @@
 					"name": "Хост (ПК) 192.168.1.100"
 				}
 			]
+		},
+		{
+			"_type": "FCFlowchart",
+			"_id": "AAAAAAGeaSBzmSbGnhs=",
+			"_parent": {
+				"$ref": "AAAAAAFF+h6SjaM2Hec="
+			},
+			"name": "Поток данных в системе",
+			"ownedElements": [
+				{
+					"_type": "FCFlowchartDiagram",
+					"_id": "AAAAAAGeaSBzmSbHg1I=",
+					"_parent": {
+						"$ref": "AAAAAAGeaSBzmSbGnhs="
+					},
+					"name": "Поток данных в системе",
+					"ownedViews": [
+						{
+							"_type": "FCProcessView",
+							"_id": "AAAAAAGeaSCXPCbPEsQ=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSCXPCbNs4o="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGeaSCXPSbQncA=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSCXPCbPEsQ="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 42,
+									"top": 34,
+									"width": 297.72412109375,
+									"height": 13,
+									"text": "Шаг 1: LiDAR захват 360×16, 10 Гц",
+									"wordWrap": true
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 32,
+							"top": 24,
+							"width": 317.72412109375,
+							"height": 46,
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSCXPSbQncA="
+							}
+						},
+						{
+							"_type": "FCProcessView",
+							"_id": "AAAAAAGeaSCY4CbX5SU=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSCY4CbVrtI="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGeaSCY4CbYvCw=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSCY4CbX5SU="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 42,
+									"top": 112,
+									"width": 297.72412109375,
+									"height": 13,
+									"text": "Шаг 2: laser_to_cloud LaserScan → PointCloud2",
+									"wordWrap": true
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 32,
+							"top": 102,
+							"width": 317.72412109375,
+							"height": 46,
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSCY4CbYvCw="
+							}
+						},
+						{
+							"_type": "FCProcessView",
+							"_id": "AAAAAAGeaSCdoCbfKFQ=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSCdoCbdiTI="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGeaSCdoCbgX8A=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSCdoCbfKFQ="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 42,
+									"top": 190,
+									"width": 297.72412109375,
+									"height": 13,
+									"text": "Шаг 3: DDS Cyclone передача",
+									"wordWrap": true
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 32,
+							"top": 180,
+							"width": 317.72412109375,
+							"height": 46,
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSCdoCbgX8A="
+							}
+						},
+						{
+							"_type": "FCProcessView",
+							"_id": "AAAAAAGeaSCv5ibnxgI=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSCv5iblfnE="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGeaSCv5iboZMc=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSCv5ibnxgI="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 42,
+									"top": 268,
+									"width": 297.72412109375,
+									"height": 13,
+									"text": "Шаг 4: ground_segmenter GPF RANSAC",
+									"wordWrap": true
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 32,
+							"top": 258,
+							"width": 317.72412109375,
+							"height": 46,
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSCv5iboZMc="
+							}
+						},
+						{
+							"_type": "FCProcessView",
+							"_id": "AAAAAAGeaSC0Dibv3Ek=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSC0Dibt7EA="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGeaSC0Dibwz08=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSC0Dibv3Ek="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 42,
+									"top": 347,
+									"width": 297.72412109375,
+									"height": 13,
+									"text": "Шаг 5: elevation_mapping GPU карта высот",
+									"wordWrap": true
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 32,
+							"top": 337,
+							"width": 317.72412109375,
+							"height": 46,
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSC0Dibwz08="
+							}
+						},
+						{
+							"_type": "FCProcessView",
+							"_id": "AAAAAAGeaSC10Cb36d0=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSC10Cb1d/U="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGeaSC10Cb4uAI=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSC10Cb36d0="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 434,
+									"top": 34,
+									"width": 297.72412109375,
+									"height": 13,
+									"text": "Шаг 6: Плагины slope + roughness + traversability",
+									"wordWrap": true
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 424,
+							"top": 24,
+							"width": 317.72412109375,
+							"height": 46,
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSC10Cb4uAI="
+							}
+						},
+						{
+							"_type": "FCProcessView",
+							"_id": "AAAAAAGeaSC3tib/Zk0=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSC3tib9PQU="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGeaSC3ticAsjo=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSC3tib/Zk0="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 434,
+									"top": 138,
+									"width": 297.72412109375,
+									"height": 26,
+									"text": "Шаг 7: costmap_bridge GridMap → OccupancyGrid",
+									"wordWrap": true
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 424,
+							"top": 128,
+							"width": 317.72412109375,
+							"height": 46,
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSC3ticAsjo="
+							}
+						},
+						{
+							"_type": "FCProcessView",
+							"_id": "AAAAAAGeaSC52icHnJ8=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSC52icFli8="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGeaSC52icIUUM=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSC52icHnJ8="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 434,
+									"top": 242,
+									"width": 297.72412109375,
+									"height": 13,
+									"text": "Шаг 8: Nav2 SmacPlanner",
+									"wordWrap": true
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 424,
+							"top": 232,
+							"width": 317.72412109375,
+							"height": 46,
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSC52icIUUM="
+							}
+						},
+						{
+							"_type": "FCProcessView",
+							"_id": "AAAAAAGeaSC7nCcP6RA=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSC7nCcNCyY="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGeaSC7nCcQhiE=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSC7nCcP6RA="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 434,
+									"top": 346,
+									"width": 297.72412109375,
+									"height": 13,
+									"text": "Шаг 9: gait_adaptor адаптация походки",
+									"wordWrap": true
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 424,
+							"top": 336,
+							"width": 317.72412109375,
+							"height": 46,
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSC7nCcQhiE="
+							}
+						},
+						{
+							"_type": "FCFlowView",
+							"_id": "AAAAAAGeaSNtkCdDuo4=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSNtkCdB7y4="
+							},
+							"subViews": [
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGeaSNtkCdEsBs=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSNtkCdDuo4="
+									},
+									"model": {
+										"$ref": "AAAAAAGeaSNtkCdB7y4="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 204,
+									"top": 79,
+									"height": 13,
+									"alpha": 1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGeaSNtkCdDuo4="
+									},
+									"edgePosition": 1
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"head": {
+								"$ref": "AAAAAAGeaSCY4CbX5SU="
+							},
+							"tail": {
+								"$ref": "AAAAAAGeaSCXPCbPEsQ="
+							},
+							"lineStyle": 2,
+							"points": "190:70;190:102",
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSNtkCdEsBs="
+							}
+						},
+						{
+							"_type": "FCFlowView",
+							"_id": "AAAAAAGeaSNwECdMkp0=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSNwECdKnn0="
+							},
+							"subViews": [
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGeaSNwECdNiQI=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSNwECdMkp0="
+									},
+									"model": {
+										"$ref": "AAAAAAGeaSNwECdKnn0="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 204,
+									"top": 157,
+									"height": 13,
+									"alpha": 1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGeaSNwECdMkp0="
+									},
+									"edgePosition": 1
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"head": {
+								"$ref": "AAAAAAGeaSCdoCbfKFQ="
+							},
+							"tail": {
+								"$ref": "AAAAAAGeaSCY4CbX5SU="
+							},
+							"lineStyle": 2,
+							"points": "190:148;190:180",
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSNwECdNiQI="
+							}
+						},
+						{
+							"_type": "FCFlowView",
+							"_id": "AAAAAAGeaSNyHCdVgtE=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSNyHCdTViA="
+							},
+							"subViews": [
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGeaSNyHCdWoHs=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSNyHCdVgtE="
+									},
+									"model": {
+										"$ref": "AAAAAAGeaSNyHCdTViA="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 204,
+									"top": 235,
+									"height": 13,
+									"alpha": 1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGeaSNyHCdVgtE="
+									},
+									"edgePosition": 1
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"head": {
+								"$ref": "AAAAAAGeaSCv5ibnxgI="
+							},
+							"tail": {
+								"$ref": "AAAAAAGeaSCdoCbfKFQ="
+							},
+							"lineStyle": 2,
+							"points": "190:226;190:258",
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSNyHCdWoHs="
+							}
+						},
+						{
+							"_type": "FCFlowView",
+							"_id": "AAAAAAGeaSN0GydeqNA=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSN0GydcMis="
+							},
+							"subViews": [
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGeaSN0GydfD+U=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSN0GydeqNA="
+									},
+									"model": {
+										"$ref": "AAAAAAGeaSN0GydcMis="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 204,
+									"top": 313,
+									"height": 13,
+									"alpha": 1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGeaSN0GydeqNA="
+									},
+									"edgePosition": 1
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"head": {
+								"$ref": "AAAAAAGeaSC0Dibv3Ek="
+							},
+							"tail": {
+								"$ref": "AAAAAAGeaSCv5ibnxgI="
+							},
+							"lineStyle": 2,
+							"points": "190:304;190:337",
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSN0GydfD+U="
+							}
+						},
+						{
+							"_type": "FCFlowView",
+							"_id": "AAAAAAGeaSN4OidnM6Q=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSN4Oidlh+c="
+							},
+							"subViews": [
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGeaSN4OidoyKs=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSN4OidnM6Q="
+									},
+									"model": {
+										"$ref": "AAAAAAGeaSN4Oidlh+c="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 369,
+									"top": 197,
+									"height": 13,
+									"alpha": 1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGeaSN4OidnM6Q="
+									},
+									"edgePosition": 1
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"head": {
+								"$ref": "AAAAAAGeaSC10Cb36d0="
+							},
+							"tail": {
+								"$ref": "AAAAAAGeaSC0Dibv3Ek="
+							},
+							"lineStyle": 2,
+							"points": "350:360;384:360;384:48;424:48",
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSN4OidoyKs="
+							}
+						},
+						{
+							"_type": "FCFlowView",
+							"_id": "AAAAAAGeaSN67Cdw3tE=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSN67CduyxU="
+							},
+							"subViews": [
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGeaSN67CdxZl8=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSN67Cdw3tE="
+									},
+									"model": {
+										"$ref": "AAAAAAGeaSN67CduyxU="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 596,
+									"top": 92,
+									"height": 13,
+									"alpha": 1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGeaSN67Cdw3tE="
+									},
+									"edgePosition": 1
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"head": {
+								"$ref": "AAAAAAGeaSC3tib/Zk0="
+							},
+							"tail": {
+								"$ref": "AAAAAAGeaSC10Cb36d0="
+							},
+							"lineStyle": 2,
+							"points": "582:70;582:128",
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSN67CdxZl8="
+							}
+						},
+						{
+							"_type": "FCFlowView",
+							"_id": "AAAAAAGeaSN+hCd5peY=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSN+hCd39Hw="
+							},
+							"subViews": [
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGeaSN+hCd6k7s=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSN+hCd5peY="
+									},
+									"model": {
+										"$ref": "AAAAAAGeaSN+hCd39Hw="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 596,
+									"top": 196,
+									"height": 13,
+									"alpha": 1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGeaSN+hCd5peY="
+									},
+									"edgePosition": 1
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"head": {
+								"$ref": "AAAAAAGeaSC52icHnJ8="
+							},
+							"tail": {
+								"$ref": "AAAAAAGeaSC3tib/Zk0="
+							},
+							"lineStyle": 2,
+							"points": "582:174;582:232",
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSN+hCd6k7s="
+							}
+						},
+						{
+							"_type": "FCFlowView",
+							"_id": "AAAAAAGeaSOA5SeCToU=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSBzmSbHg1I="
+							},
+							"model": {
+								"$ref": "AAAAAAGeaSOA5SeAUe8="
+							},
+							"subViews": [
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGeaSOA5SeDjNE=",
+									"_parent": {
+										"$ref": "AAAAAAGeaSOA5SeCToU="
+									},
+									"model": {
+										"$ref": "AAAAAAGeaSOA5SeAUe8="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 596,
+									"top": 300,
+									"height": 13,
+									"alpha": 1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGeaSOA5SeCToU="
+									},
+									"edgePosition": 1
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"head": {
+								"$ref": "AAAAAAGeaSC7nCcP6RA="
+							},
+							"tail": {
+								"$ref": "AAAAAAGeaSC52icHnJ8="
+							},
+							"lineStyle": 2,
+							"points": "582:278;582:336",
+							"nameLabel": {
+								"$ref": "AAAAAAGeaSOA5SeDjNE="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGeaSCXPCbNs4o=",
+					"_parent": {
+						"$ref": "AAAAAAGeaSBzmSbGnhs="
+					},
+					"name": "Шаг 1: LiDAR захват 360×16, 10 Гц",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGeaSNtkCdB7y4=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSCXPCbNs4o="
+							},
+							"source": {
+								"$ref": "AAAAAAGeaSCXPCbNs4o="
+							},
+							"target": {
+								"$ref": "AAAAAAGeaSCY4CbVrtI="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGeaSCY4CbVrtI=",
+					"_parent": {
+						"$ref": "AAAAAAGeaSBzmSbGnhs="
+					},
+					"name": "Шаг 2: laser_to_cloud LaserScan → PointCloud2",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGeaSNwECdKnn0=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSCY4CbVrtI="
+							},
+							"source": {
+								"$ref": "AAAAAAGeaSCY4CbVrtI="
+							},
+							"target": {
+								"$ref": "AAAAAAGeaSCdoCbdiTI="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGeaSCdoCbdiTI=",
+					"_parent": {
+						"$ref": "AAAAAAGeaSBzmSbGnhs="
+					},
+					"name": "Шаг 3: DDS Cyclone передача",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGeaSNyHCdTViA=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSCdoCbdiTI="
+							},
+							"source": {
+								"$ref": "AAAAAAGeaSCdoCbdiTI="
+							},
+							"target": {
+								"$ref": "AAAAAAGeaSCv5iblfnE="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGeaSCv5iblfnE=",
+					"_parent": {
+						"$ref": "AAAAAAGeaSBzmSbGnhs="
+					},
+					"name": "Шаг 4: ground_segmenter GPF RANSAC",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGeaSN0GydcMis=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSCv5iblfnE="
+							},
+							"source": {
+								"$ref": "AAAAAAGeaSCv5iblfnE="
+							},
+							"target": {
+								"$ref": "AAAAAAGeaSC0Dibt7EA="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGeaSC0Dibt7EA=",
+					"_parent": {
+						"$ref": "AAAAAAGeaSBzmSbGnhs="
+					},
+					"name": "Шаг 5: elevation_mapping GPU карта высот",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGeaSN4Oidlh+c=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSC0Dibt7EA="
+							},
+							"source": {
+								"$ref": "AAAAAAGeaSC0Dibt7EA="
+							},
+							"target": {
+								"$ref": "AAAAAAGeaSC10Cb1d/U="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGeaSC10Cb1d/U=",
+					"_parent": {
+						"$ref": "AAAAAAGeaSBzmSbGnhs="
+					},
+					"name": "Шаг 6: Плагины slope + roughness + traversability",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGeaSN67CduyxU=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSC10Cb1d/U="
+							},
+							"source": {
+								"$ref": "AAAAAAGeaSC10Cb1d/U="
+							},
+							"target": {
+								"$ref": "AAAAAAGeaSC3tib9PQU="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGeaSC3tib9PQU=",
+					"_parent": {
+						"$ref": "AAAAAAGeaSBzmSbGnhs="
+					},
+					"name": "Шаг 7: costmap_bridge GridMap → OccupancyGrid",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGeaSN+hCd39Hw=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSC3tib9PQU="
+							},
+							"source": {
+								"$ref": "AAAAAAGeaSC3tib9PQU="
+							},
+							"target": {
+								"$ref": "AAAAAAGeaSC52icFli8="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGeaSC52icFli8=",
+					"_parent": {
+						"$ref": "AAAAAAGeaSBzmSbGnhs="
+					},
+					"name": "Шаг 8: Nav2 SmacPlanner",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGeaSOA5SeAUe8=",
+							"_parent": {
+								"$ref": "AAAAAAGeaSC52icFli8="
+							},
+							"source": {
+								"$ref": "AAAAAAGeaSC52icFli8="
+							},
+							"target": {
+								"$ref": "AAAAAAGeaSC7nCcNCyY="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGeaSC7nCcNCyY=",
+					"_parent": {
+						"$ref": "AAAAAAGeaSBzmSbGnhs="
+					},
+					"name": "Шаг 9: gait_adaptor адаптация походки"
+				}
+			]
 		}
 	]
 }
