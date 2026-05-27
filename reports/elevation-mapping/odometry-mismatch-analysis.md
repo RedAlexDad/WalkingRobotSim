@@ -359,6 +359,60 @@ ground plane. Коэффициент 0.6 — это как резина на л�
 `RELIABLE + TRANSIENT_LOCAL`. Bridge публикует `/map` с аналогичным профилем.
 Mismatch нет — это не было причиной отсутствия costmap.
 
+### 11. Cost layer inverted: steep slopes shown as traversable (27.05.2026)
+
+**Проблема:** В RViz elevation costmap показывает крутые склоны как синие (free), хотя это непроходимые препятствия. Nav2 планирует маршруты через них, а в симуляции робот застревает.
+
+**Корень:** Слой `cost`, публикуемый elevation mapping, вычисляется как **traversability** cost (выше = проходимее):
+
+```python
+cost = 1.0 - (w_slope * slope_norm + w_roughness * roughness_norm + w_elevation * elev_norm)
+```
+
+- cost = 1.0 → идеально ровно → **высокая проходимость**
+- cost = 0.0 → непреодолимо → **препятствие**
+
+Bridge-нода `elevation_to_costmap_node.py` интерпретирует cost как **obstacle cost** (выше = препятствие):
+
+```python
+occ[valid & (cost >= self._occ_thresh)] = 100   # cost ≥ 0.5 → occupied
+occ[valid & (cost <= self._free_thresh)] = 0     # cost ≤ 0.3 → free
+```
+
+В результате:
+
+| Terrain                   | cost value | Bridge treats as     | Expected |
+| ------------------------- | ---------- | -------------------- | -------- |
+| Flat ground               | ~1.0       | occupied (≥0.5, red) | free     |
+| Gentle slope (~0.35 rad)  | ~0.82      | occupied (≥0.5, red) | free     |
+| Max slope (0.8 rad)       | ~0.6       | occupied (≥0.5, red) | obstacle |
+| Steep + rough + elevation | ~0.2       | free (≤0.3, blue)    | obstacle |
+
+Проходимые участки (flat, gentle) помечаются как occupied — в них робот не планирует путь. А непроходимые (steep) помечаются как free — Nav2 пытается идти через них и застревает.
+
+**Фикс (27.05.2026):** Добавлен параметр `invert_cost` (дефолт `true`) в bridge-ноду. При `invert_cost=true` логика переворачивается:
+
+```python
+lo = 1.0 - occ_thresh   # 0.5
+hi = 1.0 - free_thresh  # 0.7
+occ[valid & (cost >= hi)] = 0     # cost ≥ 0.7 → free (ровная земля)
+occ[valid & (cost <= lo)] = 100   # cost ≤ 0.5 → occupied (склоны/препятствия)
+```
+
+Теперь:
+
+- Flat ground: cost ≈ 1.0 → ≥ 0.7 → FREE ✅
+- Gentle slope: cost ≈ 0.82 → ≥ 0.7 → FREE ✅
+- Steep slope: cost ≈ 0.6 → < 0.7, > 0.5 → gradient (yellow) ⚠️
+- Very steep + rough: cost ≈ 0.0-0.3 → ≤ 0.5 → OCCUPIED ✅
+
+**Файлы:**
+
+- `elevation_mapping_cupy/.../scripts/elevation_to_costmap_node.py` — параметр `invert_cost` + инвертированная логика
+- `elevation_mapping_cupy/.../config/core/plugin_config.yaml` — параметры `cost_function` (max_slope=0.8, max_roughness=0.1, weights 0.4/0.4/0.2)
+
+**Рекомендация:** После инверсии вероятно потребуется дополнительно уменьшить `max_slope` (с 0.8 до ~0.35) и `max_roughness` (с 0.1 до ~0.05), чтобы steep slopes быстрее переходили в occupied, а gentle slopes оставались free.
+
 ## Relevant Files
 
 | Файл                                                                                    | Роль                                                                           |
@@ -476,14 +530,15 @@ Mismatch нет — это не было причиной отсутствия c
 
 **Цель:** Обеспечить доставку elevation costmap в Nav2 с корректным фреймом.
 
-| №                | Задача                                                                                                | Файл(ы)                                                                | Оценка       | Статус                                   |
-| ---------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------ | ---------------------------------------- |
-| 7.1              | Диагностика QoS профиля elevation mapping: `ros2 topic info /elevation_mapping_node/elevation_map -v` | —                                                                      | 0.25 дня     | ✅ Код совместим (оба RELIABLE+VOLATILE) |
-| 7.2              | Исправить QoS подписки bridge-ноды — явно указать RELIABLE+VOLATILE + watchdog                        | `elevation_mapping_cupy/.../scripts/elevation_to_costmap_node.py`      | 0.25 дня     | ✅ Выполнено (27.05.2026)                |
-| 7.3              | Убрать `static_transform_publisher map odom 0 0 0 0 0 0` из `el_command` или launch                   | `compose.yml:54`                                                       | 0.25 дня     | ✅ Выполнено (compose.yml:54)            |
-| 7.4              | Переключить elevation map в `map` frame (или bridge-нода републикует с трансформацией)                | `go2_lidar3d.yaml` или `elevation_to_costmap_node.py` + `/tf` listener | 0.5 дня      | 🆕 Ожидает                               |
-| 7.5              | Тестирование: `ros2 topic echo /elevation_costmap` — данные отображаются корректно                    | —                                                                      | 0.25 дня     | 🆕 Не выполнено                          |
-| **Итого этап 7** |                                                                                                       |                                                                        | **~1.5 дня** |                                          |
+| №                | Задача                                                                                                | Файл(ы)                                                                | Оценка     | Статус                                   |
+| ---------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------- | ---------------------------------------- |
+| 7.1              | Диагностика QoS профиля elevation mapping: `ros2 topic info /elevation_mapping_node/elevation_map -v` | —                                                                      | 0.25 дня   | ✅ Код совместим (оба RELIABLE+VOLATILE) |
+| 7.2              | Исправить QoS подписки bridge-ноды — явно указать RELIABLE+VOLATILE + watchdog                        | `elevation_mapping_cupy/.../scripts/elevation_to_costmap_node.py`      | 0.25 дня   | ✅ Выполнено (27.05.2026)                |
+| 7.3              | Убрать `static_transform_publisher map odom 0 0 0 0 0 0` из `el_command` или launch                   | `compose.yml:54`                                                       | 0.25 дня   | ✅ Выполнено (compose.yml:54)            |
+| 7.4              | Переключить elevation map в `map` frame (или bridge-нода републикует с трансформацией)                | `go2_lidar3d.yaml` или `elevation_to_costmap_node.py` + `/tf` listener | 0.5 дня    | 🆕 Ожидает                               |
+| 7.5              | Тестирование: `ros2 topic echo /elevation_costmap` — данные отображаются корректно                    | —                                                                      | 0.25 дня   | 🆕 Не выполнено                          |
+| 7.6              | Fix invert_cost: steep slopes отображались как free, flat ground как occupied                         | `elevation_to_costmap_node.py`                                         | 0.5 дня    | ✅ Выполнено (27.05.2026)                |
+| **Итого этап 7** |                                                                                                       |                                                                        | **~2 дня** |                                          |
 
 **Критерий готовности:** В RViz elevation costmap отображается в правильном месте, совпадающем с положением робота на карте. Nav2 может планировать через costmap.
 
@@ -499,8 +554,9 @@ Mismatch нет — это не было причиной отсутствия c
 | 4         | Automatic Ground Truth Correction       | ~3.5 дня             | ⏳ Ожидает                                        |
 | 5         | AMCL Tuning                             | ~2 дня               | ⏳ Ожидает                                        |
 | 6 ✅      | **Физическое скольжение тела в Gazebo** | **не оценено**       | ✅ Починено: foot mu 0.6→1.0 (27.05.2026)         |
-| 7 🟡      | **Costmap bridge QoS + frame shift**    | **~1.5 дня**         | 🟡 QoS починен (27.05.2026), frame shift — открыт |
-| **Итого** |                                         | **~19 рабочих дней** |                                                   |
+| 7 🟡      | **Costmap bridge QoS + frame shift**    | **~2 дня**           | 🟡 QoS починен (27.05.2026), frame shift — открыт |
+| 8 ✅      | **Elevation costmap fix (invert_cost)** | **~1 день**          | ✅ Добавлен invert_cost (27.05.2026)              |
+| **Итого** |                                         | **~20 рабочих дней** |                                                   |
 
 ### Приоритетность (27.05.2026)
 
@@ -508,15 +564,19 @@ Mismatch нет — это не было причиной отсутствия c
 2. ✅ **Этап 2** (Stall Detection) — реализован, ожидает тестирования в симуляции
 3. ✅ **Этап 6** (Физическое скольжение) — починено: foot mu 0.6→1.0 в gazebo.xacro
 4. ✅ **Static transform map→odom** — удалён из compose.yml:54, AMCL управляет динамически
-5. 🟡 **Этап 7** — **Costmap bridge** (частично):
+5. ✅ **Этап 8** — **Elevation costmap fix (invert_cost)**
+   - ✅ Инверсия cost: cost ≥ 0.7 → FREE, cost ≤ 0.5 → OCCUPIED
+   - ✅ Параметр `invert_cost=true` (дефолт) в bridge-ноде
+   - 🎯 Нужен тюнинг: уменьшить `max_slope`/`max_roughness` для более агрессивного детекта
+6. 🟡 **Этап 7** — **Costmap bridge** (частично):
    - ✅ QoS подписки bridge-ноды — RELIABLE+VOLATILE явно
    - ✅ Watchdog (5 с) + диагностика первого сообщения
    - 🕐 Переключить elevation map в map frame или bridge трансформирует
-6. **Этап 3** (Reset Service) — полезен для отладки
-7. **Этап 4** (Auto Correction) — полное автоматическое решение
-8. **Этап 5** (AMCL Tuning) — чинит только Nav2, не корень проблемы
+7. **Этап 3** (Reset Service) — полезен для отладки
+8. **Этап 4** (Auto Correction) — полное автоматическое решение
+9. **Этап 5** (AMCL Tuning) — чинит только Nav2, не корень проблемы
 
-**Ключевой вывод (27.05.2026):** Из 4 проблем решены 3 (скольжение, static map→odom, bridge QoS). 1 подтверждена как не-проблема (QoS StaticLayer). Остаётся frame shift (7.4) и интеграционный тест полного пайплайна.
+**Ключевой вывод (27.05.2026):** Из 5 проблем решены 4 (скольжение, static map→odom, bridge QoS, invert_cost). Остаётся frame shift (7.4), тюнинг параметров cost function и интеграционный тест полного пайплайна.
 
 ### Интеграция с elevation mapping
 

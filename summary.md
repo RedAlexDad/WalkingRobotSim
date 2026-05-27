@@ -38,9 +38,34 @@ foot coefficient — rubber-on-concrete equivalent is ~1.0.
 - Added 5 s watchdog timer: warns if no elevation map data received
 - Added first-message diagnostic log (frame, layers, shape)
 
+### Phase F — Cost layer inverted (steep slopes blue = free)
+
+**Problem:** Elevation costmap showed steep slopes as traversable (blue) because the cost
+layer from `elevation_mapping` is a _traversability_ cost (higher = more traversable), but
+the bridge treated it as _obstacle_ cost (higher = obstacle).
+
+Flat ground (cost ≈ 1.0) → occupied (red). Steep slope (cost ≈ 0.2) → free (blue).
+
+**Fix:** Added `invert_cost=True` parameter (default `true`) to bridge node. Logic flipped:
+
+```
+cost ≥ 0.7 → FREE   (flat ground, gentle slopes)
+cost ≤ 0.5 → OCCUPIED (steep slopes, rough terrain)
+```
+
+**File:** `elevation_mapping_cupy/.../scripts/elevation_to_costmap_node.py`
+
+- New ROS2 parameter `invert_cost` (default `true`)
+- When enabled, thresholds are mirrored via `1.0 - threshold`
+- Flat ground (cost ~1.0) now correctly maps to FREE
+- Steep slopes + roughness (cost ≤ 0.5) map to OCCUPIED
+
 ## Status
 
-All known issues fixed. Ready for integration test:
+All known issues fixed. Ready for integration test. Remaining tuning:
+
+- `max_slope` (0.8 → ~0.35) and `max_roughness` (0.1 → ~0.05) may need reduction for more aggressive obstacle detection
+- Frame shift fix (7.4) still open — elevation map may need republishing in `map` frame
 
 ```bash
 docker compose up -d simulator    # start sim

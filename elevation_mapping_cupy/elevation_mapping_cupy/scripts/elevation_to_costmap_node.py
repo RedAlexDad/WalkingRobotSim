@@ -19,12 +19,14 @@ class ElevationToCostmapNode(Node):
         self.declare_parameter("cost_layer_name", "cost")
         self.declare_parameter("free_threshold", 0.3)
         self.declare_parameter("occupied_threshold", 0.5)
+        self.declare_parameter("invert_cost", True)
 
         sub_topic = self.get_parameter("elevation_map_topic").value
         pub_topic = self.get_parameter("costmap_topic").value
         self._layer_name = self.get_parameter("cost_layer_name").value
         self._free_thresh = float(self.get_parameter("free_threshold").value)
         self._occ_thresh = float(self.get_parameter("occupied_threshold").value)
+        self._invert = bool(self.get_parameter("invert_cost").value)
 
         self._msg_count = 0
         self._warn_timer = self.create_timer(5.0, self._warn_if_no_data)
@@ -44,9 +46,10 @@ class ElevationToCostmapNode(Node):
         )
         self._pub = self.create_publisher(OccupancyGrid, pub_topic, latched_qos)
 
+        mode = "inverted" if self._invert else "direct"
         self.get_logger().info(
             f"Bridge: {sub_topic}:{self._layer_name} -> {pub_topic} "
-            f"(free<={self._free_thresh}, occ>={self._occ_thresh})"
+            f"(free<={self._free_thresh}, occ>={self._occ_thresh}, mode={mode})"
         )
 
     def _warn_if_no_data(self) -> None:
@@ -75,17 +78,30 @@ class ElevationToCostmapNode(Node):
         occ = np.full((rows, cols), -1, dtype=np.int8)
         valid = ~np.isnan(cost)
 
-        occ[valid & (cost <= self._free_thresh)] = 0
-        occ[valid & (cost >= self._occ_thresh)] = 100
-
-        interp = valid & (cost > self._free_thresh) & (cost < self._occ_thresh)
-        if interp.any():
-            occ[interp] = (
-                (cost[interp] - self._free_thresh)
-                / (self._occ_thresh - self._free_thresh)
-                * 100
-            ).astype(np.int8)
-            occ[interp] = np.clip(occ[interp], 1, 99)
+        if self._invert:
+            lo = 1.0 - self._occ_thresh
+            hi = 1.0 - self._free_thresh
+            occ[valid & (cost >= hi)] = 0
+            occ[valid & (cost <= lo)] = 100
+            interp = valid & (cost > lo) & (cost < hi)
+            if interp.any():
+                occ[interp] = (
+                    (1.0 - cost[interp] - self._free_thresh)
+                    / (self._occ_thresh - self._free_thresh)
+                    * 100
+                ).astype(np.int8)
+                occ[interp] = np.clip(occ[interp], 1, 99)
+        else:
+            occ[valid & (cost <= self._free_thresh)] = 0
+            occ[valid & (cost >= self._occ_thresh)] = 100
+            interp = valid & (cost > self._free_thresh) & (cost < self._occ_thresh)
+            if interp.any():
+                occ[interp] = (
+                    (cost[interp] - self._free_thresh)
+                    / (self._occ_thresh - self._free_thresh)
+                    * 100
+                ).astype(np.int8)
+                occ[interp] = np.clip(occ[interp], 1, 99)
 
         out = OccupancyGrid()
         out.header = msg.header
