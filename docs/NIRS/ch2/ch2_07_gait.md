@@ -33,25 +33,25 @@ $$
 
 $$
 \begin{aligned}
-\text{Step height:} &\quad h_{\mathrm{step}} = 
+\text{Step height:} &\quad h_{\mathrm{step}} =
 \begin{cases}
 0{,}04\ \mathrm{м}, & \mathrm{terrainType} > 0{,}7 \\
 0{,}08\ \mathrm{м}, & 0{,}3 < \mathrm{terrainType} \leq 0{,}7 \\
 0{,}15\ \mathrm{м}, & \mathrm{terrainType} \leq 0{,}3
 \end{cases} \\
-\text{Frequency:} &\quad f_{\mathrm{gait}} = 
+\text{Frequency:} &\quad f_{\mathrm{gait}} =
 \begin{cases}
 2{,}0\ \mathrm{Гц}, & \mathrm{terrainType} > 0{,}7 \\
 1{,}5\ \mathrm{Гц}, & 0{,}3 < \mathrm{terrainType} \leq 0{,}7 \\
 1{,}0\ \mathrm{Гц}, & \mathrm{terrainType} \leq 0{,}3
 \end{cases} \\
-\text{Max speed:} &\quad v_{\max} = 
+\text{Max speed:} &\quad v_{\max} =
 \begin{cases}
 0{,}5\ \mathrm{м/с}, & \mathrm{terrainType} > 0{,}7 \\
 0{,}3\ \mathrm{м/с}, & 0{,}3 < \mathrm{terrainType} \leq 0{,}7 \\
 0{,}15\ \mathrm{м/с}, & \mathrm{terrainType} \leq 0{,}3
 \end{cases} \\
-\text{Body height:} &\quad h_{\mathrm{body}} = 
+\text{Body height:} &\quad h_{\mathrm{body}} =
 \begin{cases}
 0{,}25\ \mathrm{м}, & \mathrm{terrainType} > 0{,}7 \\
 0{,}20\ \mathrm{м}, & 0{,}3 < \mathrm{terrainType} \leq 0{,}7 \\
