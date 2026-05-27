@@ -115,6 +115,8 @@
 
 12. Wang C. et al. Traversability Analysis for Legged Robots in Rough Terrain // IEEE International Conference on Robotics and Automation (ICRA). — 2023.
 
+13. Macenski S. et al. The Marathon 2: A Navigation System // IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). — 2020.
+
 ---
 
 _Примечание: Главы 1 и 2 являются введением и обзором литературы и разрабатываются отдельно._

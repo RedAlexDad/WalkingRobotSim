@@ -12,7 +12,9 @@
 
 2) контейнер Elevation — запускает elevation_mapping_node (CuPy/CUDA), ground segmenter, traversability estimator, gait adaptor и RViz.
 
-Компоненты внутри elevation-контейнера образуют конвейер обработки: LiDAR PointCloud → ground_seg → ground_cloud → elevation_mapping, ground_seg → obstacle_cloud → traversability, traversability → gait_adaptor → robot_controller.
+Компоненты внутри elevation-контейнера образуют конвейер обработки: LiDAR PointCloud → ground_seg → ground_cloud → elevation_mapping, ground_seg → obstacle_cloud → traversability, traversability → gait_adaptor → robot_controller, elevation_map → costmap_bridge → Nav2 (planner + controller).
+
+Дополнительно разработаны вспомогательные мосты: ground_truth_publisher (Gazebo → ROS 2 odometry для диагностики) и elevation_to_costmap_node (конвертация GridMap → OccupancyGrid для Nav2).
 
 ### 3.2.2 Двухконтейнерная архитектура
 
@@ -60,9 +62,13 @@
 
 Шаг 5 — обновление карты высот: `elevation_mapping_node` принимает ground_cloud (или полное облако, если ground segmentation отключена) и обновляет карту высот на GPU.
 
-Шаг 6 — анализ traversability: traversability estimator вычисляет gradient, roughness и traversability для каждой ячейки карты.
+Шаг 6 — анализ traversability: traversability estimator вычисляет gradient, roughness и traversability для каждой ячейки карты. Используются три плагина: surface_gradient.py (уклон), roughness.py (шероховатость) и cost_function.py (итоговая traversability как взвешенная сумма).
 
-Шаг 7 — адаптация походки: gait_adaptor читает traversability под опорами робота и корректирует параметры походки (высота шага, частота, скорость).
+Шаг 7 — конвертация в costmap: elevation_to_costmap_node конвертирует GridMap в OccupancyGrid для Nav2, публикует на топик /elevation_costmap.
+
+Шаг 8 — планирование: Nav2 плагин (SmacPlanner) использует /elevation_costmap как глобальную costmap, прокладывает путь с учётом traversability.
+
+Шаг 9 — адаптация походки: gait_adaptor читает traversability под опорами робота и корректирует параметры походки (высота шага, частота, скорость).
 
 ### 3.2.6 Топики и сервисы
 
@@ -79,4 +85,7 @@
 | elevation → rviz | /ground_cloud | PointCloud2 | 10 Гц |
 | elevation → rviz | /obstacle_cloud | PointCloud2 | 10 Гц |
 | elevation → gait | /traversability | GridMap | 10 Гц |
+| elevation → nav2 | /elevation_costmap | OccupancyGrid | 10 Гц |
+| sim → elevation | /robot1/ground_truth | Odometry | 10 Гц |
+| elevation → diagnostics | /stall_status | Bool | 10 Гц |
 | gait → controller | /gait_params | GaitParams | 10 Гц |

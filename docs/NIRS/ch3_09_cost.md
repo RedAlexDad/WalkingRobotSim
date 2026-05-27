@@ -6,25 +6,27 @@
 
 Traversability (проходимость) — количественная мера, отражающая сложность или опасность перемещения робота через данную ячейку карты. Значение traversability нормализовано от 0,0 (полностью непроходимо, опасно) до 1,0 (полностью проходимо, безопасно). В отличие от бинарной классификации (проходимо/непроходимо), traversability позволяет planner'у выбирать не только кратчайший, но и наиболее безопасный путь [12].
 
-### 3.9.2 Общая формула traversability
+### 3.9.2 Плагин cost_function.py
 
-Traversability вычисляется как взвешенная комбинация трёх факторов:
+Traversability вычисляется в плагине `cost_function.py`, который загружается elevation_mapping_node как postprocessor_plugin. Плагин вызывается после surface_gradient и roughness и имеет доступ ко всем слоям карты (elevation, variance, surface_gradient, roughness). Он реализует взвешенную формулу стоимости.
 
-traversability = 1,0 − (w_slope × slope_cost + w_roughness × roughness_cost + w_elevation × elevation_diff_cost),
+### 3.9.3 Общая формула traversability
 
-где веса удовлетворяют условию w_slope + w_roughness + w_elevation = 1,0.
+Traversability = 1,0 − (w_slope × slope_cost + w_roughness × roughness_cost + w_elevation × elevation_diff_cost),
 
-Значения весов по умолчанию: w_slope = 0,5 (уклон — основной фактор риска для шагающего робота), w_roughness = 0,3 (шероховатость влияет на стабильность походки), w_elevation = 0,2 (перепады высот менее критичны при правильном подъёме ног).
+где веса по умолчанию: w_slope = 0,5, w_roughness = 0,3, w_elevation = 0,2.
 
-### 3.9.3 Компоненты стоимости
+Плагин сохраняет результат в слой `traversability` карты GridMap, который затем публикуется на топик `/traversability` и используется как gait_adaptor'ом, так и elevation_to_costmap_node.
 
-Slope cost: slope_cost = min(slope / max_slope, 1,0), где slope — угол наклона поверхности в радианах, max_slope — максимально допустимый угол наклона. Для Unitree Go2 максимальный безопасный угол наклона составляет примерно 25° (0,436 рад). Данное значение определяется конструкцией ног (диапазон движения суставов), положением центра масс относительно опорной площадки и сцеплением подошв с поверхностью [6]. При превышении угла 25° возникает риск опрокидывания или скольжения.
+### 3.9.4 Компоненты стоимости
 
-Roughness cost: roughness_cost = min(roughness / max_roughness, 1,0), где max_roughness = 0,1 м. Высокая шероховатость означает, что роботу приходится постоянно подстраивать положение ног, что снижает скорость и повышает энергозатраты.
+Slope cost: slope_cost = min(slope / max_slope, 1,0), где slope — угол наклона поверхности в радианах, max_slope = 25° (0,436 рад). Для Unitree Go2 максимальный безопасный угол наклона составляет примерно 25°, что определяется конструкцией ног (диапазон движения суставов), положением центра масс относительно опорной площадки и сцеплением подошв с поверхностью [6].
 
-Elevation diff cost: elevation_diff_cost = min(|z − z_robot| / max_elevation_diff, 1,0), где max_elevation_diff = 0,3 м. Резкие перепады высот (ступени, бордюры, ямы) требуют высокого подъёма ног и могут привести к потере равновесия.
+Roughness cost: roughness_cost = min(roughness / max_roughness, 1,0), где max_roughness = 0,1 м.
 
-### 3.9.4 Классификация типов местности
+Elevation diff cost: elevation_diff_cost = min(|z − z_robot| / max_elevation_diff, 1,0), где max_elevation_diff = 0,3 м.
+
+### 3.9.5 Классификация типов местности
 
 На основе traversability выделяются три класса местности, приведённые в Таблице 3.4.
 
@@ -38,15 +40,33 @@ Elevation diff cost: elevation_diff_cost = min(|z − z_robot| / max_elevation_d
 
 Данная классификация используется planner'ом для выбора маршрута и gait_adaptor'ом для настройки параметров походки.
 
-### 3.9.5 Интеграция с Nav2
+### 3.9.6 Конвертация в OccupancyGrid (elevation_to_costmap_node)
 
-Разработанная traversability cost может быть интегрирована с Nav2 двумя способами.
+Для интеграции traversability с Nav2 разработан мост `elevation_to_costmap_node.py`, который подписывается на топик `/elevation_map` (GridMap) и публикует `nav2_msgs/OccupancyGrid` на `/elevation_costmap`. Конвертация выполняется по формуле:
 
-Способ 1 — пользовательский слой costmap_2d: создаётся плагин слоя costmap, который читает traversability из GridMap и преобразует в cost (0–255) для глобального и локального planner'ов Nav2: cost = 255 × (1,0 − traversability). При этом cost = 0 (свободно) соответствует traversability = 1,0, cost = 254 (занято) — traversability ≈ 0,004, cost = 255 (неизвестно) — traversability = 0,0 [3].
+cost = 255 × (1,0 − traversability)
 
-Способ 2 — custom planner plugin: разрабатывается плагин для Nav2 (SmacPlanner или MPPI), использующий traversability слой напрямую для поиска пути с применением A* с весами traversability.
+где cost = 0 (свободно) соответствует traversability = 1,0; cost = 254 (занято) — traversability ≈ 0,004; cost = 255 (неизвестно) — traversability = 0,0.
 
-### 3.9.6 Пример расчёта стоимости пути
+Для моста используется launch-файл `elevation_to_costmap.launch.py`, который запускает ноду с параметрами: частота публикации (10 Гц), фрейм карты (odom), QoS-профиль для подписки (TRANSIENT_LOCAL + RELIABLE).
+
+**Известная проблема: несоответствие QoS.** При подписке на `/elevation_map` с профилем RELIABLE + VOLATILE (значения по умолчанию) elevation map не доставляется мосту, если publisher (elevation_mapping_node) использует RELIABLE + TRANSIENT_LOCAL. Решение: явно указать TRANSIENT_LOCAL для subscriber.
+
+**Известная проблема: сдвиг costmap.** Мост публикует costmap в frame_id = "odom", в то время как Nav2 по умолчанию ожидает costmap в frame_id = "map". Поскольку статический publisher map→odom всегда публикует нулевое смещение, при движении робота возникает рассогласование. Временное решение: удалить static_transform_publisher и позволить Nav2 использовать identity transform (map = odom).
+
+### 3.9.7 Интеграция с Nav2
+
+В текущей реализации выбран Способ 1 — мост `elevation_to_costmap_node.py` публикует OccupancyGrid с traversability cost на топик `/elevation_costmap`. Nav2 настроен через `nav2_params.yaml` на использование этого топика в качестве map_topic для глобального planner'а:
+
+```yaml
+global_costmap:
+  global_costmap:
+    map_topic: /elevation_costmap
+```
+
+Планировщик (SmacPlanner 2D) прокладывает путь с учётом стоимости: зоны с высокой traversability (низкий cost) предпочтительны, no-go зоны (cost ≥ 254) игнорируются. В перспективе возможна реализация Способа 2 — custom плагин planner'а с прямым доступом к слоям GridMap для A* с весами traversability.
+
+### 3.9.8 Пример расчёта стоимости пути
 
 Пусть роботу нужно пройти из точки A в точку B. Планировщик использует функцию стоимости ребра графа: edge_cost = distance × α + (1,0 − traversability) × β, где α = 1,0 (вес расстояния), β = 5,0 (вес traversability, приоритет безопасности).
 
@@ -56,6 +76,6 @@ Elevation diff cost: elevation_diff_cost = min(|z − z_robot| / max_elevation_d
 
 Несмотря на большую длину, прямой путь через холм имеет меньшую общую стоимость (13,5 < 15,5). Однако при увеличении веса β (например, β = 10) стоимость прямого пути станет 17,0, а обхода — 15,0, и planner выберет обход.
 
-### 3.9.7 Настройка весов
+### 3.9.9 Настройка весов
 
 Веса w_slope, w_roughness, w_elevation являются настраиваемыми параметрами, которые могут быть адаптированы под конкретного робота и сценарий. Для лёгкого робота (малая инерция, высокий центр масс) следует увеличить w_slope для приоритета стабильности. Для шагающего робота с высоким подъёмом ног можно уменьшить w_elevation, так как робот способен преодолевать ступени. Для движения по склону вдоль горизонталей может быть добавлена асимметрия — различный вес для положительного и отрицательного gradient [12].

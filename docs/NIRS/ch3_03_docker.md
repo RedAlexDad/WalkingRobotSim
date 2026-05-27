@@ -38,11 +38,33 @@ ROS 2-зависимости: ROS 2 Jazzy (base), устанавливаемый
 
 Симулятор публикует трансформации на `/robot1/tf`, а elevation_mapping_node слушает `/tf`. Решение: создан Python-скрипт `tf_relay.py`, который подписывается на оба namespaced топика и републикует на `/tf` и `/tf_static` с корректными QoS-профилями.
 
-### 3.3.3 Структура compose.yml
+### 3.3.3 CPU-версия образа
 
-Корневой docker-compose.yml описывает оба сервиса. Конфигурация сервиса simulator содержит: образ `walking_robot_sim:latest`, сетевой режим host, переменные окружения DISPLAY, ROS_DOMAIN_ID=0, RMW_IMPLEMENTATION, монтирование X11 Unix-сокета, исходного кода, конфигурации Cyclone DDS и устройств `/dev/dri`. Сервису предоставлены привилегии privileged для доступа к графическим устройствам.
+Для разработки и отладки без GPU passthrough создан альтернативный Dockerfile (`Dockerfile.cpu`). Он базируется на официальном образе ROS 2 Jazzy (`osrf/ros:jazzy-desktop`) и устанавливает все Python-зависимости (numpy, scipy, grid_map, tf2-ros) без CuPy и CUDA-драйверов. Пакет elevation_mapping_cupy работает в режиме CPU-fallback на чистом numpy.
 
-Конфигурация сервиса elevation содержит: образ `elevation_mapping_cupy:latest`, сетевой режим host, переменные окружения DISPLAY, ROS_DOMAIN_ID=0, RMW_IMPLEMENTATION, NVIDIA_VISIBLE_DEVICES=all, MESA_GLSL_CACHE_DISABLE=true, монтирование X11-сокета, исходного кода elevation_mapping_cupy, конфигурационных файлов, `/run/user/1000` для X11. Сервис использует `deploy.resources.reservations.devices` для резервирования NVIDIA GPU.
+CPU-версия собирается и запускается отдельными make-целями:
+```
+make elevation-cpu-build   # сборка образа
+make elevation-cpu         # запуск контейнера на переднем плане
+make elevation-cpu-bg      # запуск в фоне
+```
+
+В CPU-режиме частота обновления карты падает с 10 до ~5 Гц, что достаточно для отладки плагинов, ground segmentation и конфигурации Nav2, но не обеспечивает real-time производительность для полноценной навигации.
+
+### 3.3.4 Структура compose.yml
+
+Корневой `compose.yml` описывает оба сервиса. Для устранения дублирования общих полей (сетевой режим, переменные окружения, монтирования) применяются YAML-якоря:
+```
+&basic — базовые настройки (network_mode, restart, privileged);
+&env_gui — переменные DISPLAY, X11-монтирования;
+&elevation_common — общие для elevation-сервисов настройки (зависимости, конфиги).
+```
+
+Конфигурация сервиса simulator содержит: образ `walking_robot_sim:latest`, сетевой режим host, переменные окружения DISPLAY, ROS_DOMAIN_ID=0, RMW_IMPLEMENTATION, монтирование X11 Unix-сокета, исходного кода, конфигурации Cyclone DDS и устройств `/dev/dri`. Сервису предоставлены привилегии privileged для доступа к графическим устройствам.
+
+Конфигурация сервиса elevation-gpu содержит: образ `elevation_mapping_cupy:latest`, сетевой режим host, переменные окружения DISPLAY, ROS_DOMAIN_ID=0, RMW_IMPLEMENTATION, NVIDIA_VISIBLE_DEVICES=all, MESA_GLSL_CACHE_DISABLE=true, монтирование X11-сокета, исходного кода elevation_mapping_cupy, конфигурационных файлов, `/run/user/1000` для X11. Сервис использует `deploy.resources.reservations.devices` для резервирования NVIDIA GPU.
+
+Сервис elevation-cpu использует образ `elevation_mapping_cupy:cpu`, наследует общие настройки через YAML-якоря, но не требует GPU-устройств.
 
 ### 3.3.4 Запуск системы
 
@@ -50,16 +72,14 @@ ROS 2-зависимости: ROS 2 Jazzy (base), устанавливаемый
 
 1) предоставить доступ к X11: `xhost +local:`;
 
-2) собрать образы: `docker compose build`;
+2) собрать образы: `make simulator-build` и `make elevation-build` (или `make elevation-cpu-build`);
 
-3) запустить оба контейнера: `docker compose up -d`;
+3) запустить симулятор: `make simulator-bg`;
 
-4) войти в контейнер симулятора: `docker compose exec simulator bash`, запустить симуляцию Gazebo: `ros2 launch gazebo_sim walking_robot.launch.py`;
+4) в отдельном терминале запустить elevation: `make elevation-bg` (или `make elevation-cpu-bg`);
 
-5) в отдельном терминале войти в elevation-контейнер: `docker compose exec elevation bash`, запустить elevation mapping: `ros2 launch elevation_mapping_cupy bot.launch.py`;
-
-6) для визуализации: `rviz2 -d /ros_ws/config/elevation.rviz`.
+5) для визуализации: `make elevation-rviz`;
 
 ### 3.3.5 Монтирование конфигурационных файлов
 
-Для обеспечения гибкой настройки без пересборки образа конфигурационные файлы монтируются как volumes. К ним относятся: `core_param.yaml` (основные параметры elevation_mapping: resolution, map_length, min_valid_distance, max_ray_length), `go2_lidar3d.yaml` (robot-specific конфигурация: топики, фреймы, слои), `cyclonedds.xml` (конфигурация DDS для межконтейнерной связи) и `elevation.rviz` (конфигурация RViz для визуализации). Данный подход позволяет изменять параметры на лету и перезапускать ноду без пересборки Docker-образа [7].
+Для обеспечения гибкой настройки без пересборки образа конфигурационные файлы монтируются как volumes. К ним относятся: `core_param.yaml` (основные параметры elevation_mapping: resolution, map_length, min_valid_distance, max_ray_length), `go2_lidar3d.yaml` (robot-specific конфигурация: топики, фреймы, слои), `cyclonedds.xml` (конфигурация DDS для межконтейнерной связи), `nav2_params.yaml` (параметры Nav2 planner и controller), `elevation_to_costmap.launch.py` (launch-файл моста) и `elevation.rviz` (конфигурация RViz для визуализации). Данный подход позволяет изменять параметры на лету и перезапускать ноду без пересборки Docker-образа [7].
