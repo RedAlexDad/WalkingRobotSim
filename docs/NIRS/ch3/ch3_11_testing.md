@@ -28,13 +28,13 @@ $$
 
 ### 3.11.2 Результаты тестирования
 
-Stage 0 — модульные тесты elevation_mapping_cupy: все 41 тестов пройдены, карта строится за < 2 мс на GPU, потребление памяти ~1,2 ГБ.
+Stage 0 — модульные тесты elevation_mapping_cupy: все 41 тестов пройдены, карта строится за < 2 мс на GPU, потребление памяти ~1,2 ГБ [14].
 
 Stage 1 — Docker-интеграция: оба контейнера запускаются без ошибок, DDS discovery стабилен, TF-relay работает корректно.
 
 Stage 2 — LiDAR → elevation_map pipeline: PointCloud2 принимается, карта публикуется с кадром odom, разрешением 0,1 м, частота 10 Гц.
 
-Stage 3 — ground segmentation: на ровной поверхности precision > 98%, recall > 95%; на холмистой — precision > 95%, recall > 90%. Время обработки < 5 мс.
+Stage 3 — ground segmentation: на ровной поверхности precision > 98%, recall > 95%; на холмистой — precision > 95%, recall > 90%. Время обработки < 5 мс [17].
 
 Stage 4 — traversability: gradient вычисляется корректно, классификация safe/medium/unsafe работает, cost map маркирует no-go зоны.
 

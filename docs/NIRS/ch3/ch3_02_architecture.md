@@ -54,7 +54,7 @@ flowchart TB
 
 На верхнем уровне выделяются два Docker-контейнера. Контейнер Simulator использует образ `osrf/ros:jazzy-desktop` и включает Gazebo Harmonic с gpu_lidar (16×360 лучей), ROS 2 Gazebo Bridge, C++ конвертер `laser_to_cloud_converter.cc`, robot_state_publisher и `tf_relay.py`. Контейнер Elevation использует образ `nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.10` и включает Python 3.12 с CuPy (CUDA 12.x), PyTorch 2.x, ROS 2 Jazzy с Cyclone DDS RMW, пакет `elevation_mapping_cupy` с GPU-ядрами обновления карты, библиотеку `grid_map` и RViz2.
 
-Компоненты внутри elevation-контейнера образуют конвейер обработки: LiDAR PointCloud → ground_seg → ground_cloud → elevation_mapping, ground_seg → obstacle_cloud → traversability, traversability → gait_adaptor → robot_controller, elevation_map → costmap_bridge → Nav2. Дополнительно разработаны вспомогательные мосты: ground_truth_publisher (Gazebo → ROS 2 odometry для диагностики) и elevation_to_costmap_node (конвертация GridMap → OccupancyGrid для Nav2).
+Компоненты внутри elevation-контейнера образуют конвейер обработки: LiDAR PointCloud → ground_seg → ground_cloud → elevation_mapping, ground_seg → obstacle_cloud → traversability, traversability → gait_adaptor → robot_controller, elevation_map → costmap_bridge → Nav2 [14]. Дополнительно разработаны вспомогательные мосты: ground_truth_publisher (Gazebo → ROS 2 odometry для диагностики) и elevation_to_costmap_node (конвертация GridMap → OccupancyGrid для Nav2).
 
 Ключевым архитектурным решением стало разделение на два Docker-контейнера, обеспечивающее следующие преимущества:
 

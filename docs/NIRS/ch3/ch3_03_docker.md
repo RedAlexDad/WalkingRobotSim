@@ -12,7 +12,7 @@ GPU-образ собирается на основе официального �
 
 Системные зависимости: build-essential, cmake, git для сборки C++ пакетов; python3-pip, python3-dev для Python-пакетов; поддержка X11 (libx11-dev, libgl1-mesa-dev) для RViz; языковые пакеты (locales, ru_RU.UTF-8).
 
-Python-зависимости: CuPy 13.x (CUDA 12.x) — GPU-ядра для elevation mapping; numpy<2.0 — совместимость с CuPy JIT (numpy 2.0 ломает CuPy JIT); PyTorch (индекс cu126) — нейросетевые компоненты.
+Python-зависимости: CuPy 13.x (CUDA 12.x) — GPU-ядра для elevation mapping [14]; numpy<2.0 — совместимость с CuPy JIT (numpy 2.0 ломает CuPy JIT); PyTorch (индекс cu126) — нейросетевые компоненты.
 
 ROS 2-зависимости: ROS 2 Jazzy (base), устанавливаемый через apt; Cyclone DDS RMW — `rmw_cyclonedds_cpp`; пакеты `elevation_mapping_cupy`, `grid_map`, `rviz2`.
 
