@@ -28,7 +28,7 @@ Stage 0 — валидация elevation_mapping_cupy (модульные тес
 
 Stage 1 — Docker-интеграция: оба контейнера собираются и запускаются без ошибок, Cyclone DDS discovery работает стабильно с отключённым SHM, TF-relay корректно передаёт трансформации между контейнерами, RViz в GPU-контейнере отображает все топики.
 
-Stage 2 — LiDAR → elevation_map pipeline: PointCloud2 от LiDAR успешно принимается elevation_mapping_node, elevation map публикуется с кадром odom и разрешением 0,1 м, слои elevation, variance, traversability обновляются на каждом кадре, фильтрация тела робота (min_valid_distance = 0,3) исключает артефакты, частота публикации стабильно составляет 10 Гц.
+Stage 2 — LiDAR  —  elevation_map pipeline: PointCloud2 от LiDAR успешно принимается elevation_mapping_node, elevation map публикуется с кадром odom и разрешением 0,1 м, слои elevation, variance, traversability обновляются на каждом кадре, фильтрация тела робота (min_valid_distance = 0,3) исключает артефакты, частота публикации стабильно составляет 10 Гц.
 
 Stage 3 — ground segmentation: Ground Plane Fitting корректно разделяет облако точек, на ровной поверхности precision > 98%, recall > 95%, на холмистой поверхности precision > 95%, recall > 90%, время обработки составляет менее 5 мс на кадр (CPU, Python + numpy).
 
@@ -36,7 +36,7 @@ Stage 4 — traversability: gradient корректно вычисляется �
 
 Stage 5 — адаптация походки: параметры походки изменяются при смене типа поверхности, переходы между режимами плавные (экспоненциальное сглаживание), робот корректно останавливается перед no-go зоной.
 
-Stage 6 — интеграция Nav2 через costmap bridge: elevation_to_costmap_node конвертирует GridMap в OccupancyGrid. Выявлены и исправлены проблемы: несоответствие QoS (RELIABLE + VOLATILE → TRANSIENT_LOCAL), неправильное имя параметра в nav2_params.yaml (topic → map_topic). Frame shift между odom и map остаётся открытой проблемой (см. анализ ниже).
+Stage 6 — интеграция Nav2 через costmap bridge: elevation_to_costmap_node конвертирует GridMap в OccupancyGrid. Выявлены и исправлены проблемы: несоответствие QoS (RELIABLE + VOLATILE  —  TRANSIENT_LOCAL), неправильное имя параметра в nav2_params.yaml (topic  —  map_topic). Frame shift между odom и map остаётся открытой проблемой (см. анализ ниже).
 
 Stage 7 — анализ одометрии: ground_truth_publisher успешно публикует эталонную одометрию от Gazebo, stall detection корректно идентифицирует остановки робота (угловая скорость < 0,05 рад/с при движении суставов), QoS для подписки на Gazebo /model/robot1_my_bot/pose исправлен с RELIABLE на BEST_EFFORT. Выявлена проблема дрейфа leg odometry: при движении по неровной поверхности Gazebo допускает физическое проскальзывание ног, что интегрируется в leg odometry и через EKF попадает в Nav2, вызывая планирование в неверной позиции.
 
@@ -66,6 +66,6 @@ Stage 7 — анализ одометрии: ground_truth_publisher успешн
 
 **Урок 1: Несоответствие QoS (RELIABLE vs BEST_EFFORT).** Gazebo публикует `/model/robot1_my_bot/pose` с профилем BEST_EFFORT. Если нода подписывается с RELIABLE, сообщения не доставляются. Аналогично, elevation_mapping_node публикует GridMap с RELIABLE + TRANSIENT_LOCAL, а elevation_to_costmap_node должен подписываться с тем же профилем. Решение: всегда проверять QoS-профиль publisher'ов при разработке подписчиков.
 
-**Урок 2: Сдвиг costmap из-за статического map→odom.** При движении робота elevation map остаётся в odom, Nav2 ожидает costmap в map. Static_transform_publisher map→odom = (0,0,0) не обновляется при перемещении. Решение: удалить статический publisher, позволить Nav2 стартовать с identity transform.
+**Урок 2: Сдвиг costmap из-за статического map — odom.** При движении робота elevation map остаётся в odom, Nav2 ожидает costmap в map. Static_transform_publisher map — odom = (0,0,0) не обновляется при перемещении. Решение: удалить статический publisher, позволить Nav2 стартовать с identity transform.
 
 **Урок 3: Дрейф leg odometry при проскальзывании.** Gazebo симулирует физическое взаимодействие ног с грунтом, допуская микропроскальзывание. Leg odometry интегрирует это проскальзывание, EKF fuse с IMU, и Nav2 получает дрейфующую позицию. Stall detection не срабатывает, когда робот стоит на месте (delta = 0, joints не движутся). На ровной поверхности дрейф минимален (< 0,01 м/с), на пересечённой местности — до 0,05 м/с. Решение: в симуляции использовать ground truth odometry как основной источник позиции, stall detection применять только для детекции коллизий.

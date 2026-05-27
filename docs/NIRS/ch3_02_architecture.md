@@ -50,13 +50,13 @@ graph TB
 
 На верхнем уровне выделяются два Docker-контейнера:
 
-1) контейнер Simulator — запускает симуляцию Gazebo Harmonic, сенсоры (трёхмерный LiDAR, IMU), robot_state_publisher, C++ конвертер LaserScan→PointCloud и TF-relay;
+1) контейнер Simulator — запускает симуляцию Gazebo Harmonic, сенсоры (трёхмерный LiDAR, IMU), robot_state_publisher, C++ конвертер LaserScan — PointCloud и TF-relay;
 
 2) контейнер Elevation — запускает elevation_mapping_node (CuPy/CUDA), ground segmenter, traversability estimator, gait adaptor и RViz.
 
-Компоненты внутри elevation-контейнера образуют конвейер обработки: LiDAR PointCloud → ground_seg → ground_cloud → elevation_mapping, ground_seg → obstacle_cloud → traversability, traversability → gait_adaptor → robot_controller, elevation_map → costmap_bridge → Nav2 (planner + controller).
+Компоненты внутри elevation-контейнера образуют конвейер обработки: LiDAR PointCloud  —  ground_seg  —  ground_cloud  —  elevation_mapping, ground_seg  —  obstacle_cloud  —  traversability, traversability  —  gait_adaptor  —  robot_controller, elevation_map  —  costmap_bridge  —  Nav2 (planner + controller).
 
-Дополнительно разработаны вспомогательные мосты: ground_truth_publisher (Gazebo → ROS 2 odometry для диагностики) и elevation_to_costmap_node (конвертация GridMap → OccupancyGrid для Nav2).
+Дополнительно разработаны вспомогательные мосты: ground_truth_publisher (Gazebo  —  ROS 2 odometry для диагностики) и elevation_to_costmap_node (конвертация GridMap  —  OccupancyGrid для Nav2).
 
 ### 3.2.2 Двухконтейнерная архитектура
 
@@ -88,7 +88,7 @@ graph TB
 
 2) tf_relay.py перепубликует эти трансформации на `/tf` и `/tf_static`, используя корректные QoS-профили (BEST_EFFORT для `/robot1/tf`, TRANSIENT_LOCAL для `/robot1/tf_static`);
 
-3) статический publisher в elevation-контейнере публикует трансформацию `map` → `odom` с нулевым смещением для привязки глобальной системы координат.
+3) статический publisher в elevation-контейнере публикует трансформацию `map`  —  `odom` с нулевым смещением для привязки глобальной системы координат.
 
 ### 3.2.5 Поток данных в системе
 
@@ -96,12 +96,12 @@ graph TB
 
 ```mermaid
 flowchart LR
-    A["Шаг 1: LiDAR<br/>захват 360×16<br/>10 Гц"] --> B["Шаг 2: laser_to_cloud<br/>LaserScan → PointCloud2"]
+    A["Шаг 1: LiDAR<br/>захват 360×16<br/>10 Гц"] --> B["Шаг 2: laser_to_cloud<br/>LaserScan  —  PointCloud2"]
     B --> C["Шаг 3: DDS<br/>Cyclone передача<br/>между контейнерами"]
     C --> D["Шаг 4: ground_segmenter<br/>GPF RANSAC<br/>ground / obstacle"]
     D --> E["Шаг 5: elevation_mapping<br/>GPU обновление<br/>карты высот"]
     E --> F["Шаг 6: Плагины<br/>slope + roughness<br/>+ traversability"]
-    F --> G["Шаг 7: costmap_bridge<br/>GridMap → OccupancyGrid"]
+    F --> G["Шаг 7: costmap_bridge<br/>GridMap  —  OccupancyGrid"]
     G --> H["Шаг 8: Nav2<br/>SmacPlanner<br/>планирование пути"]
     H --> I["Шаг 9: gait_adaptor<br/>адаптация походки<br/>под рельеф"]
 ```
@@ -134,14 +134,14 @@ flowchart LR
 
 | Направление | Топик | Тип сообщения | Частота |
 |------------|-------|---------------|---------|
-| sim → elevation | /robot1/scan/points | PointCloud2 | 10 Гц |
-| sim → elevation | /robot1/tf | TFMessage | 100 Гц |
-| sim → elevation | /robot1/tf_static | TFMessage | static |
-| elevation → rviz | /elevation_map | GridMap | 10 Гц |
-| elevation → rviz | /ground_cloud | PointCloud2 | 10 Гц |
-| elevation → rviz | /obstacle_cloud | PointCloud2 | 10 Гц |
-| elevation → gait | /traversability | GridMap | 10 Гц |
-| elevation → nav2 | /elevation_costmap | OccupancyGrid | 10 Гц |
-| sim → elevation | /robot1/ground_truth | Odometry | 10 Гц |
-| elevation → diagnostics | /stall_status | Bool | 10 Гц |
-| gait → controller | /gait_params | GaitParams | 10 Гц |
+| sim  —  elevation | /robot1/scan/points | PointCloud2 | 10 Гц |
+| sim  —  elevation | /robot1/tf | TFMessage | 100 Гц |
+| sim  —  elevation | /robot1/tf_static | TFMessage | static |
+| elevation  —  rviz | /elevation_map | GridMap | 10 Гц |
+| elevation  —  rviz | /ground_cloud | PointCloud2 | 10 Гц |
+| elevation  —  rviz | /obstacle_cloud | PointCloud2 | 10 Гц |
+| elevation  —  gait | /traversability | GridMap | 10 Гц |
+| elevation  —  nav2 | /elevation_costmap | OccupancyGrid | 10 Гц |
+| sim  —  elevation | /robot1/ground_truth | Odometry | 10 Гц |
+| elevation  —  diagnostics | /stall_status | Bool | 10 Гц |
+| gait  —  controller | /gait_params | GaitParams | 10 Гц |

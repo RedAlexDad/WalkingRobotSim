@@ -52,7 +52,7 @@ cost = 255 × (1,0 − traversability)
 
 **Известная проблема: несоответствие QoS.** При подписке на `/elevation_map` с профилем RELIABLE + VOLATILE (значения по умолчанию) elevation map не доставляется мосту, если publisher (elevation_mapping_node) использует RELIABLE + TRANSIENT_LOCAL. Решение: явно указать TRANSIENT_LOCAL для subscriber.
 
-**Известная проблема: сдвиг costmap.** Мост публикует costmap в frame_id = "odom", в то время как Nav2 по умолчанию ожидает costmap в frame_id = "map". Поскольку статический publisher map→odom всегда публикует нулевое смещение, при движении робота возникает рассогласование. Временное решение: удалить static_transform_publisher и позволить Nav2 использовать identity transform (map = odom).
+**Известная проблема: сдвиг costmap.** Мост публикует costmap в frame_id = "odom", в то время как Nav2 по умолчанию ожидает costmap в frame_id = "map". Поскольку статический publisher map — odom всегда публикует нулевое смещение, при движении робота возникает рассогласование. Временное решение: удалить static_transform_publisher и позволить Nav2 использовать identity transform (map = odom).
 
 ### 3.9.7 Интеграция с Nav2
 
