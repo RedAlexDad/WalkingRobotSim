@@ -359,7 +359,23 @@ ground plane. Коэффициент 0.6 — это как резина на л�
 `RELIABLE + TRANSIENT_LOCAL`. Bridge публикует `/map` с аналогичным профилем.
 Mismatch нет — это не было причиной отсутствия costmap.
 
-### 11. Cost layer inverted: steep slopes shown as traversable (27.05.2026)
+### 11. Smart Deploy: git diff-based build/restart (27.05.2026)
+
+Создан `scripts/smart-deploy.sh` — анализирует git diff с последнего билда, классифицирует изменения:
+
+| Тип изменений                 | Действие                        |
+| ----------------------------- | ------------------------------- |
+| C++ код / Dockerfile          | `docker compose build` + `up`   |
+| Python / YAML / launch / rviz | только `docker compose restart` |
+| Нет изменений                 | ничего                          |
+
+**Файлы:**
+
+- `scripts/smart-deploy.sh` — сам скрипт
+- `makefiles/docker.mk` — target `deploy` вызывает скрипт
+- `.last_build_commit` — хэш последней сборки
+
+### 12. Cost layer inverted: steep slopes shown as traversable (27.05.2026)
 
 **Проблема:** В RViz elevation costmap показывает крутые склоны как синие (free), хотя это непроходимые препятствия. Nav2 планирует маршруты через них, а в симуляции робот застревает.
 
@@ -413,27 +429,72 @@ occ[valid & (cost <= lo)] = 100   # cost ≤ 0.5 → occupied (склоны/пр
 
 **Рекомендация:** После инверсии вероятно потребуется дополнительно уменьшить `max_slope` (с 0.8 до ~0.35) и `max_roughness` (с 0.1 до ~0.05), чтобы steep slopes быстрее переходили в occupied, а gentle slopes оставались free.
 
+### 13. Costmap bounds не совпадают с реальной картой (27.05.2026)
+
+**Проблема:** AMCL оценивает позицию робота (2.79, -1.04), но global_costmap сообщает bounds (2.85, -1.00)–(22.80, 18.95) — робот за пределами.
+
+**Карта `cafe_world_map.yaml`:**
+
+- PGM: 191×447 px @ 0.05 м/px = 9.55 × 22.35 м
+- Origin: `[-5.06, -11.1, 0]`
+- Реальные bounds: (-5.06, -11.1)–(4.49, 11.25)
+- Робот (2.79, -1.04) находится **внутри** карты
+
+**Costmap bounds (2.85, -1.00)–(22.80, 18.95):**
+
+- 19.95 × 19.95 м = 399×399 px @ 0.05 м/px
+- Это НЕ соответствует карте 191×447 px
+
+**Гипотеза:** Costmap static layer либо не получил карту от map_server к моменту проверки, либо загрузил другую карту. Возможно, costmap инициализируется с дефолтными размерами до получения latched map.
+
+**Статус:** Требуется верификация в запущенном контейнере: `ros2 topic echo /map` — проверить origin и dimensions опубликованной карты.
+
+### 14. Ориентация робота в RViz: разворот ~90° (27.05.2026)
+
+**Проблема:** В RViz робот отображается повёрнутым ~90° относительно карты.
+
+**Причина:**
+
+- Параметр `-Y` (yaw) закомментирован в launch-файле при spawn модели в Gazebo
+- Initialpose orientation `{z: 0, w: 1}` — yaw = 0
+- Карта `cafe_world_map` может быть повёрнута относительно Gazebo world
+
+**Где смотреть:**
+
+- `src/gazebo_sim/launch/gazebo_multi_nav2_cpp.launch.py:170` — `-Y` закомментирован
+- `src/gazebo_sim/config/robots.yaml` — поле `Y_pose` отсутствует
+- `src/gazebo_sim/launch/gazebo_multi_nav2_cpp.launch.py:265` — initialpose `{z:0, w:1}`
+
+**Фикс:** Проверить ориентацию `cafe_world_map.yaml` относительно Gazebo world `cafe.world`. Если карта повёрнута — задать соответствующий yaw при spawn робота в robots.yaml и launch-файле.
+
 ## Relevant Files
 
-| Файл                                                                                    | Роль                                                                           |
-| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `src/gazebo_sim/config/ekf.yaml`                                                        | Конфигурация EKF (odom0, imu0)                                                 |
-| `src/gazebo_sim/config/gz_bridge.yaml`                                                  | Bridge Gazebo↔ROS (теперь есть ground truth + world_poses_info)                |
-| `src/gazebo_sim/scripts/ground_truth_publisher.py`                                      | Ground truth: Pose → Odometry + TF (BEST_EFFORT + fallback world_poses)        |
-| `src/gazebo_sim/launch/gazebo_multi_nav2_cpp.launch.py`                                 | Launch-файл C++ контроллеров                                                   |
-| `src/gazebo_sim/launch/gazebo_multi_nav2_world.launch.py`                               | Launch-файл Python контроллеров                                                |
-| `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp`                             | C++ нода одометрии (stall params, IMU callback, /stall_status)                 |
-| `src/quadropted_controller_cpp/src/odometry/odometry_update.cpp`                        | Алгоритм leg odometry (stall detection logic)                                  |
-| `src/quadropted_controller_cpp/src/odometry/odometry_state.cpp`                         | OdometryState::reset() — очищает stall state                                   |
-| `src/quadropted_controller_cpp/include/quadropted_controller_cpp/odometry_state.hpp`    | OdometryState (реэкспорт `odometry.hpp`)                                       |
-| `src/quadropted_controller_cpp/include/quadropted_controller_cpp/odometry/odometry.hpp` | OdometryState struct (is_stalled, stall_consecutive_count, stall_window, etc.) |
-| `compose.yml`                                                                           | Docker compose (line 54 — static_transform_publisher map→odom удалён)          |
-| `src/go2_description/xacro/gazebo.xacro`                                                | URDF — foot friction mu1/mu2 изменены 0.6→1.0 (27.05.2026)                     |
-| `elevation_mapping_cupy/.../scripts/elevation_to_costmap_node.py`                       | Bridge-нода: GridMap → OccupancyGrid (QoS mismatch на входе)                   |
-| `elevation_mapping_cupy/.../launch/elevation_to_costmap.launch.py`                      | Launch bridge-ноды                                                             |
-| `elevation_mapping_cupy/config/go2_lidar3d.yaml`                                        | Elevation mapping config: `map_frame: "odom"` — причина frame shift            |
-| `src/gazebo_sim/config/nav2_params.yaml`                                                | Nav2 params: `map_topic: "/elevation_costmap"` (было `topic`)                  |
-| `src/gazebo_sim/launch/el_command`                                                      | Launch команда с `static_transform_publisher map odom 0 0 0 0 0 0`             |
+| Файл                                                                                    | Роль                                                                                                              |
+| --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `src/gazebo_sim/config/ekf.yaml`                                                        | Конфигурация EKF (odom0, imu0)                                                                                    |
+| `src/gazebo_sim/config/gz_bridge.yaml`                                                  | Bridge Gazebo↔ROS (теперь есть ground truth + world_poses_info)                                                   |
+| `src/gazebo_sim/scripts/ground_truth_publisher.py`                                      | Ground truth: Pose → Odometry + TF (BEST_EFFORT + fallback world_poses)                                           |
+| `src/gazebo_sim/launch/gazebo_multi_nav2_cpp.launch.py`                                 | Launch-файл C++ контроллеров                                                                                      |
+| `src/gazebo_sim/launch/gazebo_multi_nav2_world.launch.py`                               | Launch-файл Python контроллеров                                                                                   |
+| `src/quadropted_controller_cpp/src/nodes/odometry_node.cpp`                             | C++ нода одометрии (stall params, IMU callback, /stall_status)                                                    |
+| `src/quadropted_controller_cpp/src/odometry/odometry_update.cpp`                        | Алгоритм leg odometry (stall detection logic)                                                                     |
+| `src/quadropted_controller_cpp/src/odometry/odometry_state.cpp`                         | OdometryState::reset() — очищает stall state                                                                      |
+| `src/quadropted_controller_cpp/include/quadropted_controller_cpp/odometry_state.hpp`    | OdometryState (реэкспорт `odometry.hpp`)                                                                          |
+| `src/quadropted_controller_cpp/include/quadropted_controller_cpp/odometry/odometry.hpp` | OdometryState struct (is_stalled, stall_consecutive_count, stall_window, etc.)                                    |
+| `compose.yml`                                                                           | Docker compose (line 54 — static_transform_publisher map→odom удалён)                                             |
+| `src/go2_description/xacro/gazebo.xacro`                                                | URDF — foot friction mu1/mu2 изменены 0.6→1.0 (27.05.2026)                                                        |
+| `elevation_mapping_cupy/.../scripts/elevation_to_costmap_node.py`                       | Bridge-нода: GridMap → OccupancyGrid (QoS mismatch на входе)                                                      |
+| `elevation_mapping_cupy/.../launch/elevation_to_costmap.launch.py`                      | Launch bridge-ноды                                                                                                |
+| `elevation_mapping_cupy/config/go2_lidar3d.yaml`                                        | Elevation mapping config: `map_frame: "odom"` — причина frame shift                                               |
+| `src/gazebo_sim/config/nav2_params.yaml`                                                | Nav2 params: `map_topic: "/elevation_costmap"` (было `topic`); elevation_costmap_layer возвращён в global_costmap |
+| `src/gazebo_sim/launch/el_command`                                                      | Launch команда с `static_transform_publisher map odom 0 0 0 0 0 0`                                                |
+| `scripts/smart-deploy.sh`                                                               | Git diff анализ: пересборка только при C++/Docker изменениях                                                      |
+| `makefiles/docker.mk`                                                                   | `make deploy` вызывает `smart-deploy.sh`                                                                          |
+| `.last_build_commit`                                                                    | Хэш последней сборки (текущий: `126bc8a`)                                                                         |
+| `src/gazebo_sim/maps/cafe_world_map.yaml`                                               | Карта: origin (-5.06, -11.1), PGM 191×447 px @ 0.05 м/px                                                          |
+| `src/gazebo_sim/maps/cafe_world_map.pgm`                                                | PGM карты: 9.55 × 22.35 м                                                                                         |
+| `src/gazebo_sim/config/robots.yaml`                                                     | Параметры спавна: `x_pose: '0.0', y_pose: '0.0', z_pose: '0.8'`, поле Y_pose отсутствует                          |
+| `src/gazebo_sim/launch/gazebo_multi_nav2_cpp.launch.py`                                 | Launch: `-Y` закомментирован (yaw не передаётся); initialpose `{z:0, w:1}`                                        |
 
 ---
 
@@ -576,7 +637,25 @@ occ[valid & (cost <= lo)] = 100   # cost ≤ 0.5 → occupied (склоны/пр
 8. **Этап 4** (Auto Correction) — полное автоматическое решение
 9. **Этап 5** (AMCL Tuning) — чинит только Nav2, не корень проблемы
 
-**Ключевой вывод (27.05.2026):** Из 5 проблем решены 4 (скольжение, static map→odom, bridge QoS, invert_cost). Остаётся frame shift (7.4), тюнинг параметров cost function и интеграционный тест полного пайплайна.
+**Ключевой вывод (27.05.2026):** Из 5 проблем решены 4 (скольжение, static map→odom, bridge QoS, invert_cost). Остаются:
+
+1. 🟡 **Frame shift** (7.4) — elevation map публикуется в `odom` frame, не `map`
+2. 🟡 **Costmap bounds** — costmap (2.85, -1.00) не совпадает с картой (-5.06, -11.1); требуется диагностика запущенного контейнера
+3. 🟡 **Ориентация робота ~90°** — spawn yaw не задан, карта может быть повёрнута
+4. 🟡 **Тюнинг cost function** — `max_slope=0.8` → уменьшить до ~0.35
+5. 🟡 **Интеграционный тест** — полный стек (sim + elevation + Nav2) не запущен
+
+### Smart Deploy
+
+Создан `scripts/smart-deploy.sh` — автоматическая проверка изменений через git diff:
+
+```bash
+make deploy  # вызывает smart-deploy.sh вместо build + up
+```
+
+- C++ / Docker → пересборка образа
+- Python / YAML → только restart контейнера
+- `.last_build_commit` сохраняется после успешной сборки
 
 ### Интеграция с elevation mapping
 

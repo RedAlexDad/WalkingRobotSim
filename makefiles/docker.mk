@@ -1,9 +1,10 @@
 # makefiles/docker.mk
 
-.PHONY: deploy build up up-bg down restart clean status logs shell deploy-no-cache build-stage build-stage-list
+.PHONY: deploy smart-deploy build up up-bg down restart clean status logs shell deploy-no-cache build-stage build-stage-list
 
-## Сборка и запуск контейнера (рекомендуется)
-deploy: build up
+## Умная сборка и запуск: пересобирает только если есть C++/Docker изменения
+deploy smart-deploy:
+	@bash scripts/smart-deploy.sh
 
 ## Сборка и запуск контейнера без кэша
 deploy-no-cache: build-no-cache up

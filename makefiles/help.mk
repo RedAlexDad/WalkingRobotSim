@@ -10,7 +10,7 @@ help:
 	@printf "${CYAN}${BOLD}╚════════════════════════════════════════════════════════════╝${NC}\n"
 	@echo ""
 	@printf "${BOLD}Основные команды:${NC}\n"
-	@printf "  ${GREEN}${BOLD}make deploy${NC}         Сборка и запуск (рекомендуется)\n"
+	@printf "  ${GREEN}${BOLD}make deploy${NC}         Сборка (если C++/Docker изменился) + запуск\n"
 	@printf "  ${GREEN}${BOLD}make build${NC}          Сборка Docker образа\n"
 	@printf "  ${GREEN}${BOLD}make up${NC}             Запуск контейнера\n"
 	@printf "  ${GREEN}${BOLD}make down${NC}           Остановка контейнера\n"

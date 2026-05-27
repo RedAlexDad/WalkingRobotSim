@@ -62,7 +62,23 @@ cost ≤ 0.5 → OCCUPIED (steep slopes, rough terrain)
 
 ## Status
 
-All known issues fixed. Ready for integration test. Remaining tuning:
+All known issues fixed. Ready for integration test.
+
+## Smart Deploy
+
+`make deploy` now calls `scripts/smart-deploy.sh` in `auto` mode. It checks `git diff` against `.last_build_commit` and classifies changes:
+
+| Changed files | Action |
+|---|---|
+| `src/*.cpp .hpp .h CMakeLists.txt package.xml` | **rebuild** main image |
+| `elevation_mapping_cupy/*` | **rebuild** elevation image |
+| `compose.yml Dockerfile` | **rebuild** main image |
+| `src/*.py .yaml .launch.py .rviz` | **skip** (bind-mount `project_src`) |
+| Everything else | **rebuild** (conservative) |
+
+Usage: `make deploy` (auto), `make deploy --build` (force), `make deploy --check` (diagnostic only). `.last_build_commit` is updated after a successful build. `make build` and `make up` remain as separate commands for manual use.
+
+Remaining tuning:
 
 - `max_slope` (0.8 → ~0.35) and `max_roughness` (0.1 → ~0.05) may need reduction for more aggressive obstacle detection
 - Frame shift fix (7.4) still open — elevation map may need republishing in `map` frame
