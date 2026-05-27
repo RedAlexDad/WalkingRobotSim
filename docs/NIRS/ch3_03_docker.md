@@ -16,9 +16,7 @@ Python-зависимости: CuPy 13.x (CUDA 12.x) — GPU-ядра для ele
 
 ROS 2-зависимости: ROS 2 Jazzy (base), устанавливаемый через apt; Cyclone DDS RMW — `rmw_cyclonedds_cpp`; пакеты `elevation_mapping_cupy`, `grid_map`, `rviz2`.
 
-### 3.3.2 Проблемы совместимости и их решения
-
-В ходе интеграции были выявлены и решены следующие проблемы.
+В ходе интеграции были выявлены и решены следующие проблемы совместимости.
 
 **Проблема 1: CuPy JIT падает на numpy 2.x с GPU CC 7.5**
 
@@ -40,20 +38,9 @@ ROS 2-зависимости: ROS 2 Jazzy (base), устанавливаемый
 
 Симулятор публикует трансформации на `/robot1/tf`, а elevation_mapping_node слушает `/tf`. Решение: создан Python-скрипт `tf_relay.py`, который подписывается на оба namespaced топика и републикует на `/tf` и `/tf_static` с корректными QoS-профилями.
 
-### 3.3.3 CPU-версия образа
+Для разработки и отладки без GPU passthrough создан альтернативный Dockerfile (`Dockerfile.cpu`), базирующийся на официальном образе ROS 2 Jazzy. Пакет elevation_mapping_cupy работает в режиме CPU-fallback на чистом numpy, обеспечивая частоту обновления карты около 5 Гц — достаточно для отладки, но не для real-time навигации.
 
-Для разработки и отладки без GPU passthrough создан альтернативный Dockerfile (`Dockerfile.cpu`). Он базируется на официальном образе ROS 2 Jazzy (`osrf/ros:jazzy-desktop`) и устанавливает все Python-зависимости (numpy, scipy, grid_map, tf2-ros) без CuPy и CUDA-драйверов. Пакет elevation_mapping_cupy работает в режиме CPU-fallback на чистом numpy.
-
-CPU-версия собирается и запускается отдельными make-целями:
-```
-make elevation-cpu-build   # сборка образа
-make elevation-cpu         # запуск контейнера на переднем плане
-make elevation-cpu-bg      # запуск в фоне
-```
-
-В CPU-режиме частота обновления карты падает с 10 до ~5 Гц, что достаточно для отладки плагинов, ground segmentation и конфигурации Nav2, но не обеспечивает real-time производительность для полноценной навигации.
-
-### 3.3.4 Структура compose.yml
+### 3.3.2 Структура compose.yml, запуск и конфигурация
 
 Корневой `compose.yml` описывает оба сервиса. Для устранения дублирования общих полей (сетевой режим, переменные окружения, монтирования) применяются YAML-якоря:
 ```
@@ -68,8 +55,6 @@ make elevation-cpu-bg      # запуск в фоне
 
 Сервис elevation-cpu использует образ `elevation_mapping_cupy:cpu`, наследует общие настройки через YAML-якоря, но не требует GPU-устройств.
 
-### 3.3.4 Запуск системы
-
 Для запуска системы необходимо выполнить следующие шаги:
 
 1) предоставить доступ к X11: `xhost +local:`;
@@ -81,7 +66,5 @@ make elevation-cpu-bg      # запуск в фоне
 4) в отдельном терминале запустить elevation: `make elevation-bg` (или `make elevation-cpu-bg`);
 
 5) для визуализации: `make elevation-rviz`;
-
-### 3.3.5 Монтирование конфигурационных файлов
 
 Для обеспечения гибкой настройки без пересборки образа конфигурационные файлы монтируются как volumes. К ним относятся: `core_param.yaml` (основные параметры elevation_mapping: resolution, map_length, min_valid_distance, max_ray_length), `go2_lidar3d.yaml` (robot-specific конфигурация: топики, фреймы, слои), `cyclonedds.xml` (конфигурация DDS для межконтейнерной связи), `nav2_params.yaml` (параметры Nav2 planner и controller), `elevation_to_costmap.launch.py` (launch-файл моста) и `elevation.rviz` (конфигурация RViz для визуализации). Данный подход позволяет изменять параметры на лету и перезапускать ноду без пересборки Docker-образа [7].

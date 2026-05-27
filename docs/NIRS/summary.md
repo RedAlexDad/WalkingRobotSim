@@ -8,39 +8,32 @@
 
 ## Progress
 ### Done
-- **root cause:** GitHub markdown pre-processor преобразует `\_` → `_` внутри math-блоков
-- KaTeX воспринимает `_` как оператор нижнего индекса — `\mathrm{elevation}\_\mathrm{diff}\_\mathrm{cost}` становится `\mathrm{elevation}_\mathrm{diff}_\mathrm{cost}` = Double subscripts
-- Заменены все `\_` между `\mathrm{...}` на camelCase имена внутри единого `\mathrm{...}` в 5 файлах:
-  - `\mathrm{map}\_\mathrm{origin}_x` → `\mathrm{mapOrigin}_x`
-  - `\mathrm{slope}\_\mathrm{cost}` → `\mathrm{slopeCost}`
-  - `\mathrm{elevation}\_\mathrm{diff}\_\mathrm{cost}` → `\mathrm{elevationDiffCost}`
-  - `\mathrm{terrain}\_\mathrm{type}` → `\mathrm{terrainType}`
-  - `\mathrm{edge}\_\mathrm{cost}` → `\mathrm{edgeCost}`
-  - `\mathrm{path}\_\mathrm{length}` → `\mathrm{pathLength}`
-  - `\mathrm{travel}\_\mathrm{time}` → `\mathrm{travelTime}`
-  - `\mathrm{max}\_\mathrm{slope}` → `\mathrm{maxSlope}`
-  - `\mathrm{max}\_\mathrm{roughness}` → `\mathrm{maxRoughness}`
-  - `\mathrm{max}\_\mathrm{elevation}\_\mathrm{diff}` → `\mathrm{maxElevationDiff}`
-- Обновлён AGENTS.md с правильным решением и автоматизацией
-- Коммит `9901382` (6 файлов, 40 insertions, 23 deletions)
+- **LaTeX fixes:** Заменены `\_` между `\mathrm{...}` на camelCase (10 паттернов в 5 файлах). AGENTS.md обновлён. Коммит `9901382`.
+- **Intro paragraphs:** Добавлены вводные абзацы (≥5 предложений) во все 11 файлов главы 3.
+- **Mermaid diagrams (ch3_02_architecture.md):** 3 диаграммы (архитектура, развёртывание, поток данных), конвертированы из X/Y-координат в `flowchart TB`.
+- **Структурное сжатие подсекций (N → 3-4):**
+  - `ch3_02_architecture.md`: 6 → 3 (3.2.1 архитектура+развёртывание, 3.2.2 коммуникации+TF, 3.2.3 поток данных+топики)
+  - `ch3_03_docker.md`: 5 → 2 (3.3.1 сборка+запуск+сеть, 3.3.2 compose+make+отладка)
+  - `ch3_04_lidar.md`: 7 → 3 (3.4.1 выбор+конвертер+PointCloud2, 3.4.2 TF-relay, 3.4.3 фильтры+валидация)
+  - `ch3_05_tf_dds.md`: 7 → 3 (3.5.1 TF-дерево+релеи, 3.5.2 DDS+SHM+миграция, 3.5.3 QoS+выводы)
+  - `ch3_06_filtering.md`: 7 → 4 (3.6.1 pipeline, 3.6.2 voxel+RAM+outlier, 3.6.3 visibility+body, 3.6.4 skip-frame+итог)
+  - `ch3_07_ground_seg.md`: 6 → 3 (3.7.1 алгоритм GPF, 3.7.2 интеграция, 3.7.3 оптимизация+результаты)
+  - `ch3_08_dem.md`: 8 → 4 (3.8.1 структура+слои, 3.8.2 pipeline GPU, 3.8.3 pipeline CPU, 3.8.4 визуализация+метрики)
+  - `ch3_09_cost.md`: 9 → 4 (3.9.1 slope+roughness+elevationDiff, 3.9.2 traversability+пороги, 3.9.3 costmap+Nav2, 3.9.4 результаты)
+  - `ch3_10_gait.md`: 8 → 4 (3.10.1 режимы traversability, 3.10.2 параметры+адаптация, 3.10.3 плавность+прогнозирование, 3.10.4 типы+валидация)
+  - `ch3_11_testing.md`: 6 → 3 (3.11.1 сценарии+процедура, 3.11.2 результаты+таблица, 3.11.3 ошибки+уроки)
+  - `ch3_12_metrics.md`: 8 → 4 (3.12.1 точность+производительность, 3.12.2 навигация, 3.12.3 инструменты+baseline, 3.12.4 целевые показатели)
+  - `ch3_13_conclusions.md`: 5 → 3 (3.13.1 результаты+ТЗ+таблица, 3.13.2 проблемы, 3.13.3 развитие)
+- **Bug fix (ch3_08_dem.md):** Восстановлены удалённые подсекции 3.8.4 и 3.8.5 после merge (перезаписаны соседним содержимым).
 
 ### In Progress
 - (none)
 
 ### Blocked
-- Ожидает проверки на GitHub: ошибка "Double subscripts" должна исчезнуть, т.к. в формулах больше нет `\_` (только `_` для intentional subscript `cell_x`, `foot_x`, `w_{\mathrm{slope}}` и т.д.)
-
-## Key Decisions
-- Вместо `\_` (который слопается GitHub pre-processor'ом) → camelCase внутри `\mathrm{...}`
-- Второе решение (вынесение `\_` между `\mathrm{...}`) тоже не работает — GitHub превращает `\_` → `_` → KaTeX видит subscript
+- (none)
 
 ## Next Steps
 - Пушнуть коммит на GitHub и проверить отображение
 
 ## Relevant Files
-- `/home/redalexdad/GitHub/WalkingRobotSim/docs/NIRS/ch3_08_dem.md` — `mapOrigin`
-- `/home/redalexdad/GitHub/WalkingRobotSim/docs/NIRS/ch3_09_cost.md` — `slopeCost`, `roughnessCost`, `elevationDiffCost`, `maxSlope`, `maxRoughness`, `maxElevationDiff`, `edgeCost`
-- `/home/redalexdad/GitHub/WalkingRobotSim/docs/NIRS/ch3_10_gait.md` — `mapOrigin`, `terrainType`
-- `/home/redalexdad/GitHub/WalkingRobotSim/docs/NIRS/ch3_12_metrics.md` — `pathLength`, `travelTime`
-- `/home/redalexdad/GitHub/WalkingRobotSim/docs/NIRS/ch3_13_conclusions.md` — `slopeCost`, `roughnessCost`, `elevationDiffCost`
-- `/home/redalexdad/GitHub/WalkingRobotSim/docs/NIRS/AGENTS.md` — patterns (updated)
+- Все файлы `ch3_01_intro.md`–`ch3_13_conclusions.md` в `/home/redalexdad/GitHub/WalkingRobotSim/docs/NIRS/`
