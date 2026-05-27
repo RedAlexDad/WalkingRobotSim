@@ -11,6 +11,7 @@
 ```mermaid
 graph TB
     subgraph Sim["Контейнер Simulator"]
+        direction TB
         GZ[Gazebo Harmonic<br/>gpu_lidar]
         L2C[laser_to_cloud_converter<br/>C++]
         RSP[robot_state_publisher]
@@ -19,16 +20,17 @@ graph TB
     end
 
     subgraph Elev["Контейнер Elevation"]
+        direction TB
         GS[ground_segmenter.py]
         EM[elevation_mapping_node<br/>CuPy/CUDA]
-        PL[Плагины:<br/>surface_gradient<br/>roughness<br/>cost_function]
         CB[elevation_to_costmap_node]
         GA[gait_adaptor]
-        RV[RViz2]
         GT[ground_truth_publisher]
+        RV[RViz2]
     end
 
     subgraph Nav2["Nav2 (planner)"]
+        direction TB
         SP[SmacPlanner 2D]
     end
 
