@@ -99,15 +99,18 @@ flowchart TB
 Рассмотрим поток данных от сенсора до исполнительных механизмов (Рисунок 3.2).
 
 ```mermaid
-flowchart LR
-    A["Шаг 1: LiDAR<br/>захват 360×16<br/>10 Гц"] --> B["Шаг 2: laser_to_cloud<br/>LaserScan  —  PointCloud2"]
-    B --> C["Шаг 3: DDS<br/>Cyclone передача<br/>между контейнерами"]
-    C --> D["Шаг 4: ground_segmenter<br/>GPF RANSAC<br/>ground / obstacle"]
-    D --> E["Шаг 5: elevation_mapping<br/>GPU обновление<br/>карты высот"]
-    E --> F["Шаг 6: Плагины<br/>slope + roughness<br/>+ traversability"]
-    F --> G["Шаг 7: costmap_bridge<br/>GridMap  —  OccupancyGrid"]
-    G --> H["Шаг 8: Nav2<br/>SmacPlanner<br/>планирование пути"]
-    H --> I["Шаг 9: gait_adaptor<br/>адаптация походки<br/>под рельеф"]
+flowchart TB
+    A["Шаг 1: LiDAR<br/>захват 360×16<br/>10 Гц"]
+    B["Шаг 2: laser_to_cloud<br/>LaserScan → PointCloud2"]
+    C["Шаг 3: DDS<br/>Cyclone передача<br/>между контейнерами"]
+    D["Шаг 4: ground_segmenter<br/>GPF RANSAC<br/>ground / obstacle"]
+    E["Шаг 5: elevation_mapping<br/>GPU обновление<br/>карты высот"]
+    F["Шаг 6: Плагины<br/>slope + roughness<br/>+ traversability"]
+    G["Шаг 7: costmap_bridge<br/>GridMap → OccupancyGrid"]
+    H["Шаг 8: Nav2<br/>SmacPlanner<br/>планирование пути"]
+    I["Шаг 9: gait_adaptor<br/>адаптация походки<br/>под рельеф"]
+
+    A --> B --> C --> D --> E --> F --> G --> H --> I
 ```
 
 Рисунок 3.2 — Поток данных от сенсора до исполнительных механизмов
