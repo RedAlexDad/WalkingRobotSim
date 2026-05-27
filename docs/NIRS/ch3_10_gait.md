@@ -10,7 +10,16 @@
 
 ### 3.10.2 Проецирование опор на карту высот
 
-Позиции опор робота получаются из кинематики (joint states) или из TF-дерева (если foot frames публикуются). Для каждой опоры выполняется трансформация foot_frame  —  map_frame, после чего определяется ячейка карты: cell_x = floor((foot_x − map_origin_x) / resolution), cell_y = floor((foot_y − map_origin_y) / resolution), и traversability = t[cell_y, cell_x]. Если опора находится за пределами карты, используется значение по умолчанию 0,5 (средняя проходимость).
+Позиции опор робота получаются из кинематики (joint states) или из TF-дерева (если foot frames публикуются). Для каждой опоры выполняется трансформация foot_frame  →  map_frame, после чего определяется ячейка карты:
+
+$$
+\begin{aligned}
+\text{cell}_x &= \left\lfloor \frac{\text{foot}_x - \text{map\_origin}_x}{\text{resolution}} \right\rfloor \\
+\text{cell}_y &= \left\lfloor \frac{\text{foot}_y - \text{map\_origin}_y}{\text{resolution}} \right\rfloor
+\end{aligned}
+$$
+
+и $\text{traversability} = \mathbf{t}[\text{cell}_y, \text{cell}_x]$. Если опора находится за пределами карты, используется значение по умолчанию 0,5 (средняя проходимость).
 
 ### 3.10.3 Параметры адаптации
 
@@ -31,7 +40,13 @@
 
 Входными данными алгоритма является traversability под опорами [t₁, t₂, t₃, t₄]. Выходные данные — параметры походки (step_height, frequency, speed, body_height).
 
-Вычисление агрегированной traversability: terrain_type = min(t₁, t₂, t₃, t₄) — худшая опора определяет режим.
+Вычисление агрегированной traversability:
+
+$$
+\text{terrain\_type} = \min(t_1, t_2, t_3, t_4)
+$$
+
+— худшая опора определяет режим.
 
 Если terrain_type > 0,7 (Safe): step_height = 0,04 м, frequency = 2,0 Гц, speed = 0,5 м/с, body_height = 0,25 м, gait_type = "trot" (рысь — эффективная походка).
 
@@ -41,7 +56,13 @@
 
 ### 3.10.5 Плавность перехода
 
-Для обеспечения плавного изменения походки используется экспоненциальное сглаживание: param_current = param_current × (1,0 − alpha) + param_target × alpha, где alpha = 0,3 (коэффициент сглаживания). Типичное время перехода между режимами: Safe  —  Medium — около 3–4 шагов (1,5–2 с при частоте 2 Гц), Medium  —  Safe — 2–3 шага, Medium  —  Unsafe — 1–2 шага (быстрая реакция на опасность).
+Для обеспечения плавного изменения походки используется экспоненциальное сглаживание:
+
+$$
+\text{param}_{\text{current}} = \text{param}_{\text{current}} \times (1 - \alpha) + \text{param}_{\text{target}} \times \alpha, \quad \alpha = 0.3
+$$
+
+где $\alpha$ — коэффициент сглаживания. Типичное время перехода между режимами: Safe  —  Medium — около 3–4 шагов (1,5–2 с при частоте 2 Гц), Medium  —  Safe — 2–3 шага, Medium  —  Unsafe — 1–2 шага (быстрая реакция на опасность).
 
 ### 3.10.6 Прогнозирование traversability
 

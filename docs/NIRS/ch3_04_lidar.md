@@ -32,9 +32,15 @@ ROS 2 `sensor_msgs/LaserScan` не имеет полей `vertical_angle_min/max
 
 2) Обработка LaserScan: при получении сообщения `gz.msgs.LaserScan` извлекаются параметры сканирования (углы, количество лучей), восстанавливаются вертикальные углы — для 16 лучей диапазон ±15° разбивается равномерно, и каждая точка проецируется в трёхмерное пространство:
 
-x = d × cos(θ_v) × sin(θ_h), y = d × cos(θ_v) × cos(θ_h), z = d × sin(θ_v),
+$$
+\begin{aligned}
+x &= d \cos\theta_v \sin\theta_h \\
+y &= d \cos\theta_v \cos\theta_h \\
+z &= d \sin\theta_v
+\end{aligned}
+$$
 
-где d — измеренное расстояние, θ_v — вертикальный угол, θ_h — горизонтальный угол.
+где $d$ — измеренное расстояние, $\theta_v$ — вертикальный угол, $\theta_h$ — горизонтальный угол.
 
 3) Публикация PointCloudPacked: результат публикуется как `gz.msgs.PointCloudPacked`, и ros_gz_bridge автоматически конвертирует его в `sensor_msgs/PointCloud2` на топик `/robot1/scan/points`.
 

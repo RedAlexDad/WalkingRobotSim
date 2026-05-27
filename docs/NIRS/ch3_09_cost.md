@@ -12,7 +12,9 @@ Traversability вычисляется в плагине `cost_function.py`, ко
 
 ### 3.9.3 Общая формула traversability
 
-Traversability = 1,0 − (w_slope × slope_cost + w_roughness × roughness_cost + w_elevation × elevation_diff_cost),
+$$
+\text{traversability} = 1 - \bigl(w_{\text{slope}} \cdot \text{slope\_cost} + w_{\text{roughness}} \cdot \text{roughness\_cost} + w_{\text{elevation}} \cdot \text{elevation\_diff\_cost}\bigr)
+$$,
 
 где веса по умолчанию: w_slope = 0,5, w_roughness = 0,3, w_elevation = 0,2.
 
@@ -20,11 +22,15 @@ Traversability = 1,0 − (w_slope × slope_cost + w_roughness × roughness_cost 
 
 ### 3.9.4 Компоненты стоимости
 
-Slope cost: slope_cost = min(slope / max_slope, 1,0), где slope — угол наклона поверхности в радианах, max_slope = 25° (0,436 рад). Для Unitree Go2 максимальный безопасный угол наклона составляет примерно 25°, что определяется конструкцией ног (диапазон движения суставов), положением центра масс относительно опорной площадки и сцеплением подошв с поверхностью [6].
+$$
+\begin{aligned}
+\text{slope\_cost} &= \min\left(\frac{\text{slope}}{\text{max\_slope}}, 1.0\right), \quad \text{max\_slope} = 25^\circ = 0.436\ \text{рад} \\
+\text{roughness\_cost} &= \min\left(\frac{\text{roughness}}{\text{max\_roughness}}, 1.0\right), \quad \text{max\_roughness} = 0.10\ \text{м} \\
+\text{elevation\_diff\_cost} &= \min\left(\frac{|z - z_{\text{robot}}|}{\text{max\_elevation\_diff}}, 1.0\right), \quad \text{max\_elevation\_diff} = 0.30\ \text{м}
+\end{aligned}
+$$
 
-Roughness cost: roughness_cost = min(roughness / max_roughness, 1,0), где max_roughness = 0,1 м.
-
-Elevation diff cost: elevation_diff_cost = min(|z − z_robot| / max_elevation_diff, 1,0), где max_elevation_diff = 0,3 м.
+Для Unitree Go2 максимальный безопасный угол наклона составляет примерно 25°, что определяется конструкцией ног (диапазон движения суставов), положением центра масс относительно опорной площадки и сцеплением подошв с поверхностью [6].
 
 ### 3.9.5 Классификация типов местности
 
@@ -44,7 +50,9 @@ Elevation diff cost: elevation_diff_cost = min(|z − z_robot| / max_elevation_d
 
 Для интеграции traversability с Nav2 разработан мост `elevation_to_costmap_node.py`, который подписывается на топик `/elevation_map` (GridMap) и публикует `nav2_msgs/OccupancyGrid` на `/elevation_costmap`. Конвертация выполняется по формуле:
 
-cost = 255 × (1,0 − traversability)
+$$
+\text{cost} = 255 \times (1 - \text{traversability})
+$$
 
 где cost = 0 (свободно) соответствует traversability = 1,0; cost = 254 (занято) — traversability ≈ 0,004; cost = 255 (неизвестно) — traversability = 0,0.
 
@@ -68,7 +76,13 @@ global_costmap:
 
 ### 3.9.8 Пример расчёта стоимости пути
 
-Пусть роботу нужно пройти из точки A в точку B. Планировщик использует функцию стоимости ребра графа: edge_cost = distance × α + (1,0 − traversability) × β, где α = 1,0 (вес расстояния), β = 5,0 (вес traversability, приоритет безопасности).
+Пусть роботу нужно пройти из точки A в точку B. Планировщик использует функцию стоимости ребра графа:
+
+$$
+\text{edge\_cost} = \text{distance} \times \alpha + (1 - \text{traversability}) \times \beta
+$$
+
+где $\alpha = 1.0$ (вес расстояния), $\beta = 5.0$ (вес traversability, приоритет безопасности).
 
 Пример 1 — прямой путь через холм длиной 10 м со средней traversability 0,3 (крутой склон). Стоимость: 10 × 1,0 + (1,0 − 0,3) × 5,0 = 13,5.
 

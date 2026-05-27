@@ -44,14 +44,14 @@ Visibility cleanup — алгоритм, реализованный на CUDA, �
 
 ```mermaid
 flowchart LR
-    A["Облако точек<br/>sensor_msgs/PointCloud2"] --> B{"min_valid_dist<br/>&#60; 0.3 м?"}
+    A["Облако точек<br/>sensor_msgs/PointCloud2"] -->     B{"min_valid_dist<br/>< 0.3 м?"}
     B -->|Да| X["Отброс"]
-    B -->|Нет| C{"max_ray_length<br/>&#62; 10.0 м?"}
+    B -->|Нет| C{"max_ray_length<br/>> 10.0 м?"}
     C -->|Да| X
     C -->|Нет| D{"ramped_height<br/>превышение<br/>порога?"}
     D -->|Да| X
     D -->|Нет| E["Проецирование<br/>в фрейм карты<br/>(TF)"]
-    E --> F{"Махаланобис<br/>&#62; 2.0?"}
+    E --> F{"Махаланобис<br/>> 2.0?"}
     F -->|Да| X
     F -->|Нет| G["Обновление карты<br/>взвешенное среднее<br/>+ дисперсия"]
 ```

@@ -18,7 +18,13 @@
 
 6) Карта высот (DEM): карта высот публикуется с кадром odom, разрешением 0,1 м, размером 20×20 м, с частотой 10 Гц. Содержит слои elevation, variance, traversability. GPU-обработка занимает менее 2 мс на кадр. CPU fallback обеспечивает ~5 Гц на чистом numpy.
 
-7) Плагины elevation mapping: разработаны surface_gradient.py (PCA gradient поверхности, окно 3×3), roughness.py (RMSE в окне 5×5), cost_function.py (traversability = 1 − w_slope · slope_cost − w_roughness · roughness_cost − w_elevation · elevation_diff_cost с весами 0,5/0,3/0,2).
+7) Плагины elevation mapping: разработаны surface_gradient.py (PCA gradient поверхности, окно 3×3), roughness.py (RMSE в окне 5×5), cost_function.py:
+
+$$
+\text{traversability} = 1 - w_{\text{slope}} \cdot \text{slope\_cost} - w_{\text{roughness}} \cdot \text{roughness\_cost} - w_{\text{elevation}} \cdot \text{elevation\_diff\_cost}
+$$
+
+с весами $w_{\text{slope}} = 0.5$, $w_{\text{roughness}} = 0.3$, $w_{\text{elevation}} = 0.2$.
 
 8) Адаптация походки: реализовано изменение высоты шага (0,04–0,15 м), частоты (1,0–2,0 Гц), скорости (0,15–0,5 м/с), высоты корпуса (0,18–0,25 м) и типа походки (trot/crawl/crawl_slow) с плавными переходами (экспоненциальное сглаживание, α = 0,3).
 
