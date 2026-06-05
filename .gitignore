@@ -88,5 +88,8 @@ wheels/
 # Qwen
 .qwen/*
 
+# Авто-генерируемый хеш последней сборки
+.last_build_commit
+
 # Примеры НИРС (большие PDF, не часть кода)
 docs/NIRS/examples/
