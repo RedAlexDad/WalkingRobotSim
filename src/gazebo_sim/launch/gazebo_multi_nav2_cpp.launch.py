@@ -167,7 +167,7 @@ def generate_launch_description():
                 robot["y_pose"],
                 "-z",
                 robot["z_pose"],
-                '-Y', str(robot['Y_pose']),
+                # '-Y', robot['Y_pose']
             ],
             output="screen",
         )
