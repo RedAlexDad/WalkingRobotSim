@@ -2,9 +2,10 @@
 # ЭТАП 1: Базовый образ с системными зависимостями
 # ============================================================
 ARG BASE_IMG=osrf/ros:jazzy-desktop
+ARG ROS_DISTRO=jazzy
 FROM ${BASE_IMG} AS base-system
 
-ARG ROS_DISTRO=jazzy
+ARG ROS_DISTRO
 
 # Кэширование системных пакетов
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -29,14 +30,15 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # ============================================================
 FROM base-system AS ros-core
 
-ARG ROS_DISTRO=jazzy
+ARG ROS_DISTRO
 
 # Кэширование ROS core пакетов
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
     # ROS Core
-    ros-${ROS_DISTRO}-desktop \
+    ros-${ROS_DISTRO}-ros-base \
+    ros-${ROS_DISTRO}-rviz2 \
     ros-dev-tools \
     ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
     ros-${ROS_DISTRO}-rclcpp \
@@ -54,7 +56,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # ============================================================
 FROM ros-core AS ros-control
 
-ARG ROS_DISTRO=jazzy
+ARG ROS_DISTRO
 
 # Кэширование ROS control пакетов
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -76,7 +78,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # ============================================================
 FROM ros-control AS ros-simulation
 
-ARG ROS_DISTRO=jazzy
+ARG ROS_DISTRO
 
 # Кэширование ROS simulation пакетов
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -93,7 +95,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # ============================================================
 FROM ros-simulation AS ros-navigation
 
-ARG ROS_DISTRO=jazzy
+ARG ROS_DISTRO
 
 # Кэширование ROS navigation пакетов
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -112,7 +114,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # ============================================================
 FROM ros-navigation AS ros-vision
 
-ARG ROS_DISTRO=jazzy
+ARG ROS_DISTRO
 
 # Кэширование ROS vision пакетов
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -133,7 +135,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # ============================================================
 FROM ros-vision AS ros-tools
 
-ARG ROS_DISTRO=jazzy
+ARG ROS_DISTRO
 
 # Кэширование ROS tools пакетов
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -151,9 +153,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     ros-${ROS_DISTRO}-ament-cmake-pytest \
     libbenchmark-dev \
     libbenchmark-tools \
-    tmux \
-    tmuxinator \
     python3-colcon-common-extensions \
+    tmuxinator \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
@@ -170,19 +171,23 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pandas \
     PyYAML
 
-# YOLO + CPU-only torch (без CUDA)
+# YOLO + torch (по умолчанию CPU, для GPU укажи --build-arg TORCH_INDEX_URL=...)
 # Важно: numpy фиксируем <2 из-за несовместимости cv_bridge (собран под numpy 1.x)
-# opencv-python из pip удаляем — используем системный python3-opencv
+# opencv-python-headless легче и не конфликтует с системным python3-opencv
+ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
 RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed \
-    torch --index-url https://download.pytorch.org/whl/cpu \
-    && pip3 install --no-cache-dir --break-system-packages --ignore-installed ultralytics \
-    && pip3 uninstall --break-system-packages -y opencv-python \
-    && pip3 install --no-cache-dir --break-system-packages 'numpy<2'
+    torch --index-url ${TORCH_INDEX_URL} \
+    && pip3 install --no-cache-dir --break-system-packages --ignore-installed \
+    ultralytics --no-deps \
+    && pip3 install --no-cache-dir --break-system-packages \
+    opencv-python-headless 'numpy<2'
 
 # ============================================================
 # ЭТАП 9: Workspace setup
 # ============================================================
 FROM python-deps AS workspace
+
+ARG ROS_DISTRO
 
 WORKDIR /root/ws
 
@@ -191,14 +196,14 @@ COPY src/ /root/ws/src/
 
 # Кэширование сборки ROS пакетов
 RUN --mount=type=cache,target=/root/.ccache \
-    bash -c "source /opt/ros/jazzy/setup.bash && colcon cache lock && ccache colcon build --symlink-install --mixin ccache"
+    bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && colcon cache lock 2>/dev/null; ccache colcon build --symlink-install --mixin ccache"
 
 # ============================================================
 # ЭТАП 10: Финальный образ
 # ============================================================
 FROM workspace AS final
 
-ARG ROS_DISTRO=jazzy
+ARG ROS_DISTRO
 ARG WORKSPACE_DIR=/root/ws
 
 # Настройка entrypoint
@@ -222,12 +227,12 @@ ENV WORKSPACE_DIR=${WORKSPACE_DIR}
 ENV ROS_DISTRO=${ROS_DISTRO}
 ENV ROS_LOG_DIR=${WORKSPACE_DIR}/logs
 ENV GAZEBO_MASTER_URI=http://localhost:11345
-ENV GAZEBO_RESOURCE_PATH=/usr/share/gazebo-11
+ENV GAZEBO_RESOURCE_PATH=/usr/share/gz/gazebo-8
 ENV LD_LIBRARY_PATH=/usr/local/lib:/opt/ros/${ROS_DISTRO}/lib
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD bash -c 'source /opt/ros/${ROS_DISTRO}/setup.bash && source ${WORKSPACE_DIR}/install/setup.bash && ros2 node list' || exit 1
+    CMD bash -c 'source /opt/ros/${ROS_DISTRO}/setup.bash && source ${WORKSPACE_DIR}/install/setup.bash && ros2 node list || exit 1'
 
 # Точка входа
 ENTRYPOINT ["/ros_entrypoint.sh"]
