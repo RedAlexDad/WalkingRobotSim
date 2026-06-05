@@ -23,6 +23,7 @@ def generate_launch_description():
     container_name_full = (namespace, '/', container_name)
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
+    map_subscribe_transient_local = LaunchConfiguration('map_subscribe_transient_local')
 
     lifecycle_nodes = [
         'controller_server',
@@ -35,7 +36,10 @@ def generate_launch_description():
 
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
-    param_substitutions = {'autostart': autostart}
+    param_substitutions = {
+        'autostart': autostart,
+        'map_subscribe_transient_local': map_subscribe_transient_local,
+    }
 
     configured_params = ParameterFile(
         RewrittenYaml(
@@ -79,6 +83,10 @@ def generate_launch_description():
     )
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info', description='log level'
+    )
+    declare_map_subscribe_transient_local_cmd = DeclareLaunchArgument(
+        'map_subscribe_transient_local', default_value='true',
+        description='Whether to use transient local durability for map subscription'
     )
 
     load_nodes = GroupAction(
@@ -172,5 +180,6 @@ def generate_launch_description():
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
+    ld.add_action(declare_map_subscribe_transient_local_cmd)
     ld.add_action(load_nodes)
     return ld
