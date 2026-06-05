@@ -111,8 +111,6 @@ RUN mkdir -p ${WORKSPACE_DIR}/logs ${WORKSPACE_DIR}/data
 ENV WORKSPACE_DIR=${WORKSPACE_DIR}
 ENV ROS_DISTRO=${ROS_DISTRO}
 ENV ROS_LOG_DIR=${WORKSPACE_DIR}/logs
-ENV GAZEBO_MASTER_URI=http://localhost:11345
-ENV GAZEBO_RESOURCE_PATH=/usr/share/gz/gazebo-8
 ENV LD_LIBRARY_PATH=/usr/local/lib:/opt/ros/${ROS_DISTRO}/lib
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
