@@ -7,7 +7,6 @@ FROM ${BASE_IMG} AS base-system
 
 ARG ROS_DISTRO
 
-# Кэширование системных пакетов
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
@@ -23,7 +22,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     python3-dev \
     ccache \
     libeigen3-dev \
-    # ROS build tools (не входят в rosdep)
     ros-dev-tools \
     python3-colcon-common-extensions \
     libbenchmark-dev \
@@ -31,7 +29,17 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
-# ЭТАП 2: ROS зависимости через rosdep + Python пакеты
+# ЭТАП 2: Изоляция package.xml для кэша rosdep
+# ============================================================
+FROM base-system AS package-xmls
+
+WORKDIR /tmp
+COPY src/ /tmp/src/
+RUN find src/ -type f ! -name 'package.xml' -delete && \
+    find src/ -type d -empty -delete 2>/dev/null; true
+
+# ============================================================
+# ЭТАП 3: ROS зависимости через rosdep + Python пакеты
 # ============================================================
 FROM base-system AS ros-deps
 
@@ -39,12 +47,8 @@ ARG ROS_DISTRO
 
 WORKDIR /root/ws
 
-# Копируем только package.xml — кэш не сбивается при изменении .cpp/.py
-COPY src/ /root/ws/src/
-RUN find src/ -type f ! -name 'package.xml' -delete && \
-    find src/ -type d -empty -delete 2>/dev/null; true
+COPY --from=package-xmls /tmp/src/ /root/ws/src/
 
-# Установка ROS-зависимостей через rosdep (единый источник — package.xml)
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
@@ -52,7 +56,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     rosdep install --from-paths src --ignore-src --skip-keys "Eigen3 torch ultralytics" -y && \
     rm -rf /var/lib/apt/lists/*
 
-# Кэширование pip пакетов
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip3 install --no-cache-dir --break-system-packages \
     git+https://github.com/ruffsl/colcon-cache.git \
@@ -61,8 +64,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pandas \
     PyYAML
 
-# YOLO + torch (по умолчанию CPU, для GPU укажи --build-arg TORCH_INDEX_URL=...)
-# Важно: numpy фиксируем <2 из-за несовместимости cv_bridge (собран под numpy 1.x)
 ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
 RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed \
     torch --index-url ${TORCH_INDEX_URL} \
@@ -72,7 +73,7 @@ RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed \
     opencv-python-headless 'numpy<2'
 
 # ============================================================
-# ЭТАП 3: Сборка workspace
+# ЭТАП 4: Сборка workspace
 # ============================================================
 FROM ros-deps AS workspace
 
@@ -80,27 +81,24 @@ ARG ROS_DISTRO
 
 WORKDIR /root/ws
 
-# Полная копия исходного кода (предыдущий слой с package.xml перезаписывается)
 COPY src/ /root/ws/src/
 
-# Кэширование сборки ROS пакетов
 RUN --mount=type=cache,target=/root/.ccache \
     bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && colcon cache lock 2>/dev/null; ccache colcon build --symlink-install --mixin ccache"
 
 # ============================================================
-# ЭТАП 4: Финальный образ
+# ЭТАП 5: Финальный образ
 # ============================================================
 FROM workspace AS final
 
 ARG ROS_DISTRO
 ARG WORKSPACE_DIR=/root/ws
 
-# Настройка entrypoint
 RUN sed -i '/exec "\$@"/i umask 002' /ros_entrypoint.sh
 RUN sed -i '/exec "\$@"/i source "'"$WORKSPACE_DIR"'/install/setup.bash"' /ros_entrypoint.sh
 
 LABEL maintainer="Walking Robot Team"
-LABEL version="3.2"
+LABEL version="3.3"
 LABEL description="Walking Robot Simulation - ROS 2 Jazzy with Gazebo (rosdep)"
 LABEL architecture="linux/amd64"
 

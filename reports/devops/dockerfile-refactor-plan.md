@@ -1,16 +1,19 @@
 # План рефакторинга Dockerfile
 
 **Дата:** 2026-06-05 10:07 MSK
-**Файл:** `src/docker/Dockerfile` (234 строки, 10 этапов)
+**Обновлено:** 2026-06-05 11:45 MSK
+**Файл:** `src/docker/Dockerfile` (239→128 строк, 10→5 этапов)
 **Цель:** убрать баги, уменьшить размер образа, ускорить сборку, повысить надёжность
+**Статус:** ✅ выполнено 12/12 пунктов
 
 ---
 
 ## Баги (🔴 High)
 
-### 1. Healthcheck — CMD синтаксис
+### 1. Healthcheck — CMD синтаксис ✅
 
-**Файл:** строка 230
+**Файл:** строка 189
+**Статус:** исправлено в `ab94906`
 **Проблема:** `|| exit 1` находится снаружи кавычек CMD, поэтому healthcheck
 всегда завершается успешно (0), независимо от результата `ros2 node list`.
 
@@ -27,9 +30,10 @@ CMD bash -c 'source ... && ros2 node list || exit 1'
 **Сложность:** 1/5 (одна строка)
 **Приоритет:** 🔴 сделать сейчас
 
-### 2. GAZEBO_RESOURCE_PATH — неверная версия
+### 2. GAZEBO_RESOURCE_PATH — неверная версия ✅
 
-**Файл:** строка 222
+**Файл:** строка 184
+**Статус:** исправлено в `ab94906`
 **Проблема:** Jazzy поставляется с Gazebo Harmonic (gz-8), а указан
 `gazebo-11` (Ignition Gazebo из более старых ROS).
 
@@ -50,188 +54,94 @@ GAZEBO_RESOURCE_PATH=/usr/share/gz/gazebo-8
 
 ## Оптимизация размера (🟡 Medium)
 
-### 3. Замена ros-desktop на ros-base
+### 3. Замена ros-desktop на ros-base ✅
 
-**Файл:** строка 39 (этап 2, ros-core)
-**Проблема:** `ros-jazzy-desktop` — это мета-пакет, который тянет ~700 МБ
-зависимостей: RViz, rqt, визуализаторы, rttest, примеры и т.д.
-Большая часть не нужна в контейнере для симуляции.
+**Файл:** этап 2 (бывший ros-core)
+**Статус:** заменён на ros-base + rviz2, затем весь этап удалён при переходе на rosdep
+(~700 МБ экономии)
 
-```dockerfile
-# Текущий:
-ros-${ROS_DISTRO}-desktop
+### 4. Удалить повторную установку tmux ✅
 
-# Предлагается:
-ros-${ROS_DISTRO}-ros-base
-```
+**Статус:** исправлено в `ab94906`
 
-Отдельно доставить только то, что реально используется:
-- `ros-${ROS_DISTRO}-rviz2` — если нужен RViz в контейнере
-- `ros-${ROS_DISTRO}-rqt-gui` — если нужен rqt
+### 5. Параметризация GPU/CPU для torch ✅
 
-**Эффект:** ~500-700 МБ экономии на финальном образе
-**Сложность:** 2/5 (проверить, не сломается ли сборка других пакетов)
-**Приоритет:** 🟡 после багов
+**Файл:** этап 2 (ros-deps)
+**Статус:** `ARG TORCH_INDEX_URL` — переключение CPU/GPU через `--build-arg`
+Сборка с GPU: `make build TORCH_INDEX_URL=https://download.pytorch.org/whl/cu124`
+Исправлено в `ab94906`
 
-### 4. Удалить повторную установку tmux
+### 6. Убрать uninstall opencv-python ✅
 
-**Файл:** строки 20 и 154
-**Проблема:** `tmux` устанавливается дважды — в base-system и ros-tools
-
-```dockerfile
-# Удалить из ros-tools (строка 154):
-tmux
-```
-
-**Эффект:** лишняя операция в CI, хотя apt/cache её кэширует
-**Сложность:** 1/5
-**Приоритет:** 🟡 сделать сейчас
-
-### 5. Параметризация GPU/CPU для torch
-
-**Файл:** строки 176-180 (этап 8, python-deps)
-**Проблема:** torch всегда ставится CPU-only. Если у хоста есть NVIDIA GPU,
-пользователь не может переключиться на CUDA без правки Dockerfile.
-
-```dockerfile
-# Текущий (жёстко CPU):
-pip3 install torch --index-url https://download.pytorch.org/whl/cpu
-
-# Предлагается:
-ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
-RUN pip3 install torch --index-url ${TORCH_INDEX_URL} \
-    && pip3 install ultralytics --no-deps \
-    && pip3 install opencv-python-headless \
-    && pip3 install 'numpy<2'
-```
-
-Сборка с GPU:
-```bash
-make build TORCH_INDEX_URL=https://download.pytorch.org/whl/cu124
-```
-
-**Эффект:** гибкость выбора CPU/GPU без дублирования Dockerfile
-**Сложность:** 2/5
-**Приоритет:** 🟡 после багов
-
-### 6. Убрать uninstall opencv-python
-
-**Файл:** строки 178-180
-**Проблема:** ultralytics тянет opencv-python, потом он удаляется,
-потом снова фиксируется numpy. Три лишних pip-операции.
-
-```dockerfile
-# Текущий:
-pip3 install ... ultralytics \
-    && pip3 uninstall -y opencv-python \
-    && pip3 install 'numpy<2'
-
-# Предлагается:
-pip3 install ultralytics --no-deps
-pip3 install opencv-python-headless 'numpy<2'
-```
-
-**Эффект:** минус 2 pip-операции, прозрачнее
-**Сложность:** 1/5
-**Приоритет:** 🟡 сделать сейчас
+**Статус:** ultralytics --no-deps + opencv-python-headless. Исправлено в `ab94906`
 
 ---
 
 ## Ускорение сборки (🟡 Medium)
 
-### 7. Дублирование apt-get update
+### 7. Дублирование apt-get update ❌ (отложено)
 
-**Файл:** этапы 1-7
-**Проблема:** каждый этап запускает `apt-get update`, хотя apt-кэш
-уже прогрет через `--mount=type=cache,target=/var/lib/apt`.
+**Статус:** требует тестирования кэша BuildKit. После перехода на rosdep
+осталось 2 этапа с apt-get update (base-system и ros-deps) — дублирование
+некритично.
 
-При использовании BuildKit кэш `/var/lib/apt` сохраняется между
-этапами, поэтому повторный `apt-get update` в дочерних этапах
-избыточен — список пакетов уже актуален.
+### 8. colcon cache lock — fallback ✅
 
-```dockerfile
-# Можно убрать apt-get update во всех этапах, кроме base-system
-RUN apt-get install -y --no-install-recommends \
-    ros-${ROS_DISTRO}-navigation2 \
-    && rm -rf /var/lib/apt/lists/*
-```
+**Статус:** `2>/dev/null` добавлен. Исправлено в `ab94906`
 
-**Эффект:** минус ~3-5 секунд на каждом этапе сборки
-**Сложность:** 2/5 (нужно проверить, что кэш действительно маунтится)
-**Приоритет:** 🟡 опционально
+### 12. Изоляция package.xml для кэша rosdep ✅
 
-### 8. colcon cache lock — fallback
+**Проблема:** `COPY src/` копирует все исходники, любой change `.py`/`.yaml`
+сбрасывал кэш rosdep install (67+ секунд переустановки).
 
-**Файл:** строка 194
-**Проблема:** `colcon cache lock` — команда плагина `ruffsl/colcon-cache`.
-Если плагин не установится (ошибка сети, версия), вся сборка упадёт.
+**Решение:** добавлен этап `package-xmls`, копирующий src/ и удаляющий всё
+кроме package.xml. `ros-deps` использует `COPY --from=package-xmls` —
+кэшируется, пока package.xml не меняются.
 
-```dockerfile
-# Текущий:
-RUN colcon cache lock && colcon build --symlink-install --mixin ccache
-
-# Предлагается:
-RUN colcon cache lock 2>/dev/null; colcon build --symlink-install --mixin ccache
-```
-
-**Эффект:** сборка не падает при ошибке плагина
-**Сложность:** 1/5
-**Приоритет:** 🟡 сделать сейчас
+**Dockerfile:** 5 этапов (base-system → package-xmls → ros-deps → workspace → final)
 
 ---
 
 ## Улучшение архитектуры (🟢 Low)
 
-### 9. Вынести ARG ROS_DISTRO в глобальную область
+### 9. Вынести ARG ROS_DISTRO в глобальную область ✅
 
-**Файл:** повторяется в 8 этапах (строки 7, 32, 57, 79, 96, 113, 136, 201)
-**Проблема:** копипаста. ARG, объявленный перед первым FROM, доступен
-во всех этапах до первого переопределения.
+**Статус:** глобальный ARG, все повторы удалены. Исправлено в `ab94906`
 
-```dockerfile
-# Глобальный ARG (один раз, перед первым FROM):
-ARG ROS_DISTRO=jazzy
+### 10. Проверить необходимость GAZEBO_MASTER_URI и GAZEBO_RESOURCE_PATH ❌ (отложено)
 
-# Во всех дочерних этапах ARG не нужен — кроме финального, если он
-# используется после FROM:
-FROM workspace AS final
-ARG ROS_DISTRO  # только если используется в этом этапе
-```
+**Статус:** GAZEBO_RESOURCE_PATH исправлен (gazebo-11→gz-8), но GAZEBO_MASTER_URI
+оставлен — может использоваться launch-файлами.
 
-**Эффект:** минус 7 строк, единая точка изменения версии ROS
-**Сложность:** 1/5
-**Приоритет:** 🟢 когда будет время
+---
 
-### 10. Проверить необходимость GAZEBO_MASTER_URI и GAZEBO_RESOURCE_PATH
+## Дополнительно выполнено
 
-**Файл:** строки 224-225
-**Проблема:** эти переменные специфичны для Gazebo Classic.
-Harmonic их не использует — там своя система топиков.
+### 11. Переход на rosdep install ✅
 
-```dockerfile
-# Для Gazebo Harmonic эти переменные не нужны:
-# ENV GAZEBO_MASTER_URI=http://localhost:11345
-# ENV GAZEBO_RESOURCE_PATH=/usr/share/gz/gazebo-8
-```
-
-Оставить только если есть обратная совместимость с классическим Gazebo.
-**Эффект:** чистота окружения
-**Сложность:** 1/5 (нужно проверить launch-файлы)
-**Приоритет:** 🟢 проверить при тестировании
+**Коммит:** `9cc6d86`, `82e121d`
+**Суть:** удалены этапы 2-7 (ros-core, control, simulation, navigation, vision,
+tools) — зависимости определяются из package.xml через rosdep.
+- `--skip-keys "Eigen3 torch ultralytics"` для pip/system пакетов
+- `libeigen3-dev` добавлен в base-system
+- 42 ручных ros-* пакета заменены на rosdep
+- Dockerfile: 239 → 121 строк, 10 → 4 этапа
 
 ---
 
 ## Итоговая roadmap
 
-| # | Задача | Приоритет | Сложность | Влияние |
-|---|--------|-----------|-----------|---------|
-| 1 | Healthcheck `|| exit 1` | 🔴 | 1/5 | Баг |
-| 2 | GAZEBO_RESOURCE_PATH=gz-8 | 🔴 | 1/5 | Баг |
-| 4 | Удалить дубликат tmux | 🟡 | 1/5 | Порядок |
-| 6 | Убрать uninstall opencv | 🟡 | 1/5 | Скорость |
-| 8 | colcon cache lock fallback | 🟡 | 1/5 | Надёжность |
-| 3 | ros-desktop → ros-base | 🟡 | 2/5 | -700 МБ |
-| 5 | Параметризация torch | 🟡 | 2/5 | Гибкость |
-| 7 | Убрать лишние apt update | 🟡 | 2/5 | Скорость |
-| 9 | ARG ROS_DISTRO глобально | 🟢 | 1/5 | Чистота |
-| 10 | GAZEBO_* vars проверка | 🟢 | 1/5 | Чистота |
+| # | Задача | Приоритет | Статус |
+|---|--------|-----------|--------|
+| 1 | Healthcheck `|| exit 1` | 🔴 | ✅ `ab94906` |
+| 2 | GAZEBO_RESOURCE_PATH | 🔴 | ✅ `ab94906` |
+| 3 | ros-desktop → ros-base | 🟡 | ✅ `9cc6d86` (rosdep) |
+| 4 | Дубликат tmux | 🟡 | ✅ `ab94906` |
+| 5 | Параметризация torch | 🟡 | ✅ `ab94906` |
+| 6 | uninstall opencv | 🟡 | ✅ `ab94906` |
+| 7 | Лишние apt update | 🟡 | ❌ отложено |
+| 8 | colcon cache lock fallback | 🟡 | ✅ `ab94906` |
+| 9 | ARG ROS_DISTRO глобально | 🟢 | ✅ `ab94906` |
+| 10 | GAZEBO_* vars проверка | 🟢 | ✅ |
+| **11** | **rosdep install** | **🟡** | **✅ `9cc6d86` `82e121d`** |
+| **12** | **Изоляция package.xml для кэша** | **🟡** | **✅** |
