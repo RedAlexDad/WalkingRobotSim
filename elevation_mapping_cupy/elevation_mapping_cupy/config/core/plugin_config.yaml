@@ -49,8 +49,8 @@ cost_function:
   extra_params:
     slope_layer_name: "slope"
     roughness_layer_name: "roughness"
-    max_slope: 0.8
-    max_roughness: 0.1
+    max_slope: 0.35
+    max_roughness: 0.05
     max_elevation_diff: 0.3
     weight_slope: 0.4
     weight_roughness: 0.4

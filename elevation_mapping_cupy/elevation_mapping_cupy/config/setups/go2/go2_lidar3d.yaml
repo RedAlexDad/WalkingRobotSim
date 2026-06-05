@@ -1,8 +1,8 @@
 /elevation_mapping_node:
   ros__parameters:
-    map_frame: "odom"
+    map_frame: "map"
     base_frame: "base_link"
-    corrected_map_frame: "odom"
+    corrected_map_frame: "map"
 
     subscribers:
       depth:
