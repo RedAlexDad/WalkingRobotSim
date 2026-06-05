@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+set -e
+
+REPORT_DIR="reports"
+CHANGED_FILES=$(git diff --cached --name-only)
+
+if [ -z "$CHANGED_FILES" ]; then
+    exit 0
+fi
+
+if ! echo "$CHANGED_FILES" | grep -qv "^$REPORT_DIR/"; then
+    echo "[githook] Only report files changed, skipping"
+    exit 0
+fi
+
+ADDED=$(git diff --cached --diff-filter=A --name-only | tr '\n' ', ' | sed 's/, $//')
+MODIFIED=$(git diff --cached --diff-filter=M --name-only | tr '\n' ', ' | sed 's/, $//')
+STAT=$(git diff --cached --stat | tail -1)
+
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+TZONE=$(date '+%Z')
+FILENAME="$(date '+%Y-%m-%d_%H%M%S')"
+FILEPATH="$REPORT_DIR/$FILENAME.md"
+CURRENT_BRANCH=$(git branch --show-current)
+
+group_by_dir() {
+    local files="$1"
+    local label="$2"
+    if [ -z "$files" ]; then return; fi
+    echo ""
+    echo "### $label"
+    IFS=', ' read -ra ARR <<< "$files"
+    declare -A groups
+    for f in "${ARR[@]}"; do
+        dir=$(dirname "$f")
+        if [ "$dir" = "." ]; then dir="/"; fi
+        groups["$dir"]="${groups[$dir]}  - \`$f\`"$'\n'
+    done
+    for dir in "${!groups[@]}"; do
+        echo "**$dir**"
+        echo -n "${groups[$dir]}"
+    done
+}
+
+mkdir -p "$REPORT_DIR"
+
+{
+  echo "# Report $TIMESTAMP $TZONE"
+  echo ""
+  echo "**Branch:** $CURRENT_BRANCH"
+  echo "**Stats:** $STAT"
+  echo ""
+  echo "## What was added"
+  group_by_dir "$ADDED" "New files"
+  if [ -z "$ADDED" ]; then echo "-"; fi
+  echo ""
+  echo "## What was changed"
+  group_by_dir "$MODIFIED" "Modified files"
+  if [ -z "$MODIFIED" ]; then echo "-"; fi
+  echo ""
+  echo "## Problems encountered"
+  echo "-"
+  echo ""
+  echo "## How they were solved"
+  echo "-"
+} > "$FILEPATH"
+
+git add "$FILEPATH"
+
+echo "[githook] Report created and staged: $FILEPATH"
