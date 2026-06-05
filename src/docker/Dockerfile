@@ -22,6 +22,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     python3-pip \
     python3-dev \
     ccache \
+    libeigen3-dev \
     # ROS build tools (не входят в rosdep)
     ros-dev-tools \
     python3-colcon-common-extensions \
@@ -48,7 +49,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
     rosdep update && \
-    rosdep install --from-paths src --ignore-src -y && \
+    rosdep install --from-paths src --ignore-src --skip-keys "Eigen3 torch ultralytics" -y && \
     rm -rf /var/lib/apt/lists/*
 
 # Кэширование pip пакетов
