@@ -87,11 +87,12 @@ elevation-cpu-rviz:
 		rviz2 -d /ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/rviz/elevation.rviz; \
 	'
 
-## Запуск unit-тестов elevation_mapping_cupy (pytest)
+## Запуск unit-тестов elevation_mapping_cupy (pytest) с coverage
 elevation-test:
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск unit-тестов elevation_mapping_cupy...${NC}\n"
 	cd elevation_mapping_cupy/elevation_mapping_cupy/elevation_mapping_cupy/tests && \
-		PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -v --tb=short
+		python3 -m pytest -v --tb=short \
+			--cov=.. --cov-report=term
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Unit-тесты завершены${NC}\n"
 
 ## Логи elevation mapping (CPU)
