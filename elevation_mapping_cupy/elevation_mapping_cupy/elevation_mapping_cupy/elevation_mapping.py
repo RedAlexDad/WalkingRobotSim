@@ -9,22 +9,29 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-from elevation_mapping_cupy.kernels import (add_points_kernel,
-                                            average_map_kernel,
-                                            dilation_filter_kernel,
-                                            error_counting_kernel,
-                                            normal_filter_kernel,
-                                            polygon_mask_kernel, sum_kernel)
+
+from elevation_mapping_cupy.kernels import (
+    add_points_kernel,
+    average_map_kernel,
+    dilation_filter_kernel,
+    error_counting_kernel,
+    normal_filter_kernel,
+    polygon_mask_kernel,
+    sum_kernel,
+)
 from elevation_mapping_cupy.map_initializer import MapInitializer
 from elevation_mapping_cupy.parameter import Parameter
 from elevation_mapping_cupy.plugins.plugin_manager import PluginManager
-from elevation_mapping_cupy.traversability_filter import (
-    get_filter_chainer, get_filter_numpy, get_filter_torch)
+from elevation_mapping_cupy.traversability_filter import get_filter_chainer, get_filter_numpy, get_filter_torch
 from elevation_mapping_cupy.traversability_polygon import (
-    calculate_area, get_masked_traversability, is_traversable,
-    transform_to_map_index, transform_to_map_position)
+    calculate_area,
+    get_masked_traversability,
+    is_traversable,
+    transform_to_map_index,
+    transform_to_map_position,
+)
 
-from .backend import xp, GPU_AVAILABLE, cp, asnumpy, get_stream
+from .backend import GPU_AVAILABLE, asnumpy, cp, get_stream, xp
 
 if GPU_AVAILABLE:
     pool = cp.cuda.MemoryPool(cp.cuda.malloc_managed)
@@ -129,17 +136,11 @@ class ElevationMap:
 
         if GPU_AVAILABLE:
             if param.use_chainer:
-                self.traversability_filter = get_filter_chainer(
-                    param.w1, param.w2, param.w3, param.w_out
-                )
+                self.traversability_filter = get_filter_chainer(param.w1, param.w2, param.w3, param.w_out)
             else:
-                self.traversability_filter = get_filter_torch(
-                    param.w1, param.w2, param.w3, param.w_out
-                )
+                self.traversability_filter = get_filter_torch(param.w1, param.w2, param.w3, param.w_out)
         else:
-            self.traversability_filter = get_filter_numpy(
-                param.w1, param.w2, param.w3, param.w_out
-            )
+            self.traversability_filter = get_filter_numpy(param.w1, param.w2, param.w3, param.w_out)
         self.untraversable_polygon = xp.zeros((1, 2))
 
         # Plugins
@@ -499,8 +500,7 @@ class ElevationMap:
 
     def input_image(self, *args, **kwargs):
         raise NotImplementedError(
-            "Image input was removed from the supported surface of this repo. "
-            "Use pointcloud input only."
+            "Image input was removed from the supported surface of this repo. Use pointcloud input only."
         )
 
     def update_normal(self, dilated_map):
@@ -534,7 +534,10 @@ class ElevationMap:
             xp_module = xp
         m = input_map.copy()
         if fill_nan:
-            m = xp_module.where(self.elevation_map[2] > 0.5, m, xp_module.nan)
+            mask = self.elevation_map[2]
+            if mask.shape != m.shape:
+                mask = mask[1:-1, 1:-1]
+            m = xp_module.where(mask > 0.5, m, xp_module.nan)
         if add_z:
             m = m + self.center[2]
         return m[1:-1, 1:-1]
@@ -886,7 +889,9 @@ class ElevationMap:
         if clipped_area < 0.001:
             is_safe = False
             print("requested polygon is outside of the map")
-        result[...] = np.array([is_safe, t.get() if hasattr(t, 'get') else float(t), area.get() if hasattr(area, 'get') else float(area)])
+        result[...] = np.array(
+            [is_safe, t.get() if hasattr(t, "get") else float(t), area.get() if hasattr(area, "get") else float(area)]
+        )
         self.untraversable_polygon = un_polygon
         return untraversable_polygon_num
 
@@ -1012,13 +1017,15 @@ class ElevationMap:
                 if np.any(valid_mask):
                     vals = incoming_slice[valid_mask]
                     min_max = (float(np.nanmin(vals)), float(np.nanmax(vals)))
-                map_extent = self._map_extent_from_mask(map_rows, map_cols, valid_mask) or self._map_extent_from_slices(map_rows, map_cols)
+                map_extent = self._map_extent_from_mask(map_rows, map_cols, valid_mask) or self._map_extent_from_slices(
+                    map_rows, map_cols
+                )
                 print(
                     f"[ElevationMap] masked_replace layer '{name}': wrote {written} cells, "
                     f"X∈[{map_extent['x_min']:.2f},{map_extent['x_max']:.2f}], "
                     f"Y∈[{map_extent['y_min']:.2f},{map_extent['y_max']:.2f}], "
                     f"values {min_max if min_max else 'n/a'}",
-                    flush=True
+                    flush=True,
                 )
 
         self._invalidate_caches()
@@ -1078,9 +1085,7 @@ class ElevationMap:
     def _validate_geometry_against_shape(self, shape: Tuple[int, int], geometry: GridGeometry) -> None:
         expected_shape = geometry.shape
         if shape != expected_shape:
-            raise ValueError(
-                f"Grid shape mismatch: expected {expected_shape}, received {shape}."
-            )
+            raise ValueError(f"Grid shape mismatch: expected {expected_shape}, received {shape}.")
         if not math.isclose(float(geometry.resolution), float(self.resolution), rel_tol=1e-6, abs_tol=1e-6):
             raise ValueError(
                 f"Resolution mismatch: map uses {self.resolution}, incoming grid uses {geometry.resolution}."
@@ -1116,26 +1121,14 @@ class ElevationMap:
         patch_origin_y = patch_min_y
 
         map_start_x = int(np.clip(np.floor((overlap_min_x - map_origin_x) / self.resolution), 0, map_width))
-        map_end_x = int(
-            np.clip(np.ceil((overlap_max_x - map_origin_x) / self.resolution), 0, map_width)
-        )
+        map_end_x = int(np.clip(np.ceil((overlap_max_x - map_origin_x) / self.resolution), 0, map_width))
         map_start_y = int(np.clip(np.floor((overlap_min_y - map_origin_y) / self.resolution), 0, map_width))
-        map_end_y = int(
-            np.clip(np.ceil((overlap_max_y - map_origin_y) / self.resolution), 0, map_width)
-        )
+        map_end_y = int(np.clip(np.ceil((overlap_max_y - map_origin_y) / self.resolution), 0, map_width))
 
-        patch_start_x = int(
-            np.clip(np.floor((overlap_min_x - patch_origin_x) / geometry.resolution), 0, patch_cols)
-        )
-        patch_end_x = int(
-            np.clip(np.ceil((overlap_max_x - patch_origin_x) / geometry.resolution), 0, patch_cols)
-        )
-        patch_start_y = int(
-            np.clip(np.floor((overlap_min_y - patch_origin_y) / geometry.resolution), 0, patch_rows)
-        )
-        patch_end_y = int(
-            np.clip(np.ceil((overlap_max_y - patch_origin_y) / geometry.resolution), 0, patch_rows)
-        )
+        patch_start_x = int(np.clip(np.floor((overlap_min_x - patch_origin_x) / geometry.resolution), 0, patch_cols))
+        patch_end_x = int(np.clip(np.ceil((overlap_max_x - patch_origin_x) / geometry.resolution), 0, patch_cols))
+        patch_start_y = int(np.clip(np.floor((overlap_min_y - patch_origin_y) / geometry.resolution), 0, patch_rows))
+        patch_end_y = int(np.clip(np.ceil((overlap_max_y - patch_origin_y) / geometry.resolution), 0, patch_rows))
 
         width = min(map_end_x - map_start_x, patch_end_x - patch_start_x)
         height = min(map_end_y - map_start_y, patch_end_y - patch_start_y)

@@ -2,6 +2,7 @@
 
 .PHONY: elevation-build elevation elevation-bg elevation-rviz elevation-logs elevation-down
 .PHONY: elevation-cpu-build elevation-cpu elevation-cpu-bg elevation-cpu-logs elevation-cpu-down
+.PHONY: elevation-test
 
 require-elevation = \
 if [ -z "$$(docker ps -q -f name=elevation_mapping)" ]; then \
@@ -85,6 +86,13 @@ elevation-cpu-rviz:
 		source /ws/install/setup.bash 2>/dev/null; \
 		rviz2 -d /ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/rviz/elevation.rviz; \
 	'
+
+## Запуск unit-тестов elevation_mapping_cupy (pytest)
+elevation-test:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск unit-тестов elevation_mapping_cupy...${NC}\n"
+	cd elevation_mapping_cupy/elevation_mapping_cupy/elevation_mapping_cupy/tests && \
+		PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -v --tb=short
+	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Unit-тесты завершены${NC}\n"
 
 ## Логи elevation mapping (CPU)
 elevation-cpu-logs:

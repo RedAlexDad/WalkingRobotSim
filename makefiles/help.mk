@@ -73,6 +73,7 @@ help:
 	@printf "  ${GREEN}${BOLD}make elevation-cpu-logs${NC}          Логи CPU elevation mapping\n"
 	@printf "  ${GREEN}${BOLD}make elevation-cpu-down${NC}          Остановка CPU elevation mapping\n"
 	@printf "  ${GREEN}${BOLD}make elevation-cpu-rviz${NC}          RViz в CPU контейнере\n"
+	@printf "  ${GREEN}${BOLD}make elevation-test${NC}              Запуск unit-тестов (pytest)\n"
 	@echo ""
 	@printf "${BOLD}Тестирование и CI:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make test${NC}                 Полный цикл тестирования\n"
