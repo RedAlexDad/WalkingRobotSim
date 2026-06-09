@@ -262,6 +262,7 @@ local_costmap:
         map_subscribe_transient_local: true
         map_topic: "/elevation_costmap"
         enabled: true
+        combination_method: 1
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 4.0
@@ -310,6 +311,7 @@ global_costmap:
         map_subscribe_transient_local: true
         map_topic: "/elevation_costmap"
         enabled: true
+        combination_method: 1
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: true
