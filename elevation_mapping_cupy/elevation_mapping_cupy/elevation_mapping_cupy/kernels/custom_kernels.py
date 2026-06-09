@@ -5,6 +5,7 @@
 import string
 
 import numpy as np
+
 from ..backend import GPU_AVAILABLE, asnumpy, cp, scipy_ndimage, xp
 
 # =====================================================================
@@ -382,9 +383,7 @@ if GPU_AVAILABLE:
                     map[get_map_idx(i, 1)] = ${initial_variance};
                     map[get_map_idx(i, 2)] = 0;
                 }
-                """).substitute(
-                max_variance=max_variance, initial_variance=initial_variance
-            ),
+                """).substitute(max_variance=max_variance, initial_variance=initial_variance),
             name="average_map_kernel",
         )
         return average_map_kernel
@@ -661,10 +660,7 @@ if GPU_AVAILABLE:
             n = random.randint(3, 5)
 
             polygon = cp.array(
-                [
-                    [(random.random() - 0.5) * 10, (random.random() - 0.5) * 10]
-                    for i in range(n)
-                ],
+                [[(random.random() - 0.5) * 10, (random.random() - 0.5) * 10] for i in range(n)],
                 dtype=float,
             )
             print(polygon)
@@ -677,9 +673,7 @@ if GPU_AVAILABLE:
             import time
 
             start = time.time()
-            polygon_mask(
-                polygon, 0.0, 0.0, polygon_n, polygon_bbox, a, size=(100 * 100)
-            )
+            polygon_mask(polygon, 0.0, 0.0, polygon_n, polygon_bbox, a, size=(100 * 100))
             print(time.time() - start)
             import pylab as plt
 
@@ -721,26 +715,28 @@ def _make_add_points_cpu(
         ry = p[:, 1]
         rz = p[:, 2]
 
-        x = Rf[0] * rx + Rf[1] * ry + Rf[2] * rz + tf[0]
-        y = Rf[3] * rx + Rf[4] * ry + Rf[5] * rz + tf[1]
-        z = Rf[6] * rx + Rf[7] * ry + Rf[8] * rz + tf[2]
+        with np.errstate(invalid="ignore"):
+            x = Rf[0] * rx + Rf[1] * ry + Rf[2] * rz + tf[0]
+            y = Rf[3] * rx + Rf[4] * ry + Rf[5] * rz + tf[1]
+            z = Rf[6] * rx + Rf[7] * ry + Rf[8] * rz + tf[2]
 
-        v = sensor_noise_factor * (rx * rx + ry * ry + rz * rz)
+            v = sensor_noise_factor * (rx * rx + ry * ry + rz * rz)
 
-        cx = float(center_x[0])
-        cy = float(center_y[0])
+            cx = float(center_x[0])
+            cy = float(center_y[0])
 
-        cols = np.clip(((x - cx) / resolution + 0.5 * width).astype(int), 0, width - 1)
-        rows = np.clip(
-            ((y - cy) / resolution + 0.5 * height).astype(int), 0, height - 1
-        )
+            cols = np.clip(((x - cx) / resolution + 0.5 * width).astype(int), 0, width - 1)
+            rows = np.clip(((y - cy) / resolution + 0.5 * height).astype(int), 0, height - 1)
 
-        sensor_dist2 = (x - t[0]) ** 2 + (y - t[1]) ** 2 + (z - t[2]) ** 2
-        dxy = np.maximum(np.sqrt(x * x + y * y) - ramped_height_range_b, 0.0)
+            sensor_dist2 = (x - t[0]) ** 2 + (y - t[1]) ** 2 + (z - t[2]) ** 2
+            dxy = np.maximum(np.sqrt(x * x + y * y) - ramped_height_range_b, 0.0)
+
+        finite = np.isfinite(x) & np.isfinite(y) & np.isfinite(z)
         valid = np.ones(n_points, dtype=bool)
         valid &= sensor_dist2 >= min_valid_distance * min_valid_distance
         valid &= (z - t[2]) <= dxy * ramped_height_range_a + ramped_height_range_c
         valid &= (z - t[2]) <= max_height_range
+        valid &= finite
 
         inside = (cols > 0) & (cols < width - 1) & (rows > 0) & (rows < height - 1)
         mask = valid & inside
@@ -754,9 +750,7 @@ def _make_add_points_cpu(
         inlier_mask = mask & ~is_outlier
 
         if np.any(outlier_mask):
-            np.add.at(
-                map_, (1, rows[outlier_mask], cols[outlier_mask]), outlier_variance
-            )
+            np.add.at(map_, (1, rows[outlier_mask], cols[outlier_mask]), outlier_variance)
 
         if np.any(inlier_mask):
             vi = v[inlier_mask]
@@ -800,9 +794,7 @@ def _make_error_counting_cpu(
     ramped_height_range_b,
     ramped_height_range_c,
 ):
-    def error_counting_cpu(
-        map_, p, center_x, center_y, R, t, newmap, error, error_cnt, size=None
-    ):
+    def error_counting_cpu(map_, p, center_x, center_y, R, t, newmap, error, error_cnt, size=None):
         n_points = p.shape[0]
         Rf = R.ravel()
         tf = t.ravel()
@@ -811,24 +803,26 @@ def _make_error_counting_cpu(
         ry = p[:, 1]
         rz = p[:, 2]
 
-        x = Rf[0] * rx + Rf[1] * ry + Rf[2] * rz + tf[0]
-        y = Rf[3] * rx + Rf[4] * ry + Rf[5] * rz + tf[1]
-        z = Rf[6] * rx + Rf[7] * ry + Rf[8] * rz + tf[2]
+        with np.errstate(invalid="ignore"):
+            x = Rf[0] * rx + Rf[1] * ry + Rf[2] * rz + tf[0]
+            y = Rf[3] * rx + Rf[4] * ry + Rf[5] * rz + tf[1]
+            z = Rf[6] * rx + Rf[7] * ry + Rf[8] * rz + tf[2]
 
-        cx = float(center_x[0])
-        cy = float(center_y[0])
+            cx = float(center_x[0])
+            cy = float(center_y[0])
 
-        cols = np.clip(((x - cx) / resolution + 0.5 * width).astype(int), 0, width - 1)
-        rows = np.clip(
-            ((y - cy) / resolution + 0.5 * height).astype(int), 0, height - 1
-        )
+            cols = np.clip(((x - cx) / resolution + 0.5 * width).astype(int), 0, width - 1)
+            rows = np.clip(((y - cy) / resolution + 0.5 * height).astype(int), 0, height - 1)
 
-        sensor_dist2 = (x - tf[0]) ** 2 + (y - tf[1]) ** 2 + (z - tf[2]) ** 2
-        dxy = np.maximum(np.sqrt(x * x + y * y) - ramped_height_range_b, 0.0)
+            sensor_dist2 = (x - tf[0]) ** 2 + (y - tf[1]) ** 2 + (z - tf[2]) ** 2
+            dxy = np.maximum(np.sqrt(x * x + y * y) - ramped_height_range_b, 0.0)
+
+        finite = np.isfinite(x) & np.isfinite(y) & np.isfinite(z)
         valid = np.ones(n_points, dtype=bool)
         valid &= sensor_dist2 >= min_valid_distance * min_valid_distance
         valid &= (z - tf[2]) <= dxy * ramped_height_range_a + ramped_height_range_c
         valid &= (z - tf[2]) <= max_height_range
+        valid &= finite
 
         inside = (cols > 0) & (cols < width - 1) & (rows > 0) & (rows < height - 1)
         process = valid & inside
@@ -871,7 +865,7 @@ def _make_average_map_cpu(width, height, max_variance, initial_variance):
         map_valid = map_[2].ravel()
 
         cnt_mask = new_cnt > 0
-        variance_ok = ~((new_v / new_cnt) > max_variance)
+        variance_ok = ~((new_v / np.maximum(new_cnt, 1)) > max_variance)
 
         update_mask = cnt_mask & variance_ok
         reset_mask = cnt_mask & ~variance_ok
@@ -932,9 +926,7 @@ def _make_normal_filter_cpu(width, height, resolution):
 
 
 def _make_polygon_mask_cpu(width, height, resolution):
-    def polygon_mask_cpu(
-        polygon, center_x, center_y, polygon_n, polygon_bbox, mask, size=None
-    ):
+    def polygon_mask_cpu(polygon, center_x, center_y, polygon_n, polygon_bbox, mask, size=None):
         from matplotlib.path import Path
 
         cx = float(center_x)

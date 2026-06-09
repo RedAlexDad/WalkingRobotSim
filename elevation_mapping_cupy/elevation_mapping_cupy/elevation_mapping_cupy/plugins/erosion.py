@@ -7,13 +7,11 @@ from typing import List, Optional
 import cv2 as cv
 import numpy as np
 
-from ..backend import xp, GPU_AVAILABLE, asnumpy
-
+from ..backend import GPU_AVAILABLE, asnumpy, xp
 from .plugin_manager import PluginBase
 
 
 class Erosion(PluginBase):
-
     def __init__(
         self,
         input_layer_name="traversability",
@@ -79,15 +77,13 @@ class Erosion(PluginBase):
             layer_np = 1 - layer_np
         layer_min = float(layer_np.min())
         layer_max = float(layer_np.max())
-        layer_np_normalized = (
-            (layer_np - layer_min) * 255 / (layer_max - layer_min)
-        ).astype("uint8")
-        eroded_map_np = cv.erode(
-            layer_np_normalized, kernel, iterations=self.iterations
-        )
-        eroded_map_np = (
-            eroded_map_np.astype(np.float32) * (layer_max - layer_min) / 255 + layer_min
-        )
+        layer_range = layer_max - layer_min
+        if layer_range > 0:
+            layer_np_normalized = ((layer_np - layer_min) * 255 / layer_range).astype("uint8")
+        else:
+            layer_np_normalized = np.zeros_like(layer_np, dtype=np.uint8)
+        eroded_map_np = cv.erode(layer_np_normalized, kernel, iterations=self.iterations)
+        eroded_map_np = eroded_map_np.astype(np.float32) * (layer_max - layer_min) / 255 + layer_min
         if self.reverse:
             eroded_map_np = 1 - eroded_map_np
 
