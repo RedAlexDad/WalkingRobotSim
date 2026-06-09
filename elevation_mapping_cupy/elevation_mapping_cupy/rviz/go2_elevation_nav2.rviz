@@ -107,7 +107,7 @@ Visualization Manager:
       Color Transformer: IntensityLayer
       Enabled: true
       Height Layer: elevation
-      Height Transformer: GridMapLayer
+      Height Transformer: Flat
       History Length: 1
       Invert Rainbow: false
       Max Color: 255; 255; 255
@@ -133,7 +133,7 @@ Visualization Manager:
       Color Transformer: IntensityLayer
       Enabled: true
       Height Layer: elevation
-      Height Transformer: GridMapLayer
+      Height Transformer: Flat
       History Length: 1
       Invert Rainbow: false
       Max Color: 0; 255; 0
@@ -159,7 +159,7 @@ Visualization Manager:
       Color Transformer: IntensityLayer
       Enabled: true
       Height Layer: elevation
-      Height Transformer: GridMapLayer
+      Height Transformer: Flat
       History Length: 1
       Invert Rainbow: false
       Max Color: 255; 255; 255
@@ -185,7 +185,7 @@ Visualization Manager:
       Color Transformer: IntensityLayer
       Enabled: false
       Height Layer: elevation
-      Height Transformer: GridMapLayer
+      Height Transformer: Flat
       History Length: 1
       Invert Rainbow: false
       Max Color: 255; 255; 255
