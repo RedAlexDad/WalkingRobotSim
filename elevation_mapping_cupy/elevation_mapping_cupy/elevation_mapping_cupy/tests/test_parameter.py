@@ -20,3 +20,35 @@ def test_parameter():
     param.update()
     assert param.resolution == param.get_value("resolution")
     param.load_weights(param.weight_file)
+
+
+def test_set_value_invalid_type():
+    root = Path(__file__).resolve().parents[2]
+    param = Parameter(
+        use_chainer=False,
+        weight_file=str(root / "config" / "core" / "weights.dat"),
+        plugin_config_file=str(root / "config" / "core" / "plugin_config.yaml"),
+    )
+    param.set_value("resolution", "not_a_number")
+
+
+def test_get_value_unknown():
+    root = Path(__file__).resolve().parents[2]
+    param = Parameter(
+        use_chainer=False,
+        weight_file=str(root / "config" / "core" / "weights.dat"),
+        plugin_config_file=str(root / "config" / "core" / "plugin_config.yaml"),
+    )
+    with pytest.raises(AttributeError):
+        param.get_value("nonexistent_param")
+
+
+def test_update_returns_none():
+    root = Path(__file__).resolve().parents[2]
+    param = Parameter(
+        use_chainer=False,
+        weight_file=str(root / "config" / "core" / "weights.dat"),
+        plugin_config_file=str(root / "config" / "core" / "plugin_config.yaml"),
+    )
+    result = param.update()
+    assert result is None
