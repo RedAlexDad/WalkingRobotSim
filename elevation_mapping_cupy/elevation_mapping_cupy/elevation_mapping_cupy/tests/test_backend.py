@@ -51,13 +51,8 @@ def test_get_stream_with_gpu():
 
 
 def test_detect_cuda_no_cupy(monkeypatch):
-    monkeypatch.setattr(importlib.util, "find_spec", lambda name: None)
-    import importlib
-
     orig_find_spec = importlib.util.find_spec
     monkeypatch.setattr(importlib.util, "find_spec", lambda name: None if name == "cupy" else orig_find_spec(name))
-    import importlib as _il
-
     backend._detect_cuda()
     assert backend.GPU_AVAILABLE is False
     assert backend.cp is None

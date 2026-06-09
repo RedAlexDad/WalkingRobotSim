@@ -391,6 +391,7 @@ class TestMaxLayerFilter:
             cell_n=n,
             layers=["layer_a", "layer_b"],
             min_or_max="min",
+            reverse=[],
         )
         result = mlf(elevation_map, layer_names, pl, ["layer_a", "layer_b"], *semantic_map)
         assert float(result[0, 0]) == pytest.approx(0.1, abs=1e-5)

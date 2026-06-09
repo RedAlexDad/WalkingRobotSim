@@ -6,13 +6,12 @@ from typing import List
 
 import numpy as np
 
-from ..backend import xp, GPU_AVAILABLE
-
 from elevation_mapping_cupy.plugins.plugin_manager import PluginBase
+
+from ..backend import GPU_AVAILABLE, xp
 
 
 class MaxLayerFilter(PluginBase):
-
     def __init__(
         self,
         cell_n: int = 100,
@@ -68,11 +67,11 @@ class MaxLayerFilter(PluginBase):
                     self.default_value,
                 )
                 layer = xp.where(layer == 0, default_layer, layer)
-            if self.reverse[it]:
+            if len(self.reverse) > it and self.reverse[it]:
                 layer = 1.0 - layer
             if len(self.scales) > it and isinstance(self.scales[it], float):
                 layer = layer * float(self.scales[it])
-            if isinstance(self.thresholds[it], float):
+            if len(self.thresholds) > it and isinstance(self.thresholds[it], float):
                 layer = xp.where(layer > float(self.thresholds[it]), 1, 0)
             layers.append(layer)
         if len(layers) == 0:
