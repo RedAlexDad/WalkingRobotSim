@@ -146,30 +146,40 @@
 3. Elevation costmap bridge работает корректно (данные публикуются, origin считается правильно)
 4. `/downsampled_costmap` публикуется, вопреки первоначальному предположению
 
-### Фаза 1 — Создание единого RViz конфига
+### Фаза 1 — Создание единого RViz конфига ✅ ВЫПОЛНЕНО
 
-| # | Задача | Файл | Описание | Приоритет |
-|---|--------|------|----------|-----------|
-| 1.1 | Создать `go2_elevation_nav2.rviz` | `elevation_mapping_cupy/elevation_mapping_cupy/rviz/go2_elevation_nav2.rviz` | Скопировать `go2_elevation.rviz` как основу | 🔴 High |
-| 1.2 | Добавить Global Costmap display | `go2_elevation_nav2.rviz` | `rviz_default_plugins/Map`, топик `/robot1/global_costmap/costmap`, Color Scheme: `costmap`, Alpha: 0.7 | 🔴 High |
-| 1.3 | Добавить Local Costmap display | `go2_elevation_nav2.rviz` | `rviz_default_plugins/Map`, топик `/robot1/local_costmap/costmap`, Color Scheme: `costmap`, Alpha: 0.7 | 🔴 High |
-| 1.4 | Добавить Footprint display | `go2_elevation_nav2.rviz` | `rviz_default_plugins/Polygon`, топик `/robot1/local_costmap/published_footprint`, Color: 255;85;255 (розовый) | 🟡 Medium |
-| 1.5 | Добавить Path display | `go2_elevation_nav2.rviz` | `rviz_default_plugins/Path`, топик `/robot1/plan`, Color: 255;85;255 (розовый), Pose Style: None, Line Width: 0.1 | 🟡 Medium |
-| 1.6 | Добавить Local Plan display | `go2_elevation_nav2.rviz` | `rviz_default_plugins/Path`, топик `/robot1/local_plan`, Color: 0;255;0 (зелёный) | 🟢 Low |
-| 1.7 | Добавить Voxel Markers (global) | `go2_elevation_nav2.rviz` | `rviz_default_plugins/PointCloud2`, топик `/robot1/global_costmap/voxel_marked_cloud`, Style: Boxes, Size: 0.05 | 🟡 Medium |
-| 1.8 | Добавить Voxel Markers (local) | `go2_elevation_nav2.rviz` | `rviz_default_plugins/PointCloud2`, топик `/robot1/local_costmap/voxel_marked_cloud`, Style: Boxes, Size: 0.05 | 🟢 Low |
-| 1.9 | Включить Cost GridMap display | `go2_elevation_nav2.rviz` | Поменять `Enabled: false` → `true` для существующего Cost-слоя (строки 233-258) | 🔴 High |
-| 1.10 | Включить Roughness display | `go2_elevation_nav2.rviz` | Поменять `Enabled: false` → `true` для Roughness | 🟢 Low |
-| 1.11 | Настроить порядок отображения | `go2_elevation_nav2.rviz` | 1. Grid → 2. GlobalCostmap → 3. LocalCostmap → 4. ElevationMap → 5. Cost → 6. ObstacleCloud → 7. GroundCloud → 8. Voxel → 9. Footprint → 10. Path → 11. TF | 🟡 Medium |
+Создан файл `elevation_mapping_cupy/elevation_mapping_cupy/rviz/go2_elevation_nav2.rviz` — 15 displays в порядке:
 
-### Фаза 2 — Интеграция с запуском
+| # | Display | Топик | Тип | Статус |
+|---|---------|-------|-----|--------|
+| 1 | Grid | — | rviz_default_plugins/Grid | ✅ Включён |
+| 2 | Global Costmap | `/robot1/global_costmap/costmap` | rviz_default_plugins/Map, costmap | ✅ Включён, α=0.7 |
+| 3 | Local Costmap | `/robot1/local_costmap/costmap` | rviz_default_plugins/Map, costmap | ✅ Включён, α=0.7 |
+| 4 | Downsampled Costmap | `/downsampled_costmap` | rviz_default_plugins/Map, costmap | ✅ Выключен (available) |
+| 5 | ElevationMap | `/elevation_mapping_node/elevation_map` (elevation) | grid_map_rviz_plugin/GridMap | ✅ Включён |
+| 6 | Cost | `/elevation_mapping_node/elevation_map` (cost) | grid_map_rviz_plugin/GridMap | ✅ Включён (был выключен) |
+| 7 | Roughness | `/elevation_mapping_node/elevation_map` (roughness) | grid_map_rviz_plugin/GridMap | ✅ Включён (был выключен) |
+| 8 | Slope | `/elevation_mapping_node/elevation_map` (slope) | grid_map_rviz_plugin/GridMap | ✅ Выключен |
+| 9 | Map | `/robot1/map` | rviz_default_plugins/Map | ✅ Включён |
+| 10 | ObstacleCloud | `/obstacle_cloud` | rviz_default_plugins/PointCloud2 | ✅ Включён, красный |
+| 11 | GroundCloud | `/ground_cloud` | rviz_default_plugins/PointCloud2 | ✅ Включён, белый |
+| 12 | VoxelMarkers Global | `/robot1/global_costmap/voxel_marked_cloud` | rviz_default_plugins/PointCloud2 | ✅ Включён, Boxes |
+| 13 | VoxelMarkers Local | `/robot1/local_costmap/voxel_marked_cloud` | rviz_default_plugins/PointCloud2 | ✅ Выключен |
+| 14 | Footprint | `/robot1/local_costmap/published_footprint` | rviz_default_plugins/Polygon | ✅ Включён, розовый |
+| 15 | Plan | `/robot1/plan` | rviz_default_plugins/Path | ✅ Включён, розовый |
+| 16 | Local Plan | `/robot1/local_plan` | rviz_default_plugins/Path | ✅ Включён, зелёный |
+| 17 | TF | — | rviz_default_plugins/TF | ✅ Включён |
 
-| # | Задача | Файл | Описание | Приоритет |
-|---|--------|------|----------|-----------|
-| 2.1 | Изменить launch-файл для нового RViz config | `elevation_mapping_cupy/elevation_mapping_cupy/launch/elevation_mapping.launch.py` | Добавить аргумент выбора RViz config (`go2_elevation.rviz` по умолчанию, `go2_elevation_nav2.rviz` — опционально) | 🔴 High |
-| 2.2 | Изменить compose.yml | `compose.yml` | В команде `elevation_mapping_cpu` вместо `go2_elevation.rviz` указать `go2_elevation_nav2.rviz` | 🔴 High |
-| 2.3 | Добавить make-цель `elevation-viz` | `makefiles/elevation.mk` | Запуск только RViz с новым конфигом внутри запущенного контейнера (аналог `elevation-rviz`) | 🟢 Low |
-| 2.4 | Проверить запуск `make elevation-cpu` | — | RViz открывается с новым конфигом, все топики доступны | 🔴 High |
+Fixed Frame изменён с `odom` на **`map`** — так costmap Nav2 отображается без смещения.
+
+### Фаза 2 — Интеграция с запуском ✅ ВЫПОЛНЕНО
+
+| # | Задача | Файл | Результат | Статус |
+|---|--------|------|-----------|--------|
+| 2.1 | Launch-файл | — | Не требует изменений — уже generic | ✅ Пропущен |
+| 2.2 | compose.yml | `compose.yml` | Путь изменён на `go2_elevation_nav2.rviz`. Добавлен volume mount `rviz/` | ✅ |
+| 2.3 | make-цель | `makefiles/elevation.mk` | `elevation-cpu-rviz` обновлена на новый конфиг | ✅ |
+| 2.4 | Проверка запуска | — | RViz стартанул, подписался на все топики (costmap, voxel, pointcloud) | ✅ |
 
 ### Фаза 3 — Валидация (проверить, что всё корректно отображается)
 
@@ -199,11 +209,12 @@
 ### 5.1 Must-have (Фаза 0 + 1 + 2)
 
 - [x] **Фаза 0 — Диагностика** (выполнено 09.06.2026)
-- [ ] При `make elevation-cpu` RViz отображает **все** перечисленные display одновременно
-- [ ] Global Costmap overlay (розово-фиолетовый) виден поверх Elevation Map
-- [ ] ObstacleCloud (красные точки) совпадает с розовыми пикселями на costmap
-- [ ] Cost layer (зелёно-красный GridMap) коррелирует с costmap
-- [ ] Composite costmap (LiDAR + elevation) отображается как единая карта
+- [x] **Фаза 1 — Создание RViz конфига** (выполнено 09.06.2026)
+- [x] **Фаза 2 — Интеграция** (выполнено 09.06.2026)
+- [ ] Валидация: Global Costmap overlay виден поверх Elevation Map
+- [ ] Валидация: ObstacleCloud совпадает с costmap
+- [ ] Валидация: Cost layer коррелирует с costmap
+- [ ] Валидация: Composite costmap (LiDAR + elevation) — единая карта
 
 ### 5.2 Nice-to-have (Фаза 3)
 
