@@ -88,6 +88,12 @@ wheels/
 # Qwen
 .qwen/*
 
+# Coverage (pytest-cov)
+.coverage
+coverage/
+htmlcov/
+.coverage.*
+
 # Авто-генерируемый хеш последней сборки
 .last_build_commit
 
