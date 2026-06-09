@@ -76,7 +76,7 @@ elevation-cpu-bg:
 	@$(COMPOSE) up -d elevation_mapping_cpu
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Elevation mapping (CPU) запущен${NC}\n"
 
-## Запуск RViz в CPU-контейнере
+## Запуск RViz в CPU-контейнере (Go2 elevation + Nav2 costmap)
 elevation-cpu-rviz:
 	$(require-elevation-cpu)
 	@xhost +local: >/dev/null 2>&1 || true
@@ -84,7 +84,7 @@ elevation-cpu-rviz:
 	@docker exec -it elevation_mapping_cpu bash -c '\
 		source /opt/ros/jazzy/setup.bash; \
 		source /ws/install/setup.bash 2>/dev/null; \
-		rviz2 -d /ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/rviz/elevation.rviz; \
+		rviz2 -d /ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/rviz/go2_elevation_nav2.rviz; \
 	'
 
 ## Запуск unit-тестов elevation_mapping_cupy (pytest) с coverage
