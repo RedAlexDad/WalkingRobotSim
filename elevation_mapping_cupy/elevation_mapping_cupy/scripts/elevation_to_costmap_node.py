@@ -75,6 +75,14 @@ class ElevationToCostmapNode(Node):
         cost = decode_multiarray_to_rows_cols(self._layer_name, msg.data[idx])
         rows, cols = cost.shape
 
+        # GridMap stores data in grid_map coordinate convention (Row=-X, Col=-Y).
+        # OccupancyGrid expects standard row-major (Row=Y, Col=X) with origin at bottom-left.
+        # Apply inverse of _transform_to_grid_map_coordinate_convention:
+        cost = np.flip(cost, 0)
+        cost = np.flip(cost, 1)
+        cost = cost.T
+        rows, cols = cost.shape
+
         occ = np.full((rows, cols), -1, dtype=np.int8)
         valid = ~np.isnan(cost)
 
@@ -109,7 +117,10 @@ class ElevationToCostmapNode(Node):
         out.info.resolution = msg.info.resolution
         out.info.width = cols
         out.info.height = rows
-        out.info.origin = msg.info.pose
+        cx = msg.info.pose.position.x
+        cy = msg.info.pose.position.y
+        out.info.origin.position.x = cx - cols * msg.info.resolution / 2.0
+        out.info.origin.position.y = cy - rows * msg.info.resolution / 2.0
         out.info.origin.position.z = 0.0
         out.info.origin.orientation.x = 0.0
         out.info.origin.orientation.y = 0.0

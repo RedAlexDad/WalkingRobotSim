@@ -40,6 +40,8 @@ x-el-volumes: &el_volumes
   - ./elevation_mapping_cupy/elevation_mapping_cupy/config/core/core_param.yaml:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/config/core/core_param.yaml:ro
   - ./elevation_mapping_cupy/elevation_mapping_cupy/config/setups/go2/go2_lidar3d.yaml:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/config/setups/go2/go2_lidar3d.yaml:ro
   - ./elevation_mapping_cupy/elevation_mapping_cupy/scripts/elevation_to_costmap_node.py:/elevation_to_costmap_node.py:ro
+  - ./elevation_mapping_cupy/elevation_mapping_cupy/scripts/elevation_mapping_node.py:/ws/install/elevation_mapping_cupy/lib/elevation_mapping_cupy/elevation_mapping_node.py:ro
+  - ./elevation_mapping_cupy/elevation_mapping_cupy/elevation_mapping_cupy/:/ws/install/elevation_mapping_cupy/lib/python3.12/site-packages/elevation_mapping_cupy/:ro
   - ./src/gazebo_sim/scripts/tf_relay.py:/tf_relay.py:ro
   - ./src/gazebo_sim/scripts/ground_segmenter.py:/ground_segmenter.py:ro
   - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
