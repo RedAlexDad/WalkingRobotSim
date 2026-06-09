@@ -1,11 +1,11 @@
 #!/bin/bash
 # Smart deploy: определяет нужна ли пересборка Docker по изменениям в git
 #
-# Правила (см. AGENTS.md / summary.md):
-#   src/*.py .yaml .launch.py .rviz          → mount volume, not rebuild, just restart
-#   src/*.cpp .hpp .h CMakeLists.txt pkg.xml → rebuild main image
-#   elevation_mapping_cupy/*                 → rebuild elevation image
-#   compose.yml Dockerfile                   → rebuild main image
+# Правила:
+#   src/*.cpp .hpp .h CMakeLists.txt pkg.xml  → rebuild main image (Docker)
+#   src/*.py .yaml .launch.py .rviz            → colcon build --symlink-install внутри контейнера
+#   elevation_mapping_cupy/*                   → rebuild elevation image
+#   compose.yml Dockerfile                     → rebuild main image
 #
 # Использование:
 #   ./scripts/smart-deploy.sh          # check + build if needed + up
@@ -31,6 +31,7 @@ bold()   { printf "\033[1m%s\033[0m" "$*"; }
 # ── classify changes ─────────────────────────────────────
 REBUILD_MAIN=false
 REBUILD_ELEVATION=false
+REBUILD_WS_PACKAGES=()  # array of packages needing colcon build inside container
 CHANGED_FILES=""
 UNSTAGED_FILES=""
 
@@ -67,9 +68,18 @@ collect_changes() {
                 REBUILD_MAIN=true
                 yellow "  [C++] $file → rebuild needed"
                 ;;
-            src/*.py|src/*.yaml|src/*.yml|src/*.launch.py|src/*.rviz|src/*.mk|src/*.md|src/*.txt)
-                # No rebuild needed — mounted via project_src volume
-                cyan "  [skip] $file → mounted, no rebuild"
+            src/*.py|src/*.yaml|src/*.yml|src/*.launch.py|src/*.rviz)
+                # Extract package name (src/<pkg>/...)
+                pkg=$(echo "$file" | cut -d/ -f2)
+                # Validate it's a real package dir
+                if [ -d "src/$pkg" ]; then
+                    REBUILD_WS_PACKAGES+=("$pkg")
+                    cyan "  [py] $file → queue colcon build $pkg"
+                fi
+                ;;
+            src/*.mk|src/*.md|src/*.txt)
+                # Infra/docs — no action
+                cyan "  [skip] $file — infra/docs, no rebuild"
                 ;;
             elevation_mapping_cupy/*)
                 REBUILD_ELEVATION=true
@@ -98,12 +108,27 @@ collect_changes() {
     done
 }
 
+# Deduplicate array while preserving order
+dedupe() {
+    local -n arr=$1
+    local -A seen=()
+    local result=()
+    for item in "${arr[@]}"; do
+        if [[ -z "${seen[$item]-}" ]]; then
+            seen[$item]=1
+            result+=("$item")
+        fi
+    done
+    arr=("${result[@]}")
+}
+
 do_build_main() {
     if [ "$REBUILD_MAIN" = true ]; then
         green "→ Building main image..."
         $COMPOSE build
-        # Record the commit hash after successful build
         git rev-parse HEAD > "$LAST_BUILD_FILE" 2>/dev/null || true
+        # Full Docker build installs everything — no extra ws build needed
+        REBUILD_WS_PACKAGES=()
     else
         cyan "→ No changes requiring main rebuild, skipping build"
     fi
@@ -115,6 +140,26 @@ do_build_elevation() {
         $COMPOSE build elevation_mapping
     else
         cyan "→ No elevation changes, skipping elevation build"
+    fi
+}
+
+do_workspace_build() {
+    dedupe REBUILD_WS_PACKAGES
+    if [ ${#REBUILD_WS_PACKAGES[@]} -eq 0 ]; then
+        return
+    fi
+
+    green "→ Rebuilding workspace packages inside container..."
+    pkgs_str=$(IFS=' '; echo "${REBUILD_WS_PACKAGES[*]}")
+
+    if docker ps --format '{{.Names}}' | grep -Fxq "$CONTAINER_NAME" 2>/dev/null; then
+        docker exec "$CONTAINER_NAME" bash -c "
+            source /opt/ros/jazzy/setup.bash
+            cd /root/ws
+            colcon build --packages-select $pkgs_str --symlink-install
+        " && green "✓ Workspace rebuild complete ($pkgs_str)"
+    else
+        yellow "! Container not running, skipping workspace build"
     fi
 }
 
@@ -142,19 +187,30 @@ do_up() {
         sleep 1
     done
     echo ""
+
+    # Rebuild workspace if needed (only after container is up)
+    do_workspace_build
+
     green "✓ Container running"
 }
 
 do_status() {
     echo ""
-    if [ "$REBUILD_MAIN" = false ] && [ "$REBUILD_ELEVATION" = false ]; then
+    dedupe REBUILD_WS_PACKAGES
+
+    if [ "$REBUILD_MAIN" = false ] && [ "$REBUILD_ELEVATION" = false ] && [ ${#REBUILD_WS_PACKAGES[@]} -eq 0 ]; then
         green "→ No rebuild needed, starting container..."
     else
         echo "────────────────────────────────────────────"
-        [ "$REBUILD_MAIN" = true ]       && echo " • Main image:     REBUILD"
-        [ "$REBUILD_MAIN" = false ]      && echo " • Main image:     skip (no C++/Docker changes)"
-        [ "$REBUILD_ELEVATION" = true ]  && echo " • Elevation:      REBUILD"
-        [ "$REBUILD_ELEVATION" = false ] && echo " • Elevation:      skip (no changes)"
+        [ "$REBUILD_MAIN" = true ]              && echo " • Main image:           REBUILD"
+        [ "$REBUILD_MAIN" = false ]             && echo " • Main image:           skip"
+        [ "$REBUILD_ELEVATION" = true ]         && echo " • Elevation:            REBUILD"
+        [ "$REBUILD_ELEVATION" = false ]        && echo " • Elevation:            skip"
+        if [ ${#REBUILD_WS_PACKAGES[@]} -gt 0 ]; then
+            local pkgs_str
+            pkgs_str=$(IFS=' '; echo "${REBUILD_WS_PACKAGES[*]}")
+            echo " • Workspace packages:   colcon build $pkgs_str"
+        fi
         echo "────────────────────────────────────────────"
     fi
 }
@@ -183,6 +239,7 @@ case "$MODE" in
     --build)
         REBUILD_MAIN=true
         REBUILD_ELEVATION=true
+        REBUILD_WS_PACKAGES=()
         do_status
         do_build_main
         do_build_elevation
@@ -190,6 +247,7 @@ case "$MODE" in
         ;;
     --main)
         REBUILD_MAIN=true
+        REBUILD_WS_PACKAGES=()
         do_status
         do_build_main
         do_up

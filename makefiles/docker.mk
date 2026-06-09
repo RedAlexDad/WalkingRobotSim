@@ -4,7 +4,7 @@
 
 ## Умная сборка и запуск: пересобирает только если есть C++/Docker изменения
 deploy smart-deploy:
-	@bash scripts/smart-deploy.sh
+	@bash scripts/smart-deploy.bash
 
 ## Сборка и запуск контейнера без кэша
 deploy-no-cache: build-no-cache up
