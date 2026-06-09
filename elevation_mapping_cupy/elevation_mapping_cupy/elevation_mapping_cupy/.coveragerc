@@ -1,0 +1,20 @@
+[run]
+source = elevation_mapping_cupy
+omit =
+    */kk.py
+    */build/*
+    */install/*
+    */log/*
+    listener_test.py
+    */tests/*
+    */test/*
+    setup.py
+    setup.cfg
+
+[report]
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    if __name__ == "__main__":
+    def __repr__
+    def __str__
