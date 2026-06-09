@@ -279,3 +279,168 @@ class TestElevationMap:
         assert result is not None
         assert "map" in result
         assert "patch" in result
+
+    def test_input_pointcloud_with_nan_rows(self, elmap_ex):
+        channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
+        if "class_max" in elmap_ex.param.fusion_algorithms:
+            val = xp.random.rand(100000, len(channels)).astype(xp.float16)
+            ind = xp.random.randint(0, 2, size=(100000, len(channels))).astype(xp.float32)
+            points = encode_max(val, ind)
+        else:
+            points = xp.random.rand(100000, len(channels)).astype(elmap_ex.param.data_type)
+        points[::5, :] = xp.nan
+        R = xp.eye(3, dtype=elmap_ex.param.data_type)
+        t = xp.zeros(3, dtype=elmap_ex.param.data_type)
+        elmap_ex.input_pointcloud(points, channels, R, t, 0, 0)
+
+    def test_input_pointcloud_with_inf_values(self, elmap_ex):
+        channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
+        if "class_max" in elmap_ex.param.fusion_algorithms:
+            val = xp.random.rand(100000, len(channels)).astype(xp.float16)
+            ind = xp.random.randint(0, 2, size=(100000, len(channels))).astype(xp.float32)
+            points = encode_max(val, ind)
+        else:
+            points = xp.random.rand(100000, len(channels)).astype(elmap_ex.param.data_type)
+        points[::7, 0] = xp.inf
+        points[::11, 1] = -xp.inf
+        R = xp.eye(3, dtype=elmap_ex.param.data_type)
+        t = xp.zeros(3, dtype=elmap_ex.param.data_type)
+        elmap_ex.input_pointcloud(points, channels, R, t, 0, 0)
+
+    def test_input_pointcloud_all_nan(self, elmap_ex):
+        channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
+        if "class_max" in elmap_ex.param.fusion_algorithms:
+            val = xp.full((1000, len(channels)), xp.nan, dtype=xp.float16)
+            ind = xp.random.randint(0, 2, size=(1000, len(channels))).astype(xp.float32)
+            points = encode_max(val, ind)
+        else:
+            points = xp.full((1000, len(channels)), xp.nan, dtype=elmap_ex.param.data_type)
+        R = xp.eye(3, dtype=elmap_ex.param.data_type)
+        t = xp.zeros(3, dtype=elmap_ex.param.data_type)
+        elmap_ex.input_pointcloud(points, channels, R, t, 0, 0)
+
+    def test_full_pipeline_input_to_publish(self, elmap_ex):
+        channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
+        if "class_max" in elmap_ex.param.fusion_algorithms:
+            val = xp.random.rand(50000, len(channels)).astype(xp.float16)
+            ind = xp.random.randint(0, 2, size=(50000, len(channels))).astype(xp.float32)
+            points = encode_max(val, ind)
+        else:
+            points = xp.random.rand(50000, len(channels)).astype(elmap_ex.param.data_type)
+        R = xp.eye(3, dtype=elmap_ex.param.data_type)
+        t = xp.zeros(3, dtype=elmap_ex.param.data_type)
+        elmap_ex.input_pointcloud(points, channels, R, t, 0, 0)
+        elmap_ex.update_normal(elmap_ex.elevation_map[0])
+        elev = elmap_ex.get_layer("elevation")
+        assert elev is not None
+        published = elmap_ex.process_map_for_publish(elev, fill_nan=False, add_z=True)
+        assert published.shape == (elmap_ex.cell_n - 2, elmap_ex.cell_n - 2)
+
+    def test_multiple_pointclouds_sequential(self, elmap_ex):
+        channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
+        R = xp.eye(3, dtype=elmap_ex.param.data_type)
+        for i in range(5):
+            if "class_max" in elmap_ex.param.fusion_algorithms:
+                val = xp.random.rand(20000, len(channels)).astype(xp.float16)
+                ind = xp.random.randint(0, 2, size=(20000, len(channels))).astype(xp.float32)
+                points = encode_max(val, ind)
+            else:
+                points = xp.random.rand(20000, len(channels)).astype(elmap_ex.param.data_type)
+            t = xp.array([i * 0.1, i * 0.1, 0.0], dtype=elmap_ex.param.data_type)
+            elmap_ex.input_pointcloud(points, channels, R, t, 0, 0)
+
+    def test_large_move_then_input_pointcloud(self, elmap_ex):
+        channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
+        pos = np.array([3.0, 3.0, 1.0])
+        angle = np.pi / 6
+        R = xp.array([[np.cos(angle), -np.sin(angle), 0],
+                       [np.sin(angle), np.cos(angle), 0],
+                       [0, 0, 1]], dtype=elmap_ex.param.data_type)
+        elmap_ex.move_to(pos, R)
+        if "class_max" in elmap_ex.param.fusion_algorithms:
+            val = xp.random.rand(50000, len(channels)).astype(xp.float16)
+            ind = xp.random.randint(0, 2, size=(50000, len(channels))).astype(xp.float32)
+            points = encode_max(val, ind)
+        else:
+            points = xp.random.rand(50000, len(channels)).astype(elmap_ex.param.data_type)
+        t = xp.zeros(3, dtype=elmap_ex.param.data_type)
+        elmap_ex.input_pointcloud(points, channels, R, t, 0, 0)
+
+    def test_update_variance_after_multiple_inputs(self, elmap_ex):
+        channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
+        R = xp.eye(3, dtype=elmap_ex.param.data_type)
+        for _ in range(3):
+            if "class_max" in elmap_ex.param.fusion_algorithms:
+                val = xp.random.rand(20000, len(channels)).astype(xp.float16)
+                ind = xp.random.randint(0, 2, size=(20000, len(channels))).astype(xp.float32)
+                points = encode_max(val, ind)
+            else:
+                points = xp.random.rand(20000, len(channels)).astype(elmap_ex.param.data_type)
+            t = xp.random.rand(3).astype(elmap_ex.param.data_type)
+            elmap_ex.input_pointcloud(points, channels, R, t, 0, 0)
+        elmap_ex.update_variance()
+        var_layer = elmap_ex.get_layer("variance")
+        assert var_layer is not None
+
+    def test_semantic_layers_persist_after_input(self, elmap_ex, add_lay):
+        channels = ["x", "y", "z"] + add_lay
+        if "class_max" in elmap_ex.param.fusion_algorithms:
+            val = xp.random.rand(50000, len(channels)).astype(xp.float16)
+            ind = xp.random.randint(0, 2, size=(50000, len(channels))).astype(xp.float32)
+            points = encode_max(val, ind)
+        else:
+            points = xp.random.rand(50000, len(channels)).astype(elmap_ex.param.data_type)
+        R = xp.eye(3, dtype=elmap_ex.param.data_type)
+        t = xp.zeros(3, dtype=elmap_ex.param.data_type)
+        elmap_ex.input_pointcloud(points, channels, R, t, 0, 0)
+        for layer in add_lay:
+            if elmap_ex.exists_layer(layer):
+                _ = elmap_ex.get_layer(layer)
+
+    def test_clear_overlap_after_large_z_shift(self, elmap_ex):
+        elmap_ex.elevation_map[0] = 2.0
+        elmap_ex.elevation_map[2] = 1.0
+        t = xp.array([0.0, 0.0, 10.0], dtype=xp.float32)
+        elmap_ex.clear_overlap_map(t)
+        assert xp.any(elmap_ex.elevation_map[2] < 0.5)
+
+    def test_shift_map_xy_preserves_invariants(self, elmap_ex):
+        z0 = elmap_ex.elevation_map[0].copy()
+        elmap_ex.shift_map_xy(xp.array([5, 3]))
+        assert elmap_ex.elevation_map[0].shape == z0.shape
+
+    def test_shift_map_z_large_negative(self, elmap_ex):
+        elmap_ex.shift_map_z(-100.0)
+        assert xp.allclose(elmap_ex.elevation_map[0], -100.0)
+
+    def test_process_map_for_publish_all_nan(self, elmap_ex):
+        layer = xp.full((200, 200), xp.nan, dtype=xp.float32)
+        result = elmap_ex.process_map_for_publish(layer, fill_nan=True, add_z=False)
+        assert result.shape == (198, 198)
+        assert xp.all(xp.isnan(result))
+
+    def test_process_map_for_publish_all_zero(self, elmap_ex):
+        layer = xp.zeros((200, 200), dtype=xp.float32)
+        result = elmap_ex.process_map_for_publish(layer, fill_nan=False, add_z=True)
+        assert result.shape == (198, 198)
+        assert xp.allclose(result, float(elmap_ex.center[2]))
+
+    def test_get_elevation_and_variance_together(self, elmap_ex):
+        elev = elmap_ex.get_elevation()
+        var = elmap_ex.get_variance()
+        assert elev.shape == var.shape
+
+    def test_map_after_clear_then_input(self, elmap_ex):
+        channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
+        R = xp.eye(3, dtype=elmap_ex.param.data_type)
+        t = xp.zeros(3, dtype=elmap_ex.param.data_type)
+        if "class_max" in elmap_ex.param.fusion_algorithms:
+            val = xp.random.rand(30000, len(channels)).astype(xp.float16)
+            ind = xp.random.randint(0, 2, size=(30000, len(channels))).astype(xp.float32)
+            points = encode_max(val, ind)
+        else:
+            points = xp.random.rand(30000, len(channels)).astype(elmap_ex.param.data_type)
+        elmap_ex.input_pointcloud(points, channels, R, t, 0, 0)
+        elmap_ex.clear()
+        elmap_ex.input_pointcloud(points, channels, R, t, 0, 0)
+        assert xp.any(elmap_ex.elevation_map[2] > 0.5)
