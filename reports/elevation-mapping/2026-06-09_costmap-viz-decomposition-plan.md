@@ -109,15 +109,42 @@
 
 ## 4. Декомпозиция работ
 
-### Фаза 0 — Диагностика (проверить текущее состояние)
+### Фаза 0 — Диагностика ✅ ВЫПОЛНЕНО
 
-| # | Задача | Действие | Ожидаемый результат |
-|---|--------|----------|---------------------|
-| 0.1 | Проверить доступность топиков | Запустить `make elevation-cpu` + `make navigation`, затем `docker exec elevation_mapping_cpu ros2 topic list` | Список всех доступных топиков |
-| 0.2 | Проверить Nav2 costmap топики | `ros2 topic echo /robot1/global_costmap/costmap --once` | Есть данные, не пустой |
-| 0.3 | Проверить elevation costmap | `ros2 topic echo /elevation_costmap --once` | Есть данные, не пустой |
-| 0.4 | Проверить RViz логи | Запустить RViz, открыть Panel → Add → `nav2_msgs/OccupancyGrid` на `/robot1/global_costmap/costmap` | Costmap отображается |
-| 0.5 | Проверить `/downsampled_costmap` | `ros2 topic list \| grep downsampled` | Топика нет — ожидаемо |
+| # | Задача | Действие | Результат | Статус |
+|---|--------|----------|-----------|--------|
+| 0.1 | Проверить доступность топиков | `docker exec elevation_mapping_cpu ros2 topic list` | 130+ топиков доступны из контейнера elevation, включая все Nav2 costmap, elevation, LiDAR | ✅ |
+| 0.2 | Проверить Nav2 costmap топики | `ros2 topic echo /robot1/global_costmap/costmap --once` | **200×200**, origin ~(-10, -10), обновляется. `local_costmap` — 200×200, origin ~(-7, -8) (следует за роботом) | ✅ |
+| 0.3 | Проверить elevation costmap | `ros2 topic echo /elevation_costmap --once` | **200×200**, ~22k free / ~17k unknown cells, origin движется вместе с роботом. Occupied: 0 | ✅ |
+| 0.4 | Проверить RViz | RViz запущен с `go2_elevation.rviz` внутри контейнера | Nav2 costmap display **отсутствуют** в конфиге. Ручное добавление через Add Panel возможно | ✅ |
+| 0.5 | Проверить `/downsampled_costmap` | `ros2 topic list \| grep downsampled` | **Топик ЕСТЬ** — `/downsampled_costmap` и `/downsampled_costmap_updates` публикуются | ✅ |
+
+#### Детальные результаты диагностики
+
+**Список всех Nav2 costmap топиков, доступных из elevation контейнера:**
+
+| Топик | Размер | Origin | Статус |
+|-------|--------|--------|--------|
+| `/elevation_costmap` | 200×200 | ~(-12.4, -13.4) | ✅ Публикуется, данные есть |
+| `/robot1/global_costmap/costmap` | 200×200 | ~(-10, -10) | ✅ Публикуется |
+| `/robot1/local_costmap/costmap` | 200×200 | ~(-7.2, -8.3) | ✅ Публикуется (следит за роботом) |
+| `/robot1/global_costmap/elevation_costmap_layer` | — | — | ✅ Отдельный слой Nav2 |
+| `/robot1/local_costmap/elevation_costmap_layer` | — | — | ✅ Отдельный слой Nav2 |
+| `/robot1/global_costmap/obstacle_layer` | — | — | ✅ LiDAR obstacle layer |
+| `/robot1/local_costmap/voxel_layer` | — | — | ✅ LiDAR voxel layer |
+| `/robot1/global_costmap/voxel_marked_cloud` | — | — | ✅ Voxel markers |
+| `/robot1/local_costmap/voxel_marked_cloud` | — | — | ✅ Voxel markers |
+| `/robot1/global_costmap/published_footprint` | — | — | ✅ Footprint |
+| `/robot1/local_costmap/published_footprint` | — | — | ✅ Footprint |
+| `/robot1/plan` | — | — | ✅ Path |
+| `/robot1/local_plan` | — | — | ✅ Local plan |
+| `/downsampled_costmap` | — | — | ✅ Публикуется |
+
+**Ключевые выводы:**
+1. `network_mode: host` полностью решает проблему сетевой доступности — все топики видны из обоих контейнеров
+2. Единственный барьер: `go2_elevation.rviz` не содержит display-панелей для Nav2 costmap
+3. Elevation costmap bridge работает корректно (данные публикуются, origin считается правильно)
+4. `/downsampled_costmap` публикуется, вопреки первоначальному предположению
 
 ### Фаза 1 — Создание единого RViz конфига
 
@@ -169,8 +196,9 @@
 
 ## 5. Критерии успеха
 
-### 5.1 Must-have (Фаза 1 + 2)
+### 5.1 Must-have (Фаза 0 + 1 + 2)
 
+- [x] **Фаза 0 — Диагностика** (выполнено 09.06.2026)
 - [ ] При `make elevation-cpu` RViz отображает **все** перечисленные display одновременно
 - [ ] Global Costmap overlay (розово-фиолетовый) виден поверх Elevation Map
 - [ ] ObstacleCloud (красные точки) совпадает с розовыми пикселями на costmap
@@ -187,13 +215,14 @@
 
 ## 6. Риски и зависимости
 
-| Риск | Вероятность | Влияние | Митигация |
-|------|-------------|---------|-----------|
-| **Топики Nav2 недоступны из elevation контейнера** | Низкая | Высокое | `network_mode: host` решает; проверить `ros2 topic list` в фазе 0 |
-| **Costmap пустая (Nav2 не стартанула)** | Средняя | Высокое | Убедиться что `make navigation` запущен до `make elevation-cpu` |
-| **Разные fixed frame (odom vs map)** | Средняя | Среднее | `go2_elevation.rviz` использует `odom`, Nav2 топики — `map`. RViz автоматически преобразует через TF |
-| **Конфликт QoS (Reliable vs BestEffort)** | Низкая | Среднее | Costmap публикуется с TRANSIENT_LOCAL, RViz Map display должен читать `Reliable + TransientLocal` |
-| **Elevation costmap layer в Nav2 не загружен** | Средняя | Среднее | Проверить логи Nav2: `ros2 node list | grep costmap` |
+| Риск | Вероятность | Влияние | Статус | Митигация |
+|------|-------------|---------|--------|-----------|
+| **Топики Nav2 недоступны из elevation контейнера** | Низкая | Высокое | ✅ **Не подтвердился** — все топики доступны | `network_mode: host` решает |
+| **Costmap пустая (Nav2 не стартанула)** | Средняя | Высокое | ⚠️ **Актуально** — проверить при старте | Убедиться что Gazebo + Nav2 запущены до elevation |
+| **Разные fixed frame (odom vs map)** | Средняя | Среднее | ⚠️ **Актуально** — `go2_elevation.rviz` использует `odom`, Nav2 топики — `map` | RViz автоматически преобразует через TF |
+| **Конфликт QoS (Reliable vs BestEffort)** | Низкая | Среднее | ✅ **Не подтвердился** | Costmap публикуется с TRANSIENT_LOCAL, RViz Map display — Reliable + TransientLocal |
+| **Elevation costmap layer в Nav2 не загружен** | Средняя | Среднее | ✅ **Не подтвердился** — отдельные слои `elevation_costmap_layer` видны в обоих costmap | — |
+| **/downsampled_costmap отсутствует** | Низкая | Низкое | ✅ **Не подтвердился** — топик публикуется | Включён в конфигурации |
 
 ---
 
