@@ -46,6 +46,7 @@ x-el-volumes: &el_volumes
   - ./src/gazebo_sim/scripts/tf_relay.py:/tf_relay.py:ro
   - ./src/gazebo_sim/scripts/ground_segmenter.py:/ground_segmenter.py:ro
   - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
+  - ./src/walking_robot_utils/:/ws/install/elevation_mapping_cupy/lib/python3.12/site-packages/walking_robot_utils/:ro
 
 x-el-command: &el_command
   >
@@ -53,7 +54,6 @@ x-el-command: &el_command
       set -e;
       source /opt/ros/jazzy/setup.bash;
       source /ws/install/setup.bash;
-      export PYTHONPATH=/root/ws/src:$PYTHONPATH;
       echo "Elevation mapping node ready. Ground segmenter -> /ground_cloud";
       python3 /tf_relay.py &
       python3 /ground_segmenter.py &
@@ -85,8 +85,7 @@ services:
         ROS_DISTRO: jazzy
       target: final
     volumes:
-  - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
-  - ./src/walking_robot_utils/:/root/ws/src/walking_robot_utils/:ro
+      - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
       - ./logs/gazebo:/root/ws/logs
       - ./data/gazebo:/root/ws/data
       - project_src:/root/ws/src/
