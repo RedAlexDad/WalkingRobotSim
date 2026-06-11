@@ -483,10 +483,6 @@ class ElevationMap:
         """
         raw_points = xp.asarray(raw_points, dtype=self.data_type)
 
-        min_points = xp.min(raw_points, axis=0)
-        max_points = xp.max(raw_points, axis=0)
-        mean_points = xp.mean(raw_points, axis=0)
-
         additional_channels = channels[3:]
         raw_points = raw_points[~xp.isnan(raw_points[:, :3]).any(axis=1)]
         self.update_map_with_kernel(
@@ -532,7 +528,7 @@ class ElevationMap:
         """
         if xp_module is None:
             xp_module = xp
-        m = input_map.copy()
+        m = input_map.copy() if (fill_nan or add_z) else input_map
         if fill_nan:
             mask = self.elevation_map[2]
             if mask.shape != m.shape:

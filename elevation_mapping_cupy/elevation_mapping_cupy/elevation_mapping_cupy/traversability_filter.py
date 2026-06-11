@@ -2,6 +2,9 @@
 # Copyright (c) 2022, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
+import numpy as np
+from scipy import signal as scipy_signal
+
 from .backend import xp, GPU_AVAILABLE, cp, asnumpy
 
 
@@ -111,17 +114,14 @@ def get_filter_chainer(*args, **kwargs):
 
 
 def get_filter_numpy(w1, w2, w3, w_out):
-    from scipy import signal as scipy_signal
-
     class TraversabilityFilterNumPy:
         def __init__(self, w1, w2, w3, w_out):
-            self.w1 = w1  # (4, 1, 3, 3)
-            self.w2 = w2  # (4, 1, 3, 3)
-            self.w3 = w3  # (4, 1, 3, 3)
-            self.w_out = w_out  # (1, 12, 1, 1)
+            self.w1 = w1
+            self.w2 = w2
+            self.w3 = w3
+            self.w_out = w_out
 
         def __call__(self, elevation):
-            import numpy as np
             elevation = asnumpy(elevation)
             h, w = elevation.shape
             out1 = self._apply_conv_bank(elevation, self.w1, dilation=1)
@@ -136,9 +136,6 @@ def get_filter_numpy(w1, w2, w3, w_out):
             return xp.asarray(result.reshape(out.shape[1], out.shape[2]))
 
         def _apply_conv_bank(self, elevation, weights, dilation=1):
-            import numpy as np
-            from scipy import signal as scipy_signal
-
             results = []
             for i in range(weights.shape[0]):
                 kernel = weights[i, 0]

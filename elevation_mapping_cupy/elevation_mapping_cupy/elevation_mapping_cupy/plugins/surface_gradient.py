@@ -2,7 +2,7 @@ from typing import List
 
 import numpy as np
 
-from ..backend import GPU_AVAILABLE, asnumpy, xp
+from ..backend import GPU_AVAILABLE, asnumpy, xp, cp
 from .plugin_manager import PluginBase
 
 
@@ -39,12 +39,17 @@ class SurfaceGradient(PluginBase):
         valid = xp.logical_and(is_valid > 0.5, finite)
         h_clean = xp.where(valid, h, xp.nan)
 
-        h_np = asnumpy(h_clean)
-        valid_np = asnumpy(valid)
-
-        dy, dx = np.gradient(h_np, axis=(0, 1))
-        magnitude = np.sqrt(dx**2 + dy**2)
-        slope = np.arctan(magnitude)
-        slope[~valid_np] = 0.0
+        if GPU_AVAILABLE and type(h_clean) == cp.ndarray:
+            dy, dx = xp.gradient(h_clean, axis=(0, 1))
+            magnitude = xp.sqrt(dx**2 + dy**2)
+            slope = xp.arctan(magnitude)
+            slope[~valid] = 0.0
+        else:
+            h_np = asnumpy(h_clean)
+            valid_np = asnumpy(valid)
+            dy, dx = np.gradient(h_np, axis=(0, 1))
+            magnitude = np.sqrt(dx**2 + dy**2)
+            slope = np.arctan(magnitude)
+            slope[~valid_np] = 0.0
 
         return xp.asarray(slope, dtype=xp.float32)
