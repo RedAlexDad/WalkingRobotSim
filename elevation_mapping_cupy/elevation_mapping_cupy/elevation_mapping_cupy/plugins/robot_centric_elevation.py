@@ -12,7 +12,7 @@ from ..backend import GPU_AVAILABLE, cp, xp
 from .plugin_manager import PluginBase
 
 
-@njit(cache=True)
+@njit
 def _base_elevation_cpu_numba(min_filtered, elevation_map, mask, rotation, h, w, res, use_th, th):
     r6 = rotation[2, 0]
     r7 = rotation[2, 1]

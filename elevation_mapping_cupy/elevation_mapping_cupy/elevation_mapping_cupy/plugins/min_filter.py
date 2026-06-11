@@ -12,7 +12,7 @@ from ..backend import GPU_AVAILABLE, cp, xp
 from .plugin_manager import PluginBase
 
 
-@njit(cache=True)
+@njit
 def _min_filter_cpu_numba(min_filtered, min_filtered_mask, orig_mask, dilation, h, w):
     for i in range(h * w):
         if orig_mask.flat[i] >= 0.5:
