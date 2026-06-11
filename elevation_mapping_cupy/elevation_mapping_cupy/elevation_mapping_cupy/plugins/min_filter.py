@@ -6,17 +6,35 @@ import string
 from typing import List
 
 import numpy as np
+from numba import njit
 
-from ..backend import xp, GPU_AVAILABLE, cp
-
+from ..backend import GPU_AVAILABLE, cp, xp
 from .plugin_manager import PluginBase
 
 
-class MinFilter(PluginBase):
+@njit(cache=True)
+def _min_filter_cpu_numba(min_filtered, min_filtered_mask, orig_mask, dilation, h, w):
+    for i in range(h * w):
+        if orig_mask.flat[i] >= 0.5:
+            continue
+        iy = i // w
+        ix = i % w
+        min_val = 1e6
+        for dy in range(-dilation, dilation + 1):
+            for dx in range(-dilation, dilation + 1):
+                ny = iy + dy
+                nx = ix + dx
+                if nx <= 0 or nx >= w - 1 or ny <= 0 or ny >= h - 1:
+                    continue
+                if min_filtered_mask[ny, nx] > 0.5 and min_filtered[ny, nx] < min_val:
+                    min_val = min_filtered[ny, nx]
+        if min_val < 1e6 - 1:
+            min_filtered.flat[i] = min_val
+            min_filtered_mask.flat[i] = 0.6
 
-    def __init__(
-        self, cell_n: int = 100, dilation_size: int = 5, iteration_n: int = 5, **kwargs
-    ):
+
+class MinFilter(PluginBase):
+    def __init__(self, cell_n: int = 100, dilation_size: int = 5, iteration_n: int = 5, **kwargs):
         super().__init__()
         self.iteration_n = iteration_n
         self.width = cell_n
@@ -99,31 +117,15 @@ class MinFilter(PluginBase):
                 self._min_filter_cpu(elevation_map[0], elevation_map[2])
             if (self.min_filtered_mask > 0.5).all():
                 break
-        min_filtered = xp.where(
-            self.min_filtered_mask > 0.5, self.min_filtered.copy(), xp.nan
-        )
+        min_filtered = xp.where(self.min_filtered_mask > 0.5, self.min_filtered.copy(), xp.nan)
         return min_filtered
 
     def _min_filter_cpu(self, orig_map, orig_mask):
-        dilation = self.dilation_size
-        h, w = self.height, self.width
-        for i in range(h * w):
-            if orig_mask.flat[i] >= 0.5:
-                continue
-            iy = i // w
-            ix = i % w
-            min_val = 1e6
-            for dy in range(-dilation, dilation + 1):
-                for dx in range(-dilation, dilation + 1):
-                    ny = iy + dy
-                    nx = ix + dx
-                    if nx <= 0 or nx >= w - 1 or ny <= 0 or ny >= h - 1:
-                        continue
-                    if (
-                        self.min_filtered_mask[ny, nx] > 0.5
-                        and self.min_filtered[ny, nx] < min_val
-                    ):
-                        min_val = self.min_filtered[ny, nx]
-            if min_val < 1e6 - 1:
-                self.min_filtered.flat[i] = min_val
-                self.min_filtered_mask.flat[i] = 0.6
+        _min_filter_cpu_numba(
+            self.min_filtered,
+            self.min_filtered_mask,
+            orig_mask,
+            self.dilation_size,
+            self.height,
+            self.width,
+        )

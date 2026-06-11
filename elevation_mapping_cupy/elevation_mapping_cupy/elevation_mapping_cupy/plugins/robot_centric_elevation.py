@@ -6,14 +6,35 @@ import string
 from typing import List
 
 import numpy as np
+from numba import njit
 
-from ..backend import xp, GPU_AVAILABLE, cp
-
+from ..backend import GPU_AVAILABLE, cp, xp
 from .plugin_manager import PluginBase
 
 
-class RobotCentricElevation(PluginBase):
+@njit(cache=True)
+def _base_elevation_cpu_numba(min_filtered, elevation_map, mask, rotation, h, w, res, use_th, th):
+    r6 = rotation[2, 0]
+    r7 = rotation[2, 1]
+    r8 = rotation[2, 2]
+    for i in range(h * w):
+        if mask.flat[i] <= 0.5:
+            continue
+        row = i // w
+        col = i % w
+        rx = row * res
+        ry = col * res
+        rz = elevation_map.flat[i]
+        z_b = r6 * rx + r7 * ry + r8 * rz
+        if use_th and z_b >= th:
+            min_filtered.flat[i] = 1.0
+        elif use_th and z_b < th:
+            min_filtered.flat[i] = 0.0
+        else:
+            min_filtered.flat[i] = z_b
 
+
+class RobotCentricElevation(PluginBase):
     def __init__(
         self,
         cell_n: int = 100,
@@ -62,9 +83,7 @@ class RobotCentricElevation(PluginBase):
                                          float r0, float r1, float r2) {
                         return r0 * x + r1 * y + r2 * z ;
                     }
-                    """).substitute(
-                    width=self.width, height=self.height, resolution=resolution
-                ),
+                    """).substitute(width=self.width, height=self.height, resolution=resolution),
                 operation=string.Template("""
                     U rz = map[get_map_idx(i, 0)];
                     U valid = mask[get_map_idx(i, 0)];
@@ -113,23 +132,14 @@ class RobotCentricElevation(PluginBase):
         return self.min_filtered
 
     def _base_elevation_cpu(self, elevation_map, mask, rotation):
-        h, w = self.height, self.width
-        res = self.resolution
-        use_th = self.use_threshold
-        th = self.threshold
-        R_flat = rotation.ravel()
-        for i in range(h * w):
-            if mask.flat[i] <= 0.5:
-                continue
-            row = i // w
-            col = i % w
-            rx = row * res
-            ry = col * res
-            rz = elevation_map.flat[i]
-            z_b = R_flat[6] * rx + R_flat[7] * ry + R_flat[8] * rz
-            if use_th and z_b >= th:
-                self.min_filtered.flat[i] = 1.0
-            elif use_th and z_b < th:
-                self.min_filtered.flat[i] = 0.0
-            else:
-                self.min_filtered.flat[i] = z_b
+        _base_elevation_cpu_numba(
+            self.min_filtered,
+            elevation_map,
+            mask,
+            rotation,
+            self.height,
+            self.width,
+            self.resolution,
+            self.use_threshold,
+            self.threshold,
+        )

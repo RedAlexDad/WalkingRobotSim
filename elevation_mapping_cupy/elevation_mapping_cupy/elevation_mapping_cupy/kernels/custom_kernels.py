@@ -794,6 +794,35 @@ def _make_error_counting_cpu(
     ramped_height_range_b,
     ramped_height_range_c,
 ):
+    from numba import njit
+
+    @njit(cache=True)
+    def error_counting_cpu_inner(
+        map_, rows, cols, z, process_idx, mahalanobis_thresh, outlier_variance, traversability_inlier
+    ):
+        newmap = np.zeros_like(map_)
+        error_total = 0.0
+        error_cnt_total = 0
+        for ii in range(len(process_idx)):
+            idx = process_idx[ii]
+            r, c = rows[idx], cols[idx]
+            map_h = map_[0, r, c]
+            map_v = map_[1, r, c]
+            map_valid = map_[2, r, c]
+            map_t = map_[3, r, c]
+            if (
+                map_valid > 0.5
+                and abs(map_h - z[idx]) < (map_v * mahalanobis_thresh)
+                and map_v < outlier_variance / 2.0
+                and map_t > traversability_inlier
+            ):
+                e = z[idx] - map_h
+                error_total += e
+                error_cnt_total += 1
+                newmap[3, r, c] += 1.0
+            newmap[4, r, c] += 1.0
+        return newmap, error_total, error_cnt_total
+
     def error_counting_cpu(map_, p, center_x, center_y, R, t, newmap, error, error_cnt, size=None):
         n_points = p.shape[0]
         Rf = R.ravel()
@@ -828,28 +857,23 @@ def _make_error_counting_cpu(
         process = valid & inside
         process_idx = np.where(process)[0]
 
-        error_total = 0.0
-        error_cnt_total = 0
-        for idx in process_idx:
-            r, c = rows[idx], cols[idx]
-            map_h = map_[0, r, c]
-            map_v = map_[1, r, c]
-            map_valid = map_[2, r, c]
-            map_t = map_[3, r, c]
-            if (
-                map_valid > 0.5
-                and abs(map_h - z[idx]) < (map_v * mahalanobis_thresh)
-                and map_v < outlier_variance / 2.0
-                and map_t > traversability_inlier
-            ):
-                e = z[idx] - map_h
-                error_total += e
-                error_cnt_total += 1
-                newmap[3, r, c] += 1.0
-            newmap[4, r, c] += 1.0
+        if len(process_idx) > 0:
+            nm, err_tot, err_cnt = error_counting_cpu_inner(
+                map_,
+                rows,
+                cols,
+                z,
+                process_idx,
+                mahalanobis_thresh,
+                outlier_variance,
+                traversability_inlier,
+            )
+            newmap[...] = nm
+        else:
+            err_tot, err_cnt = 0.0, 0
 
-        error[0] = np.array(error_total).astype(error.dtype)
-        error_cnt[0] = np.array(error_cnt_total).astype(error_cnt.dtype)
+        error[0] = np.array(err_tot).astype(error.dtype)
+        error_cnt[0] = np.array(err_cnt).astype(error_cnt.dtype)
 
     return error_counting_cpu
 

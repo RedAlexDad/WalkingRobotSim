@@ -6,17 +6,37 @@ import string
 from typing import List
 
 import numpy as np
+from numba import njit
 
-from ..backend import xp, GPU_AVAILABLE, cp
-
+from ..backend import GPU_AVAILABLE, cp, xp
 from .plugin_manager import PluginBase
 
 
-class MaxFilter(PluginBase):
+@njit(cache=True)
+def _max_filter_cpu_numba(max_filtered, max_filtered_mask, dilation, h, w):
+    prev_map = max_filtered.copy()
+    prev_mask = max_filtered_mask.copy()
+    for i in range(h * w):
+        if prev_mask.flat[i] >= 0.5:
+            continue
+        iy = i // w
+        ix = i % w
+        max_val = -1e6
+        for dy in range(-dilation, dilation + 1):
+            for dx in range(-dilation, dilation + 1):
+                ny = iy + dy
+                nx = ix + dx
+                if nx <= 0 or nx >= w - 1 or ny <= 0 or ny >= h - 1:
+                    continue
+                if prev_mask[ny, nx] > 0.5 and prev_map[ny, nx] > max_val:
+                    max_val = prev_map[ny, nx]
+        if max_val > -1e6 + 1:
+            max_filtered.flat[i] = max_val
+            max_filtered_mask.flat[i] = 0.6
 
-    def __init__(
-        self, cell_n: int = 100, dilation_size: int = 5, iteration_n: int = 5, **kwargs
-    ):
+
+class MaxFilter(PluginBase):
+    def __init__(self, cell_n: int = 100, dilation_size: int = 5, iteration_n: int = 5, **kwargs):
         super().__init__()
         self.iteration_n = iteration_n
         self.width = cell_n
@@ -97,30 +117,14 @@ class MaxFilter(PluginBase):
                 self._max_filter_cpu()
             if (self.max_filtered_mask > 0.5).all():
                 break
-        max_filtered = xp.where(
-            self.max_filtered_mask > 0.5, self.max_filtered.copy(), xp.nan
-        )
+        max_filtered = xp.where(self.max_filtered_mask > 0.5, self.max_filtered.copy(), xp.nan)
         return max_filtered
 
     def _max_filter_cpu(self):
-        prev_map = self.max_filtered.copy()
-        prev_mask = self.max_filtered_mask.copy()
-        dilation = self.dilation_size
-        h, w = self.height, self.width
-        for i in range(h * w):
-            if prev_mask.flat[i] >= 0.5:
-                continue
-            iy = i // w
-            ix = i % w
-            max_val = -1e6
-            for dy in range(-dilation, dilation + 1):
-                for dx in range(-dilation, dilation + 1):
-                    ny = iy + dy
-                    nx = ix + dx
-                    if nx <= 0 or nx >= w - 1 or ny <= 0 or ny >= h - 1:
-                        continue
-                    if prev_mask[ny, nx] > 0.5 and prev_map[ny, nx] > max_val:
-                        max_val = prev_map[ny, nx]
-            if max_val > -1e6 + 1:
-                self.max_filtered.flat[i] = max_val
-                self.max_filtered_mask.flat[i] = 0.6
+        _max_filter_cpu_numba(
+            self.max_filtered,
+            self.max_filtered_mask,
+            self.dilation_size,
+            self.height,
+            self.width,
+        )
