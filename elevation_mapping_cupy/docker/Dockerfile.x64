@@ -64,7 +64,8 @@ RUN python3 -m pip install --no-cache-dir --break-system-packages -U --extra-ind
 RUN python3 -m pip install --no-cache-dir --break-system-packages \
     "numpy<2" \
     cupy-cuda12x \
-    simple-parsing
+    simple-parsing \
+    numba
 
 # Non-root user (so mounted workspaces behave).
 # NOTE: NVIDIA CUDA base images already ship with `ubuntu:1000:1000`.
