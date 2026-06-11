@@ -10,6 +10,15 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
+try:
+    from walking_robot_utils.logging import get_logger
+    _log = get_logger("elevation_mapping.core")
+except ImportError:
+    import logging as _logging
+    _log = _logging.getLogger("elevation_mapping.core")
+    _log.addHandler(_logging.StreamHandler())
+    _log.setLevel(_logging.INFO)
+
 from elevation_mapping_cupy.kernels import (
     add_points_kernel,
     average_map_kernel,
@@ -831,7 +840,7 @@ class ElevationMap:
             )
             return_map = self.plugin_manager.get_map_with_name(name)
         else:
-            print("Layer {} is not in the map, returning traversabiltiy!".format(name))
+            _log.warning("Layer %s is not in the map, returning traversability!", name)
             return
         return return_map
 
@@ -884,7 +893,7 @@ class ElevationMap:
             untraversable_polygon_num = un_polygon.shape[0]
         if clipped_area < 0.001:
             is_safe = False
-            print("requested polygon is outside of the map")
+            _log.warning("requested polygon is outside of the map")
         result[...] = np.array(
             [is_safe, t.get() if hasattr(t, "get") else float(t), area.get() if hasattr(area, "get") else float(area)]
         )
@@ -1016,12 +1025,12 @@ class ElevationMap:
                 map_extent = self._map_extent_from_mask(map_rows, map_cols, valid_mask) or self._map_extent_from_slices(
                     map_rows, map_cols
                 )
-                print(
-                    f"[ElevationMap] masked_replace layer '{name}': wrote {written} cells, "
-                    f"X∈[{map_extent['x_min']:.2f},{map_extent['x_max']:.2f}], "
-                    f"Y∈[{map_extent['y_min']:.2f},{map_extent['y_max']:.2f}], "
-                    f"values {min_max if min_max else 'n/a'}",
-                    flush=True,
+                _log.info(
+                    "masked_replace layer '%s': wrote %d cells, X∈[%.2f,%.2f], Y∈[%.2f,%.2f], values %s",
+                    name, written,
+                    map_extent['x_min'], map_extent['x_max'],
+                    map_extent['y_min'], map_extent['y_max'],
+                    str(min_max) if min_max else 'n/a',
                 )
 
         self._invalidate_caches()
