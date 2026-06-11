@@ -9,6 +9,16 @@ import numpy as np
 from elevation_mapping_cupy.plugins.plugin_manager import PluginBase
 
 from ..backend import GPU_AVAILABLE, xp
+s
+try:
+    from walking_robot_utils.logging import get_logger
+    _log = get_logger("elevation_mapping.plugins.max_layer_filter")
+except ImportError:
+    import logging as _logging
+    _log = _logging.getLogger("elevation_mapping.plugins.max_layer_filter")
+    _log.addHandler(_logging.StreamHandler())
+    _log.setLevel(_logging.INFO)
+
 
 
 class MaxLayerFilter(PluginBase):
@@ -75,7 +85,7 @@ class MaxLayerFilter(PluginBase):
                 layer = xp.where(layer > float(self.thresholds[it]), 1, 0)
             layers.append(layer)
         if len(layers) == 0:
-            print("No layers are found, returning traversability!")
+                _log.info("No layers are found, returning traversability!")
             if isinstance(self.default_value, float):
                 layer = xp.ones_like(elevation_map[0])
                 layer *= float(self.default_value)

@@ -7,6 +7,17 @@ from typing import List, Optional
 import cv2 as cv
 import numpy as np
 
+try:
+    from walking_robot_utils.logging import get_logger
+
+    _log = get_logger("elevation_mapping.plugins.erosion")
+except ImportError:
+    import logging as _logging
+
+    _log = _logging.getLogger("elevation_mapping.plugins.erosion")
+    _log.addHandler(_logging.StreamHandler())
+    _log.setLevel(_logging.INFO)
+
 from ..backend import GPU_AVAILABLE, asnumpy, xp
 from .plugin_manager import PluginBase
 
@@ -48,7 +59,7 @@ class Erosion(PluginBase):
             self.input_layer_name,
         )
         if layer_data is None:
-            print(f"No layers are found, using {self.default_layer_name}!")
+            _log.warning("No layers are found, using %s!", self.default_layer_name)
             layer_data = self.get_layer_data(
                 elevation_map,
                 layer_names,
@@ -59,7 +70,7 @@ class Erosion(PluginBase):
                 self.default_layer_name,
             )
             if layer_data is None:
-                print(f"No layers are found, using traversability!")
+                _log.warning("No layers are found, using traversability!")
                 layer_data = self.get_layer_data(
                     elevation_map,
                     layer_names,
