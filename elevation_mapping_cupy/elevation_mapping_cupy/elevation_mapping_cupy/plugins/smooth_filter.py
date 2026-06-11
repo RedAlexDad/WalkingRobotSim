@@ -7,7 +7,7 @@ from typing import List
 import numpy as np
 
 from ..backend import xp, GPU_AVAILABLE, scipy_ndimage
-s
+
 try:
     from walking_robot_utils.logging import get_logger
     _log = get_logger("elevation_mapping.plugins.smooth_filter")
@@ -44,10 +44,9 @@ class SmoothFilter(PluginBase):
             idx = plugin_layer_names.index(self.input_layer_name)
             h = plugin_layers[idx]
         else:
-                _log.info(
-                "layer name {} was not found. Using elevation layer.".format(
-                    self.input_layer_name
-                )
+            _log.info(
+                "layer name %s was not found. Using elevation layer.",
+                self.input_layer_name,
             )
             h = elevation_map[0]
         hs1 = scipy_ndimage.uniform_filter(h, size=3)
