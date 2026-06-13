@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.4
-
 FROM osrf/ros:jazzy-desktop
 
 ARG ROS_DISTRO=jazzy

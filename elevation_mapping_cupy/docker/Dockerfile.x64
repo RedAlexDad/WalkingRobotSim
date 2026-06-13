@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.4
-
 # Jazzy targets Ubuntu 24.04. Use an NVIDIA CUDA base so CuPy + torch can use the GPU.
 FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04
 
