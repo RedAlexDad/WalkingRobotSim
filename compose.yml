@@ -46,6 +46,7 @@ x-el-volumes: &el_volumes
   - ./src/gazebo_sim/scripts/tf_relay.py:/tf_relay.py:ro
   - ./src/gazebo_sim/scripts/ground_segmenter.py:/ground_segmenter.py:ro
   - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
+  - ./src/walking_robot_utils/:/ws/install/elevation_mapping_cupy/lib/python3.12/site-packages/walking_robot_utils/:ro
 
 x-el-command: &el_command
   >

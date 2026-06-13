@@ -20,7 +20,7 @@ from typing import Optional
 DEFAULT_LEVEL = logging.INFO
 DEFAULT_FORMAT = "[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s"
 DEFAULT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-DEFAULT_LOG_DIR = "/tmp/walking_robot_sim"
+DEFAULT_LOG_DIR = os.environ.get("WALKING_ROBOT_LOG_DIR", "/tmp/walking_robot_sim")
 DEFAULT_MAX_BYTES = 10 * 1024 * 1024
 DEFAULT_BACKUP_COUNT = 5
 
@@ -43,7 +43,7 @@ class ColoredFormatter(logging.Formatter):
         self.use_colors = use_colors
 
     def format(self, record):
-        if self.use_colors and sys.stderr.isatty():
+        if self.use_colors:
             color = COLORS.get(record.levelname, COLORS["RESET"])
             record.levelname = f"{color}{record.levelname}{COLORS['RESET']}"
         return super().format(record)
