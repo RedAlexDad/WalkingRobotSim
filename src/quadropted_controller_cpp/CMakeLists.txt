@@ -52,6 +52,11 @@ add_library(${PROJECT_NAME} SHARED
   src/controllers/crawl_stance.cpp
   src/controllers/crawl_swing.cpp
   src/controllers/crawl_gait.cpp
+  # Control
+  src/control/trot_control.cpp
+  src/control/crawl_control.cpp
+  src/control/rest_control.cpp
+  src/control/stand_control.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -136,7 +141,13 @@ endif()
 # Benchmark (standalone, no ROS dependencies)
 # ════════════════════════════════════════════════════════════
 
-add_executable(benchmark benchmark/benchmark.cpp)
+add_executable(benchmark
+  benchmark/main.cpp
+  benchmark/benchmark_gait.cpp
+  benchmark/benchmark_kinematics.cpp
+  benchmark/benchmark_controllers.cpp
+  benchmark/benchmark_timing.cpp
+)
 target_link_libraries(benchmark ${PROJECT_NAME})
 
 # ════════════════════════════════════════════════════════════
