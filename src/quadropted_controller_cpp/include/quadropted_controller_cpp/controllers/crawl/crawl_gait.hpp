@@ -1,6 +1,6 @@
 #pragma once
-#include "quadropted_controller_cpp/controllers/crawl_stance.hpp"
-#include "quadropted_controller_cpp/controllers/crawl_swing.hpp"
+#include "quadropted_controller_cpp/controllers/crawl/crawl_stance.hpp"
+#include "quadropted_controller_cpp/controllers/crawl/crawl_swing.hpp"
 #include "quadropted_controller_cpp/controllers/gait_controller.hpp"
 
 namespace quadropted {

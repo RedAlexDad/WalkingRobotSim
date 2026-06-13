@@ -1,4 +1,4 @@
-#include "quadropted_controller_cpp/controllers/crawl_gait.hpp"
+#include "quadropted_controller_cpp/controllers/crawl/crawl_gait.hpp"
 
 namespace quadropted {
 

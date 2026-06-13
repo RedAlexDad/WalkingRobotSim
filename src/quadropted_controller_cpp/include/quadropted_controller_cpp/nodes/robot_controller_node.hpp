@@ -9,10 +9,10 @@
 #include <sensor_msgs/msg/imu.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
 
-#include "quadropted_controller_cpp/controllers/crawl_gait.hpp"
+#include "quadropted_controller_cpp/controllers/crawl/crawl_gait.hpp"
 #include "quadropted_controller_cpp/controllers/rest_controller.hpp"
 #include "quadropted_controller_cpp/controllers/stand_controller.hpp"
-#include "quadropted_controller_cpp/controllers/trot_gait.hpp"
+#include "quadropted_controller_cpp/controllers/trot/trot_gait.hpp"
 #include "quadropted_controller_cpp/kinematics/inverse_kinematics.hpp"
 #include "quadropted_controller_cpp/states/state_command.hpp"
 

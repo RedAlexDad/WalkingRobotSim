@@ -1,7 +1,7 @@
 #include "benchmark_gait.h"
 
 #include "benchmark_utils.h"
-#include "quadropted_controller_cpp/controllers/trot_gait.hpp"
+#include "quadropted_controller_cpp/controllers/trot/trot_gait.hpp"
 
 using namespace quadropted;
 

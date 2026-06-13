@@ -1,4 +1,4 @@
-#include "quadropted_controller_cpp/controllers/crawl_swing.hpp"
+#include "quadropted_controller_cpp/controllers/crawl/crawl_swing.hpp"
 
 #include "quadropted_controller_cpp/utils/math_utils.hpp"
 

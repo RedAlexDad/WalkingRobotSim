@@ -1,4 +1,4 @@
-#include "quadropted_controller_cpp/controllers/trot_gait.hpp"
+#include "quadropted_controller_cpp/controllers/trot/trot_gait.hpp"
 
 namespace quadropted {
 

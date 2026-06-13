@@ -1,4 +1,4 @@
-#include "quadropted_controller_cpp/controllers/trot_swing.hpp"
+#include "quadropted_controller_cpp/controllers/trot/trot_swing.hpp"
 
 #include "quadropted_controller_cpp/utils/math_utils.hpp"
 

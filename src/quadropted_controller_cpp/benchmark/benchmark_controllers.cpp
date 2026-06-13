@@ -4,8 +4,8 @@
 #include "quadropted_controller_cpp/controllers/pid_controller.hpp"
 #include "quadropted_controller_cpp/controllers/rest_controller.hpp"
 #include "quadropted_controller_cpp/controllers/stand_controller.hpp"
-#include "quadropted_controller_cpp/controllers/trot_stance.hpp"
-#include "quadropted_controller_cpp/controllers/trot_swing.hpp"
+#include "quadropted_controller_cpp/controllers/trot/trot_stance.hpp"
+#include "quadropted_controller_cpp/controllers/trot/trot_swing.hpp"
 #include "quadropted_controller_cpp/states/state_command.hpp"
 
 using namespace quadropted;

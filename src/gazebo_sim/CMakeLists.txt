@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.28)
 project(gazebo_sim)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -57,11 +57,6 @@ install(PROGRAMS
   scripts/experiment_logger.py
   scripts/laser_to_pointcloud.py
   scripts/ground_truth_publisher.py
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
-  PROGRAMS
   DESTINATION lib/${PROJECT_NAME}
 )
 

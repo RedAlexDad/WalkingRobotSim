@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.28)
 project(quadropted_controller_cpp)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -27,40 +27,11 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 # Библиотека
 # ════════════════════════════════════════════════════════════
 
-add_library(${PROJECT_NAME} SHARED
-  # Utils
-  src/utils/math_utils.cpp
-  src/utils/rotation_matrices.cpp
-  src/utils/homogeneous_transforms.cpp
-  src/utils/message_builders.cpp
-  # Kinematics
-  src/kinematics/forward_kinematics.cpp
-  src/kinematics/inverse_kinematics.cpp
-  # Odometry
-  src/odometry/odometry_state.cpp
-  src/odometry/odometry_update.cpp
-  src/odometry/dog_odom_callbacks.cpp
-  src/odometry/dog_odom_publish.cpp
-  src/odometry/dog_odom_update.cpp
-  # States
-  src/states/state_command.cpp
-  # Controllers
-  src/controllers/pid_controller.cpp
-  src/controllers/gait_controller.cpp
-  src/controllers/rest_controller.cpp
-  src/controllers/stand_controller.cpp
-  src/controllers/trot_stance.cpp
-  src/controllers/trot_swing.cpp
-  src/controllers/trot_gait.cpp
-  src/controllers/crawl_stance.cpp
-  src/controllers/crawl_swing.cpp
-  src/controllers/crawl_gait.cpp
-  # Control
-  src/control/trot_control.cpp
-  src/control/crawl_control.cpp
-  src/control/rest_control.cpp
-  src/control/stand_control.cpp
-)
+file(GLOB _SRCS CONFIGURE_DEPENDS
+  src/utils/*.cpp src/kinematics/*.cpp src/odometry/*.cpp src/states/*.cpp
+  src/controllers/*.cpp src/controllers/trot/*.cpp src/controllers/crawl/*.cpp
+  src/control/*.cpp)
+add_library(${PROJECT_NAME} SHARED ${_SRCS})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -100,59 +71,21 @@ install(TARGETS odometry_node robot_controller_node cmd_vel_pub DESTINATION lib/
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
-
-  ament_add_gmock(test_rotation_matrices test/test_rotation_matrices.cpp)
-  target_link_libraries(test_rotation_matrices ${PROJECT_NAME})
-
-  ament_add_gmock(test_homogeneous_transforms test/test_homogeneous_transforms.cpp)
-  target_link_libraries(test_homogeneous_transforms ${PROJECT_NAME})
-
-  ament_add_gmock(test_fk test/test_fk.cpp)
-  target_link_libraries(test_fk ${PROJECT_NAME})
-
-  ament_add_gmock(test_ik test/test_ik.cpp)
-  target_link_libraries(test_ik ${PROJECT_NAME})
-
-  ament_add_gmock(test_odometry test/test_odometry.cpp)
-  target_link_libraries(test_odometry ${PROJECT_NAME})
-
-  ament_add_gmock(test_pid test/test_pid.cpp)
-  target_link_libraries(test_pid ${PROJECT_NAME})
-
-  ament_add_gmock(test_gait test/test_gait.cpp)
-  target_link_libraries(test_gait ${PROJECT_NAME})
-
-  ament_add_gmock(test_message_builders test/test_message_builders.cpp)
-  ament_add_gmock(test_cross_validation test/test_cross_validation.cpp)
-  target_link_libraries(test_cross_validation ${PROJECT_NAME})
-  target_link_libraries(test_message_builders ${PROJECT_NAME})
-
-  # Base link roll tests — критические тесты для проверки крена
-  ament_add_gmock(test_base_link_roll test/test_base_link_roll.cpp)
-  target_link_libraries(test_base_link_roll ${PROJECT_NAME})
-
-  # IK with roll tests — проверка влияния крена на углы суставов
-  ament_add_gmock(test_ik_with_roll test/test_ik_with_roll.cpp)
-  target_link_libraries(test_ik_with_roll ${PROJECT_NAME})
-
-  # step_trot cross-validation tests
-  ament_add_gmock(test_step_trot test/test_step_trot.cpp)
-  target_link_libraries(test_step_trot ${PROJECT_NAME})
+  foreach(_t test_rotation_matrices test_homogeneous_transforms test_fk test_ik
+            test_odometry test_pid test_gait test_message_builders
+            test_cross_validation test_base_link_roll test_ik_with_roll test_step_trot)
+    ament_add_gmock(${_t} test/${_t}.cpp)
+    target_link_libraries(${_t} ${PROJECT_NAME})
+  endforeach()
 endif()
 
 # ════════════════════════════════════════════════════════════
 # Benchmark (standalone, no ROS dependencies)
 # ════════════════════════════════════════════════════════════
 
-add_executable(benchmark
-  benchmark/main.cpp
-  benchmark/benchmark_gait.cpp
-  benchmark/benchmark_kinematics.cpp
-  benchmark/benchmark_controllers.cpp
-  benchmark/benchmark_timing.cpp
-)
+file(GLOB _BENCH_SRCS CONFIGURE_DEPENDS benchmark/*.cpp)
+add_executable(benchmark ${_BENCH_SRCS})
 target_link_libraries(benchmark ${PROJECT_NAME})
-
 install(TARGETS benchmark DESTINATION lib/${PROJECT_NAME})
 
 # ════════════════════════════════════════════════════════════

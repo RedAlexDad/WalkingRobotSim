@@ -1,8 +1,8 @@
 #pragma once
 #include "quadropted_controller_cpp/controllers/gait_controller.hpp"
 #include "quadropted_controller_cpp/controllers/pid_controller.hpp"
-#include "quadropted_controller_cpp/controllers/trot_stance.hpp"
-#include "quadropted_controller_cpp/controllers/trot_swing.hpp"
+#include "quadropted_controller_cpp/controllers/trot/trot_stance.hpp"
+#include "quadropted_controller_cpp/controllers/trot/trot_swing.hpp"
 
 namespace quadropted {
 
