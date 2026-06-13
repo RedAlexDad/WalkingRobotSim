@@ -43,6 +43,15 @@ def generate_launch_description():
         )
     )
 
+    use_elevation = LaunchConfiguration("use_elevation", default="false")
+    ld.add_action(
+        DeclareLaunchArgument(
+            name="use_elevation",
+            default_value="false",
+            description="Use elevation costmap layer",
+        )
+    )
+
     world_file = os.path.join(pkg_path, "world", "cafe.world")
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -67,6 +76,7 @@ def generate_launch_description():
         ),
         launch_arguments={
             "camera_fps": camera_fps,
+            "use_elevation": use_elevation,
         }.items(),
     )
 

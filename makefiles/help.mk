@@ -21,6 +21,7 @@ help:
 	@printf "  ${GREEN}${BOLD}make gazebo${NC}         Запуск Gazebo симуляции (C++)\n"
 	@printf "  ${GREEN}${BOLD}make gazebo-py${NC}      Запуск Gazebo симуляции (Python)\n"
 	@printf "  ${GREEN}${BOLD}make gazebo-cpp${NC}     Запуск Gazebo симуляции (C++)\n"
+	@printf "  ${GREEN}${BOLD}make gazebo ELEVATION=true${NC}  С картой высот (elevation costmap)\n"
 	@printf "  ${GREEN}${BOLD}make teleop${NC}         Запуск управления роботом\n"
 	@printf "  ${GREEN}${BOLD}make kill-ros${NC}       Очистка всех ROS/Gazebo процессов\n"
 	@echo ""

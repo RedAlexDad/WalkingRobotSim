@@ -73,6 +73,14 @@ def generate_launch_description():
     )
     ld.add_action(declare_camera_fps)
 
+    use_elevation = LaunchConfiguration("use_elevation", default="false")
+    declare_use_elevation = DeclareLaunchArgument(
+        name="use_elevation",
+        default_value="false",
+        description="Use elevation costmap layer",
+    )
+    ld.add_action(declare_use_elevation)
+
     remappings_initial = [
         ("/tf", "tf"),
         ("/tf_static", "tf_static"),
@@ -265,8 +273,6 @@ def generate_launch_description():
 
         nav2_launch_file = os.path.join(pkg_path, "launch", "nav2", "bringup_launch.py")
         map_yaml_file = os.path.join(pkg_path, "maps", "cafe_world_map.yaml")
-        params_file = os.path.join(pkg_path, "config", "nav2_params.yaml")
-
         message = f"{{header: {{frame_id: map}}, pose: {{pose: {{position: {{x: {robot['x_pose']}, y: {robot['y_pose']}, z: 0.1}}, orientation: {{x: 0.0, y: 0.0, z: 0.0, w: 1.0}}}}, }} }}"
 
         initial_pose_cmd = ExecuteProcess(
@@ -291,7 +297,7 @@ def generate_launch_description():
                 "map": map_yaml_file,
                 "use_namespace": "True",
                 "namespace": namespace,
-                "params_file": params_file,
+                "use_elevation": use_elevation,
                 "autostart": "true",
                 "use_sim_time": "true",
                 "log_level": "warn",

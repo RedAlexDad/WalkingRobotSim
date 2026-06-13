@@ -19,7 +19,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration, PythonExpression, TextSubstitution
 from launch_ros.actions import PushRosNamespace
 
 
@@ -36,6 +36,7 @@ def generate_launch_description():
     slam = LaunchConfiguration("slam")
     map_yaml_file = LaunchConfiguration("map")
     use_sim_time = LaunchConfiguration("use_sim_time")
+    use_elevation = LaunchConfiguration("use_elevation")
     params_file = LaunchConfiguration("params_file")
     autostart = LaunchConfiguration("autostart")
 
@@ -51,8 +52,21 @@ def generate_launch_description():
 
     declare_use_sim_time_cmd = DeclareLaunchArgument("use_sim_time", default_value="True", description="Use simulation (Gazebo) clock if true")
 
+    declare_use_elevation_cmd = DeclareLaunchArgument(
+        "use_elevation", default_value="false", description="Use elevation costmap layer"
+    )
+
+    default_params_file = PythonExpression([
+        "'" + os.path.join(robot_dir, "config", "nav2_params_elevation.yaml") + "'",
+        " if ",
+        use_elevation,
+        " == 'true' else '",
+        os.path.join(robot_dir, "config", "nav2_params.yaml"),
+        "'"
+    ])
+
     declare_params_file_cmd = DeclareLaunchArgument(
-        "params_file", default_value=os.path.join(robot_dir, "config", "nav2_params.yaml"), description="Full path to the ROS2 parameters file to use for all launched nodes"
+        "params_file", default_value=default_params_file, description="Full path to the ROS2 parameters file to use for all launched nodes"
     )
 
     declare_autostart_cmd = DeclareLaunchArgument("autostart", default_value="true", description="Automatically startup the nav2 stack")
@@ -97,6 +111,7 @@ def generate_launch_description():
     ld.add_action(declare_slam_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
+    ld.add_action(declare_use_elevation_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
 

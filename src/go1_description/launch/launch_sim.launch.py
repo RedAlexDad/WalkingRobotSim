@@ -26,6 +26,11 @@ def generate_launch_description():
     ]
 
 
+    use_elevation = LaunchConfiguration('use_elevation', default='false')
+    declare_use_elevation = DeclareLaunchArgument(
+        'use_elevation', default_value='false', description='Use elevation costmap layer'
+    )
+
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
     declare_use_sim_time = DeclareLaunchArgument(
         name='use_sim_time', default_value=use_sim_time, description='Использовать симуляционное время'
@@ -148,7 +153,6 @@ def generate_launch_description():
         remappings=remappings
     )
 
-    params_file = os.path.join(get_package_share_directory(package_name), 'config', 'nav2_params.yaml')
     map_dir = os.path.join(get_package_share_directory(package_name), 'maps', 'warehouse_map.yaml')
 
     bringup_cmd = IncludeLaunchDescription(
@@ -158,7 +162,7 @@ def generate_launch_description():
             'map': map_dir,
             'use_namespace': 'True',
             'namespace': namespace,
-            'params_file': params_file,
+            'use_elevation': use_elevation,
             'autostart': 'true',
             'use_sim_time': 'True',
             'log_level': 'warn',
@@ -179,6 +183,7 @@ def generate_launch_description():
     # Launch them all!
     return LaunchDescription([
         declare_use_sim_time,
+        declare_use_elevation,
         node_robot_state_publisher,
         gazebo,
         spawn_entity,

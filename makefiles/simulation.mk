@@ -15,7 +15,8 @@ gazebo-py:
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
 		ros2 launch gazebo_sim launch_python.launch.py \
 			use_sim_time:=true gui:=true \
-			$(if $(FPS),camera_fps:=${FPS})"
+			$(if $(FPS),camera_fps:=${FPS}) \
+			$(if $(ELEVATION),use_elevation:=${ELEVATION})"
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
@@ -29,7 +30,8 @@ gazebo-cpp:
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
 		ros2 launch gazebo_sim launch_cpp.launch.py \
 			use_sim_time:=true gui:=true \
-			$(if $(FPS),camera_fps:=${FPS})"
+			$(if $(FPS),camera_fps:=${FPS}) \
+			$(if $(ELEVATION),use_elevation:=${ELEVATION})"
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
