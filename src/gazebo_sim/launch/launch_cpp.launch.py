@@ -89,15 +89,17 @@ def generate_launch_description():
     )
 
     experiment_logger = Node(
-        package='gazebo_sim',
-        executable='experiment_logger.py',
-        namespace='robot1',
-        name='experiment_logger',
-        output='screen',
-        parameters=[{
-            'odom_topic': '/robot1/odom',
-            'output_dir': '/tmp/experiments',
-        }],
+        package="gazebo_sim",
+        executable="experiment_logger.py",
+        namespace="robot1",
+        name="experiment_logger",
+        output="screen",
+        parameters=[
+            {
+                "odom_topic": "/robot1/odom",
+                "output_dir": "/tmp/experiments",
+            }
+        ],
     )
     ld.add_action(experiment_logger)
 
