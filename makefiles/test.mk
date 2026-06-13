@@ -1,7 +1,7 @@
 # makefiles/test.mk
 
 .PHONY: test test-build test-container test-clean check-deps check-structure test-yaml setup backup check-x11
-.PHONY: test-correctness test-benchmark benchmark benchmark-python benchmark-cpp
+.PHONY: test-correctness test-benchmark benchmark benchmark-cpp
 
 ## Полный цикл тестирования
 test: check-deps check-structure test-yaml test-build test-container
@@ -195,27 +195,9 @@ test-benchmark:
 	@echo ""
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Benchmark завершён${NC}\n"
 
-## Запуск полного бенчмарка Python vs C++ с таблицей результатов
-benchmark:
-	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Python + C++ сводной таблицы...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
-		source /root/ws/install/setup.bash && \
-		cd /root/ws/src/quadropted_controller/scripts/benchmark && \
-		python3 benchmark.py --combined"
+## Запуск бенчмарка (C++)
+benchmark: benchmark-cpp
 
-## Запуск только Python бенчмарка
-benchmark-python:
-	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Python бенчмарка...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
-		source /root/ws/install/setup.bash && \
-		cd /root/ws/src/quadropted_controller/scripts/benchmark && \
-		python3 benchmark.py"
-
-## Запуск только C++ бенчмарка
 benchmark-cpp:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск C++ бенчмарка...${NC}\n"

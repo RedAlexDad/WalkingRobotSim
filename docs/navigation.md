@@ -6,7 +6,7 @@
 
 ## Компоненты
 
-### waypoint_collector (Python, quadropted_controller)
+### waypoint_collector
 
 Узел для сбора и управления waypoints:
 

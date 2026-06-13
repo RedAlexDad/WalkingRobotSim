@@ -20,7 +20,7 @@
        │ joint_states               │ /tf, /tf_static
        ▼                            ▼
 ┌────────────────────────────────────────────────────┐
-│              quadropted_controller                 │
+│           quadropted_controller_cpp               │
 │  (или quadropted_controller_cpp)                   │
 │                                                    │
 │  GaitManager → GaitController (Trot/Crawl/Rest)    │
@@ -40,21 +40,9 @@
 
 ## Пакеты
 
-### quadropted_controller (Python)
+### quadropted_controller_cpp
 
-Основной контроллер ходьбы на Python. Компоненты:
-
-- `gait_manager.py` — переключение режимов (TROT, CRAWL, REST, STAND)
-- `trot_gait.py` / `crawl_gait.py` / `rest_controller.py` — реализации gait
-- `forward_kinematics.py` / `inverse_kinematics.py` — кинематика ног
-- `odometry_publisher.py` — одометрия на основе прямой кинематики
-- `pid_controller.py` — PID для стабилизации
-- `robot_controller.py` — cmd_vel → joint commands
-- `waypoint_collector.py` — управление waypoints (сервис `/get_waypoints`)
-
-### quadropted_controller_cpp (C++)
-
-C++ версия контроллера, 53.5x быстрее Python. Полная кросс-валидация.
+C++ контроллер ходьбы, 53.5x быстрее Python. Полная кросс-валидация.
 
 - `TrotGaitController`, `CrawlGaitController`, `RestController`, `StandController`
 - Eigen3 для кинематики

@@ -41,8 +41,7 @@ WalkingRobotSim/
 │   ├── go1_description/         # URDF описание робота Unitree Go1
 │   ├── go2_description/         # URDF описание робота Unitree Go2
 │   ├── quadrapted_perception/   # YOLO детектор + визуализация RViz
-│   ├── quadropted_controller/   # Python контроллер (RobotController, одометрия)
-│   ├── quadropted_controller_cpp/ # C++ контроллер (53.5x ускорение)
+│   ├── quadropted_controller_cpp/   # C++ контроллер (RobotController, одометрия, 53.5x ускорение)
 │   ├── quadropted_msgs/         # ROS 2 сообщения (Waypoint, RobotVelocity и др.)
 │   ├── rviz_waypoint_tool/      # Кастомный RViz инструмент для waypoints
 │   └── tests/                   # Интеграционные тесты Python vs C++

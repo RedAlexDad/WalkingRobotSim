@@ -112,43 +112,41 @@ def generate_launch_description():
 
     )
 
-    # Ноды для управления роботом
+    # Ноды для управления роботом (C++)
     controller = Node(
-        package='quadropted_controller',
-        executable='robot_controller_gazebo.py',
-        name='quadruped_controller',
+        package='quadropted_controller_cpp',
+        executable='robot_controller_node',
+        name='robot_controller_cpp',
         namespace=namespace,
         output='screen',
         remappings=remappings
-
     )
 
-
     cmd_vel_pub = Node(
-        package='quadropted_controller',
-        executable='cmd_vel_pub.py',
-        name='cmd_vel_pub',
+        package='quadropted_controller_cpp',
+        executable='cmd_vel_pub',
+        name='cmd_vel_pub_cpp',
         namespace=namespace,
         output='screen',
     )
 
-    odom =Node(
-        package='quadropted_controller',
-        executable='QuadrupedOdometryNode.py',
-        name='odom',
+    odom = Node(
+        package='quadropted_controller_cpp',
+        executable='odometry_node',
+        name='odometry_cpp',
         namespace=namespace,
         output='screen',
         parameters=[{
-                "verbose": False,
-                'publish_rate': 50,
-                'open_loop': False,
-                'has_imu_heading': True,
-                'is_gazebo': True,
-                'imu_topic': f"/{namespace}/imu",
-                'base_frame_id': "base",
-                'odom_frame_id': "odom",
-                'clock_topic': '/clock',
-                'enable_odom_tf': True,
+            "verbose": False,
+            'publish_rate': 50,
+            'open_loop': False,
+            'has_imu_heading': True,
+            'is_gazebo': True,
+            'imu_topic': f"/{namespace}/imu_plugin/out",
+            'base_frame_id': "base_link",
+            'odom_frame_id': "odom",
+            'clock_topic': '/clock',
+            'enable_odom_tf': True,
         }],
         remappings=remappings
     )
