@@ -1,6 +1,5 @@
 #include "quadropted_controller_cpp/controllers/stand_controller.hpp"
 
-#include <algorithm>
 #include <cmath>
 
 namespace quadropted {

@@ -1,7 +1,5 @@
 #include "quadropted_controller_cpp/controllers/trot_gait.hpp"
 
-#include <cmath>
-
 namespace quadropted {
 
 TrotGaitController::TrotGaitController(double stance_time, double swing_time, double time_step, bool use_imu,

@@ -18,8 +18,7 @@ void CrawlGaitController::reset() {
     first_cycle_ = true;
 }
 
-LegsMatrix CrawlGaitController::step(int ticks, const LegsMatrix& current,
-                                     const Eigen::Vector3d& cmd_vel) {
+LegsMatrix CrawlGaitController::step(int ticks, const LegsMatrix& current, const Eigen::Vector3d& cmd_vel) {
     LegsMatrix new_foot_locations{};
 
     Eigen::VectorXi contact_modes = contacts(ticks);

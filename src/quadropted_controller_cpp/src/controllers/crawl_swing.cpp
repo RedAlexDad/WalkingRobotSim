@@ -1,5 +1,7 @@
 #include "quadropted_controller_cpp/controllers/crawl_swing.hpp"
 
+#include "quadropted_controller_cpp/utils/math_utils.hpp"
+
 namespace quadropted {
 
 CrawlSwingController::CrawlSwingController(int swing_ticks, double time_step, double z_leg_lift,
@@ -39,9 +41,8 @@ double CrawlSwingController::swing_height(double swing_prop) const {
     }
 }
 
-Eigen::Vector3d CrawlSwingController::next_foot_location(double swing_prop, int leg_index,
-                                                         const LegsMatrix& current, const Eigen::Vector3d& cmd_vel,
-                                                         double robot_height) const {
+Eigen::Vector3d CrawlSwingController::next_foot_location(double swing_prop, int leg_index, const LegsMatrix& current,
+                                                         const Eigen::Vector3d& cmd_vel, double robot_height) const {
     assert(swing_prop >= 0.0 && swing_prop <= 1.0);
 
     // Python: foot_location = state.foot_locations[:, leg_index]

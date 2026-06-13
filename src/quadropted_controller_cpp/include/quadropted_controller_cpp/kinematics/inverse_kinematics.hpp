@@ -14,15 +14,15 @@ Eigen::MatrixXd compute_local_positions(const LegsMatrix& leg_positions, double 
 std::array<double, 3> compute_joint_angles_for_leg(double x, double y, double z, int leg_index, double l1, double l2,
                                                    double l3, double l4);
 
-std::vector<double> compute_all_joint_angles(const Eigen::Ref<const Eigen::MatrixXd>& positions, double l1,
-                                             double l2, double l3, double l4);
+std::vector<double> compute_all_joint_angles(const Eigen::Ref<const Eigen::MatrixXd>& positions, double l1, double l2,
+                                             double l3, double l4);
 
 class InverseKinematics {
   public:
     InverseKinematics(double body_length, double body_width, double l1, double l2, double l3, double l4);
 
-    Eigen::MatrixXd get_local_positions(const LegsMatrix& leg_positions, double dx, double dy, double dz,
-                                        double roll, double pitch, double yaw) const;
+    Eigen::MatrixXd get_local_positions(const LegsMatrix& leg_positions, double dx, double dy, double dz, double roll,
+                                        double pitch, double yaw) const;
 
     std::vector<double> inverse_kinematics(const LegsMatrix& leg_positions, double dx, double dy, double dz,
                                            double roll, double pitch, double yaw) const;

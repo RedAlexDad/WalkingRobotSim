@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "quadropted_controller_cpp/nodes/dog_odometry_node.hpp"
 
 void DogOdometryNode::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg) {

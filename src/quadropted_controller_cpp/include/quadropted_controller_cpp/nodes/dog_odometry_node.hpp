@@ -2,7 +2,6 @@
 
 #include <tf2_ros/transform_broadcaster.h>
 
-#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <memory>
 #include <nav_msgs/msg/odometry.hpp>
 #include <quadropted_msgs/msg/robot_foot_contact.hpp>
@@ -12,12 +11,10 @@
 #include <std_msgs/msg/bool.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
 #include <string>
-#include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
 #include "quadropted_controller_cpp/kinematics/forward_kinematics.hpp"
 #include "quadropted_controller_cpp/odometry/odometry.hpp"
-#include "quadropted_controller_cpp/utils/message_builders.hpp"
 
 class DogOdometryNode : public rclcpp::Node {
   public:

@@ -2,7 +2,6 @@
 #include <Eigen/Dense>
 
 #include "quadropted_controller_cpp/states/state_command.hpp"
-#include "quadropted_controller_cpp/utils/math_utils.hpp"
 
 namespace quadropted {
 

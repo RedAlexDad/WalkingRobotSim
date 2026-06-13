@@ -1,5 +1,7 @@
 #include "quadropted_controller_cpp/controllers/crawl_stance.hpp"
 
+#include "quadropted_controller_cpp/utils/math_utils.hpp"
+
 namespace quadropted {
 
 CrawlStanceController::CrawlStanceController(int phase_length, int stance_ticks, int swing_ticks, double time_step,

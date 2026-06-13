@@ -19,8 +19,7 @@ struct State {
     double robot_height = -0.25;  // FIX: отрицательная как в Python StateCommand.py
 
     State() = default;
-    explicit State(double height)
-        : body_height(height), robot_height(-height) {}
+    explicit State(double height) : body_height(height), robot_height(-height) {}
 };
 
 struct Command {

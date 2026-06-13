@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "quadropted_controller_cpp/odometry_state.hpp"
-#include "quadropted_controller_cpp/odometry_update.hpp"
+#include "quadropted_controller_cpp/odometry/odometry.hpp"
 
 TEST(Odometry, append_delta_and_average) {
     quadropted::OdometryState state;  // пустой, не инициализированный

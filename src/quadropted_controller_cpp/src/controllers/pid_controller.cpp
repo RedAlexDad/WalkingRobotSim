@@ -1,7 +1,5 @@
 #include "quadropted_controller_cpp/controllers/pid_controller.hpp"
 
-#include <cmath>
-
 namespace quadropted {
 
 PIDController::PIDController(double kp, double ki, double kd) : kp_(kp), ki_(ki), kd_(kd) {}

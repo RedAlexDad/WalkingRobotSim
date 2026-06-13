@@ -1,4 +1,7 @@
+#include <cmath>
+
 #include "quadropted_controller_cpp/nodes/robot_controller_node.hpp"
+#include "quadropted_controller_cpp/utils/math_utils.hpp"
 
 namespace quadropted {
 

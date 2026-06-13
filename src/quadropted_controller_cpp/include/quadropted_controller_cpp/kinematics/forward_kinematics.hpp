@@ -3,8 +3,6 @@
 #include <array>
 #include <vector>
 
-#include "quadropted_controller_cpp/utils/math_utils.hpp"
-
 namespace quadropted {
 
 using JointAngles = std::array<double, 12>;
@@ -15,10 +13,8 @@ struct LegBasePositions {
 };
 
 Eigen::Vector3d compute_leg_fk_chain(double theta_hip, double theta_thigh, double theta_calf, double base_x,
-                                     double base_y, double l1,
-                                     const Eigen::Matrix4d& T_thigh_t,
-                                     const Eigen::Matrix4d& T_calf_t,
-                                     const Eigen::Matrix4d& T_foot);
+                                     double base_y, double l1, const Eigen::Matrix4d& T_thigh_t,
+                                     const Eigen::Matrix4d& T_calf_t, const Eigen::Matrix4d& T_foot);
 
 class ForwardKinematics {
   public:

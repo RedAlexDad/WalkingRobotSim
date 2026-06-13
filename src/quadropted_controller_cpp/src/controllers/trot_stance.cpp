@@ -1,6 +1,6 @@
 #include "quadropted_controller_cpp/controllers/trot_stance.hpp"
 
-#include "quadropted_controller_cpp/utils/rotation_matrices.hpp"
+#include "quadropted_controller_cpp/utils/math_utils.hpp"
 
 namespace quadropted {
 

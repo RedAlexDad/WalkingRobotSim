@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cmath>
-#include <geometry_msgs/msg/twist.hpp>
 #include <memory>
 #include <quadropted_msgs/msg/robot_foot_contact.hpp>
 #include <quadropted_msgs/msg/robot_mode_command.hpp>
@@ -9,7 +7,6 @@
 #include <quadropted_msgs/srv/robot_behavior_command.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
-#include <sensor_msgs/msg/joint_state.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
 
 #include "quadropted_controller_cpp/controllers/crawl_gait.hpp"
@@ -18,7 +15,6 @@
 #include "quadropted_controller_cpp/controllers/trot_gait.hpp"
 #include "quadropted_controller_cpp/kinematics/inverse_kinematics.hpp"
 #include "quadropted_controller_cpp/states/state_command.hpp"
-#include "quadropted_controller_cpp/utils/math_utils.hpp"
 
 namespace quadropted {
 

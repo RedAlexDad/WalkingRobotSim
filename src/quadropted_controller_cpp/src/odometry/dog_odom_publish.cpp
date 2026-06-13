@@ -1,3 +1,6 @@
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <visualization_msgs/msg/marker.hpp>
+
 #include "quadropted_controller_cpp/nodes/dog_odometry_node.hpp"
 
 void DogOdometryNode::publish_odometry() {

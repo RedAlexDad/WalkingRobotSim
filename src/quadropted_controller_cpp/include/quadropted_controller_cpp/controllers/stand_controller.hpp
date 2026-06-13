@@ -1,7 +1,6 @@
 #pragma once
 #include <Eigen/Dense>
 
-#include "quadropted_controller_cpp/controllers/pid_controller.hpp"
 #include "quadropted_controller_cpp/states/state_command.hpp"
 
 namespace quadropted {

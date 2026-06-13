@@ -10,8 +10,7 @@ class TrotGaitController : public GaitController {
   public:
     TrotGaitController(double stance_time, double swing_time, double time_step, bool use_imu,
                        Eigen::MatrixXd default_stance);
-    LegsMatrix step(int ticks, const LegsMatrix& current, const Eigen::Vector3d& cmd_vel,
-                         double robot_height) const;
+    LegsMatrix step(int ticks, const LegsMatrix& current, const Eigen::Vector3d& cmd_vel, double robot_height) const;
     bool use_imu() const { return use_imu_; }
     TrotSwingController& swing_controller() { return swing_; }
     PIDController& pid_controller() { return pid_; }

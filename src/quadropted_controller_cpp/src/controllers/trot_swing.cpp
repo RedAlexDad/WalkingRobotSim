@@ -1,5 +1,7 @@
 #include "quadropted_controller_cpp/controllers/trot_swing.hpp"
 
+#include "quadropted_controller_cpp/utils/math_utils.hpp"
+
 namespace quadropted {
 
 TrotSwingController::TrotSwingController(int swing_ticks, double time_step, double z_leg_lift,
@@ -31,9 +33,8 @@ double TrotSwingController::swing_height(double swing_prop) const {
     }
 }
 
-Eigen::Vector3d TrotSwingController::next_foot_location(double swing_prop, int leg_index,
-                                                        const LegsMatrix& current, const Eigen::Vector3d& cmd_vel,
-                                                        double robot_height) const {
+Eigen::Vector3d TrotSwingController::next_foot_location(double swing_prop, int leg_index, const LegsMatrix& current,
+                                                        const Eigen::Vector3d& cmd_vel, double robot_height) const {
     assert(swing_prop >= 0.0 && swing_prop <= 1.0);
 
     Eigen::Vector3d foot_location = current.col(leg_index);

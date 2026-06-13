@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+#include "quadropted_controller_cpp/utils/math_utils.hpp"
+
 namespace quadropted {
 
 Eigen::MatrixXd compute_local_positions(const LegsMatrix& leg_positions, double body_length, double body_width,
@@ -75,8 +77,8 @@ std::array<double, 3> compute_joint_angles_for_leg(double x, double y, double z,
     return {theta1, theta3, theta4};
 }
 
-std::vector<double> compute_all_joint_angles(const Eigen::Ref<const Eigen::MatrixXd>& positions, double l1,
-                                             double l2, double l3, double l4) {
+std::vector<double> compute_all_joint_angles(const Eigen::Ref<const Eigen::MatrixXd>& positions, double l1, double l2,
+                                             double l3, double l4) {
     static const double LEG_SIGNS[] = {1.0, -1.0, 1.0, -1.0};
 
     double l2_sq = l2 * l2;
@@ -125,8 +127,8 @@ InverseKinematics::InverseKinematics(double body_length, double body_width, doub
       l3_(l3),
       l4_(l4) {}
 
-Eigen::MatrixXd InverseKinematics::get_local_positions(const LegsMatrix& leg_positions, double dx, double dy,
-                                                       double dz, double roll, double pitch, double yaw) const {
+Eigen::MatrixXd InverseKinematics::get_local_positions(const LegsMatrix& leg_positions, double dx, double dy, double dz,
+                                                       double roll, double pitch, double yaw) const {
     return compute_local_positions(leg_positions, body_length_, body_width_, dx, dy, dz, roll, pitch, yaw);
 }
 

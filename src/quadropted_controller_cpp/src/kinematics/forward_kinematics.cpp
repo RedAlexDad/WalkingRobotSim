@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+#include "quadropted_controller_cpp/utils/math_utils.hpp"
+
 namespace quadropted {
 
 Eigen::Vector2d LegBasePositions::get(int leg_index, double body_length, double body_width) {
@@ -22,10 +24,8 @@ Eigen::Vector2d LegBasePositions::get(int leg_index, double body_length, double 
 }
 
 Eigen::Vector3d compute_leg_fk_chain(double theta_hip, double theta_thigh, double theta_calf, double base_x,
-                                     double base_y, double l1,
-                                     const Eigen::Matrix4d& T_thigh_t,
-                                     const Eigen::Matrix4d& T_calf_t,
-                                     const Eigen::Matrix4d& T_foot) {
+                                     double base_y, double l1, const Eigen::Matrix4d& T_thigh_t,
+                                     const Eigen::Matrix4d& T_calf_t, const Eigen::Matrix4d& T_foot) {
     Eigen::Matrix4d T_base = homog_transform(base_x, base_y, -l1, 0, 0, 0);
     Eigen::Matrix4d T_hip = homog_transform(0, 0, 0, 0, 0, theta_hip);
     Eigen::Matrix4d T_thigh = homog_transform(0, 0, 0, 0, theta_thigh, 0);
@@ -38,7 +38,12 @@ Eigen::Vector3d compute_leg_fk_chain(double theta_hip, double theta_thigh, doubl
 }
 
 ForwardKinematics::ForwardKinematics(double body_length, double body_width, double l1, double l2, double l3, double l4)
-    : body_length_(body_length), body_width_(body_width), l1_(l1), l2_(l2), l3_(l3), l4_(l4),
+    : body_length_(body_length),
+      body_width_(body_width),
+      l1_(l1),
+      l2_(l2),
+      l3_(l3),
+      l4_(l4),
       T_thigh_t_(homog_transform(l2, 0, 0, 0, 0, 0)),
       T_calf_t_(homog_transform(l3, 0, 0, 0, 0, 0)),
       T_foot_(homog_transform(l4, 0, 0, 0, 0, 0)) {}
@@ -59,9 +64,8 @@ std::vector<Eigen::Vector3d> ForwardKinematics::forward_kinematics_all_legs(
         double theta_calf = joint_angles[idx + 2];
 
         Eigen::Vector2d base = LegBasePositions::get(leg, body_length_, body_width_);
-        foot_positions.push_back(
-            compute_leg_fk_chain(theta_hip, theta_thigh, theta_calf, base.x(), base.y(), l1_,
-                                T_thigh_t_, T_calf_t_, T_foot_));
+        foot_positions.push_back(compute_leg_fk_chain(theta_hip, theta_thigh, theta_calf, base.x(), base.y(), l1_,
+                                                      T_thigh_t_, T_calf_t_, T_foot_));
     }
 
     return foot_positions;
@@ -77,9 +81,8 @@ FootPositions ForwardKinematics::forward_kinematics_all_legs(const JointAngles& 
         double theta_calf = joint_angles[idx + 2];
 
         Eigen::Vector2d base = LegBasePositions::get(leg, body_length_, body_width_);
-        foot_positions[leg] =
-            compute_leg_fk_chain(theta_hip, theta_thigh, theta_calf, base.x(), base.y(), l1_,
-                                T_thigh_t_, T_calf_t_, T_foot_);
+        foot_positions[leg] = compute_leg_fk_chain(theta_hip, theta_thigh, theta_calf, base.x(), base.y(), l1_,
+                                                   T_thigh_t_, T_calf_t_, T_foot_);
     }
 
     return foot_positions;

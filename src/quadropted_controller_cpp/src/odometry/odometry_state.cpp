@@ -1,5 +1,3 @@
-#include <algorithm>
-
 #include "quadropted_controller_cpp/odometry/odometry.hpp"
 
 namespace quadropted {

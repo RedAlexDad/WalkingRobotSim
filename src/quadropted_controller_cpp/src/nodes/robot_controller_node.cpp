@@ -1,6 +1,7 @@
 #include "quadropted_controller_cpp/nodes/robot_controller_node.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
 #include <string>
 
