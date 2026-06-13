@@ -1,16 +1,18 @@
 #include "quadropted_controller_cpp/kinematics/inverse_kinematics.hpp"
 
+#include <array>
 #include <cmath>
 
 #include "quadropted_controller_cpp/utils/math_utils.hpp"
 
 namespace quadropted {
 
-Eigen::MatrixXd compute_local_positions(const LegsMatrix& leg_positions, double body_length, double body_width,
-                                        double dx, double dy, double dz, double roll, double pitch, double yaw) {
+Eigen::Matrix<double, 4, 3> compute_local_positions(const LegsMatrix& leg_positions, double body_length,
+                                                    double body_width, double dx, double dy, double dz, double roll,
+                                                    double pitch, double yaw) {
     // Фиксированная матрица вращения для ног: R = rotxyz(pi/2, -pi/2, 0)
-    Eigen::Matrix3d R_legs;
-    R_legs << 0.0, 0.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 0.0;
+    static const Eigen::Matrix3d R_legs =
+        (Eigen::Matrix3d() << 0.0, 0.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 0.0).finished();
 
     // T_blwbl — преобразование корпуса
     Eigen::Matrix4d T_blwbl = Eigen::Matrix4d::Identity();
@@ -39,7 +41,8 @@ Eigen::MatrixXd compute_local_positions(const LegsMatrix& leg_positions, double 
     T_leg[3] = T_blwbl * make_leg_T(-hl, hw, 0);   // RL
 
     // Обратное преобразование для каждой ноги
-    Eigen::MatrixXd result(4, 3);
+    Eigen::Matrix<double, 4, 3> result;
+    result.setZero();
     for (int i = 0; i < 4; ++i) {
         Eigen::Matrix4d inv_T = homog_transform_inverse(T_leg[i]);
         Eigen::Vector4d leg_pos_h;
@@ -77,8 +80,8 @@ std::array<double, 3> compute_joint_angles_for_leg(double x, double y, double z,
     return {theta1, theta3, theta4};
 }
 
-std::vector<double> compute_all_joint_angles(const Eigen::Ref<const Eigen::MatrixXd>& positions, double l1, double l2,
-                                             double l3, double l4) {
+std::array<double, 12> compute_all_joint_angles(const Eigen::Ref<const Eigen::MatrixXd>& positions, double l1,
+                                                double l2, double l3, double l4) {
     static const double LEG_SIGNS[] = {1.0, -1.0, 1.0, -1.0};
 
     double l2_sq = l2 * l2;
@@ -86,7 +89,7 @@ std::vector<double> compute_all_joint_angles(const Eigen::Ref<const Eigen::Matri
     double inv_2l3l4 = 1.0 / _2l3l4;
     double l3sq_l4sq = l3 * l3 + l4 * l4;
 
-    std::vector<double> angles(12, 0.0);
+    std::array<double, 12> angles{};
 
     for (int i = 0; i < 4; ++i) {
         double x = positions(i, 0);
@@ -127,14 +130,15 @@ InverseKinematics::InverseKinematics(double body_length, double body_width, doub
       l3_(l3),
       l4_(l4) {}
 
-Eigen::MatrixXd InverseKinematics::get_local_positions(const LegsMatrix& leg_positions, double dx, double dy, double dz,
-                                                       double roll, double pitch, double yaw) const {
+Eigen::Matrix<double, 4, 3> InverseKinematics::get_local_positions(const LegsMatrix& leg_positions, double dx,
+                                                                   double dy, double dz, double roll, double pitch,
+                                                                   double yaw) const {
     return compute_local_positions(leg_positions, body_length_, body_width_, dx, dy, dz, roll, pitch, yaw);
 }
 
-std::vector<double> InverseKinematics::inverse_kinematics(const LegsMatrix& leg_positions, double dx, double dy,
-                                                          double dz, double roll, double pitch, double yaw) const {
-    Eigen::MatrixXd positions = get_local_positions(leg_positions, dx, dy, dz, roll, pitch, yaw);
+std::array<double, 12> InverseKinematics::inverse_kinematics(const LegsMatrix& leg_positions, double dx, double dy,
+                                                             double dz, double roll, double pitch, double yaw) const {
+    auto positions = get_local_positions(leg_positions, dx, dy, dz, roll, pitch, yaw);
     return compute_all_joint_angles(positions, l1_, l2_, l3_, l4_);
 }
 

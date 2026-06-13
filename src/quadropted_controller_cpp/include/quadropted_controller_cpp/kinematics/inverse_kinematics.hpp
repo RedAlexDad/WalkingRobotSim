@@ -1,31 +1,31 @@
 #pragma once
 #include <Eigen/Dense>
 #include <array>
-#include <vector>
 
 #include "quadropted_controller_cpp/kinematics/forward_kinematics.hpp"
 #include "quadropted_controller_cpp/states/state_command.hpp"
 
 namespace quadropted {
 
-Eigen::MatrixXd compute_local_positions(const LegsMatrix& leg_positions, double body_length, double body_width,
-                                        double dx, double dy, double dz, double roll, double pitch, double yaw);
+Eigen::Matrix<double, 4, 3> compute_local_positions(const LegsMatrix& leg_positions, double body_length,
+                                                    double body_width, double dx, double dy, double dz, double roll,
+                                                    double pitch, double yaw);
 
 std::array<double, 3> compute_joint_angles_for_leg(double x, double y, double z, int leg_index, double l1, double l2,
                                                    double l3, double l4);
 
-std::vector<double> compute_all_joint_angles(const Eigen::Ref<const Eigen::MatrixXd>& positions, double l1, double l2,
-                                             double l3, double l4);
+std::array<double, 12> compute_all_joint_angles(const Eigen::Ref<const Eigen::MatrixXd>& positions, double l1,
+                                                double l2, double l3, double l4);
 
 class InverseKinematics {
   public:
     InverseKinematics(double body_length, double body_width, double l1, double l2, double l3, double l4);
 
-    Eigen::MatrixXd get_local_positions(const LegsMatrix& leg_positions, double dx, double dy, double dz, double roll,
-                                        double pitch, double yaw) const;
+    Eigen::Matrix<double, 4, 3> get_local_positions(const LegsMatrix& leg_positions, double dx, double dy, double dz,
+                                                    double roll, double pitch, double yaw) const;
 
-    std::vector<double> inverse_kinematics(const LegsMatrix& leg_positions, double dx, double dy, double dz,
-                                           double roll, double pitch, double yaw) const;
+    std::array<double, 12> inverse_kinematics(const LegsMatrix& leg_positions, double dx, double dy, double dz,
+                                              double roll, double pitch, double yaw) const;
 
   private:
     ForwardKinematics fk_;

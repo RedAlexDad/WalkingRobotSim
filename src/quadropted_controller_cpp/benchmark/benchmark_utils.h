@@ -2,6 +2,7 @@
 #define QUADROPTED_BENCHMARK_H
 
 #include <Eigen/Dense>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <iomanip>
@@ -26,6 +27,15 @@ inline void print_joints(const std::string& label, const Eigen::VectorXd& joints
 }
 
 inline void print_joints(const std::string& label, const std::vector<double>& joints) {
+    std::cout << label << ": [";
+    for (size_t i = 0; i < joints.size(); ++i) {
+        std::cout << std::fixed << std::setprecision(4) << joints[i];
+        if (i < joints.size() - 1) std::cout << ", ";
+    }
+    std::cout << "]\n";
+}
+
+inline void print_joints(const std::string& label, const std::array<double, 12>& joints) {
     std::cout << label << ": [";
     for (size_t i = 0; i < joints.size(); ++i) {
         std::cout << std::fixed << std::setprecision(4) << joints[i];
