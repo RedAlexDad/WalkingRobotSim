@@ -97,6 +97,9 @@ htmlcov/
 # Артефакты тестов
 test_detail.xml
 
+# Clangd compile commands (симлинк в корне)
+compile_commands.json
+
 # Авто-генерируемый хеш последней сборки
 .last_build_commit
 

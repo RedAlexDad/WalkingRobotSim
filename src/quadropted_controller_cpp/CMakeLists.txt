@@ -39,6 +39,9 @@ add_library(${PROJECT_NAME} SHARED
   # Odometry
   src/odometry/odometry_state.cpp
   src/odometry/odometry_update.cpp
+  src/odometry/dog_odom_callbacks.cpp
+  src/odometry/dog_odom_publish.cpp
+  src/odometry/dog_odom_update.cpp
   # States
   src/states/state_command.cpp
   # Controllers
@@ -64,7 +67,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<INSTALL_INTERFACE:include>)
 
 ament_target_dependencies(${PROJECT_NAME}
-  rclcpp geometry_msgs nav_msgs sensor_msgs tf2_ros tf2 quadropted_msgs Eigen3)
+  rclcpp geometry_msgs nav_msgs sensor_msgs tf2_ros tf2 visualization_msgs quadropted_msgs Eigen3)
 
 install(TARGETS ${PROJECT_NAME}
   EXPORT export_${PROJECT_NAME}
@@ -149,6 +152,8 @@ add_executable(benchmark
   benchmark/benchmark_timing.cpp
 )
 target_link_libraries(benchmark ${PROJECT_NAME})
+
+install(TARGETS benchmark DESTINATION lib/${PROJECT_NAME})
 
 # ════════════════════════════════════════════════════════════
 # Установка
