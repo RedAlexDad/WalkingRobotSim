@@ -15,11 +15,35 @@ from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node, SetRemap
 
 
+def _initial_pose(context, ns, x_pose, y_pose):
+    ns_val = ns.perform(context)
+    x_val = x_pose.perform(context)
+    y_val = y_pose.perform(context)
+    topic = f"/{ns_val}/initialpose"
+    msg = (
+        f"{{header: {{frame_id: map}}, pose: {{pose: {{position: {{x: {x_val}, "
+        f"y: {y_val}, z: 0.1}}, orientation: {{x: 0.0, y: 0.0, z: 0.0, w: 1.0}}}}}}}}"
+    )
+    return [
+        ExecuteProcess(
+            cmd=[
+                "ros2", "topic", "pub", "-t", "3",
+                "--qos-reliability", "reliable",
+                topic,
+                "geometry_msgs/PoseWithCovarianceStamped",
+                msg,
+            ],
+            output="screen",
+        )
+    ]
+
+
 def _robot_state_publisher(
     context, xacro_file, robot_name, camera_fps, use_sim_time, namespace, remappings
 ):
     fps = camera_fps.perform(context)
-    mappings = {"robot_name": robot_name, "camera_fps": fps}
+    robot_name_value = robot_name.perform(context)
+    mappings = {"robot_name": robot_name_value, "camera_fps": fps}
     robot_desc = xacro.process_file(xacro_file, mappings=mappings).toxml()
     params = {"robot_description": robot_desc, "use_sim_time": use_sim_time}
     return [
@@ -83,7 +107,7 @@ def generate_launch_description():
             "-topic",
             PythonExpression(["'/' + '", ns, "' + '/robot_description'"]),
             "-name",
-            PythonExpression([ns, "' + '_my_bot'"]),
+            PythonExpression(["'", ns, "' + '_my_bot'"]),
             "-allow_renaming",
             "true",
             "-x",
@@ -223,28 +247,9 @@ def generate_launch_description():
         }.items(),
     )
 
-    initial_pose = ExecuteProcess(
-        cmd=[
-            "ros2",
-            "topic",
-            "pub",
-            "-t",
-            "3",
-            "--qos-reliability",
-            "reliable",
-            PythonExpression(["'/' + '", ns, "' + '/initialpose'"]),
-            "geometry_msgs/PoseWithCovarianceStamped",
-            PythonExpression(
-                [
-                    "'{header: {frame_id: map}, pose: {pose: {position: {x: '",
-                    LaunchConfiguration("x_pose"),
-                    "', y: '",
-                    LaunchConfiguration("y_pose"),
-                    "', z: 0.1}}, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}} }'",
-                ]
-            ),
-        ],
-        output="screen",
+    initial_pose = OpaqueFunction(
+        function=_initial_pose,
+        args=[ns, LaunchConfiguration("x_pose"), LaunchConfiguration("y_pose")],
     )
 
     nav2_group = GroupAction(
