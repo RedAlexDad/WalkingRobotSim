@@ -55,11 +55,11 @@
 - `-flto` требует больше памяти при линковке — OK для нашего проекта
 
 **Чек-лист:**
-- [ ] Изменить `-O2` на `-O3 -march=native`
-- [ ] Добавить `set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)`
-- [ ] Собрать: `colcon build --packages-select quadropted_controller_cpp`
-- [ ] Прогнать тесты: `colcon test --packages-select quadropted_controller_cpp`
-- [ ] Поправить `include_directories` → `target_link_libraries` (Eigen3)
+- [x] Изменить `-O2` на `-O3 -march=native`
+- [x] Добавить `set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)`
+- [x] Собрать: `colcon build --packages-select quadropted_controller_cpp`
+- [x] Прогнать тесты: `colcon test --packages-select quadropted_controller_cpp`
+- [ ] Поправить `include_directories` → `target_link_libraries` (Eigen3) — осталось `include_directories(${EIGEN3_INCLUDE_DIR})` на строке 24
 
 ---
 
@@ -97,12 +97,12 @@ for (int leg = 0; leg < 4; ++leg) {
 ```
 
 **Чек-лист:**
-- [ ] Вынести `contacts(ticks)` до цикла
-- [ ] Вынести `subphase_ticks(ticks)` до цикла
-- [ ] Вынести `swing_prop` вычисление до цикла
-- [ ] Убрать `auto contacts_vec` и `int sub` из тела цикла
-- [ ] Собрать
-- [ ] Запустить тесты (особенно `test_gait`, `test_step_trot`)
+- [x] Вынести `contacts(ticks)` до цикла
+- [x] Вынести `subphase_ticks(ticks)` до цикла
+- [x] Вынести `swing_prop` вычисление до цикла
+- [x] Убрать `auto contacts_vec` и `int sub` из тела цикла
+- [x] Собрать
+- [x] Запустить тесты (особенно `test_gait`, `test_step_trot`)
 
 ---
 
@@ -655,20 +655,20 @@ phase_ticks_.reserve(num_phases);  // добавить
 ## 7. Финальная верификация
 
 ### 7.1 Сборка
-- [ ] `colcon build --packages-select quadropted_controller_cpp` — чистая сборка без ошибок
-- [ ] `colcon build --packages-select quadropted_controller_cpp` — повторная (проверка инкрементальной)
+- [x] `colcon build --packages-select quadropted_controller_cpp` — чистая сборка без ошибок
+- [x] `colcon build --packages-select quadropted_controller_cpp` — повторная (проверка инкрементальной)
 
 ### 7.2 Модульные тесты
-- [ ] `colcon test --packages-select quadropted_controller_cpp` — все тесты проходят
-- [ ] Особая проверка: `test_cross_validation` (12/12)
-- [ ] Особая проверка: `test_base_link_roll`
-- [ ] Особая проверка: `test_ik_with_roll`
-- [ ] Особая проверка: `test_step_trot`
-- [ ] Особая проверка: `test_pid`
+- [x] `colcon test --packages-select quadropted_controller_cpp` — все тесты проходят (12/12)
+- [x] Особая проверка: `test_cross_validation` (12/12)
+- [x] Особая проверка: `test_base_link_roll`
+- [x] Особая проверка: `test_ik_with_roll`
+- [x] Особая проверка: `test_step_trot`
+- [x] Особая проверка: `test_pid`
 
 ### 7.3 Бенчмарк
-- [ ] `make bench-cpp` (если доступен) или `./build/quadropted_controller_cpp/benchmark`
-- [ ] Сравнить с baseline: ~0.0035 ms/iter → ~0.0024 ms/iter (цель 31%)
+- [x] `./build/quadropted_controller_cpp/benchmark`
+- [ ] Сравнить с baseline: ~0.0035 ms/iter → ~0.0024 ms/iter (цель 31%) — только Phase 1 готов, цели не достигнуты
 - [ ] Сравнить с Python: ~45× → ~83×
 
 ### 7.4 Функциональная проверка (симуляция)
