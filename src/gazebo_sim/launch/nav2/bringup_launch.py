@@ -58,9 +58,9 @@ def generate_launch_description():
 
     default_params_file = PythonExpression([
         "'" + os.path.join(robot_dir, "config", "nav2_params_elevation.yaml") + "'",
-        " if ",
+        " if '",
         use_elevation,
-        " == 'true' else '",
+        "' == 'true' else '",
         os.path.join(robot_dir, "config", "nav2_params.yaml"),
         "'"
     ])
