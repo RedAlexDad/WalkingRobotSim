@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.8)
 project(quadropted_controller_cpp)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -O2)
+  add_compile_options(-Wall -Wextra -Wpedantic -O3 -march=native)
+  cmake_policy(SET CMP0069 NEW)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)

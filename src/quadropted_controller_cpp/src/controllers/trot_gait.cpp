@@ -18,13 +18,13 @@ TrotGaitController::TrotGaitController(double stance_time, double swing_time, do
 Eigen::MatrixXd TrotGaitController::step(int ticks, const Eigen::MatrixXd& current, const Eigen::Vector3d& cmd_vel,
                                          double robot_height) const {
     Eigen::MatrixXd next = current;
+    Eigen::VectorXi contacts_vec = contacts(ticks);
+    int sub = subphase_ticks(ticks);
+    double swing_prop = static_cast<double>(sub) / swing_ticks_;
     for (int leg = 0; leg < 4; ++leg) {
-        auto contacts_vec = contacts(ticks);
-        int sub = subphase_ticks(ticks);
         if (contacts_vec(leg) == 1) {
             next.col(leg) = stance_.next_foot_location(leg, current, cmd_vel, robot_height);
         } else {
-            double swing_prop = static_cast<double>(sub) / swing_ticks_;
             next.col(leg) = swing_.next_foot_location(swing_prop, leg, current, cmd_vel, robot_height);
         }
     }

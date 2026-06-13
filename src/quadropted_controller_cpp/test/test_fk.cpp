@@ -11,11 +11,11 @@ TEST(FK, forward_kinematics_all_legs) {
     auto result = fk.forward_kinematics_all_legs(angles);
 
     EXPECT_NEAR(result[0].x(), 0.686308, 1e-5);
-    EXPECT_NEAR(result[0].y(), 0.046750, 1e-5);
+    EXPECT_NEAR(result[0].y(), -0.046750, 1e-5);  // FR (right)
     EXPECT_NEAR(result[0].z(), 0.097669, 1e-5);
 
     EXPECT_NEAR(result[1].x(), 0.686308, 1e-5);
-    EXPECT_NEAR(result[1].y(), -0.046750, 1e-5);
+    EXPECT_NEAR(result[1].y(), 0.046750, 1e-5);  // FL (left)
 
     EXPECT_NEAR(result[2].x(), 0.310108, 1e-5);
     EXPECT_NEAR(result[3].x(), 0.310108, 1e-5);

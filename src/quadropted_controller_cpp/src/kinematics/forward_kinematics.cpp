@@ -9,13 +9,13 @@ Eigen::Vector2d LegBasePositions::get(int leg_index, double body_length, double 
     double hw = body_width / 2.0;
     switch (leg_index) {
         case 0:
-            return {hl, hw};  // FR
+            return {hl, -hw};  // FR (right front)
         case 1:
-            return {hl, -hw};  // FL
+            return {hl, hw};  // FL (left front)
         case 2:
-            return {-hl, hw};  // RR
+            return {-hl, -hw};  // RR (right rear)
         case 3:
-            return {-hl, -hw};  // RL
+            return {-hl, hw};  // RL (left rear)
         default:
             throw std::invalid_argument("Invalid leg_index. Must be 0 (FR), 1 (FL), 2 (RR), or 3 (RL).");
     }

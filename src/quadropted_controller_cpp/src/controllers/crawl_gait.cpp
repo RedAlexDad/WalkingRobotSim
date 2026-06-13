@@ -23,6 +23,7 @@ Eigen::MatrixXd CrawlGaitController::step(int ticks, const Eigen::MatrixXd& curr
     Eigen::MatrixXd new_foot_locations(3, 4);
 
     Eigen::VectorXi contact_modes = contacts(ticks);
+    double swing_prop = static_cast<double>(subphase_ticks(ticks)) / static_cast<double>(swing_ticks());
 
     for (int leg_index = 0; leg_index < 4; ++leg_index) {
         int contact_mode = contact_modes(leg_index);
@@ -31,7 +32,6 @@ Eigen::MatrixXd CrawlGaitController::step(int ticks, const Eigen::MatrixXd& curr
             new_foot_locations.col(leg_index) = current.col(leg_index);
         } else {
             // Swing
-            double swing_prop = static_cast<double>(subphase_ticks(ticks)) / static_cast<double>(swing_ticks());
             new_foot_locations.col(leg_index) =
                 swing_.next_foot_location(swing_prop, leg_index, current, cmd_vel, first_cycle_);
         }
