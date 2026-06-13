@@ -12,7 +12,7 @@ from ..backend import GPU_AVAILABLE, cp, xp
 from .plugin_manager import PluginBase
 
 
-@njit(cache=True)
+@njit
 def _max_filter_cpu_numba(max_filtered, max_filtered_mask, dilation, h, w):
     prev_map = max_filtered.copy()
     prev_mask = max_filtered_mask.copy()

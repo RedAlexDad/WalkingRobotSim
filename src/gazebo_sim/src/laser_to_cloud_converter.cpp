@@ -102,7 +102,7 @@ int main(int, char**)
   auto pub = node.Advertise<gz::msgs::PointCloudPacked>(kPubTopic);
 
   if (!pub) {
-    std::cerr << "Failed to advertise on " << kPubTopic << std::endl;
+    std::cerr << "[laser_to_cloud] ERROR: Failed to advertise on " << kPubTopic << std::endl;
     return 1;
   }
 
@@ -114,13 +114,13 @@ int main(int, char**)
   auto sub = node.Subscribe(kSubTopic, subCb);
 
   if (!sub) {
-    std::cerr << "Failed to subscribe to " << kSubTopic << std::endl;
+    std::cerr << "[laser_to_cloud] ERROR: Failed to subscribe to " << kSubTopic << std::endl;
     return 1;
   }
 
-  std::cout << "LaserScan -> PointCloudPacked converter running" << std::endl;
-  std::cout << "  Sub: " << kSubTopic << std::endl;
-  std::cout << "  Pub: " << kPubTopic << std::endl;
+  std::cout << "[laser_to_cloud] INFO: LaserScan -> PointCloudPacked converter running" << std::endl;
+  std::cout << "[laser_to_cloud] INFO:   Sub: " << kSubTopic << std::endl;
+  std::cout << "[laser_to_cloud] INFO:   Pub: " << kPubTopic << std::endl;
 
   gz::transport::waitForShutdown();
   return 0;

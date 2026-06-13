@@ -796,7 +796,7 @@ def _make_error_counting_cpu(
 ):
     from numba import njit
 
-    @njit(cache=True)
+    @njit
     def error_counting_cpu_inner(
         map_, rows, cols, z, process_idx, mahalanobis_thresh, outlier_variance, traversability_inlier
     ):

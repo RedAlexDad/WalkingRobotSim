@@ -187,3 +187,19 @@ save-logs:
 	else \
 		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Контейнер не запущен, логи не сохранены${NC}\n"; \
 	fi
+
+## Очистка старых логов сборки colcon (старше 30 дней)
+clean-build-logs:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Очистка старых логов сборки...${NC}\n"
+	@find log/ -maxdepth 1 -type d -name "build_*" -mtime +30 -exec rm -rf {} + 2>/dev/null || true
+	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Логи сборки старше 30 дней удалены${NC}\n"
+
+## Очистка логов Gazebo
+clean-gazebo-logs:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Очистка логов Gazebo...${NC}\n"
+	@rm -rf logs/gazebo/* 2>/dev/null || true
+	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Логи Gazebo очищены${NC}\n"
+
+## Очистка всех логов
+clean-logs: clean-build-logs clean-gazebo-logs
+	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Все логи очищены${NC}\n"

@@ -12,7 +12,18 @@ from typing import Dict, List, Optional
 import numpy as np
 from ruamel.yaml import YAML
 
-from ..backend import xp, GPU_AVAILABLE
+try:
+    from walking_robot_utils.logging import get_logger
+
+    _log = get_logger("elevation_mapping.plugins.manager")
+except ImportError:
+    import logging as _logging
+
+    _log = _logging.getLogger("elevation_mapping.plugins.manager")
+    _log.addHandler(_logging.StreamHandler())
+    _log.setLevel(_logging.INFO)
+
+from ..backend import GPU_AVAILABLE, xp
 
 
 @dataclass
@@ -104,7 +115,7 @@ class PluginBase(ABC):
             idx = semantic_layer_names.index(name)
             layer = semantic_map[idx].copy()
         else:
-            print(f"Could not find layer {name}!")
+            _log.warning("Could not find layer %s!", name)
             layer = None
         return layer
 
@@ -122,20 +133,12 @@ class PluginManager(object):
 
         self.plugins = []
         for param, extra_param in zip(plugin_params, extra_params):
-            m = importlib.import_module(
-                "." + param.name, package="elevation_mapping_cupy.plugins"
-            )
+            m = importlib.import_module("." + param.name, package="elevation_mapping_cupy.plugins")
             for name, obj in inspect.getmembers(m):
-                if (
-                    inspect.isclass(obj)
-                    and issubclass(obj, PluginBase)
-                    and name != "PluginBase"
-                ):
+                if inspect.isclass(obj) and issubclass(obj, PluginBase) and name != "PluginBase":
                     extra_param["cell_n"] = self.cell_n
                     self.plugins.append(obj(**extra_param))
-        self.layers = xp.zeros(
-            (len(self.plugins), self.cell_n, self.cell_n), dtype=xp.float32
-        )
+        self.layers = xp.zeros((len(self.plugins), self.cell_n, self.cell_n), dtype=xp.float32)
         self.layer_names = self.get_layer_names()
         self.plugin_names = self.get_plugin_names()
 
@@ -155,7 +158,7 @@ class PluginManager(object):
                 )
                 extra_params.append(v["extra_params"])
         self.init(plugin_params, extra_params)
-        print("Loaded plugins are ", *self.plugin_names)
+        _log.info("Loaded plugins are: %s", self.plugin_names)
 
     def get_layer_names(self):
         names = []
@@ -179,7 +182,7 @@ class PluginManager(object):
             idx = self.plugin_names.index(name)
             return idx
         except Exception as e:
-            print("Error with plugin {}: {}".format(name, e))
+            _log.error("Error with plugin %s: %s", name, e)
             return None
 
     def get_layer_index_with_name(self, name: str) -> int:
@@ -187,7 +190,7 @@ class PluginManager(object):
             idx = self.layer_names.index(name)
             return idx
         except Exception as e:
-            print("Error with layer {}: {}".format(name, e))
+            _log.error("Error with layer %s: %s", name, e)
             return None
 
     def update_with_name(
@@ -211,9 +214,7 @@ class PluginManager(object):
         if idx is not None and idx < len(self.plugins):
             n_param = len(signature(self.plugins[idx]).parameters)
             if n_param == 5:
-                self.layers[idx] = self.plugins[idx](
-                    elevation_map, layer_names, self.layers, self.layer_names
-                )
+                self.layers[idx] = self.plugins[idx](elevation_map, layer_names, self.layers, self.layer_names)
             elif n_param == 7:
                 self.layers[idx] = self.plugins[idx](
                     elevation_map,

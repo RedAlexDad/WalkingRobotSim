@@ -35,7 +35,20 @@ class LaserToPointCloud(Node):
             self.get_parameter('output_cloud').value,
             10)
 
+        self._scan_count = 0
+        self.get_logger().info(
+            f"LaserScan -> PointCloud2 converter started: "
+            f"{self.get_parameter('input_scan').value} -> "
+            f"{self.get_parameter('output_cloud').value}, "
+            f"v_samples={self.v_samples}")
+
     def scan_callback(self, msg):
+        self._scan_count += 1
+        if self._scan_count == 1:
+            self.get_logger().info(
+                f"First scan received: {len(msg.ranges)} ranges, "
+                f"angle=[{msg.angle_min:.2f},{msg.angle_max:.2f}], "
+                f"range=[{msg.range_min:.2f},{msg.range_max:.2f}]")
         h_samples = len(msg.ranges) // self.v_samples
 
         points = []

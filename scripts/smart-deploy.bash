@@ -85,8 +85,8 @@ collect_changes() {
 
 do_build_main() {
     if [ "$REBUILD_MAIN" = true ]; then
-        green "→ Building main image..."
-        $COMPOSE build
+        green "→ Building main image (no-cache)..."
+        $COMPOSE build --no-cache
         git rev-parse HEAD > "$LAST_BUILD_FILE" 2>/dev/null || true
     else
         cyan "→ No changes requiring main rebuild, skipping build"

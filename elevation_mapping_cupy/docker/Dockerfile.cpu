@@ -56,7 +56,8 @@ RUN python3 -m pip install --no-cache-dir --break-system-packages -U \
 
 RUN python3 -m pip install --no-cache-dir --break-system-packages \
       "numpy<2" \
-      simple-parsing
+      simple-parsing \
+      numba
 
 RUN if ! getent group ${USER_GID} >/dev/null; then groupadd --gid ${USER_GID} ${USERNAME}; fi \
     && if ! id -u ${USERNAME} >/dev/null 2>&1; then useradd -m -s /bin/bash --uid ${USER_UID} --gid ${USER_GID} ${USERNAME}; fi \

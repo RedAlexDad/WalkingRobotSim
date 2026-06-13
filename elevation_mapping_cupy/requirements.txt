@@ -5,3 +5,4 @@
 simple-parsing
 cupy-cuda12x
 torch
+numba
