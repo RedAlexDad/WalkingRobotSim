@@ -34,8 +34,10 @@ def _detect_cuda():
         scipy_ndimage = scipy.ndimage
 
 
-def asnumpy(array):
+def asnumpy(array, stream=None):
     if GPU_AVAILABLE and hasattr(array, "get"):
+        if stream is not None:
+            return array.get(stream=stream)
         return array.get()
     return np.asarray(array)
 

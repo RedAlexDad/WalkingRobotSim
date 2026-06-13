@@ -2,12 +2,11 @@ from typing import List
 
 import numpy as np
 
-from ..backend import GPU_AVAILABLE, asnumpy, scipy_ndimage, xp, cp
+from ..backend import GPU_AVAILABLE, asnumpy, scipy_ndimage, xp
 from .plugin_manager import PluginBase
 
 
 class Roughness(PluginBase):
-
     def __init__(
         self,
         cell_n: int = 100,
@@ -40,22 +39,11 @@ class Roughness(PluginBase):
         finite = xp.isfinite(h)
         valid = xp.logical_and(is_valid > 0.5, finite)
         h_clean = xp.where(valid, h, 0.0)
+        mean = scipy_ndimage.uniform_filter(h_clean, size=self.window_size)
+        mean_sq = scipy_ndimage.uniform_filter(h_clean**2, size=self.window_size)
+        variance = mean_sq - mean**2
+        variance = xp.maximum(variance, 0.0)
+        roughness = xp.sqrt(variance)
+        roughness[~valid] = 0.0
 
-        if GPU_AVAILABLE and type(h_clean) == cp.ndarray:
-            mean = cp.ndimage.uniform_filter(h_clean, size=self.window_size)
-            mean_sq = cp.ndimage.uniform_filter(h_clean**2, size=self.window_size)
-            variance = mean_sq - mean**2
-            variance = xp.maximum(variance, 0.0)
-            roughness = xp.sqrt(variance)
-            roughness[~valid] = 0.0
-        else:
-            h_np = asnumpy(h_clean)
-            valid_np = asnumpy(valid)
-            mean = scipy_ndimage.uniform_filter(h_np, size=self.window_size)
-            mean_sq = scipy_ndimage.uniform_filter(h_np**2, size=self.window_size)
-            variance = mean_sq - mean**2
-            variance = np.maximum(variance, 0.0)
-            roughness = np.sqrt(variance)
-            roughness[~valid_np] = 0.0
-
-        return xp.asarray(roughness, dtype=xp.float32)
+        return roughness.astype(xp.float32)

@@ -98,4 +98,4 @@ htmlcov/
 .last_build_commit
 
 # Примеры НИРС (большие PDF, не часть кода)
-docs/NIRS/examples/
+docs/NIRS/examples/.last_elevation_build_commit

@@ -411,9 +411,7 @@ class ElevationMap:
             )
 
             traversability = self.traversability_filter(self.traversability_input)
-            self.elevation_map[3][3:-3, 3:-3] = traversability.reshape(
-                (traversability.shape[0], traversability.shape[1])
-            )
+            self.elevation_map[3][3:-3, 3:-3] = traversability.squeeze()
 
         # Log final state
         self.update_normal(self.traversability_input)
