@@ -124,8 +124,8 @@ dedupe() {
 
 do_build_main() {
     if [ "$REBUILD_MAIN" = true ]; then
-        green "→ Building main image..."
-        $COMPOSE build
+        green "→ Building main image (no-cache)..."
+        $COMPOSE build --no-cache
         git rev-parse HEAD > "$LAST_BUILD_FILE" 2>/dev/null || true
         # Full Docker build installs everything — no extra ws build needed
         REBUILD_WS_PACKAGES=()
