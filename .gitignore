@@ -94,6 +94,9 @@ coverage/
 htmlcov/
 .coverage.*
 
+# Артефакты тестов
+test_detail.xml
+
 # Авто-генерируемый хеш последней сборки
 .last_build_commit
 
