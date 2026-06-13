@@ -7,16 +7,14 @@ TrotSwingController::TrotSwingController(int swing_ticks, double time_step, doub
     : swing_ticks_(swing_ticks),
       time_step_(time_step),
       z_leg_lift_(z_leg_lift),
-      default_stance_(std::move(default_stance)),
+      default_stance_(default_stance),
       phase_length_(phase_length),
       stance_ticks_(stance_ticks) {}
 
 Eigen::Vector3d TrotSwingController::raibert_touchdown_location(int leg_index, const Eigen::Vector3d& cmd_vel) const {
-    double scale_factor = 1.0;
-    // Python: phase_length * time_step для delta_pos
     double total_time = phase_length_ * time_step_;
     Eigen::Vector3d delta_pos;
-    delta_pos << cmd_vel.x() * total_time * scale_factor, cmd_vel.y() * total_time * scale_factor, 0.0;
+    delta_pos << cmd_vel.x() * total_time, cmd_vel.y() * total_time, 0.0;
 
     // Python: stance_ticks * time_step для yaw rotation
     double theta = stance_ticks_ * time_step_ * cmd_vel.z();
@@ -26,16 +24,15 @@ Eigen::Vector3d TrotSwingController::raibert_touchdown_location(int leg_index, c
 }
 
 double TrotSwingController::swing_height(double swing_prop) const {
-    double scale_factor = 1.0;
     if (swing_prop < 0.5) {
-        return (swing_prop / 0.5) * z_leg_lift_ * scale_factor;
+        return (swing_prop * 2.0) * z_leg_lift_;
     } else {
-        return z_leg_lift_ * (1.0 - (swing_prop - 0.5) / 0.5) * scale_factor;
+        return z_leg_lift_ * (1.0 - (swing_prop - 0.5) * 2.0);
     }
 }
 
 Eigen::Vector3d TrotSwingController::next_foot_location(double swing_prop, int leg_index,
-                                                        const Eigen::MatrixXd& current, const Eigen::Vector3d& cmd_vel,
+                                                        const LegsMatrix& current, const Eigen::Vector3d& cmd_vel,
                                                         double robot_height) const {
     assert(swing_prop >= 0.0 && swing_prop <= 1.0);
 
@@ -46,10 +43,11 @@ Eigen::Vector3d TrotSwingController::next_foot_location(double swing_prop, int l
     double time_left = time_step_ * swing_ticks_ * (1.0 - swing_prop);
     if (time_left < 1e-6) return touchdown;
 
+    double inv_time_left = 1.0 / time_left;
     // Как в Python: velocity * XY_MASK — Z игнорируется
     Eigen::Vector3d velocity;
-    velocity.x() = (touchdown.x() - foot_location.x()) / time_left;
-    velocity.y() = (touchdown.y() - foot_location.y()) / time_left;
+    velocity.x() = (touchdown.x() - foot_location.x()) * inv_time_left;
+    velocity.y() = (touchdown.y() - foot_location.y()) * inv_time_left;
     velocity.z() = 0.0;
 
     Eigen::Vector3d delta_foot = velocity * time_step_;

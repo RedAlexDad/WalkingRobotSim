@@ -27,7 +27,6 @@ class DogOdometryNode : public rclcpp::Node {
         declare_parameter("enable_odom_tf", false);
         declare_parameter("base_frame_id", "base");
         declare_parameter("odom_frame_id", "odom");
-        declare_parameter("is_gazebo", true);
         declare_parameter("filter_window_size", 14);
         declare_parameter("imu_topic", "imu_plugin/out");
         declare_parameter("stall_window", 20);
@@ -40,7 +39,6 @@ class DogOdometryNode : public rclcpp::Node {
         enable_odom_tf_ = get_parameter("enable_odom_tf").as_bool();
         base_frame_id_ = get_parameter("base_frame_id").as_string();
         odom_frame_id_ = get_parameter("odom_frame_id").as_string();
-        is_gazebo_ = get_parameter("is_gazebo").as_bool();
         int filter_window = static_cast<int>(get_parameter("filter_window_size").as_int());
         std::string imu_topic = get_parameter("imu_topic").as_string();
 
@@ -140,17 +138,10 @@ class DogOdometryNode : public rclcpp::Node {
 
     void calculate_foot_positions() {
         try {
-            std::vector<double> joints(12);
-            for (int i = 0; i < 12; ++i)
-                joints[i] = odom_state_->joint_positions[i];
-            auto foot_positions = fk_->forward_kinematics_all_legs(joints);
-            for (int i = 0; i < 4; ++i) {
-                odom_state_->foot_positions[i] = foot_positions[i];
-            }
+            odom_state_->foot_positions = fk_->forward_kinematics_all_legs(odom_state_->joint_positions);
         } catch (const std::exception& e) {
             RCLCPP_ERROR(get_logger(), "Error in forward kinematics: %s", e.what());
-            for (int i = 0; i < 4; ++i)
-                odom_state_->foot_positions[i] = Eigen::Vector3d::Zero();
+            odom_state_->foot_positions = {};
         }
     }
 
@@ -266,7 +257,6 @@ class DogOdometryNode : public rclcpp::Node {
     bool enable_odom_tf_ = false;
     std::string base_frame_id_ = "base";
     std::string odom_frame_id_ = "odom";
-    bool is_gazebo_ = true;
 };
 
 int main(int argc, char** argv) {

@@ -8,7 +8,7 @@ CrawlSwingController::CrawlSwingController(int swing_ticks, double time_step, do
     : swing_ticks_(swing_ticks),
       time_step_(time_step),
       z_leg_lift_(z_leg_lift),
-      default_stance_(std::move(default_stance)),
+      default_stance_(default_stance),
       phase_length_(phase_length),
       stance_ticks_(stance_ticks),
       body_shift_y_(body_shift_y) {}
@@ -40,7 +40,7 @@ double CrawlSwingController::swing_height(double swing_prop) const {
 }
 
 Eigen::Vector3d CrawlSwingController::next_foot_location(double swing_prop, int leg_index,
-                                                         const Eigen::MatrixXd& current, const Eigen::Vector3d& cmd_vel,
+                                                         const LegsMatrix& current, const Eigen::Vector3d& cmd_vel,
                                                          double robot_height) const {
     assert(swing_prop >= 0.0 && swing_prop <= 1.0);
 

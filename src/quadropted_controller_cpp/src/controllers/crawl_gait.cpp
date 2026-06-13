@@ -18,9 +18,9 @@ void CrawlGaitController::reset() {
     first_cycle_ = true;
 }
 
-Eigen::MatrixXd CrawlGaitController::step(int ticks, const Eigen::MatrixXd& current,
-                                          const Eigen::Vector3d& cmd_vel) const {
-    Eigen::MatrixXd new_foot_locations(3, 4);
+LegsMatrix CrawlGaitController::step(int ticks, const LegsMatrix& current,
+                                     const Eigen::Vector3d& cmd_vel) {
+    LegsMatrix new_foot_locations{};
 
     Eigen::VectorXi contact_modes = contacts(ticks);
     double swing_prop = static_cast<double>(subphase_ticks(ticks)) / static_cast<double>(swing_ticks());

@@ -22,9 +22,6 @@ namespace quadropted {
 class RobotControllerNode : public rclcpp::Node {
   public:
     RobotControllerNode() : Node("robot_controller_cpp"), rate_(60), state_(0.25) {
-        declare_parameter("verbose", false);
-        // debug_mode removed
-        verbose_ = get_parameter("verbose").as_bool();
         // debug_mode removed
 
         // Геометрия робота
@@ -38,7 +35,6 @@ class RobotControllerNode : public rclcpp::Node {
         double dx_front = body[0] * 0.5 + 0.02;  // 0.2081 — передние лапы
         double dx_back = body[0] * 0.5 + 0.0;    // 0.1881 — задние лапы
         double dy = body[1] * 0.5 + legs[1];
-        default_stance_.resize(3, 4);
         default_stance_ << dx_front, dx_front, -dx_back, -dx_back, -dy, dy, -dy, dy, 0, 0, 0, 0;
 
         state_.foot_locations = default_stance_;
@@ -90,11 +86,7 @@ class RobotControllerNode : public rclcpp::Node {
                             std::clamp(command_.velocity[1], -crawl_max_vx * 0.5, crawl_max_vx * 0.5);
                         command_.yaw_rate[2] = std::clamp(command_.yaw_rate[2], -crawl_max_yaw, crawl_max_yaw);
                     }
-                    if (false)
-                        RCLCPP_DEBUG(get_logger(), "[DEBUG] Velocity: vx=%.4f vy=%.4f vz=%.4f yaw=%.4f",
-                                     command_.velocity[0], command_.velocity[1], command_.velocity[2],
-                                     command_.yaw_rate[2]);
-                }
+                    }
             });
 
         // IMU subscription — обновляем roll/pitch для компенсации
@@ -107,8 +99,6 @@ class RobotControllerNode : public rclcpp::Node {
                 double z = msg->orientation.z;
                 state_.imu_roll = std::atan2(2.0 * (w * x + y * z), 1.0 - 2.0 * (x * x + y * y));
                 state_.imu_pitch = std::asin(2.0 * (w * y - z * x));
-                if (false)
-                    RCLCPP_DEBUG(get_logger(), "[DEBUG] IMU: roll=%.4f pitch=%.4f", state_.imu_roll, state_.imu_pitch);
             });
 
         mode_sub_ = create_subscription<quadropted_msgs::msg::RobotModeCommand>(
@@ -270,14 +260,14 @@ class RobotControllerNode : public rclcpp::Node {
         }
     }
 
-    Eigen::MatrixXd step_trot(State& state, const Command& cmd) {
+    LegsMatrix step_trot(State& state, const Command& cmd, double now_seconds) {
         state.ticks++;  // Инкрементируем каждый тик
         // При нулевой скорости — стабильная стойка
         bool has_command =
             std::abs(cmd.velocity[0]) > 1e-4 || std::abs(cmd.velocity[1]) > 1e-4 || std::abs(cmd.yaw_rate[2]) > 1e-4;
         if (!has_command) {
             // Плавное возвращение к default_stance (как в Python autoRest)
-            Eigen::MatrixXd result = default_stance_;
+            LegsMatrix result = default_stance_;
             result.row(2).setConstant(cmd.robot_height);
             // Lerp: 90% текущая позиция + 10% к целевой = плавный переход за ~20 шагов
             constexpr double alpha = 0.1;
@@ -285,7 +275,7 @@ class RobotControllerNode : public rclcpp::Node {
         }
 
         // Use TrotGaitController's step method for unified stance/swing logic
-        Eigen::MatrixXd new_foot_locations =
+        LegsMatrix new_foot_locations =
             trot_gait_->step(state.ticks, state.foot_locations,
                              Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]}, cmd.robot_height);
 
@@ -302,12 +292,9 @@ class RobotControllerNode : public rclcpp::Node {
 
         // IMU compensation
         if (trot_gait_->use_imu()) {
-            auto comp = trot_gait_->pid_controller().run(state.imu_roll, state.imu_pitch, this->now().seconds());
+            auto comp = trot_gait_->pid_controller().run(state.imu_roll, state.imu_pitch, now_seconds);
             Eigen::Matrix3d rot = rotxyz(-comp[0], -comp[1], 0);
-            new_foot_locations = rot * new_foot_locations;
-            if (false)
-                RCLCPP_DEBUG(get_logger(), "[DEBUG] IMU comp: roll=%.3f pitch=%.3f comp_x=%.3f comp_y=%.3f",
-                             state.imu_roll, state.imu_pitch, -comp[0], -comp[1]);
+            new_foot_locations = (rot * new_foot_locations).eval();
         }
 
         // DEBUG: каждые 60 тиков
@@ -320,14 +307,14 @@ class RobotControllerNode : public rclcpp::Node {
         return new_foot_locations;
     }
 
-    Eigen::MatrixXd step_crawl(State& state, const Command& cmd) {
+    LegsMatrix step_crawl(State& state, const Command& cmd) {
         state.ticks++;
         // При нулевой скорости — стабильная стойка
         bool has_command =
             std::abs(cmd.velocity[0]) > 1e-4 || std::abs(cmd.velocity[1]) > 1e-4 || std::abs(cmd.yaw_rate[2]) > 1e-4;
         if (!has_command) {
             // Плавное возвращение к default_stance
-            Eigen::MatrixXd result = default_stance_;
+            LegsMatrix result = default_stance_;
             result.row(2).setConstant(cmd.robot_height);
             constexpr double alpha = 0.1;
             return state.foot_locations * (1.0 - alpha) + result * alpha;
@@ -335,7 +322,7 @@ class RobotControllerNode : public rclcpp::Node {
 
         Eigen::VectorXi contacts = crawl_gait_->contacts(state.ticks);
         int phase_idx = crawl_gait_->phase_index(state.ticks);
-        Eigen::MatrixXd new_foot_locations = Eigen::MatrixXd::Zero(3, 4);
+        LegsMatrix new_foot_locations{};
 
         for (int leg = 0; leg < 4; ++leg) {
             if (contacts(leg) == 1) {
@@ -350,10 +337,6 @@ class RobotControllerNode : public rclcpp::Node {
                 // Swing — используем CRAWL swing controller (было: trot_gait_->swing_controller())
                 int sub_ticks = crawl_gait_->subphase_ticks(state.ticks);
                 double swing_prop = static_cast<double>(sub_ticks) / crawl_gait_->swing_ticks();
-
-                // Python: shifted_left = (phase_index in (1,3))
-                bool shifted_left = (phase_idx == 1 || phase_idx == 3);
-                (void)shifted_left;  // CrawlSwing пока не использует (TODO в crawl_gait step)
 
                 new_foot_locations.col(leg) = crawl_gait_->swing().next_foot_location(
                     swing_prop, leg, state.foot_locations,
@@ -370,12 +353,12 @@ class RobotControllerNode : public rclcpp::Node {
         return new_foot_locations;
     }
 
-    Eigen::MatrixXd step_rest(State& state, const Command& cmd) {
+    LegsMatrix step_rest(State& state, const Command& cmd) {
         state.ticks++;
         return rest_ctrl_->step(state, cmd);
     }
 
-    Eigen::MatrixXd step_stand(State& state, Command& cmd) {
+    LegsMatrix step_stand(State& state, Command& cmd) {
         // NOTE: state.ticks НЕ инкрементируется здесь (как в Python StandController)
         // ticks инкрементируется только в step_trot() и step_crawl()
 
@@ -423,9 +406,10 @@ class RobotControllerNode : public rclcpp::Node {
         }
 
         // Run controller
-        Eigen::MatrixXd leg_positions;
+        rclcpp::Time now = this->now();
+        LegsMatrix leg_positions;
         if (use_trot_) {
-            leg_positions = step_trot(state_, command_);
+            leg_positions = step_trot(state_, command_, now.seconds());
         } else if (use_crawl_) {
             leg_positions = step_crawl(state_, command_);
         } else if (use_stand_) {
@@ -479,7 +463,6 @@ class RobotControllerNode : public rclcpp::Node {
 
     // Members
     int rate_;
-    bool verbose_;
     bool debug_mode_ = false;  // removed
     bool controller_change_needed_ = false;
     bool use_trot_ = false;
@@ -487,7 +470,7 @@ class RobotControllerNode : public rclcpp::Node {
     bool use_stand_ = false;
     int startup_grace_ = 120;  // 2 секунды задержки при старте
 
-    Eigen::MatrixXd default_stance_;
+    LegsMatrix default_stance_;
     State state_;
     Command command_;
 

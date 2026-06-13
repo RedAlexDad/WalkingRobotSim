@@ -10,25 +10,24 @@ TrotStanceController::TrotStanceController(int phase_length, int stance_ticks, i
       stance_ticks_(stance_ticks),
       swing_ticks_(swing_ticks),
       time_step_(time_step),
-      z_error_constant_(z_error_constant) {}
+      z_error_constant_(z_error_constant) {
+    inv_scale_ = static_cast<double>(phase_length_) / (4.0 * swing_ticks_ * time_step_ * stance_ticks_);
+}
 
-Eigen::Vector3d TrotStanceController::position_delta(int leg_index, const Eigen::MatrixXd& state_foot,
+Eigen::Vector3d TrotStanceController::position_delta(int leg_index, const LegsMatrix& state_foot,
                                                      const Eigen::Vector3d& cmd_vel, double robot_height) const {
     double z = state_foot(2, leg_index);  // FIX: использовать leg_index вместо 0
 
-    double step_dist_x = cmd_vel.x() * (static_cast<double>(phase_length_) / swing_ticks_);
-    double step_dist_y = cmd_vel.y() * (static_cast<double>(phase_length_) / swing_ticks_);
-
     Eigen::Vector3d velocity;
-    velocity.x() = -(step_dist_x / 4.0) / (time_step_ * stance_ticks_);
-    velocity.y() = -(step_dist_y / 4.0) / (time_step_ * stance_ticks_);
+    velocity.x() = -cmd_vel.x() * inv_scale_;
+    velocity.y() = -cmd_vel.y() * inv_scale_;
     velocity.z() = (1.0 / z_error_constant_) * (robot_height - z);
 
     Eigen::Vector3d delta_pos = velocity * time_step_;
     return delta_pos;
 }
 
-Eigen::Vector3d TrotStanceController::next_foot_location(int leg_index, const Eigen::MatrixXd& state_foot,
+Eigen::Vector3d TrotStanceController::next_foot_location(int leg_index, const LegsMatrix& state_foot,
                                                          const Eigen::Vector3d& cmd_vel, double robot_height) const {
     Eigen::Vector3d foot_location = state_foot.col(leg_index);
     Eigen::Vector3d delta_pos = position_delta(leg_index, state_foot, cmd_vel, robot_height);

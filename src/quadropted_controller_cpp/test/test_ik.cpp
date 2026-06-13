@@ -4,8 +4,9 @@
 
 TEST(IK, compute_all_joint_angles) {
     // Python: [-0.608523, 0.061070, -1.630987, -2.533070, ...]
-    Eigen::MatrixXd positions(3, 4);
-    positions << 0.2, 0.2, -0.2, -0.2, -0.12, 0.12, -0.12, 0.12, -0.2, -0.2, -0.2, -0.2;
+    // Матрица (4, 3): строки = ноги, столбцы = x, y, z
+    Eigen::MatrixXd positions(4, 3);
+    positions << 0.2, -0.12, -0.2, 0.2, 0.12, -0.2, -0.2, -0.12, -0.2, -0.2, 0.12, -0.2;
 
     auto angles = quadropted::compute_all_joint_angles(positions, 0.0, 0.0955, 0.213, 0.213);
     ASSERT_EQ(angles.size(), 12u);

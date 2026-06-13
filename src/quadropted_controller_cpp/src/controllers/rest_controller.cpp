@@ -14,8 +14,8 @@ void RestController::reset() {
     pid_last_time_ = 0.0;
 }
 
-Eigen::MatrixXd RestController::step(const State& state, const Command& cmd) {
-    Eigen::MatrixXd temp = default_stance_;
+LegsMatrix RestController::step(const State& state, const Command& cmd) {
+    LegsMatrix temp = default_stance_;
     temp.row(2).setConstant(cmd.robot_height);
 
     if (use_imu_) {
@@ -25,7 +25,7 @@ Eigen::MatrixXd RestController::step(const State& state, const Command& cmd) {
         double roll_compensation = -compensation[0];
         double pitch_compensation = -compensation[1];
         Eigen::Matrix3d rot = rotxyz(roll_compensation, pitch_compensation, 0.0);
-        temp = rot * temp;
+        temp = (rot * temp).eval();
     }
 
     return temp;

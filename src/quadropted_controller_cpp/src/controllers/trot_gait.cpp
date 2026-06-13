@@ -15,9 +15,9 @@ TrotGaitController::TrotGaitController(double stance_time, double swing_time, do
       stance_(phase_length(), stance_ticks(), swing_ticks(), time_step, 0.02),
       pid_(0.15, 0.02, 0.002) {}
 
-Eigen::MatrixXd TrotGaitController::step(int ticks, const Eigen::MatrixXd& current, const Eigen::Vector3d& cmd_vel,
-                                         double robot_height) const {
-    Eigen::MatrixXd next = current;
+LegsMatrix TrotGaitController::step(int ticks, const LegsMatrix& current, const Eigen::Vector3d& cmd_vel,
+                                    double robot_height) const {
+    LegsMatrix next = current;
     Eigen::VectorXi contacts_vec = contacts(ticks);
     int sub = subphase_ticks(ticks);
     double swing_prop = static_cast<double>(sub) / swing_ticks_;

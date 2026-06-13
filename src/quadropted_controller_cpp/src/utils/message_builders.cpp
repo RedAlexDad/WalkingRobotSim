@@ -72,7 +72,7 @@ std::vector<MarkerData> build_marker_data(const std::vector<std::array<double, 3
         marker.color_r = colors[i][0];
         marker.color_g = colors[i][1];
         marker.color_b = colors[i][2];
-        markers.push_back(marker);
+        markers.push_back(std::move(marker));
     }
 
     return markers;

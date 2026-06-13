@@ -4,7 +4,7 @@
 
 namespace quadropted {
 
-Eigen::MatrixXd compute_local_positions(const Eigen::MatrixXd& leg_positions, double body_length, double body_width,
+Eigen::MatrixXd compute_local_positions(const LegsMatrix& leg_positions, double body_length, double body_width,
                                         double dx, double dy, double dz, double roll, double pitch, double yaw) {
     // Фиксированная матрица вращения для ног: R = rotxyz(pi/2, -pi/2, 0)
     Eigen::Matrix3d R_legs;
@@ -75,8 +75,8 @@ std::array<double, 3> compute_joint_angles_for_leg(double x, double y, double z,
     return {theta1, theta3, theta4};
 }
 
-std::vector<double> compute_all_joint_angles(const Eigen::MatrixXd& positions, double l1, double l2, double l3,
-                                             double l4) {
+std::vector<double> compute_all_joint_angles(const Eigen::Ref<const Eigen::MatrixXd>& positions, double l1,
+                                             double l2, double l3, double l4) {
     static const double LEG_SIGNS[] = {1.0, -1.0, 1.0, -1.0};
 
     double l2_sq = l2 * l2;
@@ -87,9 +87,9 @@ std::vector<double> compute_all_joint_angles(const Eigen::MatrixXd& positions, d
     std::vector<double> angles(12, 0.0);
 
     for (int i = 0; i < 4; ++i) {
-        double x = positions(0, i);
-        double y = positions(1, i);
-        double z = positions(2, i);
+        double x = positions(i, 0);
+        double y = positions(i, 1);
+        double z = positions(i, 2);
 
         double f_sq = x * x + y * y - l2_sq;
         double F = (f_sq > 0.0) ? std::sqrt(f_sq) : 0.0;
@@ -125,17 +125,15 @@ InverseKinematics::InverseKinematics(double body_length, double body_width, doub
       l3_(l3),
       l4_(l4) {}
 
-Eigen::MatrixXd InverseKinematics::get_local_positions(const Eigen::MatrixXd& leg_positions, double dx, double dy,
+Eigen::MatrixXd InverseKinematics::get_local_positions(const LegsMatrix& leg_positions, double dx, double dy,
                                                        double dz, double roll, double pitch, double yaw) const {
     return compute_local_positions(leg_positions, body_length_, body_width_, dx, dy, dz, roll, pitch, yaw);
 }
 
-std::vector<double> InverseKinematics::inverse_kinematics(const Eigen::MatrixXd& leg_positions, double dx, double dy,
+std::vector<double> InverseKinematics::inverse_kinematics(const LegsMatrix& leg_positions, double dx, double dy,
                                                           double dz, double roll, double pitch, double yaw) const {
     Eigen::MatrixXd positions = get_local_positions(leg_positions, dx, dy, dz, roll, pitch, yaw);
-    // compute_local_positions возвращает (4, 3), но compute_all_joint_angles
-    // ожидает (3, 4) — транспонируем
-    return compute_all_joint_angles(positions.transpose(), l1_, l2_, l3_, l4_);
+    return compute_all_joint_angles(positions, l1_, l2_, l3_, l4_);
 }
 
 }  // namespace quadropted

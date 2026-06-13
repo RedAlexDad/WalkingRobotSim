@@ -8,7 +8,7 @@ GaitController::GaitController(double stance_time, double swing_time, double tim
       swing_time_(swing_time),
       time_step_(time_step),
       contact_phases_(std::move(contact_phases)),
-      default_stance_(std::move(default_stance)) {
+      default_stance_(default_stance) {
     stance_ticks_ = static_cast<int>(stance_time_ / time_step_);
     swing_ticks_ = static_cast<int>(swing_time_ / time_step_);
     compute_phase_ticks();
@@ -20,6 +20,7 @@ GaitController::GaitController(double stance_time, double swing_time, double tim
 void GaitController::compute_phase_ticks() {
     phase_ticks_.clear();
     int num_phases = contact_phases_.cols();
+    phase_ticks_.reserve(num_phases);
     for (int i = 0; i < num_phases; ++i) {
         bool has_swing = false;
         for (int leg = 0; leg < contact_phases_.rows(); ++leg) {

@@ -342,8 +342,8 @@ void benchmark_timing_json() {
 
     start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < iterations; ++i) {
-        auto p =
-            fk.forward_kinematics_all_legs({0.0, 0.86, -1.88, 0.0, 0.86, -1.88, 0.0, 0.86, -1.88, 0.0, 0.86, -1.88});
+        quadropted::JointAngles ja = {0.0, 0.86, -1.88, 0.0, 0.86, -1.88, 0.0, 0.86, -1.88, 0.0, 0.86, -1.88};
+        auto p = fk.forward_kinematics_all_legs(ja);
     }
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
