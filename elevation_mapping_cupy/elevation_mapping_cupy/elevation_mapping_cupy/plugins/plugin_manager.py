@@ -7,7 +7,6 @@ import inspect
 from abc import ABC
 from dataclasses import dataclass
 from inspect import signature
-from typing import Dict, List, Optional
 
 import numpy as np
 from ruamel.yaml import YAML
@@ -23,7 +22,7 @@ except ImportError:
     _log.addHandler(_logging.StreamHandler())
     _log.setLevel(_logging.INFO)
 
-from ..backend import GPU_AVAILABLE, xp
+from ..backend import xp
 
 
 @dataclass
@@ -49,11 +48,11 @@ class PluginBase(ABC):
     def __call__(
         self,
         elevation_map: np.ndarray,
-        layer_names: List[str],
+        layer_names: list[str],
         plugin_layers: np.ndarray,
-        plugin_layer_names: List[str],
+        plugin_layer_names: list[str],
         semantic_map: np.ndarray,
-        semantic_layer_names: List[str],
+        semantic_layer_names: list[str],
         *args,
         **kwargs,
     ) -> np.ndarray:
@@ -83,13 +82,13 @@ class PluginBase(ABC):
     def get_layer_data(
         self,
         elevation_map: np.ndarray,
-        layer_names: List[str],
+        layer_names: list[str],
         plugin_layers: np.ndarray,
-        plugin_layer_names: List[str],
+        plugin_layer_names: list[str],
         semantic_map: np.ndarray,
-        semantic_layer_names: List[str],
+        semantic_layer_names: list[str],
         name: str,
-    ) -> Optional[np.ndarray]:
+    ) -> np.ndarray | None:
         """
         Retrieve a copy of the layer data from the elevation, plugin, or semantic maps based on the layer name.
 
@@ -120,7 +119,7 @@ class PluginBase(ABC):
         return layer
 
 
-class PluginManager(object):
+class PluginManager:
     """
     This manages the plugins.
     """
@@ -128,7 +127,7 @@ class PluginManager(object):
     def __init__(self, cell_n: int):
         self.cell_n = cell_n
 
-    def init(self, plugin_params: List[PluginParams], extra_params: List[Dict]):
+    def init(self, plugin_params: list[PluginParams], extra_params: list[dict]):
         self.plugin_params = plugin_params
 
         self.plugins = []
@@ -143,41 +142,39 @@ class PluginManager(object):
         self.plugin_names = self.get_plugin_names()
 
     def load_plugin_settings(self, file_path: str):
-        cfg = YAML().load(open(file_path, "r"))
+        with open(file_path) as f:
+            cfg = YAML().load(f)
         plugin_params = []
         extra_params = []
         for k, v in cfg.items():
             if v["enable"]:
                 plugin_params.append(
                     PluginParams(
-                        name=k if not "type" in v else v["type"],
+                        name=v.get("type", k),
                         layer_name=v["layer_name"],
                         fill_nan=v["fill_nan"],
                         is_height_layer=v["is_height_layer"],
                     )
                 )
-                extra_params.append(v["extra_params"])
+                extra_params.append(v.get("extra_params", {}))
         self.init(plugin_params, extra_params)
         _log.info("Loaded plugins are: %s", self.plugin_names)
 
-    def get_layer_names(self):
-        names = []
-        for obj in self.plugin_params:
-            names.append(obj.layer_name)
-        return names
+    def get_layer_names(self) -> list[str]:
+        return [obj.layer_name for obj in self.plugin_params]
 
     def reset_layers(self):
         """Invalidate cached plugin layers so they will be recomputed on demand."""
         if hasattr(self, "layers"):
             self.layers[...] = xp.nan
 
-    def get_plugin_names(self):
+    def get_plugin_names(self) -> list[str]:
         names = []
         for obj in self.plugin_params:
             names.append(obj.name)
         return names
 
-    def get_plugin_index_with_name(self, name: str) -> int:
+    def get_plugin_index_with_name(self, name: str) -> int | None:
         try:
             idx = self.plugin_names.index(name)
             return idx
@@ -185,7 +182,7 @@ class PluginManager(object):
             _log.error("Error with plugin %s: %s", name, e)
             return None
 
-    def get_layer_index_with_name(self, name: str) -> int:
+    def get_layer_index_with_name(self, name: str) -> int | None:
         try:
             idx = self.layer_names.index(name)
             return idx
@@ -197,24 +194,36 @@ class PluginManager(object):
         self,
         name: str,
         elevation_map: np.ndarray,
-        layer_names: List[str],
+        layer_names: list[str],
         semantic_map=None,
-        semantic_params=None,
+        semantic_layer_names: list[str] | None = None,
         rotation=None,
         elements_to_shift=None,
     ):
         if semantic_map is None:
             semantic_map = xp.zeros((0, self.cell_n, self.cell_n), dtype=xp.float32)
-        if semantic_params is None:
-            semantic_params = []
+        if semantic_layer_names is None:
+            semantic_layer_names = []
         if elements_to_shift is None:
             elements_to_shift = {}
 
         idx = self.get_layer_index_with_name(name)
         if idx is not None and idx < len(self.plugins):
             n_param = len(signature(self.plugins[idx]).parameters)
-            if n_param == 5:
-                self.layers[idx] = self.plugins[idx](elevation_map, layer_names, self.layers, self.layer_names)
+            if n_param == 4:
+                self.layers[idx] = self.plugins[idx](
+                    elevation_map,
+                    layer_names,
+                    self.layers,
+                    self.layer_names,
+                )
+            elif n_param == 5:
+                self.layers[idx] = self.plugins[idx](
+                    elevation_map,
+                    layer_names,
+                    self.layers,
+                    self.layer_names,
+                )
             elif n_param == 7:
                 self.layers[idx] = self.plugins[idx](
                     elevation_map,
@@ -222,7 +231,7 @@ class PluginManager(object):
                     self.layers,
                     self.layer_names,
                     semantic_map,
-                    semantic_params,
+                    semantic_layer_names,
                 )
             elif n_param == 8:
                 self.layers[idx] = self.plugins[idx](
@@ -231,7 +240,7 @@ class PluginManager(object):
                     self.layers,
                     self.layer_names,
                     semantic_map,
-                    semantic_params,
+                    semantic_layer_names,
                     rotation,
                 )
             else:
@@ -241,7 +250,7 @@ class PluginManager(object):
                     self.layers,
                     self.layer_names,
                     semantic_map,
-                    semantic_params,
+                    semantic_layer_names,
                     rotation,
                     elements_to_shift,
                 )
@@ -268,8 +277,8 @@ if __name__ == "__main__":
     ]
     manager = PluginManager(200)
     manager.load_plugin_settings("../config/plugin_config.yaml")
-    print(manager.layer_names)
-    print(manager.plugin_names)
+    _log.info("layer_names: %s", manager.layer_names)
+    _log.info("plugin_names: %s", manager.plugin_names)
     elevation_map = xp.zeros((7, 200, 200)).astype(xp.float32)
     layer_names = [
         "elevation",
@@ -282,9 +291,8 @@ if __name__ == "__main__":
     ]
     elevation_map[0] = xp.random.randn(200, 200)
     elevation_map[2] = xp.abs(xp.random.randn(200, 200))
-    print("map", elevation_map[0])
-    print("layer map ", manager.layers)
+    _log.info("map: %s", elevation_map[0])
+    _log.info("layer map: %s", manager.layers)
     manager.update_with_name("min_filter", elevation_map, layer_names)
     manager.update_with_name("smooth_filter", elevation_map, layer_names)
-    # manager.update_with_name("sem_fil", elevation_map, layer_names, semantic_map=semantic_map)
-    print(manager.get_map_with_name("smooth"))
+    _log.info("smooth: %s", manager.get_map_with_name("smooth"))
