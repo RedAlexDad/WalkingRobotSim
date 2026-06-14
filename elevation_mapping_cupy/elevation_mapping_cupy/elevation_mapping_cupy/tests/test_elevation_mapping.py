@@ -353,9 +353,10 @@ class TestElevationMap:
         channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
         pos = np.array([3.0, 3.0, 1.0])
         angle = np.pi / 6
-        R = xp.array([[np.cos(angle), -np.sin(angle), 0],
-                       [np.sin(angle), np.cos(angle), 0],
-                       [0, 0, 1]], dtype=elmap_ex.param.data_type)
+        R = xp.array(
+            [[np.cos(angle), -np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1]],
+            dtype=elmap_ex.param.data_type,
+        )
         elmap_ex.move_to(pos, R)
         if "class_max" in elmap_ex.param.fusion_algorithms:
             val = xp.random.rand(50000, len(channels)).astype(xp.float16)

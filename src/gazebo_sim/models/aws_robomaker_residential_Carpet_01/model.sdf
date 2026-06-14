@@ -5,7 +5,7 @@
       <inertial>
         <mass>8.1</mass>
       </inertial>
-      
+
       <collision name="collision">
 
         <geometry>
@@ -16,9 +16,9 @@
           </mesh>
         </geometry>
 
-        <surface>        
+        <surface>
           <friction>
-            <ode> 
+            <ode>
               <mu>100</mu>
               <mu2>50</mu2>
             </ode>
@@ -32,7 +32,7 @@
 
         <pose>0 0 -0.01 0 0 0 </pose>
       </collision>
-      
+
       <visual name="visual">
 	    <geometry>
           <mesh>
@@ -44,6 +44,6 @@
     </link>
 
     <static>1</static>
-    
+
   </model>
 </sdf>

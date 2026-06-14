@@ -47,4 +47,3 @@ Minimal example:
       def __call__(self, elevation_map, layer_names, plugin_layers, plugin_layer_names, semantic_map, semantic_layer_names):
           # elevation_map[0] is the elevation layer
           return elevation_map[0] + self.add_value
-

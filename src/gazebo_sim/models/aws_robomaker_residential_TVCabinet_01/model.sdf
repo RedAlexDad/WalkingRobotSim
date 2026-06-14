@@ -2,7 +2,7 @@
 <sdf version="1.6">
   <model name="aws_robomaker_residential_TVCabinet_01">
     <link name="link">
-      
+
       <inertial>
         <mass>59.2</mass>
 

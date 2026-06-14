@@ -10,67 +10,57 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-
-    package_name='go1_gazebo'
-    namespace = '/robot1'
-    name = 'robot1'
+    package_name = "go1_gazebo"
+    namespace = "/robot1"
+    name = "robot1"
 
     # Process the URDF file
     pkg_path = os.path.join(get_package_share_directory(package_name))
-    xacro_file = os.path.join(pkg_path,'xacro','robot.xacro')
-    remappings = [
-        ("/tf", "tf"),
-        ("/tf_static", "tf_static"),
-        ("/scan", "scan"),
-        ("/odom", "odom")
-    ]
+    xacro_file = os.path.join(pkg_path, "xacro", "robot.xacro")
+    remappings = [("/tf", "tf"), ("/tf_static", "tf_static"), ("/scan", "scan"), ("/odom", "odom")]
 
-
-    use_elevation = LaunchConfiguration('use_elevation', default='false')
+    use_elevation = LaunchConfiguration("use_elevation", default="false")
     declare_use_elevation = DeclareLaunchArgument(
-        'use_elevation', default_value='false', description='Use elevation costmap layer'
+        "use_elevation", default_value="false", description="Use elevation costmap layer"
     )
 
-    use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+    use_sim_time = LaunchConfiguration("use_sim_time", default="true")
     declare_use_sim_time = DeclareLaunchArgument(
-        name='use_sim_time', default_value=use_sim_time, description='Использовать симуляционное время'
+        name="use_sim_time", default_value=use_sim_time, description="Использовать симуляционное время"
     )
 
-
-    world = os.path.join(pkg_path, 'world', 'empty.world')
+    world = os.path.join(pkg_path, "world", "empty.world")
     # Include the Gazebo launch file, provided by the ros_gz_sim package
     gazebo = IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([os.path.join(
-                    get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')]),
-                    launch_arguments={'gz_args': ['-r -v4 ', world], 'on_exit_shutdown': 'true'}.items()
-             )
-
-    # Run the spawner node from the ros_gz_sim package. The entity name doesn't really matter if you only have a single robot.
-    spawn_entity = Node(package='ros_gz_sim', executable='create', namespace=namespace,
-                        arguments=['-topic', f'{namespace}/robot_description',
-                                   '-name', f'{namespace}/my_bot',
-                                   '-z', '0.4'],
-                        output='screen')
-
-
-
-    robot_desc = xacro.process_file(
-            xacro_file,
-            mappings={'robot_name': name}
-        ).toxml()
-
-    params = {'robot_description': robot_desc, 'use_sim_time': use_sim_time}
-
-    node_robot_state_publisher = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        output='screen',
-        namespace=namespace,
-        parameters=[params],
-        remappings=remappings
+        PythonLaunchDescriptionSource(
+            [os.path.join(get_package_share_directory("ros_gz_sim"), "launch", "gz_sim.launch.py")]
+        ),
+        launch_arguments={"gz_args": ["-r -v4 ", world], "on_exit_shutdown": "true"}.items(),
     )
 
-    bridge_params = os.path.join(get_package_share_directory(package_name),'config','gz_bridge.yaml')
+    # Run the spawner node from the ros_gz_sim package. The entity name doesn't really matter if you only have a single robot.
+    spawn_entity = Node(
+        package="ros_gz_sim",
+        executable="create",
+        namespace=namespace,
+        arguments=["-topic", f"{namespace}/robot_description", "-name", f"{namespace}/my_bot", "-z", "0.4"],
+        output="screen",
+    )
+
+    robot_desc = xacro.process_file(xacro_file, mappings={"robot_name": name}).toxml()
+
+    params = {"robot_description": robot_desc, "use_sim_time": use_sim_time}
+
+    node_robot_state_publisher = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        output="screen",
+        namespace=namespace,
+        parameters=[params],
+        remappings=remappings,
+    )
+
+    bridge_params = os.path.join(get_package_share_directory(package_name), "config", "gz_bridge.yaml")
     ros_gz_bridge = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
@@ -79,27 +69,26 @@ def generate_launch_description():
             f"{namespace}/imu_plugin/out@sensor_msgs/msg/Imu@gz.msgs.IMU",
             f"{namespace}/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan",
             f"{namespace}/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V",
-            f"{namespace}/joint_states@sensor_msgs/msg/JointState@gz.msgs.Model"
-        ]
+            f"{namespace}/joint_states@sensor_msgs/msg/JointState@gz.msgs.Model",
+        ],
     )
 
     ros_gz_bridge_clock = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
         arguments=[
-            '--ros-args',
-            '-p',
-            f'config_file:={bridge_params}',
-        ]
+            "--ros-args",
+            "-p",
+            f"config_file:={bridge_params}",
+        ],
     )
-        # Запуск контроллеров
+    # Запуск контроллеров
     joint_state_broadcaster = Node(
         package="controller_manager",
         executable="spawner",
         namespace=namespace,
         arguments=["joint_state_broadcaster"],
-        remappings=remappings
-
+        remappings=remappings,
     )
 
     joint_group_controller = Node(
@@ -108,90 +97,92 @@ def generate_launch_description():
         namespace=namespace,
         arguments=["joint_group_controller"],
         output="screen",
-        remappings=remappings
-
+        remappings=remappings,
     )
 
     # Ноды для управления роботом (C++)
     controller = Node(
-        package='quadropted_controller_cpp',
-        executable='robot_controller_node',
-        name='robot_controller_cpp',
+        package="quadropted_controller_cpp",
+        executable="robot_controller_node",
+        name="robot_controller_cpp",
         namespace=namespace,
-        output='screen',
-        remappings=remappings
+        output="screen",
+        remappings=remappings,
     )
 
     cmd_vel_pub = Node(
-        package='quadropted_controller_cpp',
-        executable='cmd_vel_pub',
-        name='cmd_vel_pub_cpp',
+        package="quadropted_controller_cpp",
+        executable="cmd_vel_pub",
+        name="cmd_vel_pub_cpp",
         namespace=namespace,
-        output='screen',
+        output="screen",
     )
 
     odom = Node(
-        package='quadropted_controller_cpp',
-        executable='odometry_node',
-        name='odometry_cpp',
+        package="quadropted_controller_cpp",
+        executable="odometry_node",
+        name="odometry_cpp",
         namespace=namespace,
-        output='screen',
-        parameters=[{
-            "verbose": False,
-            'publish_rate': 50,
-            'open_loop': False,
-            'has_imu_heading': True,
-            'is_gazebo': True,
-            'imu_topic': f"/{namespace}/imu_plugin/out",
-            'base_frame_id': "base_link",
-            'odom_frame_id': "odom",
-            'clock_topic': '/clock',
-            'enable_odom_tf': True,
-        }],
-        remappings=remappings
+        output="screen",
+        parameters=[
+            {
+                "verbose": False,
+                "publish_rate": 50,
+                "open_loop": False,
+                "has_imu_heading": True,
+                "is_gazebo": True,
+                "imu_topic": f"/{namespace}/imu_plugin/out",
+                "base_frame_id": "base_link",
+                "odom_frame_id": "odom",
+                "clock_topic": "/clock",
+                "enable_odom_tf": True,
+            }
+        ],
+        remappings=remappings,
     )
 
-    map_dir = os.path.join(get_package_share_directory(package_name), 'maps', 'warehouse_map.yaml')
+    map_dir = os.path.join(get_package_share_directory(package_name), "maps", "warehouse_map.yaml")
 
     bringup_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_path, 'launch', 'nav2', 'bringup_launch.py')),
+        PythonLaunchDescriptionSource(os.path.join(pkg_path, "launch", "nav2", "bringup_launch.py")),
         launch_arguments={
-            'map': map_dir,
-            'use_namespace': 'True',
-            'namespace': namespace,
-            'use_elevation': use_elevation,
-            'autostart': 'true',
-            'use_sim_time': 'True',
-            'log_level': 'warn',
-            'map_server': 'True'
-        }.items()
+            "map": map_dir,
+            "use_namespace": "True",
+            "namespace": namespace,
+            "use_elevation": use_elevation,
+            "autostart": "true",
+            "use_sim_time": "True",
+            "log_level": "warn",
+            "map_server": "True",
+        }.items(),
     )
 
-    rviz_config_file = os.path.join(pkg_path, 'config', 'multi_nav2_default_view.rviz')
+    rviz_config_file = os.path.join(pkg_path, "config", "multi_nav2_default_view.rviz")
     rviz = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(pkg_path, 'launch', "rviz_launch.py")),
-            launch_arguments={
-                "namespace": namespace,
-                "use_namespace": 'true',
-                "rviz_config": rviz_config_file,
-            }.items()
-        )
+        PythonLaunchDescriptionSource(os.path.join(pkg_path, "launch", "rviz_launch.py")),
+        launch_arguments={
+            "namespace": namespace,
+            "use_namespace": "true",
+            "rviz_config": rviz_config_file,
+        }.items(),
+    )
 
     # Launch them all!
-    return LaunchDescription([
-        declare_use_sim_time,
-        declare_use_elevation,
-        node_robot_state_publisher,
-        gazebo,
-        spawn_entity,
-        ros_gz_bridge,
-        ros_gz_bridge_clock,
-        joint_state_broadcaster,
-        joint_group_controller,
-        controller,
-        cmd_vel_pub,
-        odom,
-        rviz,
-        # bringup_cmd
-    ])
+    return LaunchDescription(
+        [
+            declare_use_sim_time,
+            declare_use_elevation,
+            node_robot_state_publisher,
+            gazebo,
+            spawn_entity,
+            ros_gz_bridge,
+            ros_gz_bridge_clock,
+            joint_state_broadcaster,
+            joint_group_controller,
+            controller,
+            cmd_vel_pub,
+            odom,
+            rviz,
+            # bringup_cmd
+        ]
+    )

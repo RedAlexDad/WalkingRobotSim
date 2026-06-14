@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 import numpy as np
 import rclpy
-from elevation_mapping_cupy.gridmap_utils import decode_multiarray_to_rows_cols
 from grid_map_msgs.msg import GridMap
 from nav_msgs.msg import OccupancyGrid
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
+
+from elevation_mapping_cupy.gridmap_utils import decode_multiarray_to_rows_cols
 
 
 class ElevationToCostmapNode(Node):
     def __init__(self):
         super().__init__("elevation_to_costmap_node")
 
-        self.declare_parameter(
-            "elevation_map_topic", "/elevation_mapping_node/elevation_map"
-        )
+        self.declare_parameter("elevation_map_topic", "/elevation_mapping_node/elevation_map")
         self.declare_parameter("costmap_topic", "/elevation_costmap")
         self.declare_parameter("cost_layer_name", "cost")
         self.declare_parameter("free_threshold", 0.3)
@@ -55,8 +54,7 @@ class ElevationToCostmapNode(Node):
     def _warn_if_no_data(self) -> None:
         if self._msg_count == 0:
             self.get_logger().warn(
-                "No elevation map messages received yet. "
-                "Check that elevation_mapping_node is publishing."
+                "No elevation map messages received yet. Check that elevation_mapping_node is publishing."
             )
 
     def _cb(self, msg: GridMap) -> None:
@@ -94,9 +92,7 @@ class ElevationToCostmapNode(Node):
             interp = valid & (cost > lo) & (cost < hi)
             if interp.any():
                 occ[interp] = (
-                    (1.0 - cost[interp] - self._free_thresh)
-                    / (self._occ_thresh - self._free_thresh)
-                    * 100
+                    (1.0 - cost[interp] - self._free_thresh) / (self._occ_thresh - self._free_thresh) * 100
                 ).astype(np.int8)
                 occ[interp] = np.clip(occ[interp], 1, 99)
         else:
@@ -105,9 +101,7 @@ class ElevationToCostmapNode(Node):
             interp = valid & (cost > self._free_thresh) & (cost < self._occ_thresh)
             if interp.any():
                 occ[interp] = (
-                    (cost[interp] - self._free_thresh)
-                    / (self._occ_thresh - self._free_thresh)
-                    * 100
+                    (cost[interp] - self._free_thresh) / (self._occ_thresh - self._free_thresh) * 100
                 ).astype(np.int8)
                 occ[interp] = np.clip(occ[interp], 1, 99)
 

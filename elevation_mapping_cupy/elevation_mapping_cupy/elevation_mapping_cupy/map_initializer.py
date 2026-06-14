@@ -5,10 +5,10 @@
 import numpy as np
 from scipy.interpolate import griddata
 
-from .backend import GPU_AVAILABLE, asnumpy, xp
+from .backend import asnumpy, xp
 
 
-class MapInitializer(object):
+class MapInitializer:
     def __init__(
         self,
         initial_variance: float,
@@ -17,9 +17,7 @@ class MapInitializer(object):
         method: str = "points",
     ):
         self.methods = ["points"]
-        assert method in self.methods, "method should be chosen from {}".format(
-            self.methods
-        )
+        assert method in self.methods, f"method should be chosen from {self.methods}"
         self.method = method
         self.xp = xp
         self.initial_variance = initial_variance
@@ -29,9 +27,7 @@ class MapInitializer(object):
         if self.method == "points":
             self.points_initializer(*args, **kwargs)
 
-    def points_initializer(
-        self, elevation_map: np.ndarray, points: np.ndarray, method: str = "linear"
-    ) -> None:
+    def points_initializer(self, elevation_map: np.ndarray, points: np.ndarray, method: str = "linear") -> None:
         """Initialize the map using interpolation between given points
 
         Args:
@@ -67,9 +63,7 @@ class MapInitializer(object):
             self.new_variance,
             self.initial_variance,
         )
-        elevation_map[2] = self.xp.where(
-            self.xp.invert(self.xp.isnan(interpolated)), 1.0, 0.0
-        )
+        elevation_map[2] = self.xp.where(self.xp.invert(self.xp.isnan(interpolated)), 1.0, 0.0)
 
 
 if __name__ == "__main__":

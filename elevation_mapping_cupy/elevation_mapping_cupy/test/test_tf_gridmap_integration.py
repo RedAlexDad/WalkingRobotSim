@@ -79,15 +79,11 @@ def generate_test_description():
     pkg_share = get_package_share_directory("elevation_mapping_cupy")
 
     # Path to test config
-    test_config_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "config", "test_integration.yaml"
-    )
+    test_config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config", "test_integration.yaml")
 
     # Fallback to package share if not found
     if not os.path.exists(test_config_path):
-        test_config_path = os.path.join(
-            pkg_share, "test", "config", "test_integration.yaml"
-        )
+        test_config_path = os.path.join(pkg_share, "test", "config", "test_integration.yaml")
 
     elevation_mapping_node = launch_ros.actions.Node(
         package="elevation_mapping_cupy",
@@ -212,9 +208,7 @@ class TestFixtureNode(Node):
             durability=DurabilityPolicy.VOLATILE,
             depth=10,
         )
-        self.pc_publisher = self.create_publisher(
-            PointCloud2, "/test_pointcloud", pc_qos
-        )
+        self.pc_publisher = self.create_publisher(PointCloud2, "/test_pointcloud", pc_qos)
 
         # GridMap subscriber with appropriate QoS
         qos = QoSProfile(
@@ -248,9 +242,7 @@ class TestFixtureNode(Node):
         base_tf = create_transform("map", "base_link", x, y, z, stamp)
         self.tf_broadcaster.sendTransform(base_tf)
 
-    def publish_marker_pointcloud(
-        self, marker_x: float, marker_y: float, marker_z: float
-    ):
+    def publish_marker_pointcloud(self, marker_x: float, marker_y: float, marker_z: float):
         """Publish a pointcloud with a single marker point at world position."""
         stamp = self.get_clock().now().to_msg()
 
@@ -364,9 +356,7 @@ class TestTFGridMapIntegration(unittest.TestCase):
                 return True
         return False
 
-    def _prime_map_with_pointcloud(
-        self, repeats: int = 5, tf_x: float = 0.0, tf_y: float = 0.0, tf_z: float = 0.0
-    ):
+    def _prime_map_with_pointcloud(self, repeats: int = 5, tf_x: float = 0.0, tf_y: float = 0.0, tf_z: float = 0.0):
         """Publish TF and a tiny pointcloud to give the node a timestamp for publishing."""
         for _ in range(repeats):
             self.fixture.publish_tf(tf_x, tf_y, tf_z)
@@ -476,9 +466,7 @@ class TestTFGridMapIntegration(unittest.TestCase):
 
         self.wait_for_gridmap_with_spin(timeout=10.0)
         center_before_marker = self.fixture.get_gridmap_center()
-        self.assertIsNotNone(
-            center_before_marker, "No GridMap received before marker injection"
-        )
+        self.assertIsNotNone(center_before_marker, "No GridMap received before marker injection")
         self.assertLess(
             abs(center_before_marker[0]),
             0.2,
@@ -557,12 +545,8 @@ class TestTFGridMapIntegration(unittest.TestCase):
         delta_x = new_center[0] - initial_center[0]
         delta_y = new_center[1] - initial_center[1]
 
-        self.assertAlmostEqual(
-            delta_x, 0.5, delta=0.2, msg=f"X should increase by ~0.5, got {delta_x}"
-        )
-        self.assertAlmostEqual(
-            delta_y, 0.5, delta=0.2, msg=f"Y should increase by ~0.5, got {delta_y}"
-        )
+        self.assertAlmostEqual(delta_x, 0.5, delta=0.2, msg=f"X should increase by ~0.5, got {delta_x}")
+        self.assertAlmostEqual(delta_y, 0.5, delta=0.2, msg=f"Y should increase by ~0.5, got {delta_y}")
 
     def test_05_no_axis_swap(self):
         """
@@ -598,14 +582,10 @@ class TestTFGridMapIntegration(unittest.TestCase):
         self._prime_map_with_pointcloud(repeats=3, tf_x=target_x, tf_y=target_y)
         self.wait_for_gridmap_with_spin(timeout=5.0)
         after_x_move = self.fixture.get_gridmap_center()
-        self.assertIsNotNone(
-            after_x_move, "Failed to get center after priming at X pose"
-        )
+        self.assertIsNotNone(after_x_move, "Failed to get center after priming at X pose")
 
         y_change_from_x_move = abs(after_x_move[1] - start_center[1])
-        self.fixture.get_logger().info(
-            f"[no_axis_swap] centers start={start_center}, after_x={after_x_move}"
-        )
+        self.fixture.get_logger().info(f"[no_axis_swap] centers start={start_center}, after_x={after_x_move}")
         self.assertLess(
             y_change_from_x_move,
             0.15,

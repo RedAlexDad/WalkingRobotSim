@@ -1,5 +1,5 @@
 .. include:: documentation.rst
-   
+
 .. toctree::
     :hidden:
     :maxdepth: 3
@@ -18,6 +18,3 @@
     Parameters <usage/parameters>
     Plugins <usage/plugins>
     Semantics (Not Supported) <usage/semantics>
-
-
-

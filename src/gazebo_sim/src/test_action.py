@@ -19,24 +19,14 @@ from rclpy.node import Node
 
 class MultiActionServer(Node):
     def __init__(self):
-        super().__init__('multi_action_server')
+        super().__init__("multi_action_server")
 
         # Action Server 1: test_action (вычисление Фибоначчи)
-        self._action_server_test = ActionServer(
-            self,
-            Fibonacci,
-            'test_action',
-            self.execute_test_callback
-        )
+        self._action_server_test = ActionServer(self, Fibonacci, "test_action", self.execute_test_callback)
         self.get_logger().info("Test Action Server (test_action) started.")
 
         # Action Server 2: count_action (ожидание указанного времени)
-        self._action_server_count = ActionServer(
-            self,
-            Wait,
-            'count_action',
-            self.execute_count_callback
-        )
+        self._action_server_count = ActionServer(self, Wait, "count_action", self.execute_count_callback)
         self.get_logger().info("Count Action Server (count_action) started.")
 
     def execute_test_callback(self, goal_handle):
@@ -107,11 +97,11 @@ def main(args=None):
     try:
         rclpy.spin(action_server)
     except KeyboardInterrupt:
-        action_server.get_logger().info('Keyboard interrupt, shutting down...')
+        action_server.get_logger().info("Keyboard interrupt, shutting down...")
     finally:
         action_server.destroy_node()
         rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

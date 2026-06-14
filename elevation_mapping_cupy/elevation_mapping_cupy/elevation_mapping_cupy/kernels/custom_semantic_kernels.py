@@ -2,10 +2,11 @@
 # Copyright (c) 2023, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-from ..backend import xp, GPU_AVAILABLE, cp, scipy_ndimage, asnumpy
 import string
+
 import numpy as np
 
+from ..backend import GPU_AVAILABLE, cp
 
 # ====================================================================
 # CUDA kernels (only defined when GPU is available)
@@ -38,7 +39,6 @@ if GPU_AVAILABLE:
             name="sum_kernel",
         )
 
-
     def _sum_compact_kernel_cuda(resolution, width, height):
         return cp.ElementwiseKernel(
             in_params="raw U p, raw U R, raw U t, raw W pcl_chan, raw W map_lay, raw W pcl_channels",
@@ -64,7 +64,6 @@ if GPU_AVAILABLE:
                 """).substitute(),
             name="sum_compact_kernel",
         )
-
 
     def _sum_max_kernel_cuda(resolution, width, height):
         return cp.ElementwiseKernel(
@@ -92,7 +91,6 @@ if GPU_AVAILABLE:
                 """).substitute(),
             name="sum_max_kernel",
         )
-
 
     def _alpha_kernel_cuda(resolution, width, height):
         return cp.ElementwiseKernel(
@@ -126,7 +124,6 @@ if GPU_AVAILABLE:
             name="alpha_kernel",
         )
 
-
     def _average_kernel_cuda(width, height):
         return cp.ElementwiseKernel(
             in_params="raw V newmap, raw W pcl_chan, raw W map_lay, raw W pcl_channels, raw U new_elmap",
@@ -148,7 +145,6 @@ if GPU_AVAILABLE:
                 """).substitute(),
             name="average_map_kernel",
         )
-
 
     def _bayesian_inference_kernel_cuda(width, height):
         return cp.ElementwiseKernel(
@@ -178,7 +174,6 @@ if GPU_AVAILABLE:
             name="bayesian_inference_kernel",
         )
 
-
     def _class_average_kernel_cuda(width, height, alpha):
         return cp.ElementwiseKernel(
             in_params="raw V newmap, raw W pcl_chan, raw W map_lay, raw W pcl_channels, raw U new_elmap",
@@ -207,7 +202,6 @@ if GPU_AVAILABLE:
                 """).substitute(alpha=alpha),
             name="class_average_kernel",
         )
-
 
     def _add_color_kernel_cuda(width, height):
         return cp.ElementwiseKernel(
@@ -250,7 +244,6 @@ if GPU_AVAILABLE:
                 """).substitute(width=width),
             name="add_color_kernel",
         )
-
 
     def _color_average_kernel_cuda(width, height):
         return cp.ElementwiseKernel(
@@ -298,6 +291,7 @@ if GPU_AVAILABLE:
 # CPU fallback implementations
 # =====================================================================
 
+
 def _make_sum_kernel_cpu(width, height):
     def sum_kernel_cpu(p, R, t, pcl_chan, map_lay, pcl_channels, map_, newmap, size=None):
         p = np.asarray(p)
@@ -315,6 +309,7 @@ def _make_sum_kernel_cpu(width, height):
                 for lay in range(n_layers):
                     feat = p[pid, int(pcl_chan[lay])]
                     np.add.at(newmap.ravel(), idx + map_lay[lay] * cell_n, feat)
+
     return sum_kernel_cpu
 
 
@@ -334,6 +329,7 @@ def _make_sum_compact_kernel_cpu(width, height):
                 for lay in range(n_layers):
                     feat = p[pid, int(pcl_chan[lay])]
                     np.add.at(newmap.ravel(), idx + lay * cell_n, feat)
+
     return sum_compact_kernel_cpu
 
 
@@ -355,6 +351,7 @@ def _make_sum_max_kernel_cpu(width, height):
                     prob = max_pt[pid, it]
                     sid = int(max_id[pid, it])
                     np.add.at(newmap.ravel(), idx + sid * cell_n, prob)
+
     return sum_max_kernel_cpu
 
 
@@ -380,6 +377,7 @@ def _make_alpha_kernel_cpu(width, height):
                         arg_max = int(map_lay[lay])
                         theta_max = theta
                 np.add.at(newmap.ravel(), idx + arg_max * cell_n, theta_max)
+
     return alpha_kernel_cpu
 
 
@@ -398,6 +396,7 @@ def _make_average_kernel_cpu(width, height):
                 for lay in range(n_layers):
                     feat = newmap.ravel()[cid + map_lay[lay] * cell_n] / cnt
                     map_.ravel()[cid + map_lay[lay] * cell_n] = feat
+
     return average_kernel_cpu
 
 
@@ -420,10 +419,13 @@ def _make_bayesian_inference_kernel_cpu(width, height):
                     feat_old = map_.ravel()[cid + map_lay[lay] * cell_n]
                     sigma_old = newmap.ravel()[cid + map_lay[lay] * cell_n]
                     sigma = 1.0
-                    feat_new = sigma * feat_old / (cnt * sigma_old + sigma) + cnt * sigma_old * feat_ml / (cnt * sigma_old + sigma)
+                    feat_new = sigma * feat_old / (cnt * sigma_old + sigma) + cnt * sigma_old * feat_ml / (
+                        cnt * sigma_old + sigma
+                    )
                     sigma_new = sigma * sigma_old / (cnt * sigma_old + sigma)
                     map_.ravel()[cid + map_lay[lay] * cell_n] = feat_new
                     newmap.ravel()[cid + map_lay[lay] * cell_n] = sigma_new
+
     return bayesian_inference_kernel_cpu
 
 
@@ -448,6 +450,7 @@ def _make_class_average_kernel_cpu(width, height, alpha):
                     else:
                         val = alpha * prev_val + (1 - alpha) * cur
                         map_.ravel()[cid + map_lay[lay] * cell_n] = val
+
     return class_average_kernel_cpu
 
 
@@ -474,6 +477,7 @@ def _make_add_color_kernel_cpu(width, height):
                     np.add.at(color_map.ravel(), idx + (lay * 3 + 1) * cell_n, g)
                     np.add.at(color_map.ravel(), idx + (lay * 3 + 2) * cell_n, b)
                     np.add.at(color_map.ravel(), idx + (n_layers * 3) * cell_n, 1)
+
     return add_color_kernel_cpu
 
 
@@ -496,12 +500,14 @@ def _make_color_average_kernel_cpu(width, height):
                     rgb_uint = np.uint32((r << 16) | (g << 8) | b)
                     rgb_float = np.frombuffer(rgb_uint.tobytes(), dtype=np.float32)[0]
                     map_.ravel()[cid + map_lay[lay] * cell_n] = rgb_float
+
     return color_average_kernel_cpu
 
 
 # =====================================================================
 # Public API — dispatch between CUDA and CPU
 # =====================================================================
+
 
 def sum_kernel(resolution, width, height):
     if GPU_AVAILABLE:

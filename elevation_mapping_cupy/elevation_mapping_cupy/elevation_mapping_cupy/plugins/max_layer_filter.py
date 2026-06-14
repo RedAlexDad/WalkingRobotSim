@@ -2,23 +2,23 @@
 # Copyright (c) 2022, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-from typing import List
 
 import numpy as np
 
 from elevation_mapping_cupy.plugins.plugin_manager import PluginBase
 
-from ..backend import GPU_AVAILABLE, xp
+from ..backend import xp
 
 try:
     from walking_robot_utils.logging import get_logger
+
     _log = get_logger("elevation_mapping.plugins.max_layer_filter")
 except ImportError:
     import logging as _logging
+
     _log = _logging.getLogger("elevation_mapping.plugins.max_layer_filter")
     _log.addHandler(_logging.StreamHandler())
     _log.setLevel(_logging.INFO)
-
 
 
 class MaxLayerFilter(PluginBase):
@@ -44,11 +44,11 @@ class MaxLayerFilter(PluginBase):
     def __call__(
         self,
         elevation_map: np.ndarray,
-        layer_names: List[str],
+        layer_names: list[str],
         plugin_layers: np.ndarray,
-        plugin_layer_names: List[str],
+        plugin_layer_names: list[str],
         semantic_map: np.ndarray,
-        semantic_layer_names: List[str],
+        semantic_layer_names: list[str],
         *args,
     ) -> np.ndarray:
         layers = []

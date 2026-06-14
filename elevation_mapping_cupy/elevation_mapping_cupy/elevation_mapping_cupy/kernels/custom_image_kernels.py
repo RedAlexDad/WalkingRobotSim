@@ -5,16 +5,15 @@
 import string
 
 import numpy as np
-from ..backend import GPU_AVAILABLE, asnumpy, cp, scipy_ndimage, xp
+
+from ..backend import GPU_AVAILABLE, cp
 
 # =====================================================================
 # CUDA kernels (only defined when GPU is available)
 # =====================================================================
 if GPU_AVAILABLE:
 
-    def image_to_map_correspondence_kernel_cuda(
-        resolution, width, height, tolerance_z_collision
-    ):
+    def image_to_map_correspondence_kernel_cuda(resolution, width, height, tolerance_z_collision):
         _image_to_map_correspondence_kernel = cp.ElementwiseKernel(
             in_params="raw U map, raw U x1, raw U y1, raw U z1, raw U P, raw U K, raw U D, raw U image_height, raw U image_width, raw U center",
             out_params="raw U uv_correspondence, raw B valid_correspondence",
@@ -250,9 +249,7 @@ if GPU_AVAILABLE:
 # =====================================================================
 
 
-def _make_image_to_map_correspondence_cpu(
-    resolution, width, height, tolerance_z_collision
-):
+def _make_image_to_map_correspondence_cpu(resolution, width, height, tolerance_z_collision):
     def image_to_map_correspondence_cpu(
         map_,
         x1,
@@ -311,16 +308,8 @@ def _make_image_to_map_correspondence_cpu(
                 y_norm = (v - cy_k) / fy
                 r2 = x_norm * x_norm + y_norm * y_norm
                 radial = 1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2
-                u_corr = (
-                    x_norm * radial
-                    + 2 * p1_d * x_norm * y_norm
-                    + p2_d * (r2 + 2 * x_norm * x_norm)
-                )
-                v_corr = (
-                    y_norm * radial
-                    + 2 * p2_d * x_norm * y_norm
-                    + p1_d * (r2 + 2 * y_norm * y_norm)
-                )
+                u_corr = x_norm * radial + 2 * p1_d * x_norm * y_norm + p2_d * (r2 + 2 * x_norm * x_norm)
+                v_corr = y_norm * radial + 2 * p2_d * x_norm * y_norm + p1_d * (r2 + 2 * y_norm * y_norm)
                 u = fx * u_corr + cx_k
                 v = fy * v_corr + cy_k
 
@@ -427,8 +416,7 @@ def _make_exponential_correspondences_to_map_cpu(width, height, alpha):
 
         map_idx_val = int(map_idx[0] if hasattr(map_idx, "__len__") else map_idx)
         new_sem_map[map_idx_val][valid_mask] = (
-            sem_map[map_idx_val][valid_mask] * (1 - alpha)
-            + alpha * image_mono.ravel()[img_idx]
+            sem_map[map_idx_val][valid_mask] * (1 - alpha) + alpha * image_mono.ravel()[img_idx]
         )
         new_sem_map[:, ~valid_mask] = sem_map[:, ~valid_mask]
 
@@ -464,9 +452,7 @@ def _make_color_correspondences_to_map_cpu(width, height):
         b = img_flat[2 * img_w * img_h + base_idx].astype(np.uint32)
 
         rgb_int = (r << 16) | (g << 8) | b
-        rgb_float = np.frombuffer(
-            rgb_int.astype(np.uint32).tobytes(), dtype=np.float32
-        ).copy()
+        rgb_float = np.frombuffer(rgb_int.astype(np.uint32).tobytes(), dtype=np.float32).copy()
 
         map_idx_val = int(map_idx[0] if hasattr(map_idx, "__len__") else map_idx)
         new_sem_map[map_idx_val][valid_mask] = rgb_float
@@ -480,16 +466,10 @@ def _make_color_correspondences_to_map_cpu(width, height):
 # =====================================================================
 
 
-def image_to_map_correspondence_kernel(
-    resolution, width, height, tolerance_z_collision
-):
+def image_to_map_correspondence_kernel(resolution, width, height, tolerance_z_collision):
     if GPU_AVAILABLE:
-        return image_to_map_correspondence_kernel_cuda(
-            resolution, width, height, tolerance_z_collision
-        )
-    return _make_image_to_map_correspondence_cpu(
-        resolution, width, height, tolerance_z_collision
-    )
+        return image_to_map_correspondence_kernel_cuda(resolution, width, height, tolerance_z_collision)
+    return _make_image_to_map_correspondence_cpu(resolution, width, height, tolerance_z_collision)
 
 
 def average_correspondences_to_map_kernel(width, height):

@@ -3,7 +3,6 @@
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
 import string
-from typing import List
 
 import numpy as np
 from numba import njit
@@ -36,9 +35,7 @@ def _max_filter_cpu_numba(max_filtered, max_filtered_mask, dilation, h, w):
 
 
 class MaxFilter(PluginBase):
-    def __init__(
-        self, cell_n: int = 100, dilation_size: int = 5, iteration_n: int = 5, **kwargs
-    ):
+    def __init__(self, cell_n: int = 100, dilation_size: int = 5, iteration_n: int = 5, **kwargs):
         super().__init__()
         self.iteration_n = iteration_n
         self.width = cell_n
@@ -100,9 +97,9 @@ class MaxFilter(PluginBase):
     def __call__(
         self,
         elevation_map: np.ndarray,
-        layer_names: List[str],
+        layer_names: list[str],
         plugin_layers: np.ndarray,
-        plugin_layer_names: List[str],
+        plugin_layer_names: list[str],
     ) -> np.ndarray:
         self.max_filtered = elevation_map[0].copy()
         self.max_filtered_mask = elevation_map[2].copy()
@@ -110,9 +107,7 @@ class MaxFilter(PluginBase):
             self._run_iteration()
             if (self.max_filtered_mask > 0.5).all():
                 break
-        max_filtered = xp.where(
-            self.max_filtered_mask > 0.5, self.max_filtered.copy(), xp.nan
-        )
+        max_filtered = xp.where(self.max_filtered_mask > 0.5, self.max_filtered.copy(), xp.nan)
         return max_filtered
 
     def _run_iteration(self) -> None:

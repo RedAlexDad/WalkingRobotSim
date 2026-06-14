@@ -12,4 +12,3 @@ colcon build \
   --merge-install \
   --event-handlers console_direct+ \
   --cmake-args "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
-

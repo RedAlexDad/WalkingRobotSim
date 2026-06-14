@@ -34,9 +34,7 @@ class GroundTruthPublisher(Node):
             history=HistoryPolicy.KEEP_LAST,
             depth=1,
         )
-        self.pose_sub_ = self.create_subscription(
-            Pose, pose_topic, self.pose_callback, best_effort_qos
-        )
+        self.pose_sub_ = self.create_subscription(Pose, pose_topic, self.pose_callback, best_effort_qos)
         self.world_poses_sub_ = self.create_subscription(
             PoseArray, "/world_poses_info", self.world_poses_callback, best_effort_qos
         )
@@ -104,9 +102,7 @@ class GroundTruthPublisher(Node):
                 vy = (self.current_pose_.position.y - self.prev_pose_.position.y) / dt
                 vz = (self.current_pose_.position.z - self.prev_pose_.position.z) / dt
 
-                dq = self.quaternion_diff(
-                    self.prev_pose_.orientation, self.current_pose_.orientation
-                )
+                dq = self.quaternion_diff(self.prev_pose_.orientation, self.current_pose_.orientation)
                 angular_z = dq / dt if abs(dq) < math.pi else 0.0
 
                 odom_msg.twist.twist.linear.x = vx
@@ -128,9 +124,7 @@ class GroundTruthPublisher(Node):
 
     @staticmethod
     def quaternion_yaw(q):
-        return math.atan2(
-            2.0 * (q.w * q.z + q.x * q.y), 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
-        )
+        return math.atan2(2.0 * (q.w * q.z + q.x * q.y), 1.0 - 2.0 * (q.y * q.y + q.z * q.z))
 
     @staticmethod
     def quaternion_diff(q1, q2):

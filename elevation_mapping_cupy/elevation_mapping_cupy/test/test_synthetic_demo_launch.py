@@ -102,9 +102,7 @@ class TestSyntheticDemoLaunch(unittest.TestCase):
         node = _GridMapWaiter()
         try:
             ok = node.wait_for_msg(timeout_s=20.0)
-            self.assertTrue(
-                ok, "Timed out waiting for /elevation_mapping_node/elevation_map"
-            )
+            self.assertTrue(ok, "Timed out waiting for /elevation_mapping_node/elevation_map")
             msg = node.last_msg
             self.assertIsNotNone(msg)
             self.assertEqual(msg.header.frame_id, "map")

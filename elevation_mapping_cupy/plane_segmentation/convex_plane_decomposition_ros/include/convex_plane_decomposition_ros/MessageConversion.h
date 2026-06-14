@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include <geometry_msgs/msg/pose.hpp>
+#include <convex_plane_decomposition/PlanarRegion.h>
+#include <convex_plane_decomposition/PolygonTypes.h>
 
 #include <convex_plane_decomposition_msgs/msg/bounding_box2d.hpp>
 #include <convex_plane_decomposition_msgs/msg/planar_region.hpp>
@@ -12,9 +13,7 @@
 #include <convex_plane_decomposition_msgs/msg/point2d.hpp>
 #include <convex_plane_decomposition_msgs/msg/polygon2d.hpp>
 #include <convex_plane_decomposition_msgs/msg/polygon_with_holes2d.hpp>
-
-#include <convex_plane_decomposition/PlanarRegion.h>
-#include <convex_plane_decomposition/PolygonTypes.h>
+#include <geometry_msgs/msg/pose.hpp>
 
 namespace convex_plane_decomposition {
 

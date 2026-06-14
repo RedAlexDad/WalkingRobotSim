@@ -1,7 +1,4 @@
-import numpy as np
-import pytest
-
-from ..backend import GPU_AVAILABLE, xp
+from ..backend import xp
 
 
 class TestCpuKernels:

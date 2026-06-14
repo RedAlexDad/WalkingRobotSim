@@ -3,7 +3,6 @@ import math
 import os
 from functools import partial
 from pathlib import Path
-from typing import Dict, List
 
 import numpy as np
 import rclpy
@@ -11,23 +10,19 @@ import rosbag2_py
 import tf2_py as tf2
 import tf2_ros
 from ament_index_python.packages import get_package_share_directory
-from elevation_mapping_cupy.elevation_mapping import GridGeometry
-from elevation_mapping_cupy.gridmap_utils import (
-    decode_multiarray_to_rows_cols, encode_layer_to_multiarray)
 from geometry_msgs.msg import Quaternion, Vector3
 from grid_map_msgs.msg import GridMap
 from grid_map_msgs.srv import ProcessFile, SetGridMap
-from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import QoSPresetProfiles
 from rclpy.serialization import deserialize_message, serialize_message
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Float32MultiArray
-from std_msgs.msg import MultiArrayDimension as MAD
-from std_msgs.msg import MultiArrayLayout as MAL
 from tf_transformations import quaternion_matrix
 
 from elevation_mapping_cupy import ElevationMap, Parameter
+from elevation_mapping_cupy.elevation_mapping import GridGeometry
+from elevation_mapping_cupy.gridmap_utils import decode_multiarray_to_rows_cols, encode_layer_to_multiarray
 
 PDC_DATATYPE = {
     "1": np.int8,
@@ -39,6 +34,7 @@ PDC_DATATYPE = {
     "7": np.float32,
     "8": np.float64,
 }
+
 
 def _pointcloud2_xyz_f32(msg: PointCloud2) -> np.ndarray:
     """
@@ -82,12 +78,13 @@ def _pointcloud2_xyz_f32(msg: PointCloud2) -> np.ndarray:
         pts = pts[good]
     return pts
 
+
 class ElevationMappingNode(Node):
     def __init__(self):
         super().__init__(
-            'elevation_mapping_node',
+            "elevation_mapping_node",
             automatically_declare_parameters_from_overrides=True,
-            allow_undeclared_parameters=False
+            allow_undeclared_parameters=False,
         )
 
         self.root = get_package_share_directory("elevation_mapping_cupy")
@@ -95,11 +92,7 @@ class ElevationMappingNode(Node):
         plugin_config_file = os.path.join(self.root, "config/core/plugin_config.yaml")
 
         # Initialize parameters with some defaults
-        self.param = Parameter(
-            use_chainer=False,
-            weight_file=weight_file,
-            plugin_config_file=plugin_config_file
-        )
+        self.param = Parameter(use_chainer=False, weight_file=weight_file, plugin_config_file=plugin_config_file)
 
         # Read ROS parameters (including YAML)
         self.initialize_ros()
@@ -120,10 +113,10 @@ class ElevationMappingNode(Node):
         self._pointcloud_process_counter = 0
         self._image_process_counter = 0
         self._map = ElevationMap(self.param)
-        self._map_data = np.zeros(
-            (self._map.cell_n - 2, self._map.cell_n - 2), dtype=np.float32
+        self._map_data = np.zeros((self._map.cell_n - 2, self._map.cell_n - 2), dtype=np.float32)
+        self.get_logger().info(
+            f"Initialized map with length: {self._map.map_length}, resolution: {self._map.resolution}, cells: {self._map.cell_n}"
         )
-        self.get_logger().info(f"Initialized map with length: {self._map.map_length}, resolution: {self._map.resolution}, cells: {self._map.cell_n}")
 
         self._map_q = None
         self._map_t = None
@@ -134,137 +127,130 @@ class ElevationMappingNode(Node):
         self.get_ros_params()
 
     def get_ros_params(self) -> None:
-        self.use_chainer = self.get_parameter('use_chainer').get_parameter_value().bool_value
-        self.initialize_frame_id = self.get_parameter(
-            'initialize_frame_id'
-        ).get_parameter_value().string_array_value
-        self.initialize_tf_offset = self.get_parameter('initialize_tf_offset').get_parameter_value().double_array_value
-        self.map_frame = self.get_parameter('map_frame').get_parameter_value().string_value
-        self.base_frame = self.get_parameter('base_frame').get_parameter_value().string_value
-        self.corrected_map_frame = self.get_parameter('corrected_map_frame').get_parameter_value().string_value
-        self.initialize_method = self.get_parameter('initialize_method').get_parameter_value().string_value
-        self.position_lowpass_alpha = self.get_parameter('position_lowpass_alpha').get_parameter_value().double_value
-        self.orientation_lowpass_alpha = self.get_parameter('orientation_lowpass_alpha').get_parameter_value().double_value
-        self.recordable_fps = self.get_parameter('recordable_fps').get_parameter_value().double_value
-        self.update_variance_fps = self.get_parameter('update_variance_fps').get_parameter_value().double_value
-        self.time_interval = self.get_parameter('time_interval').get_parameter_value().double_value
-        self.update_pose_fps = self.get_parameter('update_pose_fps').get_parameter_value().double_value
-        self.initialize_tf_grid_size = self.get_parameter('initialize_tf_grid_size').get_parameter_value().double_value
-        self.map_acquire_fps = self.get_parameter('map_acquire_fps').get_parameter_value().double_value
-        self.publish_statistics_fps = self.get_parameter('publish_statistics_fps').get_parameter_value().double_value
-        self.enable_pointcloud_publishing = self.get_parameter('enable_pointcloud_publishing').get_parameter_value().bool_value
-        self.enable_normal_arrow_publishing = self.get_parameter('enable_normal_arrow_publishing').get_parameter_value().bool_value
-        self.enable_drift_corrected_TF_publishing = self.get_parameter('enable_drift_corrected_TF_publishing').get_parameter_value().bool_value
-        self.use_initializer_at_start = self.get_parameter('use_initializer_at_start').get_parameter_value().bool_value
-        subscribers_params = self.get_parameters_by_prefix('subscribers')
+        self.use_chainer = self.get_parameter("use_chainer").get_parameter_value().bool_value
+        self.initialize_frame_id = self.get_parameter("initialize_frame_id").get_parameter_value().string_array_value
+        self.initialize_tf_offset = self.get_parameter("initialize_tf_offset").get_parameter_value().double_array_value
+        self.map_frame = self.get_parameter("map_frame").get_parameter_value().string_value
+        self.base_frame = self.get_parameter("base_frame").get_parameter_value().string_value
+        self.corrected_map_frame = self.get_parameter("corrected_map_frame").get_parameter_value().string_value
+        self.initialize_method = self.get_parameter("initialize_method").get_parameter_value().string_value
+        self.position_lowpass_alpha = self.get_parameter("position_lowpass_alpha").get_parameter_value().double_value
+        self.orientation_lowpass_alpha = (
+            self.get_parameter("orientation_lowpass_alpha").get_parameter_value().double_value
+        )
+        self.recordable_fps = self.get_parameter("recordable_fps").get_parameter_value().double_value
+        self.update_variance_fps = self.get_parameter("update_variance_fps").get_parameter_value().double_value
+        self.time_interval = self.get_parameter("time_interval").get_parameter_value().double_value
+        self.update_pose_fps = self.get_parameter("update_pose_fps").get_parameter_value().double_value
+        self.initialize_tf_grid_size = self.get_parameter("initialize_tf_grid_size").get_parameter_value().double_value
+        self.map_acquire_fps = self.get_parameter("map_acquire_fps").get_parameter_value().double_value
+        self.publish_statistics_fps = self.get_parameter("publish_statistics_fps").get_parameter_value().double_value
+        self.enable_pointcloud_publishing = (
+            self.get_parameter("enable_pointcloud_publishing").get_parameter_value().bool_value
+        )
+        self.enable_normal_arrow_publishing = (
+            self.get_parameter("enable_normal_arrow_publishing").get_parameter_value().bool_value
+        )
+        self.enable_drift_corrected_TF_publishing = (
+            self.get_parameter("enable_drift_corrected_TF_publishing").get_parameter_value().bool_value
+        )
+        self.use_initializer_at_start = self.get_parameter("use_initializer_at_start").get_parameter_value().bool_value
+        subscribers_params = self.get_parameters_by_prefix("subscribers")
         self.my_subscribers = {}
         for param_name, param_value in subscribers_params.items():
-            parts = param_name.split('.')
+            parts = param_name.split(".")
             if len(parts) >= 2:
                 sub_key, sub_param = parts[:2]
                 if sub_key not in self.my_subscribers:
                     self.my_subscribers[sub_key] = {}
                 self.my_subscribers[sub_key][sub_param] = param_value.value
-        publishers_params = self.get_parameters_by_prefix('publishers')
+        publishers_params = self.get_parameters_by_prefix("publishers")
         self.my_publishers = {}
         for param_name, param_value in publishers_params.items():
-            parts = param_name.split('.')
+            parts = param_name.split(".")
             if len(parts) >= 2:
                 pub_key, pub_param = parts[:2]
                 if pub_key not in self.my_publishers:
                     self.my_publishers[pub_key] = {}
                 self.my_publishers[pub_key][pub_param] = param_value.value
 
-
     def set_param_values_from_ros(self):
         # Assign to self.param so it won't use defaults. This is research code: crash loudly if
         # a required parameter is missing or mistyped.
         self.param.use_chainer = self.use_chainer
-        self.param.resolution = self.get_parameter('resolution').get_parameter_value().double_value
-        self.param.map_length = self.get_parameter('map_length').get_parameter_value().double_value
-        self.param.sensor_noise_factor = self.get_parameter('sensor_noise_factor').get_parameter_value().double_value
-        self.param.mahalanobis_thresh = self.get_parameter('mahalanobis_thresh').get_parameter_value().double_value
-        self.param.outlier_variance = self.get_parameter('outlier_variance').get_parameter_value().double_value
-        self.param.drift_compensation_variance_inlier = self.get_parameter(
-            'drift_compensation_variance_inlier'
-        ).get_parameter_value().double_value
-        self.param.checker_layer = self.get_parameter('checker_layer').get_parameter_value().string_value
-        self.param.max_drift = self.get_parameter('max_drift').get_parameter_value().double_value
-        self.param.drift_compensation_alpha = self.get_parameter(
-            'drift_compensation_alpha'
-        ).get_parameter_value().double_value
-        self.param.time_variance = self.get_parameter('time_variance').get_parameter_value().double_value
-        self.param.max_variance = self.get_parameter('max_variance').get_parameter_value().double_value
-        self.param.initial_variance = self.get_parameter('initial_variance').get_parameter_value().double_value
-        self.param.initialized_variance = self.get_parameter(
-            'initialized_variance'
-        ).get_parameter_value().double_value
-        self.param.traversability_inlier = self.get_parameter(
-            'traversability_inlier'
-        ).get_parameter_value().double_value
-        self.param.dilation_size = self.get_parameter('dilation_size').get_parameter_value().integer_value
-        self.param.dilation_size_initialize = self.get_parameter(
-            'dilation_size_initialize'
-        ).get_parameter_value().integer_value
-        self.param.wall_num_thresh = self.get_parameter('wall_num_thresh').get_parameter_value().integer_value
-        self.param.min_height_drift_cnt = self.get_parameter(
-            'min_height_drift_cnt'
-        ).get_parameter_value().integer_value
-        self.param.position_noise_thresh = self.get_parameter(
-            'position_noise_thresh'
-        ).get_parameter_value().double_value
-        self.param.orientation_noise_thresh = self.get_parameter(
-            'orientation_noise_thresh'
-        ).get_parameter_value().double_value
-        self.param.min_valid_distance = self.get_parameter(
-            'min_valid_distance'
-        ).get_parameter_value().double_value
-        self.param.max_height_range = self.get_parameter(
-            'max_height_range'
-        ).get_parameter_value().double_value
-        self.param.ramped_height_range_a = self.get_parameter(
-            'ramped_height_range_a'
-        ).get_parameter_value().double_value
-        self.param.ramped_height_range_b = self.get_parameter(
-            'ramped_height_range_b'
-        ).get_parameter_value().double_value
-        self.param.ramped_height_range_c = self.get_parameter(
-            'ramped_height_range_c'
-        ).get_parameter_value().double_value
-        self.param.max_ray_length = self.get_parameter('max_ray_length').get_parameter_value().double_value
-        self.param.cleanup_step = self.get_parameter('cleanup_step').get_parameter_value().double_value
-        self.param.cleanup_cos_thresh = self.get_parameter(
-            'cleanup_cos_thresh'
-        ).get_parameter_value().double_value
-        self.param.safe_thresh = self.get_parameter('safe_thresh').get_parameter_value().double_value
-        self.param.safe_min_thresh = self.get_parameter('safe_min_thresh').get_parameter_value().double_value
-        self.param.max_unsafe_n = self.get_parameter('max_unsafe_n').get_parameter_value().integer_value
-        self.param.overlap_clear_range_xy = self.get_parameter(
-            'overlap_clear_range_xy'
-        ).get_parameter_value().double_value
-        self.param.overlap_clear_range_z = self.get_parameter(
-            'overlap_clear_range_z'
-        ).get_parameter_value().double_value
-        self.param.enable_edge_sharpen = self.get_parameter(
-            'enable_edge_sharpen'
-        ).get_parameter_value().bool_value
-        self.param.enable_visibility_cleanup = self.get_parameter(
-            'enable_visibility_cleanup'
-        ).get_parameter_value().bool_value
-        self.param.enable_drift_compensation = self.get_parameter(
-            'enable_drift_compensation'
-        ).get_parameter_value().bool_value
-        self.param.enable_overlap_clearance = self.get_parameter(
-            'enable_overlap_clearance'
-        ).get_parameter_value().bool_value
-        self.param.use_only_above_for_upper_bound = self.get_parameter(
-            'use_only_above_for_upper_bound'
-        ).get_parameter_value().bool_value
+        self.param.resolution = self.get_parameter("resolution").get_parameter_value().double_value
+        self.param.map_length = self.get_parameter("map_length").get_parameter_value().double_value
+        self.param.sensor_noise_factor = self.get_parameter("sensor_noise_factor").get_parameter_value().double_value
+        self.param.mahalanobis_thresh = self.get_parameter("mahalanobis_thresh").get_parameter_value().double_value
+        self.param.outlier_variance = self.get_parameter("outlier_variance").get_parameter_value().double_value
+        self.param.drift_compensation_variance_inlier = (
+            self.get_parameter("drift_compensation_variance_inlier").get_parameter_value().double_value
+        )
+        self.param.checker_layer = self.get_parameter("checker_layer").get_parameter_value().string_value
+        self.param.max_drift = self.get_parameter("max_drift").get_parameter_value().double_value
+        self.param.drift_compensation_alpha = (
+            self.get_parameter("drift_compensation_alpha").get_parameter_value().double_value
+        )
+        self.param.time_variance = self.get_parameter("time_variance").get_parameter_value().double_value
+        self.param.max_variance = self.get_parameter("max_variance").get_parameter_value().double_value
+        self.param.initial_variance = self.get_parameter("initial_variance").get_parameter_value().double_value
+        self.param.initialized_variance = self.get_parameter("initialized_variance").get_parameter_value().double_value
+        self.param.traversability_inlier = (
+            self.get_parameter("traversability_inlier").get_parameter_value().double_value
+        )
+        self.param.dilation_size = self.get_parameter("dilation_size").get_parameter_value().integer_value
+        self.param.dilation_size_initialize = (
+            self.get_parameter("dilation_size_initialize").get_parameter_value().integer_value
+        )
+        self.param.wall_num_thresh = self.get_parameter("wall_num_thresh").get_parameter_value().integer_value
+        self.param.min_height_drift_cnt = self.get_parameter("min_height_drift_cnt").get_parameter_value().integer_value
+        self.param.position_noise_thresh = (
+            self.get_parameter("position_noise_thresh").get_parameter_value().double_value
+        )
+        self.param.orientation_noise_thresh = (
+            self.get_parameter("orientation_noise_thresh").get_parameter_value().double_value
+        )
+        self.param.min_valid_distance = self.get_parameter("min_valid_distance").get_parameter_value().double_value
+        self.param.max_height_range = self.get_parameter("max_height_range").get_parameter_value().double_value
+        self.param.ramped_height_range_a = (
+            self.get_parameter("ramped_height_range_a").get_parameter_value().double_value
+        )
+        self.param.ramped_height_range_b = (
+            self.get_parameter("ramped_height_range_b").get_parameter_value().double_value
+        )
+        self.param.ramped_height_range_c = (
+            self.get_parameter("ramped_height_range_c").get_parameter_value().double_value
+        )
+        self.param.max_ray_length = self.get_parameter("max_ray_length").get_parameter_value().double_value
+        self.param.cleanup_step = self.get_parameter("cleanup_step").get_parameter_value().double_value
+        self.param.cleanup_cos_thresh = self.get_parameter("cleanup_cos_thresh").get_parameter_value().double_value
+        self.param.safe_thresh = self.get_parameter("safe_thresh").get_parameter_value().double_value
+        self.param.safe_min_thresh = self.get_parameter("safe_min_thresh").get_parameter_value().double_value
+        self.param.max_unsafe_n = self.get_parameter("max_unsafe_n").get_parameter_value().integer_value
+        self.param.overlap_clear_range_xy = (
+            self.get_parameter("overlap_clear_range_xy").get_parameter_value().double_value
+        )
+        self.param.overlap_clear_range_z = (
+            self.get_parameter("overlap_clear_range_z").get_parameter_value().double_value
+        )
+        self.param.enable_edge_sharpen = self.get_parameter("enable_edge_sharpen").get_parameter_value().bool_value
+        self.param.enable_visibility_cleanup = (
+            self.get_parameter("enable_visibility_cleanup").get_parameter_value().bool_value
+        )
+        self.param.enable_drift_compensation = (
+            self.get_parameter("enable_drift_compensation").get_parameter_value().bool_value
+        )
+        self.param.enable_overlap_clearance = (
+            self.get_parameter("enable_overlap_clearance").get_parameter_value().bool_value
+        )
+        self.param.use_only_above_for_upper_bound = (
+            self.get_parameter("use_only_above_for_upper_bound").get_parameter_value().bool_value
+        )
 
-        mask_param = self.get_parameter('masked_replace_service_mask_layer_name').get_parameter_value().string_value
-        topic_param = self.get_parameter('save_map_default_topic').get_parameter_value().string_value
-        storage_param = self.get_parameter('save_map_storage_id').get_parameter_value().string_value
-        service_ns_param = self.get_parameter('service_namespace').get_parameter_value().string_value
+        mask_param = self.get_parameter("masked_replace_service_mask_layer_name").get_parameter_value().string_value
+        topic_param = self.get_parameter("save_map_default_topic").get_parameter_value().string_value
+        storage_param = self.get_parameter("save_map_storage_id").get_parameter_value().string_value
+        service_ns_param = self.get_parameter("service_namespace").get_parameter_value().string_value
 
         if not mask_param:
             raise ValueError("masked_replace_service_mask_layer_name must be a non-empty string")
@@ -286,8 +272,7 @@ class ElevationMappingNode(Node):
             data_type = config.get("data_type")
             if data_type != "pointcloud":
                 raise ValueError(
-                    f"Unsupported subscriber data_type='{data_type}' for '{key}'. "
-                    "Supported: pointcloud only."
+                    f"Unsupported subscriber data_type='{data_type}' for '{key}'. Supported: pointcloud only."
                 )
             if config.get("channels"):
                 raise ValueError(
@@ -318,46 +303,22 @@ class ElevationMappingNode(Node):
             self._publishers_dict[pub_key] = publisher
 
             fps = pub_config.get("fps", 1.0)
-            timer = self.create_timer(
-                1.0 / fps,
-                partial(self.publish_map, key=pub_key)
-            )
+            timer = self.create_timer(1.0 / fps, partial(self.publish_map, key=pub_key))
             self._publishers_timers.append(timer)
 
     def register_timers(self) -> None:
-        self.time_pose_update = self.create_timer(
-            0.1,
-            self.pose_update
-        )
-        self.timer_variance = self.create_timer(
-            1.0 / self.update_variance_fps,
-            self.update_variance
-        )
-        self.timer_time = self.create_timer(
-            self.time_interval,
-            self.update_time
-        )
+        self.time_pose_update = self.create_timer(0.1, self.pose_update)
+        self.timer_variance = self.create_timer(1.0 / self.update_variance_fps, self.update_variance)
+        self.timer_time = self.create_timer(self.time_interval, self.update_time)
 
     def register_services(self) -> None:
-        service_masked = self._resolve_service_name('masked_replace')
-        service_save = self._resolve_service_name('save_map')
-        service_load = self._resolve_service_name('load_map')
+        service_masked = self._resolve_service_name("masked_replace")
+        service_save = self._resolve_service_name("save_map")
+        service_load = self._resolve_service_name("load_map")
 
-        self._srv_masked_replace = self.create_service(
-            SetGridMap,
-            service_masked,
-            self.handle_masked_replace
-        )
-        self._srv_save_map = self.create_service(
-            ProcessFile,
-            service_save,
-            self.handle_save_map
-        )
-        self._srv_load_map = self.create_service(
-            ProcessFile,
-            service_load,
-            self.handle_load_map
-        )
+        self._srv_masked_replace = self.create_service(SetGridMap, service_masked, self.handle_masked_replace)
+        self._srv_save_map = self.create_service(ProcessFile, service_save, self.handle_save_map)
+        self._srv_load_map = self.create_service(ProcessFile, service_load, self.handle_load_map)
 
     def publish_map(self, key: str) -> None:
         if self._map_q is None:
@@ -423,15 +384,11 @@ class ElevationMappingNode(Node):
 
             fused_layer_names = self._collect_fused_layer_names()
             raw_layer_names = self._map.list_layers()
-            self.get_logger().info(
-                f"Saving map: fused layers={fused_layer_names}, raw layers={raw_layer_names}"
-            )
+            self.get_logger().info(f"Saving map: fused layers={fused_layer_names}, raw layers={raw_layer_names}")
 
             fused_layers = self._map.export_layers(fused_layer_names)
             raw_layers = self._map.export_layers(raw_layer_names)
-            self.get_logger().info(
-                f"Exported raw layer keys: {list(raw_layers.keys())}"
-            )
+            self.get_logger().info(f"Exported raw layer keys: {list(raw_layers.keys())}")
             if "elevation" in fused_layers:
                 n_finite = int(np.isfinite(fused_layers["elevation"]).sum())
                 self.get_logger().info(f"save_map: fused 'elevation' finite cells={n_finite}")
@@ -447,11 +404,9 @@ class ElevationMappingNode(Node):
             gm_raw = self._build_grid_map_message(
                 raw_layer_names,
                 raw_layers,
-                ['elevation'],
+                ["elevation"],
             )
-            self.get_logger().info(
-                f"Built fused msg layers={gm_fused.layers}, raw msg layers={gm_raw.layers}"
-            )
+            self.get_logger().info(f"Built fused msg layers={gm_fused.layers}, raw msg layers={gm_raw.layers}")
 
             self._write_grid_map_bag(fused_path, fused_topic, gm_fused)
             self._write_grid_map_bag(raw_path, raw_topic, gm_raw)
@@ -510,7 +465,7 @@ class ElevationMappingNode(Node):
         if len(grid_map_msg.layers) != len(grid_map_msg.data):
             raise ValueError("Mismatch between GridMap layers and data arrays.")
 
-        arrays: Dict[str, np.ndarray] = {}
+        arrays: dict[str, np.ndarray] = {}
         for name, array_msg in zip(grid_map_msg.layers, grid_map_msg.data):
             arrays[name] = decode_multiarray_to_rows_cols(name, array_msg)
 
@@ -544,33 +499,35 @@ class ElevationMappingNode(Node):
     def _extract_layout_shape(self, array_msg: Float32MultiArray) -> tuple:
         if array_msg.layout.dim:
             cols = array_msg.layout.dim[0].size or 1
-            rows = array_msg.layout.dim[1].size if len(array_msg.layout.dim) > 1 else (
-                len(array_msg.data) // cols if cols else len(array_msg.data)
+            rows = (
+                array_msg.layout.dim[1].size
+                if len(array_msg.layout.dim) > 1
+                else (len(array_msg.data) // cols if cols else len(array_msg.data))
             )
         else:
             cols = int(math.sqrt(len(array_msg.data)))
             rows = cols
         return cols, rows
 
-    def _collect_fused_layer_names(self) -> List[str]:
-        fused: List[str] = []
+    def _collect_fused_layer_names(self) -> list[str]:
+        fused: list[str] = []
         for config in self.my_publishers.values():
-            fused.extend(config.get('layers', []))
+            fused.extend(config.get("layers", []))
         if not fused:
-            fused = ['elevation']
-        ordered: List[str] = []
+            fused = ["elevation"]
+        ordered: list[str] = []
         for name in fused:
             if name not in ordered:
                 ordered.append(name)
         return ordered
 
-    def _collect_basic_layers(self) -> List[str]:
-        basics: List[str] = []
+    def _collect_basic_layers(self) -> list[str]:
+        basics: list[str] = []
         for config in self.my_publishers.values():
-            basics.extend(config.get('basic_layers', []))
+            basics.extend(config.get("basic_layers", []))
         if not basics:
-            basics = ['elevation']
-        ordered: List[str] = []
+            basics = ["elevation"]
+        ordered: list[str] = []
         for name in basics:
             if name not in ordered:
                 ordered.append(name)
@@ -578,9 +535,9 @@ class ElevationMappingNode(Node):
 
     def _build_grid_map_message(
         self,
-        layer_names: List[str],
-        layer_data: Dict[str, np.ndarray],
-        basic_layers: List[str],
+        layer_names: list[str],
+        layer_data: dict[str, np.ndarray],
+        basic_layers: list[str],
     ) -> GridMap:
         gm = GridMap()
         gm.header.frame_id = self.map_frame
@@ -621,14 +578,14 @@ class ElevationMappingNode(Node):
         base = self.service_namespace
         if not base:
             base = f"/{self.get_name()}"
-        return f"{base}/{suffix}".replace('//', '/')
+        return f"{base}/{suffix}".replace("//", "/")
 
     def _resolve_topic_name(self, topic: str) -> str:
-        topic = topic.strip('/') or self.save_map_default_topic
+        topic = topic.strip("/") or self.save_map_default_topic
         base = self.service_namespace
         if not base:
             base = f"/{self.get_name()}"
-        return f"{base}/{topic}".replace('//', '/')
+        return f"{base}/{topic}".replace("//", "/")
 
     def _prepare_bag_paths(self, file_path: str):
         if not file_path:
@@ -650,7 +607,7 @@ class ElevationMappingNode(Node):
     def _write_grid_map_bag(self, path: Path, topic: str, grid_map_msg: GridMap) -> None:
         writer = rosbag2_py.SequentialWriter()
         storage_options = rosbag2_py.StorageOptions(uri=str(path), storage_id=self.save_map_storage_id)
-        converter_options = rosbag2_py.ConverterOptions('', '')
+        converter_options = rosbag2_py.ConverterOptions("", "")
         writer.open(storage_options, converter_options)
         topic_metadata = self._make_topic_metadata(topic)
         writer.create_topic(topic_metadata)
@@ -659,7 +616,7 @@ class ElevationMappingNode(Node):
     def _read_latest_grid_map(self, path: Path, topic: str) -> GridMap:
         reader = rosbag2_py.SequentialReader()
         storage_options = rosbag2_py.StorageOptions(uri=str(path), storage_id=self.save_map_storage_id)
-        converter_options = rosbag2_py.ConverterOptions('', '')
+        converter_options = rosbag2_py.ConverterOptions("", "")
         reader.open(storage_options, converter_options)
         latest = None
         while reader.has_next():
@@ -684,28 +641,20 @@ class ElevationMappingNode(Node):
             self.publish_map(key)
 
     def _normalize_namespace(self, value: str) -> str:
-        value = value.strip() if value else ''
+        value = value.strip() if value else ""
         if not value:
-            return ''
-        if not value.startswith('/'):
-            value = f'/{value}'
-        return value.rstrip('/')
+            return ""
+        if not value.startswith("/"):
+            value = f"/{value}"
+        return value.rstrip("/")
 
     def safe_lookup_transform(self, target_frame, source_frame, time):
         try:
-            return self._tf_buffer.lookup_transform(
-                target_frame,
-                source_frame,
-                time
-            )
+            return self._tf_buffer.lookup_transform(target_frame, source_frame, time)
         except tf2_ros.ExtrapolationException:
             # Time is in the future/past, try with latest available
             try:
-                return self._tf_buffer.lookup_transform(
-                    target_frame,
-                    source_frame,
-                    rclpy.time.Time()
-                )
+                return self._tf_buffer.lookup_transform(target_frame, source_frame, rclpy.time.Time())
             # NOTE: The second lookup can also throw ExtrapolationException (e.g., TF buffer not populated yet,
             # or timestamps are discontinuous during sim resets). If we don't catch it here the whole node dies.
             except (
@@ -715,29 +664,26 @@ class ElevationMappingNode(Node):
                 tf2_ros.ExtrapolationException,
             ) as e:
                 self.get_logger().warning(
-                    f"Transform from '{source_frame}' to '{target_frame}' not available: {e}",
-                    throttle_duration_sec=5.0
+                    f"Transform from '{source_frame}' to '{target_frame}' not available: {e}", throttle_duration_sec=5.0
                 )
                 return None
         except tf2.LookupException as e:
             # Frame doesn't exist
             self.get_logger().warning(
-                f"Frame '{target_frame}' or '{source_frame}' does not exist: {e}",
-                throttle_duration_sec=5.0
+                f"Frame '{target_frame}' or '{source_frame}' does not exist: {e}", throttle_duration_sec=5.0
             )
             return None
         except tf2.ConnectivityException as e:
             # No transform path between frames
             self.get_logger().warning(
-                f"No transform path from '{source_frame}' to '{target_frame}': {e}",
-                throttle_duration_sec=5.0
+                f"No transform path from '{source_frame}' to '{target_frame}': {e}", throttle_duration_sec=5.0
             )
             return None
         except Exception as e:
             # Catch any other unexpected TF2 errors
             self.get_logger().warning(
                 f"Unexpected TF2 error for transform from '{source_frame}' to '{target_frame}': {e}",
-                throttle_duration_sec=5.0
+                throttle_duration_sec=5.0,
             )
             return None
 
@@ -776,11 +722,7 @@ class ElevationMappingNode(Node):
     def pose_update(self) -> None:
         if self._last_t is None:
             return
-        transform = self.safe_lookup_transform(
-            self.map_frame,
-            self.base_frame,
-            self._last_t
-        )
+        transform = self.safe_lookup_transform(self.map_frame, self.base_frame, self._last_t)
         if transform is None:
             # Transform not available, skip pose update
             return
@@ -801,6 +743,7 @@ class ElevationMappingNode(Node):
     def destroy_node(self) -> None:
         super().destroy_node()
 
+
 def main(args=None) -> None:
     rclpy.init(args=args)
     node = ElevationMappingNode()
@@ -816,5 +759,6 @@ def main(args=None) -> None:
         # launch_testing / signal handlers can already have shut down the context.
         rclpy.try_shutdown()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

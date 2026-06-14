@@ -13,24 +13,16 @@ def generate_launch_description():
     share_dir = get_package_share_directory(package_name)
 
     core_param_path = os.path.join(share_dir, "config", "core", "core_param.yaml")
-    setup_param_path = os.path.join(
-        share_dir, "config", "setups", "synthetic", "synthetic_depth.yaml"
-    )
-    rviz_config_default = PathJoinSubstitution(
-        [share_dir, "rviz", "synthetic_demo.rviz"]
-    )
+    setup_param_path = os.path.join(share_dir, "config", "setups", "synthetic", "synthetic_depth.yaml")
+    rviz_config_default = PathJoinSubstitution([share_dir, "rviz", "synthetic_demo.rviz"])
 
     if not os.path.exists(core_param_path):
         raise FileNotFoundError(f"Missing core params: {core_param_path}")
     if not os.path.exists(setup_param_path):
         raise FileNotFoundError(f"Missing setup params: {setup_param_path}")
 
-    use_sim_time_arg = DeclareLaunchArgument(
-        "use_sim_time", default_value="false", description="Use /clock if true"
-    )
-    launch_rviz_arg = DeclareLaunchArgument(
-        "launch_rviz", default_value="true", description="Launch RViz2"
-    )
+    use_sim_time_arg = DeclareLaunchArgument("use_sim_time", default_value="false", description="Use /clock if true")
+    launch_rviz_arg = DeclareLaunchArgument("launch_rviz", default_value="true", description="Launch RViz2")
     rviz_config_arg = DeclareLaunchArgument(
         "rviz_config",
         default_value=rviz_config_default,

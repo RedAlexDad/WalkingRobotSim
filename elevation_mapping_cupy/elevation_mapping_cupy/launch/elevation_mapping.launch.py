@@ -20,16 +20,12 @@ def generate_launch_description():
         "robot_config",
         # default_value='turtle_bot/turle_bot_simple.yaml',
         default_value="menzi/base.yaml",
-        description="Name of the robot-specific config file within " "config/setups/",
+        description="Name of the robot-specific config file within config/setups/",
     )
 
-    launch_rviz_arg = DeclareLaunchArgument(
-        "launch_rviz", default_value="false", description="Whether to launch RViz"
-    )
+    launch_rviz_arg = DeclareLaunchArgument("launch_rviz", default_value="false", description="Whether to launch RViz")
 
-    rviz_config_arg = DeclareLaunchArgument(
-        "rviz_config", default_value="", description="Path to the RViz config file"
-    )
+    rviz_config_arg = DeclareLaunchArgument("rviz_config", default_value="", description="Path to the RViz config file")
 
     use_sim_time_arg = DeclareLaunchArgument(
         "use_sim_time",
@@ -39,9 +35,7 @@ def generate_launch_description():
 
     # Get launch configurations
     robot_config = LaunchConfiguration("robot_config")
-    robot_param_path = PathJoinSubstitution(
-        [share_dir, "config", "setups", robot_config]
-    )
+    robot_param_path = PathJoinSubstitution([share_dir, "config", "setups", robot_config])
     launch_rviz = LaunchConfiguration("launch_rviz")
     rviz_config = LaunchConfiguration("rviz_config")
     use_sim_time = LaunchConfiguration("use_sim_time")

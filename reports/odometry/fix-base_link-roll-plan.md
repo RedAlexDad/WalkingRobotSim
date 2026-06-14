@@ -27,7 +27,7 @@
 ### ✅ Что уже сделано (2026-04-07)
 - Фаза 1: Модульные тесты для base_link roll ✅
   - test_base_link_roll.cpp — 10 C++ тестов
-  - test_ik_with_roll.cpp — 8 C++ тестов  
+  - test_ik_with_roll.cpp — 8 C++ тестов
   - test_ik_with_roll.py — 8 Python тестов (все прошли)
 - Фаза 2: Исправление step_trot ✅
   - trot_stance.cpp: исправлен rotxyz

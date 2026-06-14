@@ -501,7 +501,7 @@ if (has_command) {
 
 ### 🔴 Ошибка #17: STAND — speed в teleop не влияет на скорость изменения позиции
 
-**Файлы:** 
+**Файлы:**
 - `src/quadropted_controller_cpp/include/.../stand_controller.hpp` — `max_linear_velocity_=0.035`
 - `src/quadropted_controller/scripts/cmd_vel_pub.py` — `multiply_and_limit` с насыщающей экспонентой
 

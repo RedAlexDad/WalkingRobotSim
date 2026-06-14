@@ -60,31 +60,31 @@ check_docker_compose() {
 
 check_project_structure() {
     info "Проверка структуры проекта..."
-    
+
     PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    
+
     local required_files=(
         "docker/Dockerfile"
         "docker/compose.yml"
         "docker/manage.sh"
         "docker/cyclonedds.xml"
     )
-    
+
     for file in "${required_files[@]}"; do
         if [ ! -f "$PROJECT_ROOT/$file" ]; then
             error "Файл не найден: $file"
             exit 1
         fi
     done
-    
+
     success "Структура проекта верна"
 }
 
 check_permissions() {
     info "Проверка прав доступа..."
-    
+
     PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    
+
     if [ ! -x "$PROJECT_ROOT/docker/manage.sh" ]; then
         warning "manage.sh не имеет прав на выполнение. Исправляю..."
         chmod +x "$PROJECT_ROOT/docker/manage.sh"
@@ -96,7 +96,7 @@ check_permissions() {
 
 check_x11() {
     info "Проверка X11 (для GUI)..."
-    
+
     if [ -z "$DISPLAY" ]; then
         warning "DISPLAY не установлен. X11 GUI может не работать."
         info "Для использования GUI установите DISPLAY:"
@@ -127,19 +127,19 @@ main() {
     echo -e "${CYAN}║  🤖 WalkingRobotSim v2.6 - Setup                           ║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    
+
     check_docker
     check_docker_compose
     check_project_structure
     check_permissions
     check_x11
-    
+
     echo ""
     show_system_info
-    
+
     echo ""
     success "✅ Инициализация завершена успешно!"
-    
+
     echo ""
     info "Следующие шаги:"
     echo "  1. Перейти в директорию: cd docker"

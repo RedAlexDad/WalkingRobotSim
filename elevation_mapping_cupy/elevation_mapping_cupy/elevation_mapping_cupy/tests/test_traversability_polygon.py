@@ -14,9 +14,7 @@ class TestGetMaskedTraversability:
         traversability = xp.ones((n, n), dtype=xp.float32) * 0.8
         mask = xp.ones((n, n), dtype=xp.float32)
 
-        masked, masked_isvalid = get_masked_traversability(
-            map_array, mask, traversability
-        )
+        masked, masked_isvalid = get_masked_traversability(map_array, mask, traversability)
         assert masked.shape == (n - 2, n - 2)
         assert masked_isvalid.shape == (n - 2, n - 2)
 

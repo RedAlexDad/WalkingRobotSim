@@ -3,18 +3,18 @@
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
 import math
-import os
 import threading
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
 try:
     from walking_robot_utils.logging import get_logger
+
     _log = get_logger("elevation_mapping.core")
 except ImportError:
     import logging as _logging
+
     _log = _logging.getLogger("elevation_mapping.core")
     _log.addHandler(_logging.StreamHandler())
     _log.setLevel(_logging.INFO)
@@ -26,7 +26,6 @@ from elevation_mapping_cupy.kernels import (
     error_counting_kernel,
     normal_filter_kernel,
     polygon_mask_kernel,
-    sum_kernel,
 )
 from elevation_mapping_cupy.map_initializer import MapInitializer
 from elevation_mapping_cupy.parameter import Parameter
@@ -40,7 +39,7 @@ from elevation_mapping_cupy.traversability_polygon import (
     transform_to_map_position,
 )
 
-from .backend import GPU_AVAILABLE, asnumpy, cp, get_stream, xp
+from .backend import GPU_AVAILABLE, asnumpy, cp, xp
 
 if GPU_AVAILABLE:
     pool = cp.cuda.MemoryPool(cp.cuda.malloc_managed)
@@ -58,17 +57,17 @@ class GridGeometry:
     orientation: np.ndarray
 
     @property
-    def bounds_x(self) -> Tuple[float, float]:
+    def bounds_x(self) -> tuple[float, float]:
         half = self.length_x / 2.0
         return self.center[0] - half, self.center[0] + half
 
     @property
-    def bounds_y(self) -> Tuple[float, float]:
+    def bounds_y(self) -> tuple[float, float]:
         half = self.length_y / 2.0
         return self.center[1] - half, self.center[1] + half
 
     @property
-    def shape(self) -> Tuple[int, int]:
+    def shape(self) -> tuple[int, int]:
         cols = int(round(self.length_x / self.resolution))
         rows = int(round(self.length_y / self.resolution))
         return rows, cols
@@ -469,7 +468,7 @@ class ElevationMap:
     def input_pointcloud(
         self,
         raw_points: np.ndarray,
-        channels: List[str],
+        channels: list[str],
         R: np.ndarray,
         t: np.ndarray,
         position_noise: float,
@@ -931,8 +930,8 @@ class ElevationMap:
                     )
             self.update_upper_bound_with_valid_elevation()
 
-    def list_layers(self) -> List[str]:
-        ordered: List[str] = []
+    def list_layers(self) -> list[str]:
+        ordered: list[str] = []
         for container in (
             self.layer_names,
             getattr(self.plugin_manager, "layer_names", []),
@@ -942,8 +941,8 @@ class ElevationMap:
                     ordered.append(name)
         return ordered
 
-    def export_layers(self, layer_names: List[str]) -> Dict[str, np.ndarray]:
-        exported: Dict[str, np.ndarray] = {}
+    def export_layers(self, layer_names: list[str]) -> dict[str, np.ndarray]:
+        exported: dict[str, np.ndarray] = {}
         buffer = np.zeros((self.cell_n - 2, self.cell_n - 2), dtype=np.float32)
         for name in layer_names:
             if not self.exists_layer(name):
@@ -954,8 +953,8 @@ class ElevationMap:
 
     def apply_masked_replace(
         self,
-        layer_data: Dict[str, np.ndarray],
-        mask: Optional[np.ndarray],
+        layer_data: dict[str, np.ndarray],
+        mask: np.ndarray | None,
         geometry: GridGeometry,
     ) -> None:
         if not layer_data:
@@ -967,7 +966,7 @@ class ElevationMap:
         if mask is not None:
             mask = self._transform_to_elevation_mapping_coordinate_convention(mask)
 
-        sample_shape: Optional[Tuple[int, int]] = None
+        sample_shape: tuple[int, int] | None = None
         for array in layer_data.values():
             if sample_shape is None:
                 sample_shape = array.shape
@@ -1025,18 +1024,21 @@ class ElevationMap:
                 )
                 _log.info(
                     "masked_replace layer '%s': wrote %d cells, X∈[%.2f,%.2f], Y∈[%.2f,%.2f], values %s",
-                    name, written,
-                    map_extent['x_min'], map_extent['x_max'],
-                    map_extent['y_min'], map_extent['y_max'],
-                    str(min_max) if min_max else 'n/a',
+                    name,
+                    written,
+                    map_extent["x_min"],
+                    map_extent["x_max"],
+                    map_extent["y_min"],
+                    map_extent["y_max"],
+                    str(min_max) if min_max else "n/a",
                 )
 
         self._invalidate_caches()
 
     def set_full_map(
         self,
-        fused_layers: Dict[str, np.ndarray],
-        raw_layers: Dict[str, np.ndarray],
+        fused_layers: dict[str, np.ndarray],
+        raw_layers: dict[str, np.ndarray],
         geometry: GridGeometry,
     ) -> None:
         if not raw_layers:
@@ -1085,7 +1087,7 @@ class ElevationMap:
             return self.plugin_manager.layers[idx, 1:-1, 1:-1]
         return None
 
-    def _validate_geometry_against_shape(self, shape: Tuple[int, int], geometry: GridGeometry) -> None:
+    def _validate_geometry_against_shape(self, shape: tuple[int, int], geometry: GridGeometry) -> None:
         expected_shape = geometry.shape
         if shape != expected_shape:
             raise ValueError(f"Grid shape mismatch: expected {expected_shape}, received {shape}.")
@@ -1095,8 +1097,8 @@ class ElevationMap:
             )
 
     def _compute_overlap_indices(
-        self, incoming_shape: Tuple[int, int], geometry: GridGeometry
-    ) -> Optional[Dict[str, Tuple[slice, slice]]]:
+        self, incoming_shape: tuple[int, int], geometry: GridGeometry
+    ) -> dict[str, tuple[slice, slice]] | None:
         map_length = (self.cell_n - 2) * self.resolution
         center_cpu = np.asarray(asnumpy(self.center))
         map_min_x = center_cpu[0] - map_length / 2.0
@@ -1147,7 +1149,7 @@ class ElevationMap:
             ),
         }
 
-    def _map_extent_from_slices(self, rows: slice, cols: slice) -> Dict[str, float]:
+    def _map_extent_from_slices(self, rows: slice, cols: slice) -> dict[str, float]:
         map_length = (self.cell_n - 2) * self.resolution
         center_cpu = np.asarray(asnumpy(self.center))
         map_min_x = center_cpu[0] - map_length / 2.0
@@ -1158,7 +1160,7 @@ class ElevationMap:
         y_max = map_min_y + (rows.stop - 0.5) * self.resolution
         return {"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max}
 
-    def _map_extent_from_mask(self, rows: slice, cols: slice, valid_mask: np.ndarray) -> Optional[Dict[str, float]]:
+    def _map_extent_from_mask(self, rows: slice, cols: slice, valid_mask: np.ndarray) -> dict[str, float] | None:
         """Compute extent based on the actual mask footprint; returns None if mask is empty."""
         if valid_mask is None or not np.any(valid_mask):
             return None

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import rclpy
+from geometry_msgs.msg import Point
 from rclpy.node import Node
 from visualization_msgs.msg import Marker, MarkerArray
-from geometry_msgs.msg import Point
+
 from quadropted_msgs.msg import DetectionArray
 
 
@@ -14,9 +15,7 @@ class DetectionVisualizer(Node):
 
         detection_topic = self.get_parameter("detection_topic").value
         self._pub_markers = self.create_publisher(MarkerArray, "detection_markers", 10)
-        self._sub = self.create_subscription(
-            DetectionArray, detection_topic, self._detections_callback, 10
-        )
+        self._sub = self.create_subscription(DetectionArray, detection_topic, self._detections_callback, 10)
 
     def _detections_callback(self, msg):
         marker_array = MarkerArray()

@@ -16,4 +16,3 @@ This Jazzy branch intentionally keeps the supported feature set small and determ
     ``/elevation_mapping_node/elevation_map``
 
 If you need multi-modal (RGB/semantic) elevation mapping, use a different branch/repository revision.
-

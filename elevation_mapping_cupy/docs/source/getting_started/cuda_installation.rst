@@ -12,4 +12,3 @@ If you want to run natively (not recommended), you need:
 * a matching torch installation (CUDA wheels vary by CUDA/driver)
 
 For most users, using Docker is the simplest path.
-

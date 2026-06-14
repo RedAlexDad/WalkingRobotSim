@@ -20,7 +20,7 @@
           </mesh>
         </geometry>
 
-	<meta> 
+	<meta>
 	    <layer> 3 </layer>
 	</meta>
       </visual>

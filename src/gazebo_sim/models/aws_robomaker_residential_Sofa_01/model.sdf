@@ -8,7 +8,7 @@
       </inertial>
 
       <collision name="collision">
-      
+
         <geometry>
           <mesh>
             <uri>model://aws_robomaker_residential_Sofa_01/meshes/aws_Sofa_01_collision.DAE</uri>

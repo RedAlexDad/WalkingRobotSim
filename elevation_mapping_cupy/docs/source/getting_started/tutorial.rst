@@ -37,4 +37,3 @@ The generic launch file loads ``config/core/core_param.yaml`` and a setup YAML f
 .. code-block:: bash
 
   ros2 launch elevation_mapping_cupy elevation_mapping.launch.py robot_config:=menzi/base.yaml
-

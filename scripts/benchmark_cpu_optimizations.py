@@ -7,8 +7,8 @@ Numba JIT компилирует Python-циклы в машинный код б
 """
 
 import time
+
 import numpy as np
-from scipy.ndimage import minimum_filter, maximum_filter
 from numba import njit
 
 np.random.seed(42)
@@ -117,13 +117,25 @@ def max_filter_numba(h, w, dilation, prev_map, prev_mask):
 # ============================================================
 # 3. error_counting
 # ============================================================
-def error_counting_python(map_, p, center_x, center_y, R, t,
-                          width, height, resolution,
-                          min_valid_distance, max_height_range,
-                          ramped_height_range_a, ramped_height_range_b,
-                          ramped_height_range_c,
-                          mahalanobis_thresh, outlier_variance,
-                          traversability_inlier):
+def error_counting_python(
+    map_,
+    p,
+    center_x,
+    center_y,
+    R,
+    t,
+    width,
+    height,
+    resolution,
+    min_valid_distance,
+    max_height_range,
+    ramped_height_range_a,
+    ramped_height_range_b,
+    ramped_height_range_c,
+    mahalanobis_thresh,
+    outlier_variance,
+    traversability_inlier,
+):
     n_points = p.shape[0]
     Rf = R.ravel()
     tf = t.ravel()
@@ -157,10 +169,12 @@ def error_counting_python(map_, p, center_x, center_y, R, t,
         map_v = map_[1, r, c]
         map_valid = map_[2, r, c]
         map_t = map_[3, r, c]
-        if (map_valid > 0.5
+        if (
+            map_valid > 0.5
             and abs(map_h - z[idx]) < (map_v * mahalanobis_thresh)
             and map_v < outlier_variance / 2.0
-            and map_t > traversability_inlier):
+            and map_t > traversability_inlier
+        ):
             e = z[idx] - map_h
             error_total += e
             error_cnt_total += 1
@@ -173,9 +187,9 @@ def error_counting_python(map_, p, center_x, center_y, R, t,
 
 
 @njit
-def error_counting_numba_inner(map_, rows, cols, z, process_idx,
-                               mahalanobis_thresh, outlier_variance,
-                               traversability_inlier):
+def error_counting_numba_inner(
+    map_, rows, cols, z, process_idx, mahalanobis_thresh, outlier_variance, traversability_inlier
+):
     newmap = np.zeros_like(map_)
     error_total = 0.0
     error_cnt_total = 0
@@ -186,10 +200,12 @@ def error_counting_numba_inner(map_, rows, cols, z, process_idx,
         map_v = map_[1, r, c]
         map_valid = map_[2, r, c]
         map_t = map_[3, r, c]
-        if (map_valid > 0.5
+        if (
+            map_valid > 0.5
             and abs(map_h - z[idx]) < (map_v * mahalanobis_thresh)
             and map_v < outlier_variance / 2.0
-            and map_t > traversability_inlier):
+            and map_t > traversability_inlier
+        ):
             e = z[idx] - map_h
             error_total += e
             error_cnt_total += 1
@@ -308,11 +324,13 @@ def bench(name, fn_py, fn_opt, *args, warmup=3, runs=20):
 
     med_py = np.median(t_py)
     med_opt = np.median(t_opt)
-    speedup = med_py / med_opt if med_opt > 0 else float('inf')
+    speedup = med_py / med_opt if med_opt > 0 else float("inf")
     match = verify(r_py_last, r_opt_last, name)
 
-    print(f"  {name:35s}  Python={med_py*1000:8.2f}ms  opt={med_opt*1000:8.2f}ms  "
-          f"speedup={speedup:5.1f}x  match={match}")
+    print(
+        f"  {name:35s}  Python={med_py * 1000:8.2f}ms  opt={med_opt * 1000:8.2f}ms  "
+        f"speedup={speedup:5.1f}x  match={match}"
+    )
     return med_py, med_opt, speedup, match
 
 
@@ -332,15 +350,11 @@ if __name__ == "__main__":
 
     # 1. min_filter
     print("\n--- 1. min_filter (dilation=5) ---")
-    _, _, spd1, ok1 = bench("_min_filter_cpu (numba)",
-                            min_filter_python, min_filter_numba,
-                            elevation, mask, 5, H, W)
+    _, _, spd1, ok1 = bench("_min_filter_cpu (numba)", min_filter_python, min_filter_numba, elevation, mask, 5, H, W)
 
     # 2. max_filter
     print("\n--- 2. max_filter (dilation=5) ---")
-    _, _, spd2, ok2 = bench("_max_filter_cpu (numba)",
-                            max_filter_python, max_filter_numba,
-                            H, W, 5, elevation, mask)
+    _, _, spd2, ok2 = bench("_max_filter_cpu (numba)", max_filter_python, max_filter_numba, H, W, 5, elevation, mask)
 
     # 3. error_counting
     print("\n--- 3. error_counting (50K points) ---")
@@ -351,13 +365,25 @@ if __name__ == "__main__":
     map_layers = np.zeros((5, H, W), dtype=np.float32)
 
     # Numba version for error_counting: vectorized pre-filter + numba inner loop
-    def error_counting_numba_wrapper(map_, p, center_x, center_y, R, t,
-                                      width, height, resolution,
-                                      min_valid_distance, max_height_range,
-                                      ramped_height_range_a, ramped_height_range_b,
-                                      ramped_height_range_c,
-                                      mahalanobis_thresh, outlier_variance,
-                                      traversability_inlier):
+    def error_counting_numba_wrapper(
+        map_,
+        p,
+        center_x,
+        center_y,
+        R,
+        t,
+        width,
+        height,
+        resolution,
+        min_valid_distance,
+        max_height_range,
+        ramped_height_range_a,
+        ramped_height_range_b,
+        ramped_height_range_c,
+        mahalanobis_thresh,
+        outlier_variance,
+        traversability_inlier,
+    ):
         n_points = p.shape[0]
         Rf = R.ravel()
         tf = t.ravel()
@@ -383,22 +409,48 @@ if __name__ == "__main__":
         process_idx = np.where(process)[0]
 
         newmap, err_tot, err_cnt = error_counting_numba_inner(
-            map_, rows, cols, z, process_idx,
-            mahalanobis_thresh, outlier_variance, traversability_inlier
+            map_, rows, cols, z, process_idx, mahalanobis_thresh, outlier_variance, traversability_inlier
         )
         return newmap, np.array([err_tot]), np.array([err_cnt])
 
-    _, _, spd3, ok3 = bench("error_counting_cpu (numba)",
-                            error_counting_python,
-                            error_counting_numba_wrapper,
-                            map_layers, p, center, center, rotation, t_vec,
-                            W, H, 0.1, 0.3, 3.0, 0.3, 1.0, 0.2, 2.0, 0.01, 0.9)
+    _, _, spd3, ok3 = bench(
+        "error_counting_cpu (numba)",
+        error_counting_python,
+        error_counting_numba_wrapper,
+        map_layers,
+        p,
+        center,
+        center,
+        rotation,
+        t_vec,
+        W,
+        H,
+        0.1,
+        0.3,
+        3.0,
+        0.3,
+        1.0,
+        0.2,
+        2.0,
+        0.01,
+        0.9,
+    )
 
     # 4. base_elevation
     print("\n--- 4. base_elevation ---")
-    _, _, spd4, ok4 = bench("_base_elevation_cpu (numba)",
-                            base_elevation_python, base_elevation_numba,
-                            elevation, mask, rotation, H, W, 0.1, False, 0.0)
+    _, _, spd4, ok4 = bench(
+        "_base_elevation_cpu (numba)",
+        base_elevation_python,
+        base_elevation_numba,
+        elevation,
+        mask,
+        rotation,
+        H,
+        W,
+        0.1,
+        False,
+        0.0,
+    )
 
     # 5. sum_kernel
     print("\n--- 5. semantic sum_kernel (50K points, 3 layers) ---")
@@ -410,9 +462,9 @@ if __name__ == "__main__":
     def sum_kernel_numba_wrapper(p, map_lay, pcl_channels, map_, h, w):
         return sum_kernel_numba(p, map_lay, map_, h, w)
 
-    _, _, spd5, ok5 = bench("sum_kernel_cpu (numba)",
-                            sum_kernel_python, sum_kernel_numba_wrapper,
-                            sem_p, 3, 6, sem_map, H, W)
+    _, _, spd5, ok5 = bench(
+        "sum_kernel_cpu (numba)", sum_kernel_python, sum_kernel_numba_wrapper, sem_p, 3, 6, sem_map, H, W
+    )
 
     # ============================
     print("\n" + "=" * 80)

@@ -39,9 +39,9 @@ def test_supported_configs_are_ros2_clean(path: Path):
         assert token not in text, f"{path} contains banned substitution token: {token}"
 
     # Kill the old typo forever.
-    assert (
-        "drift_compensation_variance_inler" not in text
-    ), f"{path} contains deprecated typo key drift_compensation_variance_inler"
+    assert "drift_compensation_variance_inler" not in text, (
+        f"{path} contains deprecated typo key drift_compensation_variance_inler"
+    )
 
     # Parseable YAML.
     yaml = YAML(typ="safe")
@@ -61,13 +61,9 @@ def test_supported_configs_are_ros2_clean(path: Path):
     for k, v in _walk(data):
         # If someone keeps an old publisher layer list around, it should fail loudly.
         if k in ("layers", "basic_layers") and isinstance(v, list):
-            assert (
-                "rgb" not in v
-            ), f"{path} publishes 'rgb' but semantic/rgb fusion is removed"
+            assert "rgb" not in v, f"{path} publishes 'rgb' but semantic/rgb fusion is removed"
         if k == "data_type":
-            assert (
-                v == "pointcloud"
-            ), f"{path} sets data_type={v!r}; supported surface is pointcloud only"
+            assert v == "pointcloud", f"{path} sets data_type={v!r}; supported surface is pointcloud only"
 
     # Validate subscriber schema for any file that defines subscribers.
     for node_name, node_cfg in data.items():
@@ -81,12 +77,6 @@ def test_supported_configs_are_ros2_clean(path: Path):
             continue
         assert isinstance(subs, dict), f"{path} subscribers must be a dict"
         for sub_name, sub_cfg in subs.items():
-            assert isinstance(
-                sub_cfg, dict
-            ), f"{path} subscriber '{sub_name}' must be a dict"
-            assert (
-                sub_cfg.get("data_type") == "pointcloud"
-            ), f"{path} subscriber '{sub_name}' must be pointcloud"
-            assert sub_cfg.get(
-                "topic_name"
-            ), f"{path} subscriber '{sub_name}' missing topic_name"
+            assert isinstance(sub_cfg, dict), f"{path} subscriber '{sub_name}' must be a dict"
+            assert sub_cfg.get("data_type") == "pointcloud", f"{path} subscriber '{sub_name}' must be pointcloud"
+            assert sub_cfg.get("topic_name"), f"{path} subscriber '{sub_name}' missing topic_name"

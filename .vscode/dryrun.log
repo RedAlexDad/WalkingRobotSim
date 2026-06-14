@@ -90,4 +90,3 @@ printf "  Gazebo Harmonic\n"
 printf "  Docker + Docker Compose\n"
 echo ""
 make: Leaving directory '/home/redalexdad/GitHub/WalkingRobotSim'
- 

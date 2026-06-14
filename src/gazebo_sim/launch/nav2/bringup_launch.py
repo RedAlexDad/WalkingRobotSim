@@ -24,7 +24,7 @@ from launch.actions import (
 )
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression, TextSubstitution
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import PushRosNamespace
 
 
@@ -45,13 +45,9 @@ def generate_launch_description():
     params_file = LaunchConfiguration("params_file")
     autostart = LaunchConfiguration("autostart")
 
-    stdout_linebuf_envvar = SetEnvironmentVariable(
-        "RCUTILS_LOGGING_BUFFERED_STREAM", "1"
-    )
+    stdout_linebuf_envvar = SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1")
 
-    declare_namespace_cmd = DeclareLaunchArgument(
-        "namespace", default_value="", description="Top-level namespace"
-    )
+    declare_namespace_cmd = DeclareLaunchArgument("namespace", default_value="", description="Top-level namespace")
 
     declare_use_namespace_cmd = DeclareLaunchArgument(
         "use_namespace",
@@ -59,13 +55,9 @@ def generate_launch_description():
         description="Whether to apply a namespace to the navigation stack",
     )
 
-    declare_slam_cmd = DeclareLaunchArgument(
-        "slam", default_value="False", description="Whether run a SLAM"
-    )
+    declare_slam_cmd = DeclareLaunchArgument("slam", default_value="False", description="Whether run a SLAM")
 
-    declare_map_yaml_cmd = DeclareLaunchArgument(
-        "map", description="Full path to map yaml file to load"
-    )
+    declare_map_yaml_cmd = DeclareLaunchArgument("map", description="Full path to map yaml file to load")
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         "use_sim_time",
@@ -107,9 +99,7 @@ def generate_launch_description():
         [
             PushRosNamespace(condition=IfCondition(use_namespace), namespace=namespace),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(robot_launch_dir, "slam_launch.py")
-                ),
+                PythonLaunchDescriptionSource(os.path.join(robot_launch_dir, "slam_launch.py")),
                 condition=IfCondition(slam),
                 launch_arguments={
                     "namespace": namespace,
@@ -119,9 +109,7 @@ def generate_launch_description():
                 }.items(),
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(robot_launch_dir, "localization_launch.py")
-                ),
+                PythonLaunchDescriptionSource(os.path.join(robot_launch_dir, "localization_launch.py")),
                 condition=IfCondition(PythonExpression(["not ", slam])),
                 launch_arguments={
                     "namespace": namespace,
@@ -133,9 +121,7 @@ def generate_launch_description():
                 }.items(),
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(robot_launch_dir, "navigation_launch.py")
-                ),
+                PythonLaunchDescriptionSource(os.path.join(robot_launch_dir, "navigation_launch.py")),
                 launch_arguments={
                     "namespace": namespace,
                     "use_sim_time": use_sim_time,

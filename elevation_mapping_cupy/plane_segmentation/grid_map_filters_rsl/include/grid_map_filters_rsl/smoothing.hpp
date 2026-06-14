@@ -23,8 +23,8 @@ namespace smoothing {
  * @param deltaKernelSize   kernel size is increased by this value, if numberOfRepeats > 1
  * @param numberOfRepeats   number of sequentially applied median filters (approaches to gaussian blurring if increased)
  */
-void median(grid_map::GridMap& map, const std::string& layerIn, const std::string& layerOut, int kernelSize, int deltaKernelSize = 2,
-            int numberOfRepeats = 1);
+void median(grid_map::GridMap& map, const std::string& layerIn, const std::string& layerOut, int kernelSize,
+            int deltaKernelSize = 2, int numberOfRepeats = 1);
 
 /**
  * @brief Sequential box blur filter (open cv-function). In-place operation (layerIn = layerOut) is supported.
@@ -32,9 +32,11 @@ void median(grid_map::GridMap& map, const std::string& layerIn, const std::strin
  * @param layerIn           reference layer (filter is applied wrt this layer)
  * @param layerOut          output layer (filtered map is written into this layer)
  * @param kernelSize        size of the smoothing window (should be an odd number, otherwise, introduces offset)
- * @param numberOfRepeats   number of sequentially applied blurring filters (approaches to gaussian blurring if increased)
+ * @param numberOfRepeats   number of sequentially applied blurring filters (approaches to gaussian blurring if
+ * increased)
  */
-void boxBlur(grid_map::GridMap& map, const std::string& layerIn, const std::string& layerOut, int kernelSize, int numberOfRepeats = 1);
+void boxBlur(grid_map::GridMap& map, const std::string& layerIn, const std::string& layerOut, int kernelSize,
+             int numberOfRepeats = 1);
 
 /**
  * @brief Gaussian blur filter (open cv-function). In-place operation (layerIn = layerOut) is supported.
@@ -44,7 +46,8 @@ void boxBlur(grid_map::GridMap& map, const std::string& layerIn, const std::stri
  * @param kernelSize        size of the smoothing window (should be an odd number, otherwise, introduces offset)
  * @param sigma             variance
  */
-void gaussianBlur(grid_map::GridMap& map, const std::string& layerIn, const std::string& layerOut, int kernelSize, double sigma);
+void gaussianBlur(grid_map::GridMap& map, const std::string& layerIn, const std::string& layerOut, int kernelSize,
+                  double sigma);
 
 }  // namespace smoothing
 }  // namespace grid_map

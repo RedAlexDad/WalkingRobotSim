@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import time
+
 import numpy as np
 import rclpy
 from rclpy.node import Node
@@ -79,9 +80,7 @@ class GroundSegmenter(Node):
         self._pub_ground = self.create_publisher(PointCloud2, ground_topic, 10)
         self._pub_obstacle = self.create_publisher(PointCloud2, obstacle_topic, 10)
 
-        self.get_logger().info(
-            f"Ground segmenter ready: {input_topic} -> {ground_topic}, {obstacle_topic}"
-        )
+        self.get_logger().info(f"Ground segmenter ready: {input_topic} -> {ground_topic}, {obstacle_topic}")
 
     def _estimate_plane(self, points):
         center = points.mean(axis=0)
@@ -142,9 +141,7 @@ class GroundSegmenter(Node):
 
         elapsed = time.monotonic() - t0
         if elapsed > 0.05:
-            self.get_logger().info(
-                f"Processed {len(points)} pts in {elapsed*1000:.0f}ms",
-                throttle_duration=5.0)
+            self.get_logger().info(f"Processed {len(points)} pts in {elapsed * 1000:.0f}ms", throttle_duration=5.0)
         self._processing = False
 
 

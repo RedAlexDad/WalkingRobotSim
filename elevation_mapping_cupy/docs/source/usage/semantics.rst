@@ -11,4 +11,3 @@ Supported surface:
 * GridMap output only
 
 If you need multi-modal elevation mapping (RGB/semantic layers), use a different branch/revision.
-

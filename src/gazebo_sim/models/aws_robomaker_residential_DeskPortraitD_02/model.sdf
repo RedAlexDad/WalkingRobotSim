@@ -5,7 +5,7 @@
       <inertial>
         <mass>0.4</mass>
           <inertia>
-          <!-- 
+          <!--
             <ixx>0.02</ixx>
             <ixy>0</ixy>
             <ixz>0</ixz>
@@ -57,7 +57,7 @@
 
       </collision>
 
-      
+
       <visual name="visual">
 	    <geometry>
           <mesh>

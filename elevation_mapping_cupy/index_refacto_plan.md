@@ -250,4 +250,3 @@ At each step, verify:
 - Axis‑swap tests for `shift_map_xy` still pass.
 - Masked replace integration still writes to the correct cells.
 - Save→load→compare is an identity operation on internal layers.
-

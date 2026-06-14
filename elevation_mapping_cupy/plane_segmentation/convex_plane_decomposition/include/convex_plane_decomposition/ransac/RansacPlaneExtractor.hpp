@@ -1,13 +1,12 @@
 #pragma once
 
-#include <vector>
-
-#include <Eigen/Core>
-
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Point_with_normal_3.h>
 #include <CGAL/Shape_detection/Efficient_RANSAC.h>
 #include <CGAL/property_map.h>
+
+#include <Eigen/Core>
+#include <vector>
 
 #include "RansacPlaneExtractorParameters.h"
 
@@ -29,25 +28,25 @@ using Plane = CGAL::Shape_detection::Plane<Traits>;
 using Shape = CGAL::Shape_detection::Shape_base<Traits>;
 
 class RansacPlaneExtractor {
- public:
-  RansacPlaneExtractor(const RansacPlaneExtractorParameters& parameters);
+  public:
+    RansacPlaneExtractor(const RansacPlaneExtractorParameters& parameters);
 
-  void setParameters(const RansacPlaneExtractorParameters& parameters);
+    void setParameters(const RansacPlaneExtractorParameters& parameters);
 
-  void detectPlanes(std::vector<PointWithNormal>& points_with_normal);
+    void detectPlanes(std::vector<PointWithNormal>& points_with_normal);
 
-  /// Return {plane normal, support vector} for the detected shape
-  static std::pair<Eigen::Vector3d, Eigen::Vector3d> getPlaneParameters(Shape* shapePtr);
+    /// Return {plane normal, support vector} for the detected shape
+    static std::pair<Eigen::Vector3d, Eigen::Vector3d> getPlaneParameters(Shape* shapePtr);
 
-  /// Returns an iterator range. Data is still in the ransac_object
-  EfficientRansac::Shape_range getDetectedPlanes() const { return ransac_.shapes(); };
+    /// Returns an iterator range. Data is still in the ransac_object
+    EfficientRansac::Shape_range getDetectedPlanes() const { return ransac_.shapes(); };
 
-  /// Returns an iterator range. Data is still in the ransac_object
-  EfficientRansac::Point_index_range getUnassignedPointIndices() { return ransac_.indices_of_unassigned_points(); }
+    /// Returns an iterator range. Data is still in the ransac_object
+    EfficientRansac::Point_index_range getUnassignedPointIndices() { return ransac_.indices_of_unassigned_points(); }
 
- private:
-  EfficientRansac ransac_;
-  EfficientRansac::Parameters cgalRansacParameters_;
+  private:
+    EfficientRansac ransac_;
+    EfficientRansac::Parameters cgalRansacParameters_;
 };
 
 }  // namespace ransac_plane_extractor

@@ -22,7 +22,7 @@
       <meta> <layer> 2 </layer></meta>
 </visual>
     </link>
-    
+
     <static>1</static>
   </model>
 </sdf>

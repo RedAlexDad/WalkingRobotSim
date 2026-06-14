@@ -5,7 +5,7 @@
       <inertial>
         <mass>100</mass>
       </inertial>
-      
+
       <collision name="collision">
         <geometry>
           <mesh>
@@ -23,7 +23,7 @@
           </friction>
         </surface>
       </collision>
-      
+
       <visual name="visual">
 	    <geometry>
           <mesh>

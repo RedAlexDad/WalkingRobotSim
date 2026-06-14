@@ -9,17 +9,13 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 from math import ceil
-from typing import Dict, Optional
 
 import numpy as np
-
 import rclpy
-from rclpy.node import Node
-
 from grid_map_msgs.msg import GridMap
 from grid_map_msgs.srv import SetGridMap
-from std_msgs.msg import Float32MultiArray
-from std_msgs.msg import MultiArrayLayout, MultiArrayDimension
+from rclpy.node import Node
+from std_msgs.msg import Float32MultiArray, MultiArrayDimension, MultiArrayLayout
 
 
 def positive_float(value: str) -> float:
@@ -50,32 +46,41 @@ def build_parser() -> argparse.ArgumentParser:
         "--full-length-x",
         type=positive_float,
         default=None,
-        help="Optional total GridMap length in X (meters). If set, a full-size map is sent and only the patch region is marked in the mask."
+        help="Optional total GridMap length in X (meters). If set, a full-size map is sent and only the patch region is marked in the mask.",
     )
     parser.add_argument(
         "--full-length-y",
         type=positive_float,
         default=None,
-        help="Optional total GridMap length in Y (meters). If set, a full-size map is sent and only the patch region is marked in the mask."
+        help="Optional total GridMap length in Y (meters). If set, a full-size map is sent and only the patch region is marked in the mask.",
     )
     parser.add_argument(
         "--full-center-x",
         type=float,
         default=0.0,
-        help="GridMap center X (meters) to use when sending a full-size map. Defaults to 0."
+        help="GridMap center X (meters) to use when sending a full-size map. Defaults to 0.",
     )
     parser.add_argument(
         "--full-center-y",
         type=float,
         default=0.0,
-        help="GridMap center Y (meters) to use when sending a full-size map. Defaults to 0."
+        help="GridMap center Y (meters) to use when sending a full-size map. Defaults to 0.",
     )
     parser.add_argument("--resolution", type=positive_float, default=0.1, help="Grid resolution (meters per cell).")
     parser.add_argument("--elevation", type=float, default=0.1, help="Elevation value to set (meters).")
     parser.add_argument("--variance", type=non_negative_float, default=0.05, help="Variance value to set.")
-    parser.add_argument("--mask-value", type=float, default=1.0, help="Mask value applied over the patch (NaN keeps cells untouched).")
-    parser.add_argument("--valid-layer", dest="valid_layer", action="store_true", help="Also set the 'is_valid' layer to 1.0 in the patch region (default).")
-    parser.add_argument("--no-valid-layer", dest="valid_layer", action="store_false", help="Do not modify the 'is_valid' layer.")
+    parser.add_argument(
+        "--mask-value", type=float, default=1.0, help="Mask value applied over the patch (NaN keeps cells untouched)."
+    )
+    parser.add_argument(
+        "--valid-layer",
+        dest="valid_layer",
+        action="store_true",
+        help="Also set the 'is_valid' layer to 1.0 in the patch region (default).",
+    )
+    parser.add_argument(
+        "--no-valid-layer", dest="valid_layer", action="store_false", help="Do not modify the 'is_valid' layer."
+    )
     parser.add_argument(
         "--invalidate-first",
         dest="invalidate_first",
@@ -108,13 +113,13 @@ class PatchConfig:
     mask_value: float
     add_valid_layer: bool
     invalidate_first: bool
-    full_length_x: Optional[float] = None
-    full_length_y: Optional[float] = None
+    full_length_x: float | None = None
+    full_length_y: float | None = None
     full_center_x: float = 0.0
     full_center_y: float = 0.0
 
     @property
-    def shape(self) -> Dict[str, int]:
+    def shape(self) -> dict[str, int]:
         cols = max(1, ceil(self.length_x / self.resolution))
         rows = max(1, ceil(self.length_y / self.resolution))
         return {"rows": rows, "cols": cols}
@@ -183,7 +188,7 @@ class MaskedReplaceClient(Node):
         gm.basic_layers = ["elevation"]
         return gm
 
-    def _mask_array(self, force_value: Optional[float] = None) -> np.ndarray:
+    def _mask_array(self, force_value: float | None = None) -> np.ndarray:
         cfg = self._config
         rows = cfg.shape["rows"]
         cols = cfg.shape["cols"]
@@ -192,7 +197,7 @@ class MaskedReplaceClient(Node):
             mask_value = 1.0
         return np.full((rows, cols), mask_value, dtype=np.float32)
 
-    def _make_full_arrays(self) -> Dict[str, np.ndarray]:
+    def _make_full_arrays(self) -> dict[str, np.ndarray]:
         """Create full-size arrays (possibly larger than the patch) and place the patch in them."""
         cfg = self._config
         length_x = cfg.full_length_x or cfg.length_x
@@ -262,7 +267,7 @@ class MaskedReplaceClient(Node):
             gm.data.append(self._numpy_to_multiarray(arrays[layer]))
         return gm
 
-    def _build_data_message(self, valid_value: Optional[float]) -> GridMap:
+    def _build_data_message(self, valid_value: float | None) -> GridMap:
         gm = self._base_grid_map()
         cfg = self._config
         if cfg.full_length_x or cfg.full_length_y:

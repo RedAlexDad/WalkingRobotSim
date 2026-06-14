@@ -19,8 +19,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import LoadComposableNodes, Node
-from launch_ros.descriptions import ComposableNode
+from launch_ros.actions import Node
 from nav2_common.launch import RewrittenYaml
 
 
@@ -60,17 +59,11 @@ def generate_launch_description():
         convert_types=True,
     )
 
-    stdout_linebuf_envvar = SetEnvironmentVariable(
-        "RCUTILS_LOGGING_BUFFERED_STREAM", "1"
-    )
+    stdout_linebuf_envvar = SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1")
 
-    declare_namespace_cmd = DeclareLaunchArgument(
-        "namespace", default_value="", description="Top-level namespace"
-    )
+    declare_namespace_cmd = DeclareLaunchArgument("namespace", default_value="", description="Top-level namespace")
 
-    declare_map_yaml_cmd = DeclareLaunchArgument(
-        "map", description="Full path to map yaml file to load"
-    )
+    declare_map_yaml_cmd = DeclareLaunchArgument("map", description="Full path to map yaml file to load")
 
     declare_map_server_cmd = DeclareLaunchArgument(
         "map_server",
@@ -114,9 +107,7 @@ def generate_launch_description():
         description="Whether to respawn if a node crashes. Applied when composition is disabled.",
     )
 
-    declare_log_level_cmd = DeclareLaunchArgument(
-        "log_level", default_value="info", description="log level"
-    )
+    declare_log_level_cmd = DeclareLaunchArgument("log_level", default_value="info", description="log level")
 
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(["not ", use_composition])),

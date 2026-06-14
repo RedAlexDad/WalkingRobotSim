@@ -3,21 +3,17 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import Command, FindExecutable, PathJoinSubstitution
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
     # Paths to files and directories
-    go1_description_pkg = get_package_share_directory('go1_gazebo')
-    xacro_path = os.path.join(go1_description_pkg, 'urdf', 'go1.urdf.xacro')
+    go1_description_pkg = get_package_share_directory("go1_gazebo")
+    xacro_path = os.path.join(go1_description_pkg, "urdf", "go1.urdf.xacro")
 
     # Declare launch arguments
-    user_debug_arg = DeclareLaunchArgument(
-        'user_debug',
-        default_value='false',
-        description='Enable debug mode'
-    )
+    user_debug_arg = DeclareLaunchArgument("user_debug", default_value="false", description="Enable debug mode")
 
     # Command to convert xacro to robot_description
     robot_description_content = Command([PathJoinSubstitution([FindExecutable(name="xacro")]), " ", xacro_path])
@@ -41,10 +37,10 @@ def generate_launch_description():
 
     # Node for controlling the robot (C++)
     controller = Node(
-        package='quadropted_controller_cpp',
-        executable='robot_controller_node',
-        name='robot_controller_cpp',
-        output='screen',
+        package="quadropted_controller_cpp",
+        executable="robot_controller_node",
+        name="robot_controller_cpp",
+        output="screen",
     )
 
     # IMU bridge node
@@ -53,54 +49,50 @@ def generate_launch_description():
         executable="parameter_bridge",
         name="ign_imu",
         arguments=["/imu_plugin/out@sensor_msgs/msg/Imu@ignition.msgs.IMU"],
-        output='screen',
+        output="screen",
     )
 
     # Command velocity publisher (C++)
     cmd_vel_pub = Node(
-        package='quadropted_controller_cpp',
-        executable='cmd_vel_pub',
-        name='cmd_vel_pub_cpp',
-        output='screen',
+        package="quadropted_controller_cpp",
+        executable="cmd_vel_pub",
+        name="cmd_vel_pub_cpp",
+        output="screen",
     )
 
     # Launch description
-    return LaunchDescription([
-        # Declare user_debug argument
-        user_debug_arg,
-
-        # Robot description (xacro with optional debug)
-        Node(
-            package="robot_state_publisher",
-            executable="robot_state_publisher",
-            output="both",
-            parameters=[robot_description],
-        ),
-
-        # Joint state publisher GUI
-        Node(
-            package='joint_state_publisher_gui',
-            executable='joint_state_publisher_gui',
-            name='joint_state_publisher_gui',
-            parameters=[{'use_gui': True}],
-            output='screen'
-        ),
-
-        # Rviz node
-        Node(
-            package='rviz2',
-            executable='rviz2',
-            name='rviz2',
-            output='screen',
-            arguments=[
-                '-d', os.path.join(go1_description_pkg, 'config', 'check_joint.rviz')
-            ]
-        ),
-
-        # Controllers and other nodes
-        spawn_controller,
-        controller,
-        imu_bridge,
-        cmd_vel_pub,
-        joint_state_broadcaster_spawner
-    ])
+    return LaunchDescription(
+        [
+            # Declare user_debug argument
+            user_debug_arg,
+            # Robot description (xacro with optional debug)
+            Node(
+                package="robot_state_publisher",
+                executable="robot_state_publisher",
+                output="both",
+                parameters=[robot_description],
+            ),
+            # Joint state publisher GUI
+            Node(
+                package="joint_state_publisher_gui",
+                executable="joint_state_publisher_gui",
+                name="joint_state_publisher_gui",
+                parameters=[{"use_gui": True}],
+                output="screen",
+            ),
+            # Rviz node
+            Node(
+                package="rviz2",
+                executable="rviz2",
+                name="rviz2",
+                output="screen",
+                arguments=["-d", os.path.join(go1_description_pkg, "config", "check_joint.rviz")],
+            ),
+            # Controllers and other nodes
+            spawn_controller,
+            controller,
+            imu_bridge,
+            cmd_vel_pub,
+            joint_state_broadcaster_spawner,
+        ]
+    )

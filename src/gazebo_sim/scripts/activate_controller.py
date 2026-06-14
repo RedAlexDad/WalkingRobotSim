@@ -10,12 +10,8 @@ class ControllerActivator(Node):
         self.log = self.get_logger()
         self._activated = False
 
-        self._list_cli = self.create_client(
-            ListControllers, "/robot1/controller_manager/list_controllers"
-        )
-        self._switch_cli = self.create_client(
-            SwitchController, "/robot1/controller_manager/switch_controller"
-        )
+        self._list_cli = self.create_client(ListControllers, "/robot1/controller_manager/list_controllers")
+        self._switch_cli = self.create_client(SwitchController, "/robot1/controller_manager/switch_controller")
 
     def activate(self) -> bool:
         if not self._wait_for_controller_manager():
@@ -40,10 +36,7 @@ class ControllerActivator(Node):
             states = {c.name: c.state for c in ctrl_list}
             self.log.info(f"Controllers: {states}")
 
-            if (
-                "joint_group_controller" in names
-                and states["joint_group_controller"] == "inactive"
-            ):
+            if "joint_group_controller" in names and states["joint_group_controller"] == "inactive":
                 req = SwitchController.Request()
                 req.activate_controllers = ["joint_group_controller"]
                 req.strictness = 1
@@ -52,16 +45,11 @@ class ControllerActivator(Node):
                 fut = self._switch_cli.call_async(req)
                 rclpy.spin_until_future_complete(self, fut)
                 res = fut.result()
-                self.log.info(
-                    f"Activation attempt {attempt + 1}: ok={res.ok} msg={res.message}"
-                )
+                self.log.info(f"Activation attempt {attempt + 1}: ok={res.ok} msg={res.message}")
                 if res.ok:
                     self._activated = True
                     return True
-            elif (
-                "joint_group_controller" in names
-                and states["joint_group_controller"] == "active"
-            ):
+            elif "joint_group_controller" in names and states["joint_group_controller"] == "active":
                 self._activated = True
                 return True
 

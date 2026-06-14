@@ -6,7 +6,6 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import LaserScan, PointCloud2, PointField
-from std_msgs.msg import Header
 
 
 class LaserToPointCloud(Node):
@@ -25,13 +24,9 @@ class LaserToPointCloud(Node):
         self.v_angle_max = self.get_parameter("vertical_angle_max").value
         self.range_max = self.get_parameter("range_max").value
 
-        self.sub = self.create_subscription(
-            LaserScan, self.get_parameter("input_scan").value, self.scan_callback, 10
-        )
+        self.sub = self.create_subscription(LaserScan, self.get_parameter("input_scan").value, self.scan_callback, 10)
 
-        self.pub = self.create_publisher(
-            PointCloud2, self.get_parameter("output_cloud").value, 10
-        )
+        self.pub = self.create_publisher(PointCloud2, self.get_parameter("output_cloud").value, 10)
 
         self._scan_count = 0
         self.get_logger().info(
@@ -53,9 +48,7 @@ class LaserToPointCloud(Node):
 
         points = []
         for vi in range(self.v_samples):
-            v_angle = self.v_angle_min + vi * (
-                self.v_angle_max - self.v_angle_min
-            ) / max(self.v_samples - 1, 1)
+            v_angle = self.v_angle_min + vi * (self.v_angle_max - self.v_angle_min) / max(self.v_samples - 1, 1)
             for hi in range(h_samples):
                 idx = vi * h_samples + hi
                 if idx >= len(msg.ranges):

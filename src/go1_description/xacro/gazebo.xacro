@@ -220,7 +220,7 @@
             <hardware>
                 <plugin>gz_ros2_control/GazeboSimSystem</plugin>
             </hardware>
-            
+
             <joint name="FL_hip_joint">
             <command_interface name="position"/>
 
@@ -242,7 +242,7 @@
             <state_interface name="velocity"/>
             <state_interface name="effort"/>
             </joint>
-            
+
             <joint name="FR_hip_joint">
             <command_interface name="position"/>
 
@@ -265,7 +265,7 @@
             <state_interface name="effort"/>
             </joint>
 
-            
+
             <joint name="RL_hip_joint">
             <command_interface name="position"/>
 
@@ -288,7 +288,7 @@
             <state_interface name="effort"/>
             </joint>
 
-            
+
             <joint name="RR_hip_joint">
             <command_interface name="position"/>
 
@@ -385,10 +385,10 @@
                 <imageTopicName>rgb/imageRaw_left</imageTopicName>
                 <depthImageTopicName>depth/imageRaw_left</depthImageTopicName>
                 <pointCloudTopicName>depth/points_left</pointCloudTopicName>
-                <cameraInfoTopicName>rgb/cameraInfo_left</cameraInfoTopicName>              
-                <depthImageCameraInfoTopicName>depth/cameraInfo_left</depthImageCameraInfoTopicName>            
-                <pointCloudCutoff>0.1</pointCloudCutoff>                
-                <pointCloudCutoffMax>1.5</pointCloudCutoffMax>                
+                <cameraInfoTopicName>rgb/cameraInfo_left</cameraInfoTopicName>
+                <depthImageCameraInfoTopicName>depth/cameraInfo_left</depthImageCameraInfoTopicName>
+                <pointCloudCutoff>0.1</pointCloudCutoff>
+                <pointCloudCutoffMax>1.5</pointCloudCutoffMax>
                 <distortionK1>0.0</distortionK1>
                 <distortionK2>0.0</distortionK2>
                 <distortionK3>0.0</distortionK3>
@@ -429,10 +429,10 @@
                     <imageTopicName>rgb/imageRaw_left</imageTopicName>
                     <depthImageTopicName>depth/imageRaw_left</depthImageTopicName>
                     <pointCloudTopicName>depth/points_left</pointCloudTopicName>
-                    <cameraInfoTopicName>rgb/cameraInfo_left</cameraInfoTopicName>              
-                    <depthImageCameraInfoTopicName>depth/cameraInfo_left</depthImageCameraInfoTopicName>            
-                    <pointCloudCutoff>0.1</pointCloudCutoff>                
-                    <pointCloudCutoffMax>1.5</pointCloudCutoffMax>                
+                    <cameraInfoTopicName>rgb/cameraInfo_left</cameraInfoTopicName>
+                    <depthImageCameraInfoTopicName>depth/cameraInfo_left</depthImageCameraInfoTopicName>
+                    <pointCloudCutoff>0.1</pointCloudCutoff>
+                    <pointCloudCutoffMax>1.5</pointCloudCutoffMax>
                     <distortionK1>0.0</distortionK1>
                     <distortionK2>0.0</distortionK2>
                     <distortionK3>0.0</distortionK3>

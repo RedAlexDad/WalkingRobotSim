@@ -1,9 +1,9 @@
 from pathlib import Path
 
 import numpy as np
-from elevation_mapping_cupy.elevation_mapping import GridGeometry
 
 from elevation_mapping_cupy import elevation_mapping, parameter
+from elevation_mapping_cupy.elevation_mapping import GridGeometry
 
 
 def make_map(resolution=0.2, length=1.0):

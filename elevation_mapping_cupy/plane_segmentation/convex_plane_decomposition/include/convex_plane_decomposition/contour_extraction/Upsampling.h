@@ -19,8 +19,9 @@ namespace contour_extraction {
 cv::Mat upSample(const cv::Mat& image);
 
 /**
- * Upsamples a segmented terrain such that the resulting terrain has 1/3 of the input resolution. (Each cell is split into 9 cells)
- * This specific upsampling ratio makes it possible to keep labels in their exact original location in world frame.
+ * Upsamples a segmented terrain such that the resulting terrain has 1/3 of the input resolution. (Each cell is split
+ * into 9 cells) This specific upsampling ratio makes it possible to keep labels in their exact original location in
+ * world frame.
  *
  * @param mapIn : source terrain
  * @return upsampled terrain

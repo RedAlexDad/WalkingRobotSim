@@ -1,32 +1,32 @@
 #!/usr/bin/env python3
 # pyright: reportAttributeAccessIssue=false, reportOptionalMemberAccess=false
 
-import rclpy
-from rclpy.node import Node
-from rclpy.executors import SingleThreadedExecutor
-from rclpy.action import ActionClient
-from geometry_msgs.msg import PoseStamped, PoseArray, Pose
-from visualization_msgs.msg import Marker, MarkerArray
-from nav2_msgs.action import FollowWaypoints
-from nav2_simple_commander.robot_navigator import BasicNavigator
-from std_msgs.msg import ColorRGBA
-from std_srvs.srv import Trigger
-from quadropted_msgs.srv import WaypointNavigate, LoadWaypoints, GetWaypoints
-from quadropted_msgs.msg import Waypoint
-from action_msgs.msg import GoalStatus
-import threading
 import json
 import math
 import os
+import threading
+
+import rclpy
 import yaml
+from action_msgs.msg import GoalStatus
+from geometry_msgs.msg import Pose, PoseArray, PoseStamped
+from nav2_msgs.action import FollowWaypoints
+from nav2_simple_commander.robot_navigator import BasicNavigator
+from rclpy.action import ActionClient
+from rclpy.executors import SingleThreadedExecutor
+from rclpy.node import Node
+from std_msgs.msg import ColorRGBA
+from std_srvs.srv import Trigger
+from visualization_msgs.msg import Marker, MarkerArray
+
+from quadropted_msgs.msg import Waypoint
+from quadropted_msgs.srv import GetWaypoints, LoadWaypoints, WaypointNavigate
 
 
 def _get_waypoints_dir():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     candidates = [
-        os.path.join(
-            script_dir, "..", "..", "share", "gazebo_sim", "config", "waypoints"
-        ),
+        os.path.join(script_dir, "..", "..", "share", "gazebo_sim", "config", "waypoints"),
         os.path.join(script_dir, "..", "config", "waypoints"),
     ]
     candidate = None
@@ -65,25 +65,15 @@ class WaypointCollector(Node):
         self._resume_index = 0
         self._resume_offset = 0
 
-        self.subscription = self.create_subscription(
-            PoseStamped, "/custom_goal_pose", self.goal_pose_callback, 10
-        )
+        self.subscription = self.create_subscription(PoseStamped, "/custom_goal_pose", self.goal_pose_callback, 10)
 
-        self.waypoint_publisher = self.create_publisher(
-            PoseArray, "/custom_waypoints", 10
-        )
+        self.waypoint_publisher = self.create_publisher(PoseArray, "/custom_waypoints", 10)
 
-        self.marker_publisher = self.create_publisher(
-            MarkerArray, "/waypoint_markers", 10
-        )
+        self.marker_publisher = self.create_publisher(MarkerArray, "/waypoint_markers", 10)
 
-        self.clear_service = self.create_service(
-            Trigger, "/clear_waypoints", self.clear_waypoints_callback
-        )
+        self.clear_service = self.create_service(Trigger, "/clear_waypoints", self.clear_waypoints_callback)
 
-        self.start_service = self.create_service(
-            Trigger, "/start_navigation", self.start_navigation_callback
-        )
+        self.start_service = self.create_service(Trigger, "/start_navigation", self.start_navigation_callback)
 
         self.navigate_service = self.create_service(
             WaypointNavigate,
@@ -91,21 +81,13 @@ class WaypointCollector(Node):
             self.navigate_to_waypoint_callback,
         )
 
-        self.stop_service = self.create_service(
-            Trigger, "/stop_navigation", self.stop_navigation_callback
-        )
+        self.stop_service = self.create_service(Trigger, "/stop_navigation", self.stop_navigation_callback)
 
-        self.resume_service = self.create_service(
-            Trigger, "/resume_navigation", self.resume_navigation_callback
-        )
+        self.resume_service = self.create_service(Trigger, "/resume_navigation", self.resume_navigation_callback)
 
-        self.load_service = self.create_service(
-            LoadWaypoints, "/load_waypoints", self.load_waypoints_callback
-        )
+        self.load_service = self.create_service(LoadWaypoints, "/load_waypoints", self.load_waypoints_callback)
 
-        self.get_service = self.create_service(
-            GetWaypoints, "/get_waypoints", self.get_waypoints_callback
-        )
+        self.get_service = self.create_service(GetWaypoints, "/get_waypoints", self.get_waypoints_callback)
 
         self.timer = self.create_timer(0.1, self.check_navigation)
 
@@ -165,9 +147,7 @@ class WaypointCollector(Node):
             marker_array.markers.append(text_marker)
 
         self.marker_publisher.publish(marker_array)
-        self.get_logger().info(
-            f"Published {len(self.waypoints)} markers to /waypoint_markers"
-        )
+        self.get_logger().info(f"Published {len(self.waypoints)} markers to /waypoint_markers")
 
         pose_array = PoseArray()
         pose_array.header.frame_id = "map"
@@ -180,7 +160,7 @@ class WaypointCollector(Node):
             if self.navigation_active:
                 self.cancel_navigation()
         except Exception as e:
-            self.get_logger().error(f"Failed to cancel navigation task: {str(e)}")
+            self.get_logger().error(f"Failed to cancel navigation task: {e!s}")
 
         self.waypoints = []
         self.navigation_active = False
@@ -237,10 +217,10 @@ class WaypointCollector(Node):
                     ext = ".json"
         try:
             if ext in (".yaml", ".yml"):
-                with open(file_path, "r") as f:
+                with open(file_path) as f:
                     data = yaml.safe_load(f)
             else:
-                with open(file_path, "r") as f:
+                with open(file_path) as f:
                     data = json.load(f)
         except Exception as e:
             self.get_logger().error(f"Failed to read file {file_path}: {e}")
@@ -278,9 +258,7 @@ class WaypointCollector(Node):
             stamped.pose = pose
             self.waypoints.append(stamped)
 
-        self.get_logger().info(
-            f"Loaded {len(self.waypoints)} waypoints from {file_path}"
-        )
+        self.get_logger().info(f"Loaded {len(self.waypoints)} waypoints from {file_path}")
         self.publish_markers()
         response.success = True
         response.message = f"Loaded {len(self.waypoints)} waypoints from {file_path}"
@@ -328,24 +306,20 @@ class WaypointCollector(Node):
             pose_array.header.stamp = self.get_clock().now().to_msg()
             pose_array.poses = [wp.pose for wp in self.waypoints]
             self.waypoint_publisher.publish(pose_array)
-            self.get_logger().info(
-                f"Published {len(self.waypoints)} waypoints to /custom_waypoints"
-            )
+            self.get_logger().info(f"Published {len(self.waypoints)} waypoints to /custom_waypoints")
 
             self.navigation_active = True
             self._resume_index = 0
             self._resume_offset = 0
             self._send_goal_async(self.waypoints)
-            self.get_logger().info(
-                f"Sent {len(self.waypoints)} waypoints to FollowWaypoints action"
-            )
+            self.get_logger().info(f"Sent {len(self.waypoints)} waypoints to FollowWaypoints action")
             response.success = True
             response.message = "Navigation started successfully"
         except Exception as e:
-            self.get_logger().error(f"Failed to start navigation: {str(e)}")
+            self.get_logger().error(f"Failed to start navigation: {e!s}")
             self.navigation_active = False
             response.success = False
-            response.message = f"Failed to start navigation: {str(e)}"
+            response.message = f"Failed to start navigation: {e!s}"
         return response
 
     def _make_goal_msg(self, waypoints):
@@ -374,15 +348,11 @@ class WaypointCollector(Node):
             self.get_logger().info("Still waiting for FollowWaypoints server...")
 
     def _do_send_goal(self, goal_msg):
-        send_goal_future = self._follow_wp_client.send_goal_async(
-            goal_msg, self._feedback_callback
-        )
+        send_goal_future = self._follow_wp_client.send_goal_async(goal_msg, self._feedback_callback)
         send_goal_future.add_done_callback(self._goal_response_callback)
 
     def _feedback_callback(self, feedback_msg):
-        self._current_waypoint_index = (
-            self._resume_offset + feedback_msg.feedback.current_waypoint
-        )
+        self._current_waypoint_index = self._resume_offset + feedback_msg.feedback.current_waypoint
         self.get_logger().info(f"Current waypoint: {self._current_waypoint_index}")
 
     def _goal_response_callback(self, future):
@@ -427,13 +397,9 @@ class WaypointCollector(Node):
             return response
 
         if idx < -1 or idx >= len(self.waypoints):
-            self.get_logger().error(
-                f"Invalid waypoint index {idx}, have {len(self.waypoints)} waypoints"
-            )
+            self.get_logger().error(f"Invalid waypoint index {idx}, have {len(self.waypoints)} waypoints")
             response.success = False
-            response.message = (
-                f"Invalid index {idx}, valid: -1..{len(self.waypoints) - 1}"
-            )
+            response.message = f"Invalid index {idx}, valid: -1..{len(self.waypoints) - 1}"
             return response
 
         if self.navigation_active:
@@ -461,7 +427,7 @@ class WaypointCollector(Node):
             response.success = True
             response.message = f"Navigating to waypoint index {label}"
         except Exception as e:
-            self.get_logger().error(f"Failed to start navigation: {str(e)}")
+            self.get_logger().error(f"Failed to start navigation: {e!s}")
             self.navigation_active = False
             response.success = False
             response.message = str(e)
@@ -474,7 +440,7 @@ class WaypointCollector(Node):
             response.success = True
             response.message = "Navigation stopped"
         except Exception as e:
-            self.get_logger().error(f"Failed to stop navigation: {str(e)}")
+            self.get_logger().error(f"Failed to stop navigation: {e!s}")
             response.success = False
             response.message = str(e)
         return response
@@ -510,16 +476,12 @@ class WaypointCollector(Node):
             self._resume_offset = self._resume_index
             self._send_goal_async(remaining)
             self.get_logger().info(
-                f"Resumed navigation from waypoint {self._resume_index} "
-                f"({len(remaining)} remaining)"
+                f"Resumed navigation from waypoint {self._resume_index} ({len(remaining)} remaining)"
             )
             response.success = True
-            response.message = (
-                f"Resumed from waypoint {self._resume_index}, "
-                f"{len(remaining)} remaining"
-            )
+            response.message = f"Resumed from waypoint {self._resume_index}, {len(remaining)} remaining"
         except Exception as e:
-            self.get_logger().error(f"Failed to resume navigation: {str(e)}")
+            self.get_logger().error(f"Failed to resume navigation: {e!s}")
             self.navigation_active = False
             response.success = False
             response.message = str(e)
@@ -529,13 +491,8 @@ class WaypointCollector(Node):
         if self.navigation_active and self._nav_result_future:
             if self._nav_result_future.result():
                 status = self._nav_result_future.result().status
-                if (
-                    status != GoalStatus.STATUS_SUCCEEDED
-                    and status != GoalStatus.STATUS_EXECUTING
-                ):
-                    self.get_logger().info(
-                        f"Navigation completed with status: {status}"
-                    )
+                if status != GoalStatus.STATUS_SUCCEEDED and status != GoalStatus.STATUS_EXECUTING:
+                    self.get_logger().info(f"Navigation completed with status: {status}")
                     self.navigation_active = False
 
     def _start_nav2_wait_thread(self):
@@ -549,7 +506,7 @@ class WaypointCollector(Node):
             self.nav2_ready = True
             self.get_logger().info("Nav2 is active")
         except Exception as e:
-            self.get_logger().error(f"Failed to activate Nav2: {str(e)}")
+            self.get_logger().error(f"Failed to activate Nav2: {e!s}")
 
 
 def main(args=None):

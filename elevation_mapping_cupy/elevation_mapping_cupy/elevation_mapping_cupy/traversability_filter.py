@@ -5,7 +5,7 @@
 import numpy as np
 from scipy import signal as scipy_signal
 
-from .backend import xp, GPU_AVAILABLE, cp, asnumpy
+from .backend import asnumpy, cp, xp
 
 
 def get_filter_torch(*args, **kwargs):
@@ -35,15 +35,9 @@ def get_filter_torch(*args, **kwargs):
                 elevation = torch.from_numpy(elevation.astype(np.float32))
 
             with torch.no_grad():
-                out1 = self.conv1(
-                    elevation.view(-1, 1, elevation.shape[0], elevation.shape[1])
-                )
-                out2 = self.conv2(
-                    elevation.view(-1, 1, elevation.shape[0], elevation.shape[1])
-                )
-                out3 = self.conv3(
-                    elevation.view(-1, 1, elevation.shape[0], elevation.shape[1])
-                )
+                out1 = self.conv1(elevation.view(-1, 1, elevation.shape[0], elevation.shape[1]))
+                out2 = self.conv2(elevation.view(-1, 1, elevation.shape[0], elevation.shape[1]))
+                out3 = self.conv3(elevation.view(-1, 1, elevation.shape[0], elevation.shape[1]))
 
                 out1 = out1[:, :, 2:-2, 2:-2]
                 out2 = out2[:, :, 1:-1, 1:-1]
@@ -73,15 +67,9 @@ def get_filter_chainer(*args, **kwargs):
     class TraversabilityFilter(chainer.Chain):
         def __init__(self, w1, w2, w3, w_out, use_cupy=True):
             super(TraversabilityFilter, self).__init__()
-            self.conv1 = L.Convolution2D(
-                1, 4, ksize=3, pad=0, dilate=1, nobias=True, initialW=w1
-            )
-            self.conv2 = L.Convolution2D(
-                1, 4, ksize=3, pad=0, dilate=2, nobias=True, initialW=w2
-            )
-            self.conv3 = L.Convolution2D(
-                1, 4, ksize=3, pad=0, dilate=3, nobias=True, initialW=w3
-            )
+            self.conv1 = L.Convolution2D(1, 4, ksize=3, pad=0, dilate=1, nobias=True, initialW=w1)
+            self.conv2 = L.Convolution2D(1, 4, ksize=3, pad=0, dilate=2, nobias=True, initialW=w2)
+            self.conv3 = L.Convolution2D(1, 4, ksize=3, pad=0, dilate=3, nobias=True, initialW=w3)
             self.conv_out = L.Convolution2D(12, 1, ksize=1, nobias=True, initialW=w_out)
 
             if use_cupy:
@@ -93,15 +81,9 @@ def get_filter_chainer(*args, **kwargs):
             chainer.config.enable_backprop = False
 
         def __call__(self, elevation):
-            out1 = self.conv1(
-                elevation.reshape(-1, 1, elevation.shape[0], elevation.shape[1])
-            )
-            out2 = self.conv2(
-                elevation.reshape(-1, 1, elevation.shape[0], elevation.shape[1])
-            )
-            out3 = self.conv3(
-                elevation.reshape(-1, 1, elevation.shape[0], elevation.shape[1])
-            )
+            out1 = self.conv1(elevation.reshape(-1, 1, elevation.shape[0], elevation.shape[1]))
+            out2 = self.conv2(elevation.reshape(-1, 1, elevation.shape[0], elevation.shape[1]))
+            out3 = self.conv3(elevation.reshape(-1, 1, elevation.shape[0], elevation.shape[1]))
 
             out1 = out1[:, :, 2:-2, 2:-2]
             out2 = out2[:, :, 1:-1, 1:-1]
@@ -144,7 +126,7 @@ def get_filter_numpy(w1, w2, w3, w_out):
                     dilated = np.zeros((kd, kd))
                     dilated[::dilation, ::dilation] = kernel
                     kernel = dilated
-                results.append(scipy_signal.convolve2d(elevation, kernel, mode='valid'))
+                results.append(scipy_signal.convolve2d(elevation, kernel, mode="valid"))
             return np.stack(results)
 
     return TraversabilityFilterNumPy(w1, w2, w3, w_out)

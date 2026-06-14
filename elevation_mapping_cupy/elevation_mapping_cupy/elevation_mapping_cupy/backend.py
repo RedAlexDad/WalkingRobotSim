@@ -1,13 +1,12 @@
 import importlib.util
 from types import ModuleType
-from typing import Optional
 
 import numpy as np
 
 GPU_AVAILABLE: bool = False
-cp: Optional[ModuleType] = None
+cp: ModuleType | None = None
 xp: ModuleType = np
-scipy_ndimage: Optional[ModuleType] = None
+scipy_ndimage: ModuleType | None = None
 
 
 def _detect_cuda() -> None:
@@ -44,7 +43,7 @@ def asnumpy(array, stream=None) -> np.ndarray:
     return np.asarray(array)
 
 
-def get_stream() -> Optional[object]:
+def get_stream() -> object | None:
     if GPU_AVAILABLE:
         return cp.cuda.Stream.null
     return None

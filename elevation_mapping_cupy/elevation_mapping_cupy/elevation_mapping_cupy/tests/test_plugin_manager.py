@@ -1,9 +1,5 @@
 from pathlib import Path
 
-import numpy as np
-import pytest
-from ruamel.yaml import YAML
-
 from ..backend import xp
 from ..plugins.plugin_manager import PluginBase, PluginManager, PluginParams
 

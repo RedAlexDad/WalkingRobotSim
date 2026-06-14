@@ -650,7 +650,3 @@ Waypoints можно было расставлять только вручную
 ## Коммиты
 - `a314e64` — refactor: перейти с JSON на YAML для waypoints
 - `cb28251` — feat: добавить сервис GetWaypoints и YAML для waypoints
-
-
-
-

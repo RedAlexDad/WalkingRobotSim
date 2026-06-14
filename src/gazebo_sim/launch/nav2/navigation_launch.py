@@ -68,9 +68,7 @@ def generate_launch_description():
         [
             # Set env var to print messages to stdout immediately
             SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1"),
-            DeclareLaunchArgument(
-                "namespace", default_value="", description="Top-level namespace"
-            ),
+            DeclareLaunchArgument("namespace", default_value="", description="Top-level namespace"),
             DeclareLaunchArgument(
                 "use_sim_time",
                 default_value="true",

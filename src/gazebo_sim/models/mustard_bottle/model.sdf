@@ -1,11 +1,11 @@
 <?xml version="1.0" ?>
 <sdf version="1.7">
 <!--
-This SDF file was automatically generated using a template modified 
+This SDF file was automatically generated using a template modified
 and authored by Adwait Naik. The moment of interia is not supposed to be changed.
 -->
     <model name="mustard_bottle">
-      <pose>1.0 2.0 3.0 -1.0 0 0</pose> 
+      <pose>1.0 2.0 3.0 -1.0 0 0</pose>
       <link name="link">
         <inertial>
           <inertia>

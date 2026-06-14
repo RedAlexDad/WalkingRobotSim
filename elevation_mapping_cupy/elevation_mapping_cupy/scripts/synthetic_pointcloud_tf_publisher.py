@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Tuple
 
 import numpy as np
 import rclpy
@@ -26,7 +25,7 @@ from rclpy.qos import QoSPresetProfiles
 from sensor_msgs.msg import PointCloud2, PointField
 
 
-def _quat_from_yaw(yaw_rad: float) -> Tuple[float, float, float, float]:
+def _quat_from_yaw(yaw_rad: float) -> tuple[float, float, float, float]:
     """Quaternion (x,y,z,w) for a pure yaw rotation."""
     half = 0.5 * yaw_rad
     return (0.0, 0.0, math.sin(half), math.cos(half))
@@ -68,7 +67,7 @@ class _Trajectory:
     enable_yaw: bool
     yaw_rate_rps: float
 
-    def pose_at(self, t: float) -> Tuple[np.ndarray, float]:
+    def pose_at(self, t: float) -> tuple[np.ndarray, float]:
         """
         Deterministic square trajectory in map frame.
 

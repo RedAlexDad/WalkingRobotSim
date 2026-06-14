@@ -35,4 +35,3 @@ Plugin Configuration
 
 .. include:: ../../../elevation_mapping_cupy/config/core/plugin_config.yaml
   :code: yaml
-

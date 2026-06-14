@@ -2,14 +2,14 @@
 import os
 import time
 from datetime import datetime
-import cv2
-import numpy as np
+
 import rclpy
 from ament_index_python.packages import get_package_share_directory
+from cv_bridge import CvBridge
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
 from ultralytics import YOLO
+
 from quadropted_msgs.msg import Detection, DetectionArray
 
 
@@ -38,17 +38,13 @@ class YOLODetector(Node):
         if "." not in model_name:
             model_name += ".pt"
 
-        models_dir = os.path.join(
-            get_package_share_directory("quadropted_perception"), "models"
-        )
+        models_dir = os.path.join(get_package_share_directory("quadropted_perception"), "models")
         local_path = os.path.join(models_dir, model_name)
         if os.path.isfile(local_path):
             resolved_path = local_path
         else:
             resolved_path = model_name
-            self.get_logger().warn(
-                f"Model not found locally: {local_path}, using ultralytics default"
-            )
+            self.get_logger().warn(f"Model not found locally: {local_path}, using ultralytics default")
         self._model_path = resolved_path
 
         fps = self.get_parameter("fps").value
@@ -83,9 +79,7 @@ class YOLODetector(Node):
         self._pub_detections = self.create_publisher(DetectionArray, "detections", 10)
         self._pub_debug_image = self.create_publisher(Image, "detected_image", 10)
 
-        self._sub_camera = self.create_subscription(
-            Image, camera_topic, self._image_callback, 10
-        )
+        self._sub_camera = self.create_subscription(Image, camera_topic, self._image_callback, 10)
 
         self.get_logger().info(
             f"YOLO detector ready — model: {self._model_path}, topic: {camera_topic}, "

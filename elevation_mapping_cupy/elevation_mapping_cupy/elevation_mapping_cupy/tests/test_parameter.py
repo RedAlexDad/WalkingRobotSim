@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+
 from elevation_mapping_cupy.parameter import Parameter
 
 

@@ -7,7 +7,7 @@
 #include "convex_plane_decomposition/contour_extraction/Upsampling.h"
 
 TEST(TestUpsampling, upsampleImage) {
-  // clang-format off
+    // clang-format off
   cv::Mat M = (cv::Mat_<float>(3, 3) <<
       1, 2, 3,
       4, 5, 6,
@@ -20,9 +20,9 @@ TEST(TestUpsampling, upsampleImage) {
       4, 4, 5, 5, 5, 6, 6,
       7, 7, 8, 8, 8, 9, 9,
       7, 7, 8, 8, 8, 9, 9);
-  // clang-format on
+    // clang-format on
 
-  const auto Mout = convex_plane_decomposition::contour_extraction::upSample(M);
+    const auto Mout = convex_plane_decomposition::contour_extraction::upSample(M);
 
-  ASSERT_TRUE(std::equal(MoutCheck.begin<float>(), MoutCheck.end<float>(), Mout.begin<float>()));
+    ASSERT_TRUE(std::equal(MoutCheck.begin<float>(), MoutCheck.end<float>(), Mout.begin<float>()));
 }

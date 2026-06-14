@@ -2,10 +2,9 @@
 # Copyright (c) 2022, Takahiro Miki. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
-import numpy as np
-from shapely.geometry import MultiPoint, Polygon
+from shapely.geometry import MultiPoint
 
-from .backend import xp, GPU_AVAILABLE, asnumpy
+from .backend import asnumpy, xp
 
 
 def get_masked_traversability(map_array, mask, traversability):
@@ -48,11 +47,7 @@ def calculate_untraversable_polygon(over_thresh):
     x, y = xp.where(over_thresh > 0.5)
     points = xp.stack([x, y]).T
     convex_hull = MultiPoint(asnumpy(points)).convex_hull
-    if (
-        convex_hull.is_empty
-        or convex_hull.geom_type == "Point"
-        or convex_hull.geom_type == "LineString"
-    ):
+    if convex_hull.is_empty or convex_hull.geom_type == "Point" or convex_hull.geom_type == "LineString":
         return None
     else:
         return xp.asarray(convex_hull.exterior.coords)
@@ -64,9 +59,7 @@ def transform_to_map_position(polygon, center, cell_n, resolution):
 
 
 def transform_to_map_index(points, center, cell_n, resolution):
-    indices = ((points - center.reshape(1, 2)) / resolution + cell_n / 2).astype(
-        xp.int32
-    )
+    indices = ((points - center.reshape(1, 2)) / resolution + cell_n / 2).astype(xp.int32)
     return indices
 
 

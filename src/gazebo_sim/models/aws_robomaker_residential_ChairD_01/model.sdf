@@ -15,7 +15,7 @@
             <izz>0.067</izz>
           </inertia>
       </inertial>
-      
+
       <collision name="collision">
 
         <geometry>

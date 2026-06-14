@@ -43,9 +43,7 @@ def _initial_pose(context, ns, x_pose, y_pose):
     ]
 
 
-def _robot_state_publisher(
-    context, xacro_file, robot_name, camera_fps, use_sim_time, namespace, remappings
-):
+def _robot_state_publisher(context, xacro_file, robot_name, camera_fps, use_sim_time, namespace, remappings):
     fps = camera_fps.perform(context)
     robot_name_value = robot_name.perform(context)
     mappings = {"robot_name": robot_name_value, "camera_fps": fps}
@@ -77,9 +75,7 @@ def generate_launch_description():
         "enable_rviz": "true",
     }
 
-    ld = LaunchDescription(
-        [DeclareLaunchArgument(k, default_value=v) for k, v in args.items()]
-    )
+    ld = LaunchDescription([DeclareLaunchArgument(k, default_value=v) for k, v in args.items()])
 
     ns = LaunchConfiguration("namespace")
 
@@ -93,9 +89,7 @@ def generate_launch_description():
     state_publisher = OpaqueFunction(
         function=_robot_state_publisher,
         args=[
-            os.path.join(
-                get_package_share_directory("go2_description"), "xacro", "robot.xacro"
-            ),
+            os.path.join(get_package_share_directory("go2_description"), "xacro", "robot.xacro"),
             ns,
             LaunchConfiguration("camera_fps"),
             LaunchConfiguration("use_sim_time"),
@@ -132,9 +126,7 @@ def generate_launch_description():
         name="ros_gz_bridge",
         output="screen",
         arguments=[
-            PythonExpression(
-                ["'/' + '", ns, "' + '/imu_plugin/out@sensor_msgs/msg/Imu@gz.msgs.IMU'"]
-            ),
+            PythonExpression(["'/' + '", ns, "' + '/imu_plugin/out@sensor_msgs/msg/Imu@gz.msgs.IMU'"]),
             PythonExpression(
                 [
                     "'/' + '",
@@ -142,9 +134,7 @@ def generate_launch_description():
                     "' + '/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'",
                 ]
             ),
-            PythonExpression(
-                ["'/' + '", ns, "' + '/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V'"]
-            ),
+            PythonExpression(["'/' + '", ns, "' + '/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V'"]),
             PythonExpression(
                 [
                     "'/' + '",
@@ -244,9 +234,7 @@ def generate_launch_description():
     )
 
     nav2 = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_path, "launch", "nav2", "bringup_launch.py")
-        ),
+        PythonLaunchDescriptionSource(os.path.join(pkg_path, "launch", "nav2", "bringup_launch.py")),
         launch_arguments={
             "map": os.path.join(pkg_path, "maps", "cafe_world_map.yaml"),
             "use_namespace": "True",
@@ -274,15 +262,11 @@ def generate_launch_description():
     )
 
     rviz = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_path, "launch", "rviz_launch.py")
-        ),
+        PythonLaunchDescriptionSource(os.path.join(pkg_path, "launch", "rviz_launch.py")),
         launch_arguments={
             "namespace": ns,
             "use_namespace": "true",
-            "rviz_config": os.path.join(
-                pkg_path, "rviz", "multi_nav2_default_view.rviz"
-            ),
+            "rviz_config": os.path.join(pkg_path, "rviz", "multi_nav2_default_view.rviz"),
         }.items(),
     )
 

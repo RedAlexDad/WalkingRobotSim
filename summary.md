@@ -9,7 +9,7 @@ Go2 robot base_link drifts ~2.82 m in X and ~-4.09 m in Y during TROT at standin
 
 ### Phase A — map→odom static transform removed
 
-**File:** `compose.yml:54`  
+**File:** `compose.yml:54`
 Deleted `static_transform_publisher 0 0 0 0 0 0 map odom`. AMCL now dynamically corrects
 map→odom instead of it being locked to zero.
 
@@ -26,7 +26,7 @@ Only works for TROT, not REST (delta ≈ 0).
 
 ### Phase D — Foot friction increased
 
-**File:** `src/go2_description/xacro/gazebo.xacro`  
+**File:** `src/go2_description/xacro/gazebo.xacro`
 All 4 foot links: `mu1=0.6→1.0, mu2=0.6→1.0`. Ground plane has mu=50. Limiting factor was
 foot coefficient — rubber-on-concrete equivalent is ~1.0.
 

@@ -1,8 +1,6 @@
-from typing import List
-
 import numpy as np
 
-from ..backend import GPU_AVAILABLE, scipy_ndimage, xp
+from ..backend import scipy_ndimage, xp
 from .plugin_manager import PluginBase
 
 
@@ -33,9 +31,9 @@ class CostFunction(PluginBase):
     def __call__(
         self,
         elevation_map: np.ndarray,
-        layer_names: List[str],
+        layer_names: list[str],
         plugin_layers: np.ndarray,
-        plugin_layer_names: List[str],
+        plugin_layer_names: list[str],
         *args,
     ) -> np.ndarray:
         slope_layer = self.get_layer_data(

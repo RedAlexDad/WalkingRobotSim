@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-import rclpy
-from rclpy.node import Node
-from nav_msgs.msg import Odometry
-from std_srvs.srv import Trigger
 import math
 import os
 import time
 from datetime import datetime
+
+import rclpy
+from nav_msgs.msg import Odometry
+from rclpy.node import Node
+from std_srvs.srv import Trigger
 
 
 class ExperimentLogger(Node):
@@ -31,22 +32,14 @@ class ExperimentLogger(Node):
         os.makedirs(output_dir, exist_ok=True)
         self._output_dir = output_dir
 
-        self._sub_odom = self.create_subscription(
-            Odometry, odom_topic, self._odom_callback, 10
-        )
+        self._sub_odom = self.create_subscription(Odometry, odom_topic, self._odom_callback, 10)
 
-        self._srv_start = self.create_service(
-            Trigger, "/start_experiment", self._start_callback
-        )
-        self._srv_stop = self.create_service(
-            Trigger, "/stop_experiment", self._stop_callback
-        )
+        self._srv_start = self.create_service(Trigger, "/start_experiment", self._start_callback)
+        self._srv_stop = self.create_service(Trigger, "/stop_experiment", self._stop_callback)
 
         self._log_timer = self.create_timer(1.0, self._log_timer_callback)
 
-        self.get_logger().info(
-            f"Experiment Logger ready — odom: {odom_topic}, output: {output_dir}"
-        )
+        self.get_logger().info(f"Experiment Logger ready — odom: {odom_topic}, output: {output_dir}")
 
     def _odom_callback(self, msg):
         pos = msg.pose.pose.position
@@ -98,15 +91,9 @@ class ExperimentLogger(Node):
 
         self._save_results(duration, end_position)
 
-        self.get_logger().info(
-            f"Experiment stopped — duration: {duration:.1f}s, "
-            f"distance: {self._total_distance:.2f}m"
-        )
+        self.get_logger().info(f"Experiment stopped — duration: {duration:.1f}s, distance: {self._total_distance:.2f}m")
         response.success = True
-        response.message = (
-            f"Experiment completed — {duration:.1f}s, "
-            f"{self._total_distance:.2f}m"
-        )
+        response.message = f"Experiment completed — {duration:.1f}s, {self._total_distance:.2f}m"
         return response
 
     def _save_results(self, duration, end_position):
@@ -128,11 +115,8 @@ class ExperimentLogger(Node):
                 f"{self._start_position[1]:.2f}, {self._start_position[2]:.2f})\n"
             )
             if end_position:
-                f.write(
-                    f"End position:      ({end_position[0]:.2f}, "
-                    f"{end_position[1]:.2f}, {end_position[2]:.2f})\n"
-                )
-            f.write(f"Status:            COMPLETED\n")
+                f.write(f"End position:      ({end_position[0]:.2f}, {end_position[1]:.2f}, {end_position[2]:.2f})\n")
+            f.write("Status:            COMPLETED\n")
             f.write("=" * 40 + "\n")
             f.write("\nTrajectory log (every ~1.0 sec):\n")
             for i, pt in enumerate(self._trajectory):

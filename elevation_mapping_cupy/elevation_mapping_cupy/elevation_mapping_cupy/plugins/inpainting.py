@@ -3,12 +3,11 @@
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 #
 import logging
-from typing import List
 
 import cv2 as cv
 import numpy as np
 
-from ..backend import xp, GPU_AVAILABLE, scipy_ndimage, asnumpy
+from ..backend import asnumpy, xp
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,7 +15,6 @@ from .plugin_manager import PluginBase
 
 
 class Inpainting(PluginBase):
-
     def __init__(self, cell_n: int = 100, method: str = "telea", **kwargs):
         super().__init__()
         if method == "telea":
@@ -29,9 +27,9 @@ class Inpainting(PluginBase):
     def __call__(
         self,
         elevation_map: np.ndarray,
-        layer_names: List[str],
+        layer_names: list[str],
         plugin_layers: np.ndarray,
-        plugin_layer_names: List[str],
+        plugin_layer_names: list[str],
         *args,
     ) -> np.ndarray:
         valid_layer = elevation_map[2]
@@ -57,9 +55,7 @@ class Inpainting(PluginBase):
                 filled = xp.full(elevation.shape, h_max, dtype=xp.float32)
             else:
                 safe_elevation = xp.where(finite_elevation, elevation, h_min)
-                scaled = asnumpy((safe_elevation - h_min) * 255.0 / denom).astype(
-                    "uint8"
-                )
+                scaled = asnumpy((safe_elevation - h_min) * 255.0 / denom).astype("uint8")
                 dst = cv.inpaint(scaled, mask_np, 1, self.method)
                 h_inpainted = dst.astype(np.float32) * denom / 255.0 + h_min
                 filled = xp.asarray(h_inpainted, dtype=xp.float32)

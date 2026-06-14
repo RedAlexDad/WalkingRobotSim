@@ -7,9 +7,9 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
-#include "opencv2/imgproc/imgproc.hpp"
 
 #include "PolygonTypes.h"
+#include "opencv2/imgproc/imgproc.hpp"
 
 namespace convex_plane_decomposition {
 

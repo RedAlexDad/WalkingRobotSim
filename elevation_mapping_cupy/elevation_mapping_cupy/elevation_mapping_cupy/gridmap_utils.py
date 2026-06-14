@@ -6,9 +6,7 @@ from std_msgs.msg import MultiArrayDimension as MAD
 from std_msgs.msg import MultiArrayLayout as MAL
 
 
-def encode_layer_to_multiarray(
-    array: np.ndarray, layout: str = "gridmap_column"
-) -> Float32MultiArray:
+def encode_layer_to_multiarray(array: np.ndarray, layout: str = "gridmap_column") -> Float32MultiArray:
     """Encode a (rows, cols) array into a Float32MultiArray."""
     arr = np.asarray(array, dtype=np.float32)
     rows, cols = arr.shape
@@ -30,9 +28,7 @@ def encode_layer_to_multiarray(
     raise ValueError(f"Unknown layout '{layout}'")
 
 
-def decode_multiarray_to_rows_cols(
-    name: str, array_msg: Float32MultiArray
-) -> np.ndarray:
+def decode_multiarray_to_rows_cols(name: str, array_msg: Float32MultiArray) -> np.ndarray:
     """Decode Float32MultiArray into (rows, cols) row-major array."""
     data_np = np.asarray(array_msg.data, dtype=np.float32)
     dims = array_msg.layout.dim
@@ -57,11 +53,7 @@ def decode_multiarray_to_rows_cols(
 
     if dims:
         cols = dims[0].size or 1
-        rows = (
-            dims[1].size
-            if len(dims) > 1
-            else (len(data_np) // cols if cols else len(data_np))
-        )
+        rows = dims[1].size if len(dims) > 1 else (len(data_np) // cols if cols else len(data_np))
     else:
         cols = int(math.sqrt(len(data_np))) if len(data_np) else 0
         rows = cols

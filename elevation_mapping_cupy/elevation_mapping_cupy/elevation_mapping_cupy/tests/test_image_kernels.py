@@ -1,16 +1,13 @@
-import numpy as np
-import pytest
-
-from ..backend import GPU_AVAILABLE, xp
+from ..backend import xp
 
 
 class TestImageKernels:
     def test_import_all_functions(self):
         from ..kernels import (
-            image_to_map_correspondence_kernel,
             average_correspondences_to_map_kernel,
-            exponential_correspondences_to_map_kernel,
             color_correspondences_to_map_kernel,
+            exponential_correspondences_to_map_kernel,
+            image_to_map_correspondence_kernel,
         )
 
         assert callable(image_to_map_correspondence_kernel)
@@ -34,12 +31,8 @@ class TestImageKernels:
         y1 = xp.array([2.0], dtype=xp.float32)
         z1 = xp.array([1.0], dtype=xp.float32)
 
-        P = xp.array(
-            [500, 0, 0, 0, 0, 500, 0, 0, 0, 0, 1, 0], dtype=xp.float64
-        )
-        K = xp.array(
-            [500, 0, 320, 0, 500, 240, 0, 0, 1], dtype=xp.float64
-        )
+        P = xp.array([500, 0, 0, 0, 0, 500, 0, 0, 0, 0, 1, 0], dtype=xp.float64)
+        K = xp.array([500, 0, 320, 0, 500, 240, 0, 0, 1], dtype=xp.float64)
         D = xp.zeros(5, dtype=xp.float64)
         img_h = xp.array([480], dtype=xp.float32)
         img_w = xp.array([640], dtype=xp.float32)
@@ -65,12 +58,8 @@ class TestImageKernels:
         x1 = xp.array([2.0], dtype=xp.float32)
         y1 = xp.array([2.0], dtype=xp.float32)
         z1 = xp.array([1.0], dtype=xp.float32)
-        P = xp.array(
-            [500, 0, 0, 0, 0, 500, 0, 0, 0, 0, 1, 0], dtype=xp.float64
-        )
-        K = xp.array(
-            [500, 0, 320, 0, 500, 240, 0, 0, 1], dtype=xp.float64
-        )
+        P = xp.array([500, 0, 0, 0, 0, 500, 0, 0, 0, 0, 1, 0], dtype=xp.float64)
+        K = xp.array([500, 0, 320, 0, 500, 240, 0, 0, 1], dtype=xp.float64)
         D = xp.array([0.1, -0.05, 0.001, 0.002, 0.01], dtype=xp.float64)
         img_h = xp.array([480], dtype=xp.float32)
         img_w = xp.array([640], dtype=xp.float32)

@@ -16,7 +16,7 @@
 
 
       </inertial>
-      
+
       <collision name="collision">
         <geometry>
           <mesh>

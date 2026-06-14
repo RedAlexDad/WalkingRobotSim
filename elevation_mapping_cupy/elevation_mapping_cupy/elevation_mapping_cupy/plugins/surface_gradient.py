@@ -1,13 +1,10 @@
-from typing import List
-
 import numpy as np
 
-from ..backend import GPU_AVAILABLE, asnumpy, xp, cp
+from ..backend import GPU_AVAILABLE, asnumpy, cp, xp
 from .plugin_manager import PluginBase
 
 
 class SurfaceGradient(PluginBase):
-
     def __init__(
         self,
         cell_n: int = 100,
@@ -20,9 +17,9 @@ class SurfaceGradient(PluginBase):
     def __call__(
         self,
         elevation_map: np.ndarray,
-        layer_names: List[str],
+        layer_names: list[str],
         plugin_layers: np.ndarray,
-        plugin_layer_names: List[str],
+        plugin_layer_names: list[str],
         *args,
     ) -> np.ndarray:
         if self.input_layer_name in layer_names:

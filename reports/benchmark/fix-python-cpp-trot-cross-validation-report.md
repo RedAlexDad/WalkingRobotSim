@@ -1,7 +1,7 @@
 # Технический отчёт: исправление расхождений Python vs C++ контроллера квадрупеда
 
-**Дата:** 07.04.2026  
-**Версия:** 1.0  
+**Дата:** 07.04.2026
+**Версия:** 1.0
 **Статус:** Завершено ✅
 
 ## 1. Проблема
@@ -96,7 +96,7 @@ double z = state_foot(2, leg_index);  // ✅ Правильная нога
 
 ### 2.6. SwingController — robot_height как параметр
 
-**Было в C++**: использовался `default_stance_(2, 0)`  
+**Было в C++**: использовался `default_stance_(2, 0)`
 **Python**: `command.robot_height` передаётся как параметр
 
 **Исправлено** — добавлен параметр `robot_height` в:
@@ -194,7 +194,7 @@ colcon build --packages-select quadropted_controller_cpp
 ### До исправлений (проблемы):
 
 ```
-[DEBUG] foot_locs: FR=(0.1569,-0.1431,0.1244) FL=(0.1448,0.1413,-0.2501) 
+[DEBUG] foot_locs: FR=(0.1569,-0.1431,0.1244) FL=(0.1448,0.1413,-0.2501)
          RR=(-0.2714,-0.1432,-0.2499) RL=(-0.2593,0.1414,0.1244)
 [DEBUG] TROT step: contacts=[0,1,1,0]
 [DEBUG] joints[0-2]: -1.8312 1.4052 -2.5407
@@ -211,10 +211,10 @@ colcon build --packages-select quadropted_controller_cpp
 
 #### Состояние покоя (vx=0):
 ```
-[DEBUG] foot_locs: FR=(0.2163,-0.1295,-0.2500) FL=(0.2281,0.1073,-0.2500) 
+[DEBUG] foot_locs: FR=(0.2163,-0.1295,-0.2500) FL=(0.2281,0.1073,-0.2500)
          RR=(-0.2281,-0.1073,-0.2500) RL=(-0.2163,0.1295,-0.2500)
 [DEBUG] TROT step: contacts=[1,1,1,1]
-[DEBUG] cmd: vx=0.0000 vy=0.0000 vz=0.0000 yaw=-1.0000 
+[DEBUG] cmd: vx=0.0000 vy=0.0000 vz=0.0000 yaw=-1.0000
          joints: 0.0691 0.8303 -1.9109
 ```
 ✅ Все Z координаты = -0.2500 (на земле)
@@ -223,7 +223,7 @@ colcon build --packages-select quadropted_controller_cpp
 
 #### Движение вперёд (vx=0.0323):
 ```
-[DEBUG] foot_locs: FR=(0.1992,-0.1545,-0.2500) FL=(0.2112,0.1337,-0.1567) 
+[DEBUG] foot_locs: FR=(0.1992,-0.1545,-0.2500) FL=(0.2112,0.1337,-0.1567)
          RR=(-0.2112,-0.1337,-0.1567) RL=(-0.1992,0.1545,-0.2500)
 [DEBUG] TROT step: contacts=[1,0,0,1]
 ```
@@ -234,7 +234,7 @@ colcon build --packages-select quadropted_controller_cpp
 
 #### Переход в состояние покоя:
 ```
-[DEBUG] cmd: vx=0.0000 vy=0.0000 vz=0.0000 yaw=0.0000 
+[DEBUG] cmd: vx=0.0000 vy=0.0000 vz=0.0000 yaw=0.0000
          joints: 0.0000 0.8615 -1.8826
 ```
 ✅ Стабильные углы суставов

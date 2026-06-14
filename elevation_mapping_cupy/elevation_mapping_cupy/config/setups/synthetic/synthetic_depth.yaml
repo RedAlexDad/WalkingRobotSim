@@ -17,4 +17,3 @@
         layers: ["elevation", "variance", "traversability"]
         basic_layers: ["elevation"]
         fps: 10.0
-

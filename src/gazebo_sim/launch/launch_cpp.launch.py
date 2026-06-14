@@ -55,9 +55,7 @@ def generate_launch_description():
     world_file = os.path.join(pkg_path, "world", "cafe.world")
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory("ros_gz_sim"), "launch", "gz_sim.launch.py"
-            )
+            os.path.join(get_package_share_directory("ros_gz_sim"), "launch", "gz_sim.launch.py")
         ),
         launch_arguments={
             "gz_args": ["-r -v4 ", world_file],
@@ -71,22 +69,14 @@ def generate_launch_description():
 
     # Вместо gazebo_multi_nav2_world.launch.py запускаем C++ версию
     multi_nav2_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_path, "launch", "gazebo_multi_nav2_cpp.launch.py")
-        ),
+        PythonLaunchDescriptionSource(os.path.join(pkg_path, "launch", "gazebo_multi_nav2_cpp.launch.py")),
         launch_arguments={
             "camera_fps": camera_fps,
             "use_elevation": use_elevation,
         }.items(),
     )
 
-    ld.add_action(
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-                target_action=pause, on_exit=[multi_nav2_launch]
-            )
-        )
-    )
+    ld.add_action(RegisterEventHandler(event_handler=OnProcessExit(target_action=pause, on_exit=[multi_nav2_launch])))
 
     experiment_logger = Node(
         package="gazebo_sim",

@@ -2,7 +2,7 @@
 <sdf version="1.6">
   <model name="aws_robomaker_residential_DeskPortraitB_02">
     <link name="link">
-    
+
       <inertial>
         <mass>1</mass>
         <inertia>
