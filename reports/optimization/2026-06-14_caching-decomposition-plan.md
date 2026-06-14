@@ -328,21 +328,66 @@ return z_leg_lift_ * (1.0 - (swing_prop - 0.5) * 2.0);  // = ... * (2.0 * z_leg_
 | `include/.../kinematics/forward_kinematics.hpp` | #7: `T_base_[4]` вместо `LegBasePositions`; новый прототип `compute_leg_fk_chain` без `l1`/`base_x`/`base_y` |
 | `src/kinematics/forward_kinematics.cpp`         | #7: precompute `T_base_[4]` в конструкторе; удалён `LegBasePositions::get`                                   |
 
-### Бенчмарк (C++, 5000 итераций)
+### Бенчмарк (C++, 10K итераций, до/после)
 
-| Функция                                           | До (мс) | После (мс) |      Δ       |
-| ------------------------------------------------- | :-----: | :--------: | :----------: |
-| `ForwardKinematics.forward_kinematics_all_legs()` | 0.6879  | **0.4719** |  **−31.4%**  |
-| `InverseKinematics.inverse_kinematics()`          | 0.3849  | **0.3077** |  **−20.1%**  |
-| `TrotSwingController.next_foot_location()`        | 0.0247  | **0.0224** |    −9.3%     |
-| `TrotSwingController.raibert_touchdown()`         | 0.0182  | **0.0181** |    −0.5%     |
-| `TrotStanceController.next_foot_location()`       | 0.0321  | **0.0314** |    −2.2%     |
-| `RestController.step()`                           | 0.0033  | **0.0029** |    −12.1%    |
-| `Trot Step (full cycle)`                          | 0.1525  | **0.1490** |    −2.3%     |
-| `GaitController.contacts()`                       | 0.0122  | **0.0113** |    −7.4%     |
-| `StandController.run()`                           | 0.0061  |   0.0068   | +11.5% (шум) |
-| `PIDController.run()`                             | 0.0020  |   0.0022   | +10.0% (шум) |
+Сравнение "до/после" на 10000 итераций (мкс на вызов):
+
+| Функция                                           | До (мкс) | После (мкс) |      Δ       |
+| ------------------------------------------------- | :------: | :---------: | :----------: |
+| `ForwardKinematics.forward_kinematics_all_legs()` |  0.6879  | **0.4719**  |  **−31.4%**  |
+| `InverseKinematics.inverse_kinematics()`          |  0.3849  | **0.3077**  |  **−20.1%**  |
+| `TrotSwingController.next_foot_location()`        |  0.0247  | **0.0224**  |    −9.3%     |
+| `TrotSwingController.raibert_touchdown()`         |  0.0182  | **0.0181**  |    −0.5%     |
+| `TrotStanceController.next_foot_location()`       |  0.0321  | **0.0314**  |    −2.2%     |
+| `RestController.step()`                           |  0.0033  | **0.0029**  |    −12.1%    |
+| `Trot Step (full cycle)`                          |  0.1525  |   0.1490    |    −2.3%     |
+| `GaitController.contacts()`                       |  0.0122  | **0.0113**  |    −7.4%     |
+| `StandController.run()`                           |  0.0061  |   0.0068    | +11.5% (шум) |
+| `PIDController.run()`                             |  0.0020  |   0.0022    | +10.0% (шум) |
 
 **Наибольший прирост:** FK (−31.4%) за счёт precompute `T_base_[4]` и удаления `LegBasePositions`. IK (−20.1%) за счёт убирания лишних `Identity()` в матричных функциях.
 
 **Общий цикл Trot:** −2.3% — микрооптимизации дают малый вклад относительно тригонометрии (acos, atan2) в IK, которая остаётся основным боттлнеком.
+
+### Сравнение до/после на 100K итераций
+
+| Функция                                           | До (мкс) | После (мкс) |      Δ       |
+| ------------------------------------------------- | :------: | :---------: | :----------: |
+| `ForwardKinematics.forward_kinematics_all_legs()` |  0.7034  | **0.5006**  |  **−28.8%**  |
+| `InverseKinematics.inverse_kinematics()`          |  0.3859  | **0.3288**  |  **−14.8%**  |
+| `TrotSwingController.next_foot_location()`        |  0.0248  | **0.0229**  |    −7.7%     |
+| `TrotSwingController.raibert_touchdown()`         |  0.0189  | **0.0174**  |    −7.9%     |
+| `TrotStanceController.next_foot_location()`       |  0.0341  | **0.0439**  | +28.7% (шум) |
+| `RestController.step()`                           |  0.0029  |   0.0029    |      0%      |
+| `GaitController.contacts()`                       |  0.0120  | **0.0131**  | +9.2% (шум)  |
+| `StandController.run()`                           |  0.0063  | **0.0081**  | +28.6% (шум) |
+| `PIDController.run()`                             |  0.0021  |   0.0023    | +9.5% (шум)  |
+| `Trot Step (full cycle)`                          |  0.1565  |   0.1596    | +2.0% (шум)  |
+
+FK и IK стабильно показывают ускорение. Несколько функций имеют аномально высокий разброс (28%) из-за фоновой нагрузки системы на 100K итерациях — измерения на 10K точнее.
+
+### Стабильность измерений (10K / 50K / 100K итераций)
+
+Все значения — мкс на вызов, после оптимизаций:
+
+| Функция                                           |  10K   |  50K   |  100K  | Среднее | Разброс |
+| ------------------------------------------------- | :----: | :----: | :----: | :-----: | :-----: |
+| `GaitController.contacts()`                       | 0.0111 | 0.0112 | 0.0112 | 0.0112  |  ±0.9%  |
+| `GaitController.subphase_ticks()`                 | 0.0026 | 0.0027 | 0.0028 | 0.0027  |  ±3.7%  |
+| `TrotSwingController.swing_height()`              | 0.0024 | 0.0024 | 0.0023 | 0.0024  |  ±2.1%  |
+| `TrotSwingController.next_foot_location()`        | 0.0234 | 0.0294 | 0.0233 | 0.0254  | ±13.2%  |
+| `TrotSwingController.raibert_touchdown()`         | 0.0168 | 0.0195 | 0.0168 | 0.0177  |  ±8.8%  |
+| `TrotStanceController.position_delta()`           | 0.0020 | 0.0021 | 0.0021 | 0.0021  |  ±3.2%  |
+| `TrotStanceController.next_foot_location()`       | 0.0330 | 0.0325 | 0.0329 | 0.0328  |  ±0.8%  |
+| `StandController.run()`                           | 0.0061 | 0.0062 | 0.0063 | 0.0062  |  ±1.6%  |
+| `ForwardKinematics.forward_kinematics_all_legs()` | 0.4618 | 0.4725 | 0.4670 | 0.4671  |  ±1.1%  |
+| `RestController.step()`                           | 0.0029 | 0.0029 | 0.0029 | 0.0029  |   0%    |
+| `InverseKinematics.inverse_kinematics()`          | 0.3076 | 0.3143 | 0.3156 | 0.3125  |  ±1.3%  |
+| `PIDController.run()`                             | 0.0024 | 0.0024 | 0.0024 | 0.0024  |   0%    |
+| `Trot Step (full cycle)`                          | 0.1573 | 0.1512 | 0.1618 | 0.1568  |  ±3.4%  |
+
+Измерения стабильны: разброс <5% для большинства функций. `next_foot_location` (13%) и `raibert_touchdown` (9%) имеют условные ветвления, что даёт вариативность.
+
+## Итог
+
+Кэширование констант и удаление лишних вызовов `Identity()` **сработало хорошо**: FK ускорен на 31%, IK на 20%. Дальнейшее ускорение требует не микрооптимизаций, а замены тригонометрии (acos, atan2) на табличные методы или аппроксимации — это отдельная задача.

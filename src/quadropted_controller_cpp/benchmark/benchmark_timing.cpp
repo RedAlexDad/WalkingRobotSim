@@ -15,7 +15,7 @@
 
 using namespace quadropted;
 
-void benchmark_timing_json() {
+void benchmark_timing_json(int iterations) {
     auto stance = benchmark::create_default_stance();
     TrotGaitController trot(0.04, 0.18, 0.02, false, stance);
 
@@ -40,7 +40,7 @@ void benchmark_timing_json() {
     StandController stand(stance);
     RestController rest(stance);
 
-    const int iterations = 10000;
+    std::cout << "ITERATIONS=" << iterations << "\n";
 
     std::cout << "=== BENCHMARK_JSON_START ===\n";
 
