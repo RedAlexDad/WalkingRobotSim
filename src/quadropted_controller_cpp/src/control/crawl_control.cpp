@@ -29,9 +29,10 @@ LegsMatrix RobotControllerNode::step_crawl(State& state, const Command& cmd) {
             int sub_ticks = crawl_gait_->subphase_ticks(state.ticks);
             double swing_prop = static_cast<double>(sub_ticks) / crawl_gait_->swing_ticks();
 
+            bool shifted_left = (contacts(0) == 0 || contacts(2) == 0);
             new_foot_locations.col(leg) = crawl_gait_->swing().next_foot_location(
                 swing_prop, leg, state.foot_locations,
-                Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]}, cmd.robot_height);
+                Eigen::Vector3d{cmd.velocity[0], cmd.velocity[1], cmd.yaw_rate[2]}, cmd.robot_height, shifted_left);
         }
     }
 

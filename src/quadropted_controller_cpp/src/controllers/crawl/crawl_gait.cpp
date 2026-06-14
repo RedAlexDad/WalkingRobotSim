@@ -30,9 +30,10 @@ LegsMatrix CrawlGaitController::step(int ticks, const LegsMatrix& current, const
             // Stance — возвращаем текущую позицию
             new_foot_locations.col(leg_index) = current.col(leg_index);
         } else {
-            // Swing
+            // Swing — body shift в сторону опорных ног для устойчивости
+            bool shifted_left = (contact_modes(0) == 0 || contact_modes(2) == 0);
             new_foot_locations.col(leg_index) =
-                swing_.next_foot_location(swing_prop, leg_index, current, cmd_vel, first_cycle_);
+                swing_.next_foot_location(swing_prop, leg_index, current, cmd_vel, 0.25, shifted_left);
         }
     }
 

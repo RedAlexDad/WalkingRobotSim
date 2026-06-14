@@ -13,7 +13,7 @@ class CrawlSwingController {
     Eigen::Vector3d raibert_touchdown_location(int leg_index, const Eigen::Vector3d& cmd_vel, bool shifted_left) const;
     double swing_height(double swing_prop) const;
     Eigen::Vector3d next_foot_location(double swing_prop, int leg_index, const LegsMatrix& current,
-                                       const Eigen::Vector3d& cmd_vel, double robot_height) const;
+                                       const Eigen::Vector3d& cmd_vel, double robot_height, bool shifted_left) const;
 
   private:
     int swing_ticks_;
