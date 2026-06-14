@@ -73,7 +73,8 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   foreach(_t test_rotation_matrices test_homogeneous_transforms test_fk test_ik
             test_odometry test_pid test_gait test_message_builders
-            test_cross_validation test_base_link_roll test_ik_with_roll test_step_trot)
+            test_cross_validation test_base_link_roll test_ik_with_roll test_step_trot
+            test_fast_math test_stand_controller test_edge_cases)
     ament_add_gmock(${_t} test/${_t}.cpp)
     target_link_libraries(${_t} ${PROJECT_NAME})
   endforeach()
