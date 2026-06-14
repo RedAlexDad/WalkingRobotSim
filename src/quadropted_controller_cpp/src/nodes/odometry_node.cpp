@@ -12,6 +12,12 @@ DogOdometryNode::DogOdometryNode() : Node("dog_odometry") {
     declare_parameter("stall_window", 20);
     declare_parameter("stall_ang_vel_threshold", 0.05);
     declare_parameter("stall_exit_ang_vel_threshold", 0.1);
+    declare_parameter("body_length", 0.3762);
+    declare_parameter("body_width", 0.0935);
+    declare_parameter("leg_l1", 0.0);
+    declare_parameter("leg_l2", 0.0955);
+    declare_parameter("leg_l3", 0.213);
+    declare_parameter("leg_l4", 0.213);
 
     verbose_ = get_parameter("verbose").as_bool();
     publish_rate_ = get_parameter("publish_rate").as_int();
@@ -22,8 +28,12 @@ DogOdometryNode::DogOdometryNode() : Node("dog_odometry") {
     int filter_window = static_cast<int>(get_parameter("filter_window_size").as_int());
     std::string imu_topic = get_parameter("imu_topic").as_string();
 
-    double body_length = 0.3762, body_width = 0.0935;
-    double l1 = 0.0, l2 = 0.0955, l3 = 0.213, l4 = 0.213;
+    double body_length = get_parameter("body_length").as_double();
+    double body_width = get_parameter("body_width").as_double();
+    double l1 = get_parameter("leg_l1").as_double();
+    double l2 = get_parameter("leg_l2").as_double();
+    double l3 = get_parameter("leg_l3").as_double();
+    double l4 = get_parameter("leg_l4").as_double();
     fk_ = std::make_unique<quadropted::ForwardKinematics>(body_length, body_width, l1, l2, l3, l4);
 
     odom_state_ = std::make_unique<quadropted::OdometryState>(filter_window);

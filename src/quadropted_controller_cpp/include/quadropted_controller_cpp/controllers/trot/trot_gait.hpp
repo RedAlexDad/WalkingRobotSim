@@ -9,7 +9,9 @@ namespace quadropted {
 class TrotGaitController : public GaitController {
   public:
     TrotGaitController(double stance_time, double swing_time, double time_step, bool use_imu,
-                       Eigen::MatrixXd default_stance);
+                       Eigen::MatrixXd default_stance, double z_leg_lift = 0.14,
+                       double z_error_constant = 0.02, double pid_kp = 0.15, double pid_ki = 0.02,
+                       double pid_kd = 0.002);
     LegsMatrix step(int ticks, const LegsMatrix& current, const Eigen::Vector3d& cmd_vel, double robot_height) const;
     bool use_imu() const { return use_imu_; }
     TrotSwingController& swing_controller() { return swing_; }

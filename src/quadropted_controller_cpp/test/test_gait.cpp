@@ -1,8 +1,7 @@
 #include <gtest/gtest.h>
 
-#include <cmath>
-
 #include <Eigen/Dense>
+#include <cmath>
 
 #include "quadropted_controller_cpp/controllers/crawl/crawl_gait.hpp"
 #include "quadropted_controller_cpp/controllers/gait_controller.hpp"

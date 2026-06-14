@@ -7,7 +7,9 @@ namespace quadropted {
 
 class StandController {
   public:
-    explicit StandController(Eigen::MatrixXd default_stance);
+    explicit StandController(Eigen::MatrixXd default_stance, double body_velocity_scale = 0.01,
+                             double body_angular_scale = 0.005, double max_linear_velocity = 0.2,
+                             double max_angular_velocity = 0.5);
     LegsMatrix run(State& state, Command& cmd) const;
     const LegsMatrix& default_stance() const { return default_stance_; }
 

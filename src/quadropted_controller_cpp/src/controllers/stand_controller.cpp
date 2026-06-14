@@ -4,7 +4,12 @@
 
 namespace quadropted {
 
-StandController::StandController(Eigen::MatrixXd default_stance) : default_stance_(std::move(default_stance)) {}
+StandController::StandController(Eigen::MatrixXd default_stance, double body_velocity_scale,
+                                 double body_angular_scale, double max_linear_velocity,
+                                 double max_angular_velocity)
+    : default_stance_(std::move(default_stance)), body_velocity_scale_(body_velocity_scale),
+      body_angular_scale_(body_angular_scale), max_linear_velocity_(max_linear_velocity),
+      max_angular_velocity_(max_angular_velocity) {}
 
 LegsMatrix StandController::run(State& state, Command& cmd) const {
     LegsMatrix temp = default_stance_;

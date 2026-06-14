@@ -4,8 +4,8 @@
 
 namespace quadropted {
 
-RestController::RestController(Eigen::MatrixXd default_stance)
-    : default_stance_(std::move(default_stance)), pid_(0.75, 2.29, 0.0), use_imu_(false), pid_last_time_(0.0) {}
+RestController::RestController(Eigen::MatrixXd default_stance, double pid_kp, double pid_ki, double pid_kd)
+    : default_stance_(std::move(default_stance)), pid_(pid_kp, pid_ki, pid_kd), use_imu_(false), pid_last_time_(0.0) {}
 
 void RestController::reset() {
     pid_.reset(0.0);

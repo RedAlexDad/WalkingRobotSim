@@ -1,9 +1,8 @@
 #include <gtest/gtest.h>
 
+#include <Eigen/Dense>
 #include <cmath>
 #include <limits>
-
-#include <Eigen/Dense>
 
 #include "quadropted_controller_cpp/controllers/pid_controller.hpp"
 #include "quadropted_controller_cpp/controllers/stand_controller.hpp"

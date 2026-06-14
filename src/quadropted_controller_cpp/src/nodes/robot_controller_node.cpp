@@ -21,12 +21,31 @@ RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), state
     declare_parameter("trot_swing_time", 0.18);
     declare_parameter("trot_dt", 0.02);
     declare_parameter("trot_use_imu", false);
+    declare_parameter("trot_z_leg_lift", 0.14);
+    declare_parameter("trot_z_error_constant", 0.02);
+    declare_parameter("trot_pid_kp", 0.15);
+    declare_parameter("trot_pid_ki", 0.02);
+    declare_parameter("trot_pid_kd", 0.002);
     declare_parameter("crawl_stance_time", 0.55);
     declare_parameter("crawl_swing_time", 0.45);
     declare_parameter("crawl_dt", 0.02);
+    declare_parameter("crawl_z_leg_lift", 0.14);
+    declare_parameter("crawl_body_shift_y", 0.06);
+    declare_parameter("crawl_z_error_constant", 0.02);
     declare_parameter("crawl_max_vx", 0.011);
     declare_parameter("crawl_max_vy_scale", 0.5);
     declare_parameter("crawl_max_yaw", 0.15);
+    declare_parameter("rest_pid_kp", 0.75);
+    declare_parameter("rest_pid_ki", 2.29);
+    declare_parameter("rest_pid_kd", 0.0);
+    declare_parameter("stand_body_velocity_scale", 0.01);
+    declare_parameter("stand_body_angular_scale", 0.005);
+    declare_parameter("stand_max_linear_velocity", 0.2);
+    declare_parameter("stand_max_angular_velocity", 0.5);
+    declare_parameter("sit_height", -0.15);
+    declare_parameter("stand_height", 0.005);
+    declare_parameter("walk_height", 0.0);
+    declare_parameter("startup_grace_ticks", 120);
     declare_parameter("verbose", false);
 
     rate_ = get_parameter("rate").as_int();
@@ -42,12 +61,31 @@ RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), state
     double trot_swing_time = get_parameter("trot_swing_time").as_double();
     double trot_dt = get_parameter("trot_dt").as_double();
     bool trot_use_imu = get_parameter("trot_use_imu").as_bool();
+    double trot_z_leg_lift = get_parameter("trot_z_leg_lift").as_double();
+    double trot_z_error_constant = get_parameter("trot_z_error_constant").as_double();
+    double trot_pid_kp = get_parameter("trot_pid_kp").as_double();
+    double trot_pid_ki = get_parameter("trot_pid_ki").as_double();
+    double trot_pid_kd = get_parameter("trot_pid_kd").as_double();
     double crawl_stance_time = get_parameter("crawl_stance_time").as_double();
     double crawl_swing_time = get_parameter("crawl_swing_time").as_double();
     double crawl_dt = get_parameter("crawl_dt").as_double();
+    double crawl_z_leg_lift = get_parameter("crawl_z_leg_lift").as_double();
+    double crawl_body_shift_y = get_parameter("crawl_body_shift_y").as_double();
+    double crawl_z_error_constant = get_parameter("crawl_z_error_constant").as_double();
     double crawl_max_vx = get_parameter("crawl_max_vx").as_double();
     double crawl_max_vy_scale = get_parameter("crawl_max_vy_scale").as_double();
     double crawl_max_yaw = get_parameter("crawl_max_yaw").as_double();
+    double rest_pid_kp = get_parameter("rest_pid_kp").as_double();
+    double rest_pid_ki = get_parameter("rest_pid_ki").as_double();
+    double rest_pid_kd = get_parameter("rest_pid_kd").as_double();
+    double stand_body_velocity_scale = get_parameter("stand_body_velocity_scale").as_double();
+    double stand_body_angular_scale = get_parameter("stand_body_angular_scale").as_double();
+    double stand_max_linear_velocity = get_parameter("stand_max_linear_velocity").as_double();
+    double stand_max_angular_velocity = get_parameter("stand_max_angular_velocity").as_double();
+    sit_height_ = get_parameter("sit_height").as_double();
+    stand_height_ = get_parameter("stand_height").as_double();
+    walk_height_ = get_parameter("walk_height").as_double();
+    startup_grace_ = get_parameter("startup_grace_ticks").as_int();
     debug_mode_ = get_parameter("verbose").as_bool();
 
     double dx_front = body_length * 0.5 + dx_front_offset;
@@ -58,11 +96,14 @@ RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), state
     state_.foot_locations = default_stance_;
     state_.behavior_state = BehaviorState::REST;
 
-    trot_gait_ =
-        std::make_unique<TrotGaitController>(trot_stance_time, trot_swing_time, trot_dt, trot_use_imu, default_stance_);
-    crawl_gait_ = std::make_unique<CrawlGaitController>(crawl_stance_time, crawl_swing_time, crawl_dt, default_stance_);
-    rest_ctrl_ = std::make_unique<RestController>(default_stance_);
-    stand_ctrl_ = std::make_unique<StandController>(default_stance_);
+    trot_gait_ = std::make_unique<TrotGaitController>(trot_stance_time, trot_swing_time, trot_dt, trot_use_imu,
+                                                       default_stance_, trot_z_leg_lift, trot_z_error_constant,
+                                                       trot_pid_kp, trot_pid_ki, trot_pid_kd);
+    crawl_gait_ = std::make_unique<CrawlGaitController>(crawl_stance_time, crawl_swing_time, crawl_dt, default_stance_,
+                                                        crawl_z_leg_lift, crawl_body_shift_y, crawl_z_error_constant);
+    rest_ctrl_ = std::make_unique<RestController>(default_stance_, rest_pid_kp, rest_pid_ki, rest_pid_kd);
+    stand_ctrl_ = std::make_unique<StandController>(default_stance_, stand_body_velocity_scale, stand_body_angular_scale,
+                                                    stand_max_linear_velocity, stand_max_angular_velocity);
 
     command_.trot_event = true;
     command_.rest_event = true;
@@ -155,7 +196,7 @@ RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), state
                 command_.trot_event = false;
                 command_.crawl_event = false;
                 change_controller();
-                state_.body_local_position[2] = -0.15;
+                state_.body_local_position[2] = sit_height_;
                 response->success = true;
                 response->message = "Robot sat down.";
             } else if (cmd == "up") {
@@ -164,7 +205,7 @@ RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), state
                 command_.trot_event = false;
                 command_.crawl_event = false;
                 change_controller();
-                state_.body_local_position[2] = 0.0;
+                state_.body_local_position[2] = stand_height_;
                 response->success = true;
                 response->message = "Robot stood up.";
             } else if (cmd == "walk") {
@@ -173,7 +214,7 @@ RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), state
                 command_.stand_event = false;
                 command_.crawl_event = false;
                 change_controller();
-                state_.body_local_position[2] = 0.0;
+                state_.body_local_position[2] = walk_height_;
                 response->success = true;
                 response->message = "Robot started walking.";
             } else {
@@ -192,7 +233,7 @@ void RobotControllerNode::change_controller() {
         state_.behavior_state = BehaviorState::TROT;
         trot_gait_->pid_controller().reset(this->now().seconds());
         state_.ticks = 0;
-        state_.body_local_position[2] = 0.0;
+        state_.body_local_position[2] = walk_height_;
         command_.trot_event = false;
         RCLCPP_INFO(get_logger(), "Switched to TROT controller");
     } else if (command_.trot_event) {
@@ -200,7 +241,7 @@ void RobotControllerNode::change_controller() {
         state_.behavior_state = BehaviorState::TROT;
         trot_gait_->pid_controller().reset(this->now().seconds());
         state_.ticks = 0;
-        state_.body_local_position[2] = 0.0;
+        state_.body_local_position[2] = walk_height_;
         command_.trot_event = false;
         if (prev == BehaviorState::CRAWL) {
             RCLCPP_INFO(get_logger(), "Switched to TROT controller (from CRAWL)");
@@ -210,13 +251,13 @@ void RobotControllerNode::change_controller() {
     } else if (command_.rest_event) {
         state_.behavior_state = BehaviorState::REST;
         rest_ctrl_->pid().reset(this->now().seconds());
-        state_.body_local_position[2] = -0.15;
+        state_.body_local_position[2] = sit_height_;
         command_.rest_event = false;
         RCLCPP_INFO(get_logger(), "Switched to REST controller — lying down");
     } else if (command_.stand_event) {
         if (state_.behavior_state != BehaviorState::STAND) {
             state_.behavior_state = BehaviorState::STAND;
-            state_.body_local_position[2] = 0.005;
+            state_.body_local_position[2] = stand_height_;
             RCLCPP_INFO(get_logger(), "Switched to STAND controller");
         }
         command_.stand_event = false;
@@ -224,7 +265,7 @@ void RobotControllerNode::change_controller() {
         state_.behavior_state = BehaviorState::CRAWL;
         crawl_gait_->reset();
         state_.ticks = 0;
-        state_.body_local_position[2] = 0.0;
+        state_.body_local_position[2] = walk_height_;
         command_.crawl_event = false;
     }
 }

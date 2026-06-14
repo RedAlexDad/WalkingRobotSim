@@ -9,7 +9,15 @@ class CmdVelPub : public rclcpp::Node {
   public:
     CmdVelPub() : Node("cmd_vel_pub_cpp"), motion_start_time_(0.0) {
         declare_parameter("verbose", false);
+        declare_parameter("vel_x_scale", 0.035);
+        declare_parameter("vel_y_scale", 0.012);
+        declare_parameter("vel_curve_factor", 100.0);
+        declare_parameter("vel_clamp_max", 1.0);
         verbose_ = get_parameter("verbose").as_bool();
+        vel_x_scale_ = get_parameter("vel_x_scale").as_double();
+        vel_y_scale_ = get_parameter("vel_y_scale").as_double();
+        vel_curve_factor_ = get_parameter("vel_curve_factor").as_double();
+        vel_clamp_max_ = get_parameter("vel_clamp_max").as_double();
 
         cmd_vel_sub_ = create_subscription<geometry_msgs::msg::Twist>(
             "cmd_vel", 10, std::bind(&CmdVelPub::twist_callback, this, std::placeholders::_1));
@@ -51,24 +59,28 @@ class CmdVelPub : public rclcpp::Node {
     }
 
     double multiply_and_limit(double value) {
-        double adjusted = value * 0.035;
-        double scaled = 0.035 * (1.0 - std::exp(-100.0 * std::abs(adjusted)));
+        double adjusted = value * vel_x_scale_;
+        double scaled = vel_x_scale_ * (1.0 - std::exp(-vel_curve_factor_ * std::abs(adjusted)));
         return limit(value >= 0 ? scaled : -scaled);
     }
 
     double multiply_and_limit_y(double value) {
-        double adjusted = value * 0.012;
-        double scaled = 0.012 * (1.0 - std::exp(-100.0 * std::abs(adjusted)));
+        double adjusted = value * vel_y_scale_;
+        double scaled = vel_y_scale_ * (1.0 - std::exp(-vel_curve_factor_ * std::abs(adjusted)));
         return limit(value >= 0 ? scaled : -scaled);
     }
 
-    static double limit(double value) {
-        if (value > 1.0) return 1.0;
-        if (value < -1.0) return -1.0;
+    double limit(double value) const {
+        if (value > vel_clamp_max_) return vel_clamp_max_;
+        if (value < -vel_clamp_max_) return -vel_clamp_max_;
         return value;
     }
 
     bool verbose_;
+    double vel_x_scale_;
+    double vel_y_scale_;
+    double vel_curve_factor_;
+    double vel_clamp_max_;
     double motion_start_time_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
     rclcpp::Publisher<quadropted_msgs::msg::RobotVelocity>::SharedPtr robot_vel_pub_;

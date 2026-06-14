@@ -8,7 +8,8 @@ namespace quadropted {
 
 class RestController {
   public:
-    explicit RestController(Eigen::MatrixXd default_stance);
+    explicit RestController(Eigen::MatrixXd default_stance, double pid_kp = 0.75, double pid_ki = 2.29,
+                            double pid_kd = 0.0);
     LegsMatrix step(const State& state, const Command& cmd);
     const LegsMatrix& default_stance() const { return default_stance_; }
     PIDController& pid() { return pid_; }

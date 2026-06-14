@@ -34,6 +34,9 @@ class RobotControllerNode : public rclcpp::Node {
     int rate_;
     bool debug_mode_ = false;
     int startup_grace_ = 120;
+    double sit_height_ = -0.15;
+    double stand_height_ = 0.005;
+    double walk_height_ = 0.0;
 
     LegsMatrix default_stance_;
     State state_;

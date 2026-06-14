@@ -23,15 +23,78 @@ robot_controller_cpp:
     trot_dt: 0.02
     trot_use_imu: false
 
+    # Trot swing lift height (meters)
+    trot_z_leg_lift: 0.14
+
+    # Trot stance z_error constant
+    trot_z_error_constant: 0.02
+
+    # Trot PID gains
+    trot_pid_kp: 0.15
+    trot_pid_ki: 0.02
+    trot_pid_kd: 0.002
+
     # Crawl gait parameters
     crawl_stance_time: 0.55
     crawl_swing_time: 0.45
     crawl_dt: 0.02
+
+    # Crawl swing lift height (meters)
+    crawl_z_leg_lift: 0.14
+
+    # Crawl body shift (meters)
+    crawl_body_shift_y: 0.06
+
+    # Crawl stance z_error constant
+    crawl_z_error_constant: 0.02
 
     # Crawl velocity limits
     crawl_max_vx: 0.011
     crawl_max_vy_scale: 0.5
     crawl_max_yaw: 0.15
 
+    # Rest PID gains
+    rest_pid_kp: 0.75
+    rest_pid_ki: 2.29
+    rest_pid_kd: 0.0
+
+    # Stand controller tuning
+    stand_body_velocity_scale: 0.01
+    stand_body_angular_scale: 0.005
+    stand_max_linear_velocity: 0.2
+    stand_max_angular_velocity: 0.5
+
+    # Behavior heights (meters)
+    sit_height: -0.15
+    stand_height: 0.005
+    walk_height: 0.0
+
+    # Startup grace period (ticks at 60 Hz)
+    startup_grace_ticks: 120
+
     # Verbose logging
     verbose: false
+
+# Odometry node parameters
+dog_odometry_cpp:
+  ros__parameters:
+    verbose: false
+    publish_rate: 50
+    has_imu_heading: true
+    enable_odom_tf: true
+    base_frame_id: "base"
+    odom_frame_id: "odom"
+    filter_window_size: 14
+    imu_topic: "imu_plugin/out"
+    stall_window: 20
+    stall_ang_vel_threshold: 0.05
+    stall_exit_ang_vel_threshold: 0.1
+
+# CmdVel publisher parameters
+cmd_vel_pub_cpp:
+  ros__parameters:
+    verbose: false
+    vel_x_scale: 0.035
+    vel_y_scale: 0.012
+    vel_curve_factor: 100.0
+    vel_clamp_max: 1.0
