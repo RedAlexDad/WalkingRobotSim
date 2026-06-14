@@ -21,6 +21,10 @@ class TrotSwingController {
     LegsMatrix default_stance_;
     int phase_length_;  // для Raibert delta_pos
     int stance_ticks_;  // для Raibert yaw rotation
+    double total_time_;
+    double stance_yaw_time_;
+    double swing_total_time_;
+    double two_z_lift_;
 };
 
 }  // namespace quadropted

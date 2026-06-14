@@ -10,7 +10,8 @@ TrotStanceController::TrotStanceController(int phase_length, int stance_ticks, i
       stance_ticks_(stance_ticks),
       swing_ticks_(swing_ticks),
       time_step_(time_step),
-      z_error_constant_(z_error_constant) {
+      z_error_constant_(z_error_constant),
+      inv_z_error_(1.0 / z_error_constant) {
     inv_scale_ = static_cast<double>(phase_length_) / (4.0 * swing_ticks_ * time_step_ * stance_ticks_);
 }
 
@@ -21,7 +22,7 @@ Eigen::Vector3d TrotStanceController::position_delta(int leg_index, const LegsMa
     Eigen::Vector3d velocity;
     velocity.x() = -cmd_vel.x() * inv_scale_;
     velocity.y() = -cmd_vel.y() * inv_scale_;
-    velocity.z() = (1.0 / z_error_constant_) * (robot_height - z);
+    velocity.z() = inv_z_error_ * (robot_height - z);
 
     Eigen::Vector3d delta_pos = velocity * time_step_;
     return delta_pos;

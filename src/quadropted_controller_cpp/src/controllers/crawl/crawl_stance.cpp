@@ -11,26 +11,29 @@ CrawlStanceController::CrawlStanceController(int phase_length, int stance_ticks,
       swing_ticks_(swing_ticks),
       time_step_(time_step),
       z_error_constant_(z_error_constant),
-      body_shift_y_(body_shift_y) {}
+      body_shift_y_(body_shift_y),
+      phase_over_swing_(static_cast<double>(phase_length) / swing_ticks),
+      inv_stance_total_time_(1.0 / (time_step * stance_ticks)),
+      inv_z_error_(1.0 / z_error_constant) {}
 
 Eigen::Vector3d CrawlStanceController::next_foot_location(int leg_index, const LegsMatrix& state_foot,
                                                           const Eigen::Vector3d& cmd_vel, double robot_height,
                                                           bool first_cycle, bool move_sideways, bool move_left) const {
     double z = state_foot(2, leg_index);
 
-    double step_dist_x = cmd_vel.x() * (static_cast<double>(phase_length_) / swing_ticks_);
+    double step_dist_x = cmd_vel.x() * phase_over_swing_;
     int shift_factor = first_cycle ? 1 : 2;
 
     double side_vel = 0.0;
     if (move_sideways) {
-        side_vel = move_left ? -(body_shift_y_ * shift_factor) / (time_step_ * stance_ticks_)
-                             : (body_shift_y_ * shift_factor) / (time_step_ * stance_ticks_);
+        side_vel = move_left ? -(body_shift_y_ * shift_factor) * inv_stance_total_time_
+                             : (body_shift_y_ * shift_factor) * inv_stance_total_time_;
     }
 
     Eigen::Vector3d velocity;
-    velocity.x() = -(step_dist_x / 3.0) / (time_step_ * stance_ticks_);
+    velocity.x() = -(step_dist_x / 3.0) * inv_stance_total_time_;
     velocity.y() = side_vel;
-    velocity.z() = (1.0 / z_error_constant_) * (robot_height - z);
+    velocity.z() = inv_z_error_ * (robot_height - z);
 
     Eigen::Vector3d delta_pos = velocity * time_step_;
     double yaw_delta = -cmd_vel.z() * time_step_;

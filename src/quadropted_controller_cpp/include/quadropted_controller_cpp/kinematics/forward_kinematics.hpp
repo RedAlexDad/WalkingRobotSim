@@ -12,8 +12,8 @@ struct LegBasePositions {
     static Eigen::Vector2d get(int leg_index, double body_length, double body_width);
 };
 
-Eigen::Vector3d compute_leg_fk_chain(double theta_hip, double theta_thigh, double theta_calf, double base_x,
-                                     double base_y, double l1, const Eigen::Matrix4d& T_thigh_t,
+Eigen::Vector3d compute_leg_fk_chain(double theta_hip, double theta_thigh, double theta_calf,
+                                     const Eigen::Matrix4d& T_base, const Eigen::Matrix4d& T_thigh_t,
                                      const Eigen::Matrix4d& T_calf_t, const Eigen::Matrix4d& T_foot);
 
 class ForwardKinematics {
@@ -23,8 +23,9 @@ class ForwardKinematics {
     FootPositions forward_kinematics_all_legs(const JointAngles& joint_angles) const;
 
   private:
-    double body_length_, body_width_, l1_, l2_, l3_, l4_;
+    double l1_, l2_, l3_, l4_;
     Eigen::Matrix4d T_thigh_t_, T_calf_t_, T_foot_;
+    Eigen::Matrix4d T_base_[4]{};
 };
 
 }  // namespace quadropted

@@ -15,6 +15,9 @@ class CrawlStanceController {
   private:
     int phase_length_, stance_ticks_, swing_ticks_;
     double time_step_, z_error_constant_, body_shift_y_;
+    double phase_over_swing_;
+    double inv_stance_total_time_;
+    double inv_z_error_;
 };
 
 }  // namespace quadropted

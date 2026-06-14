@@ -13,17 +13,20 @@ CrawlSwingController::CrawlSwingController(int swing_ticks, double time_step, do
       default_stance_(default_stance),
       phase_length_(phase_length),
       stance_ticks_(stance_ticks),
-      body_shift_y_(body_shift_y) {}
+      body_shift_y_(body_shift_y),
+      total_time_(phase_length * time_step),
+      stance_yaw_time_(stance_ticks * time_step),
+      swing_total_time_(swing_ticks * time_step) {}
 
 Eigen::Vector3d CrawlSwingController::raibert_touchdown_location(int leg_index, const Eigen::Vector3d& cmd_vel,
                                                                  bool shifted_left) const {
     // Python: delta_pos_2d = command.velocity * phase_length * time_step
-    double total_time = phase_length_ * time_step_;
+    double total_time = total_time_;
     Eigen::Vector3d delta_pos;
     delta_pos << cmd_vel.x() * total_time, cmd_vel.y() * total_time, 0.0;
 
     // Python: theta = stance_ticks * time_step * command.yaw_rate
-    double theta = stance_ticks_ * time_step_ * cmd_vel.z();
+    double theta = stance_yaw_time_ * cmd_vel.z();
     Eigen::Matrix3d rotation = rotz(theta);
 
     // Python: shift_correction[1] = -body_shift_y if shifted_left else body_shift_y
@@ -35,9 +38,9 @@ Eigen::Vector3d CrawlSwingController::raibert_touchdown_location(int leg_index, 
 
 double CrawlSwingController::swing_height(double swing_prop) const {
     if (swing_prop < 0.5) {
-        return (swing_prop / 0.5) * z_leg_lift_;
+        return (swing_prop * 2.0) * z_leg_lift_;
     } else {
-        return z_leg_lift_ * (1.0 - (swing_prop - 0.5) / 0.5);
+        return z_leg_lift_ * (1.0 - (swing_prop - 0.5) * 2.0);
     }
 }
 
@@ -57,7 +60,7 @@ Eigen::Vector3d CrawlSwingController::next_foot_location(double swing_prop, int 
 
     Eigen::Vector3d touchdown = raibert_touchdown_location(leg_index, cmd_vel, shifted_left);
 
-    double time_left = time_step_ * swing_ticks_ * (1.0 - swing_prop);
+    double time_left = swing_total_time_ * (1.0 - swing_prop);
     if (time_left < 1e-6) return touchdown;
 
     // Python: velocity * np.array([1, 1, 0]) — XY mask

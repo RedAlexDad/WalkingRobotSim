@@ -17,6 +17,7 @@ class TrotStanceController {
   private:
     int phase_length_, stance_ticks_, swing_ticks_;
     double time_step_, z_error_constant_, inv_scale_;
+    double inv_z_error_;
 };
 
 }  // namespace quadropted

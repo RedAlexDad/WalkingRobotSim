@@ -22,6 +22,9 @@ class CrawlSwingController {
     int phase_length_;
     int stance_ticks_;
     double body_shift_y_;
+    double total_time_;
+    double stance_yaw_time_;
+    double swing_total_time_;
 };
 
 }  // namespace quadropted

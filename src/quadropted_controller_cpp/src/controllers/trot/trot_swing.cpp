@@ -11,15 +11,19 @@ TrotSwingController::TrotSwingController(int swing_ticks, double time_step, doub
       z_leg_lift_(z_leg_lift),
       default_stance_(default_stance),
       phase_length_(phase_length),
-      stance_ticks_(stance_ticks) {}
+      stance_ticks_(stance_ticks),
+      total_time_(phase_length * time_step),
+      stance_yaw_time_(stance_ticks * time_step),
+      swing_total_time_(swing_ticks * time_step),
+      two_z_lift_(2.0 * z_leg_lift) {}
 
 Eigen::Vector3d TrotSwingController::raibert_touchdown_location(int leg_index, const Eigen::Vector3d& cmd_vel) const {
-    double total_time = phase_length_ * time_step_;
+    double total_time = total_time_;
     Eigen::Vector3d delta_pos;
     delta_pos << cmd_vel.x() * total_time, cmd_vel.y() * total_time, 0.0;
 
     // Python: stance_ticks * time_step для yaw rotation
-    double theta = stance_ticks_ * time_step_ * cmd_vel.z();
+    double theta = stance_yaw_time_ * cmd_vel.z();
     Eigen::Matrix3d rotation = rotz(theta);
 
     return rotation * default_stance_.col(leg_index) + delta_pos;
@@ -41,7 +45,7 @@ Eigen::Vector3d TrotSwingController::next_foot_location(double swing_prop, int l
     double swing_h = swing_height(swing_prop);
     Eigen::Vector3d touchdown = raibert_touchdown_location(leg_index, cmd_vel);
 
-    double time_left = time_step_ * swing_ticks_ * (1.0 - swing_prop);
+    double time_left = swing_total_time_ * (1.0 - swing_prop);
     if (time_left < 1e-6) return touchdown;
 
     double inv_time_left = 1.0 / time_left;

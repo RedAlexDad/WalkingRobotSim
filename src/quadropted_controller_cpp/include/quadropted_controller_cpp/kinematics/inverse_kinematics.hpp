@@ -15,15 +15,13 @@ Eigen::Matrix<double, 4, 3> compute_local_positions(const LegsMatrix& leg_positi
 std::array<double, 3> compute_joint_angles_for_leg(double x, double y, double z, int leg_index, double l1, double l2,
                                                    double l3, double l4);
 
+namespace detail {
+
 template <typename Derived>
 std::array<double, 12> compute_all_joint_angles(const Eigen::MatrixBase<Derived>& positions, double l1, double l2,
-                                                double l3, double l4) {
+                                                double l3, double l4, double l2_sq, double inv_2l3l4,
+                                                double l3sq_l4sq) {
     static const double LEG_SIGNS[] = {1.0, -1.0, 1.0, -1.0};
-
-    double l2_sq = l2 * l2;
-    double _2l3l4 = 2.0 * l3 * l4;
-    double inv_2l3l4 = 1.0 / _2l3l4;
-    double l3sq_l4sq = l3 * l3 + l4 * l4;
 
     std::array<double, 12> angles{};
 
@@ -57,6 +55,18 @@ std::array<double, 12> compute_all_joint_angles(const Eigen::MatrixBase<Derived>
     return angles;
 }
 
+}  // namespace detail
+
+template <typename Derived>
+std::array<double, 12> compute_all_joint_angles(const Eigen::MatrixBase<Derived>& positions, double l1, double l2,
+                                                double l3, double l4) {
+    double l2_sq = l2 * l2;
+    double _2l3l4 = 2.0 * l3 * l4;
+    double inv_2l3l4 = 1.0 / _2l3l4;
+    double l3sq_l4sq = l3 * l3 + l4 * l4;
+    return detail::compute_all_joint_angles(positions, l1, l2, l3, l4, l2_sq, inv_2l3l4, l3sq_l4sq);
+}
+
 class InverseKinematics {
   public:
     InverseKinematics(double body_length, double body_width, double l1, double l2, double l3, double l4);
@@ -70,6 +80,8 @@ class InverseKinematics {
   private:
     ForwardKinematics fk_;
     double body_length_, body_width_, l1_, l2_, l3_, l4_;
+    Eigen::Matrix4d inv_T_bl_base_[4]{};
+    double l2_sq_ = 0.0, inv_2l3l4_ = 0.0, l3sq_l4sq_ = 0.0;
 };
 
 }  // namespace quadropted
