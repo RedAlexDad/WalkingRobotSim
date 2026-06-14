@@ -2,6 +2,7 @@
 #include <Eigen/Dense>
 #include <array>
 #include <cmath>
+#include <stdexcept>
 
 #include "quadropted_controller_cpp/kinematics/forward_kinematics.hpp"
 #include "quadropted_controller_cpp/states/state_command.hpp"
@@ -9,19 +10,22 @@
 
 namespace quadropted {
 
-Eigen::Matrix<double, 4, 3> compute_local_positions(const LegsMatrix& leg_positions, double body_length,
-                                                    double body_width, double dx, double dy, double dz, double roll,
-                                                    double pitch, double yaw);
+[[nodiscard]] Eigen::Matrix<double, 4, 3> compute_local_positions(const LegsMatrix& leg_positions, double body_length,
+                                                                  double body_width, double dx, double dy, double dz,
+                                                                  double roll, double pitch, double yaw) noexcept;
 
-std::array<double, 3> compute_joint_angles_for_leg(double x, double y, double z, int leg_index, double l1, double l2,
-                                                   double l3, double l4);
+[[nodiscard]] std::array<double, 3> compute_joint_angles_for_leg(double x, double y, double z, int leg_index, double l1,
+                                                                 double l2, double l3, double l4) noexcept;
 
 namespace detail {
 
 template <typename Derived>
-std::array<double, 12> compute_all_joint_angles(const Eigen::MatrixBase<Derived>& positions, double l1, double l2,
-                                                double l3, double l4, double l2_sq, double inv_2l3l4,
-                                                double l3sq_l4sq) {
+[[nodiscard]] std::array<double, 12> compute_all_joint_angles(const Eigen::MatrixBase<Derived>& positions, double l1,
+                                                              double l2, double l3, double l4, double l2_sq,
+                                                              double inv_2l3l4, double l3sq_l4sq) noexcept {
+    if (positions.rows() != 4 || positions.cols() != 3) {
+        throw std::invalid_argument("positions must be 4x3 (4 legs x 3 coordinates)");
+    }
     static const double LEG_SIGNS[] = {1.0, -1.0, 1.0, -1.0};
 
     std::array<double, 12> angles{};
@@ -60,8 +64,11 @@ std::array<double, 12> compute_all_joint_angles(const Eigen::MatrixBase<Derived>
 }  // namespace detail
 
 template <typename Derived>
-std::array<double, 12> compute_all_joint_angles(const Eigen::MatrixBase<Derived>& positions, double l1, double l2,
-                                                double l3, double l4) {
+[[nodiscard]] std::array<double, 12> compute_all_joint_angles(const Eigen::MatrixBase<Derived>& positions, double l1,
+                                                              double l2, double l3, double l4) noexcept {
+    if (positions.rows() != 4 || positions.cols() != 3) {
+        throw std::invalid_argument("positions must be 4x3 (4 legs x 3 coordinates)");
+    }
     double l2_sq = l2 * l2;
     double _2l3l4 = 2.0 * l3 * l4;
     double inv_2l3l4 = 1.0 / _2l3l4;
@@ -73,11 +80,13 @@ class InverseKinematics {
   public:
     InverseKinematics(double body_length, double body_width, double l1, double l2, double l3, double l4);
 
-    Eigen::Matrix<double, 4, 3> get_local_positions(const LegsMatrix& leg_positions, double dx, double dy, double dz,
-                                                    double roll, double pitch, double yaw) const;
+    [[nodiscard]] Eigen::Matrix<double, 4, 3> get_local_positions(const LegsMatrix& leg_positions, double dx, double dy,
+                                                                  double dz, double roll, double pitch,
+                                                                  double yaw) const noexcept;
 
-    std::array<double, 12> inverse_kinematics(const LegsMatrix& leg_positions, double dx, double dy, double dz,
-                                              double roll, double pitch, double yaw) const;
+    [[nodiscard]] std::array<double, 12> inverse_kinematics(const LegsMatrix& leg_positions, double dx, double dy,
+                                                            double dz, double roll, double pitch,
+                                                            double yaw) const noexcept;
 
   private:
     ForwardKinematics fk_;

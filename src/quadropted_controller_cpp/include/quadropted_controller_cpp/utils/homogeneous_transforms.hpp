@@ -5,8 +5,9 @@
 
 namespace quadropted {
 
-Eigen::Matrix4d homog_transxyz(double dx, double dy, double dz);
-Eigen::Matrix4d homog_transform(double dx, double dy, double dz, double alpha, double beta, double gamma);
-Eigen::Matrix4d homog_transform_inverse(const Eigen::Matrix4d& matrix);
+[[nodiscard]] Eigen::Matrix4d homog_transxyz(double dx, double dy, double dz) noexcept;
+[[nodiscard]] Eigen::Matrix4d homog_transform(double dx, double dy, double dz, double alpha, double beta,
+                                              double gamma) noexcept;
+[[nodiscard]] Eigen::Matrix4d homog_transform_inverse(const Eigen::Matrix4d& matrix) noexcept;
 
 }  // namespace quadropted

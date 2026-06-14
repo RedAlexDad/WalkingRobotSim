@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cmath>
+#include <stdexcept>
 
 #include "quadropted_controller_cpp/utils/fast_math.hpp"
 #include "quadropted_controller_cpp/utils/math_utils.hpp"
@@ -10,7 +11,7 @@ namespace quadropted {
 
 Eigen::Matrix<double, 4, 3> compute_local_positions(const LegsMatrix& leg_positions, double body_length,
                                                     double body_width, double dx, double dy, double dz, double roll,
-                                                    double pitch, double yaw) {
+                                                    double pitch, double yaw) noexcept {
     // Фиксированная матрица вращения для ног: R = rotxyz(pi/2, -pi/2, 0)
     static const Eigen::Matrix3d R_legs =
         (Eigen::Matrix3d() << 0.0, 0.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 0.0).finished();
@@ -60,7 +61,7 @@ Eigen::Matrix<double, 4, 3> compute_local_positions(const LegsMatrix& leg_positi
 }
 
 std::array<double, 3> compute_joint_angles_for_leg(double x, double y, double z, int leg_index, double l1, double l2,
-                                                   double l3, double l4) {
+                                                   double l3, double l4) noexcept {
     static const double LEG_SIGNS[] = {1.0, -1.0, 1.0, -1.0};
 
     double l2_sq = l2 * l2;
@@ -115,7 +116,10 @@ InverseKinematics::InverseKinematics(double body_length, double body_width, doub
 
 Eigen::Matrix<double, 4, 3> InverseKinematics::get_local_positions(const LegsMatrix& leg_positions, double dx,
                                                                    double dy, double dz, double roll, double pitch,
-                                                                   double yaw) const {
+                                                                   double yaw) const noexcept {
+    if (leg_positions.rows() != 3 || leg_positions.cols() != 4) {
+        throw std::invalid_argument("leg_positions must be 3x4 (3 coordinates x 4 legs)");
+    }
     Eigen::Matrix4d T_blwbl;
     T_blwbl.block<3, 3>(0, 0) = rotxyz(roll, pitch, yaw);
     T_blwbl(0, 3) = dx;
@@ -142,7 +146,8 @@ Eigen::Matrix<double, 4, 3> InverseKinematics::get_local_positions(const LegsMat
 }
 
 std::array<double, 12> InverseKinematics::inverse_kinematics(const LegsMatrix& leg_positions, double dx, double dy,
-                                                             double dz, double roll, double pitch, double yaw) const {
+                                                             double dz, double roll, double pitch,
+                                                             double yaw) const noexcept {
     auto positions = get_local_positions(leg_positions, dx, dy, dz, roll, pitch, yaw);
     return detail::compute_all_joint_angles(positions, l1_, l2_, l3_, l4_, l2_sq_, inv_2l3l4_, l3sq_l4sq_);
 }

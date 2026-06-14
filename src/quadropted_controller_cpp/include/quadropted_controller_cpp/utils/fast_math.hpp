@@ -4,7 +4,7 @@
 
 namespace quadropted {
 
-inline double fast_atan2(double y, double x) noexcept {
+[[nodiscard]] inline double fast_atan2(double y, double x) noexcept {
     if (x == 0.0 && y == 0.0) return 0.0;
 
     double ay = std::abs(y);

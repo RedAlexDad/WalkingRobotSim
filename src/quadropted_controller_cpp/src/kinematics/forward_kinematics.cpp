@@ -1,5 +1,6 @@
 #include "quadropted_controller_cpp/kinematics/forward_kinematics.hpp"
 
+#include <array>
 #include <cmath>
 
 #include "quadropted_controller_cpp/utils/math_utils.hpp"
@@ -8,7 +9,7 @@ namespace quadropted {
 
 Eigen::Vector3d compute_leg_fk_chain(double theta_hip, double theta_thigh, double theta_calf,
                                      const Eigen::Matrix4d& T_base, const Eigen::Matrix4d& T_thigh_t,
-                                     const Eigen::Matrix4d& T_calf_t, const Eigen::Matrix4d& T_foot) {
+                                     const Eigen::Matrix4d& T_calf_t, const Eigen::Matrix4d& T_foot) noexcept {
     Eigen::Matrix4d T_hip = homog_transform(0, 0, 0, 0, 0, theta_hip);
     Eigen::Matrix4d T_thigh = homog_transform(0, 0, 0, 0, theta_thigh, 0);
     Eigen::Matrix4d T_calf = homog_transform(0, 0, 0, 0, theta_calf, 0);
@@ -51,14 +52,12 @@ ForwardKinematics::ForwardKinematics(double body_length, double body_width, doub
     }
 }
 
-std::vector<Eigen::Vector3d> ForwardKinematics::forward_kinematics_all_legs(
-    const std::vector<double>& joint_angles) const {
+FootPositions ForwardKinematics::forward_kinematics_all_legs(const std::vector<double>& joint_angles) const {
     if (joint_angles.size() != 12) {
         throw std::invalid_argument("Expected 12 joint angles.");
     }
 
-    std::vector<Eigen::Vector3d> foot_positions;
-    foot_positions.reserve(4);
+    FootPositions foot_positions{};
 
     for (int leg = 0; leg < 4; ++leg) {
         int idx = leg * 3;
@@ -66,8 +65,8 @@ std::vector<Eigen::Vector3d> ForwardKinematics::forward_kinematics_all_legs(
         double theta_thigh = joint_angles[idx + 1];
         double theta_calf = joint_angles[idx + 2];
 
-        foot_positions.push_back(
-            compute_leg_fk_chain(theta_hip, theta_thigh, theta_calf, T_base_[leg], T_thigh_t_, T_calf_t_, T_foot_));
+        foot_positions[leg] =
+            compute_leg_fk_chain(theta_hip, theta_thigh, theta_calf, T_base_[leg], T_thigh_t_, T_calf_t_, T_foot_);
     }
 
     return foot_positions;
