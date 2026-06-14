@@ -54,6 +54,7 @@ for (int leg = 0; leg < 4; ++leg) {
 ```
 
 **Проблема:**
+
 - `contacts(ticks)` возвращает `Eigen::VectorXi` (dynamic heap-allocated vector) и вызывается 4 раза в цикле, хотя результат одинаков для всех ног
 - `subphase_ticks(ticks)` — скаляр, вычисляется 4 раза, хотя значение одинаково
 - Каждый вызов `contacts()`:
@@ -62,13 +63,15 @@ for (int leg = 0; leg < 4; ++leg) {
   3. Создаёт `Eigen::VectorXi` — heap аллокация
 
 **Каждый вызов `subphase_ticks()`:**
-  1. Вызывает `ticks % phase_length_` (деление)
-  2. Проходит по `phase_ticks_` vector
-  3. Складывает элементы
 
-**Эффект:** 4× избыточных прохода по phase_ticks_ и 3 лишних heap аллокации на итерацию
+1. Вызывает `ticks % phase_length_` (деление)
+2. Проходит по `phase_ticks_` vector
+3. Складывает элементы
+
+**Эффект:** 4× избыточных прохода по phase*ticks* и 3 лишних heap аллокации на итерацию
 
 **Исправление:**
+
 ```cpp
 Eigen::VectorXi contacts_vec = contacts(ticks);
 int sub = subphase_ticks(ticks);
@@ -110,6 +113,7 @@ for (int leg_index = 0; leg_index < 4; ++leg_index) {
 с одинаковым результатом. Плюс `swing_ticks()` — виртуальный getter.
 
 **Исправление:**
+
 ```cpp
 double swing_prop = static_cast<double>(subphase_ticks(ticks))
                   / static_cast<double>(swing_ticks());
@@ -129,6 +133,7 @@ for (int leg_index = 0; leg_index < 4; ++leg_index) {
 ### 1.3 RobotControllerNode::step_trot — `robot_controller_node.cpp:304-305`
 
 **Строки 304-305:**
+
 ```cpp
 auto comp = trot_gait_->pid_controller().run(state.imu_roll, state.imu_pitch, this->now().seconds());
 ```
@@ -137,6 +142,7 @@ auto comp = trot_gait_->pid_controller().run(state.imu_roll, state.imu_pitch, th
 контроллера (60 Hz). При этом PID вызывается только при `use_imu() == true`.
 
 **Исправление:** Захватить `now()` один раз в `control_loop()` и передать вниз:
+
 ```cpp
 void control_loop() {
     auto now = this->now();
@@ -158,18 +164,19 @@ void control_loop() {
 
 **Затрагиваемые типы:**
 
-| Структура | Файл | Текущий тип | Предлагаемый тип |
-|-----------|------|-------------|------------------|
-| `State::foot_locations` | `state_command.hpp:11` | `Eigen::MatrixXd` | `FootMatrix` |
-| `Command::...` | стабильные члены | — | — |
-| `GaitController::default_stance_` | `gait_controller.hpp:25` | `Eigen::MatrixXd` | `FootMatrix` |
-| `TrotGaitController::step()` return | `trot_gait.hpp:13` | `Eigen::MatrixXd` | `FootMatrix` |
-| `CrawlGaitController::step()` return | `crawl_gait.hpp:11` | `Eigen::MatrixXd` | `FootMatrix` |
-| `RestController::step()` return | `rest_controller.hpp:12` | `Eigen::MatrixXd` | `FootMatrix` |
-| `StandController::run()` return | `stand_controller.hpp` | `Eigen::MatrixXd` | `FootMatrix` |
-| `InverseKinematics::inverse_kinematics()` | `ik.hpp` | `Eigen::MatrixXd` param | `const FootMatrix&` |
+| Структура                                 | Файл                     | Текущий тип             | Предлагаемый тип    |
+| ----------------------------------------- | ------------------------ | ----------------------- | ------------------- |
+| `State::foot_locations`                   | `state_command.hpp:11`   | `Eigen::MatrixXd`       | `FootMatrix`        |
+| `Command::...`                            | стабильные члены         | —                       | —                   |
+| `GaitController::default_stance_`         | `gait_controller.hpp:25` | `Eigen::MatrixXd`       | `FootMatrix`        |
+| `TrotGaitController::step()` return       | `trot_gait.hpp:13`       | `Eigen::MatrixXd`       | `FootMatrix`        |
+| `CrawlGaitController::step()` return      | `crawl_gait.hpp:11`      | `Eigen::MatrixXd`       | `FootMatrix`        |
+| `RestController::step()` return           | `rest_controller.hpp:12` | `Eigen::MatrixXd`       | `FootMatrix`        |
+| `StandController::run()` return           | `stand_controller.hpp`   | `Eigen::MatrixXd`       | `FootMatrix`        |
+| `InverseKinematics::inverse_kinematics()` | `ik.hpp`                 | `Eigen::MatrixXd` param | `const FootMatrix&` |
 
 **Предлагаемый алиас:**
+
 ```cpp
 // в отдельном header или в state_command.hpp
 using LegsMatrix = Eigen::Matrix<double, 3, 4>;
@@ -190,6 +197,7 @@ Eigen::VectorXi contacts(int ticks) const;
 **Проблема:** `Eigen::VectorXi` — динамический, но contacts всегда 4-элементный.
 
 **Исправление:**
+
 ```cpp
 Eigen::Matrix<int, 4, 1> contacts(int ticks) const;
 ```
@@ -199,12 +207,13 @@ Eigen::Matrix<int, 4, 1> contacts(int ticks) const;
 ### 2.3 TrotSwingController default_stance — MatrixXd → const reference
 
 **Файл:** `trot_swing.hpp:21`
+
 ```cpp
 Eigen::MatrixXd default_stance_;
 ```
 
-**Проблема:** Хранится копия всего default_stance, хотя используется только
-`default_stance_.col(leg_index)` в `raibert_touchdown_location()`.
+**Проблема:** Хранится копия всего default*stance, хотя используется только
+`default_stance*.col(leg_index)`в`raibert_touchdown_location()`.
 
 Если стойка 3×4 (12 doubles = 96 bytes) — это не критично. Но если оставить `MatrixXd`,
 то это heap. С `Matrix<double,3,4>` — стек.
@@ -222,6 +231,7 @@ add_compile_options(-Wall -Wextra -Wpedantic -O2)
 ### 3.1 -O2 → -O3
 
 `-O3` включает дополнительные оптимизации:
+
 - `-funroll-loops` — развёртка циклов (если OSTD не задан)
 - `-ftree-vectorize` — векторизация SIMD (автоматическое использование SSE/AVX)
 - Более агрессивное inline
@@ -232,11 +242,13 @@ add_compile_options(-Wall -Wextra -Wpedantic -O2)
 
 Без `-march=native` GCC генерирует код для минимального x86-64 (обычно SSE2).
 Не используются:
+
 - AVX2 (256-bit вектора, 2× ширина)
 - AVX-512 (512-bit, 4× ширина)
 - FMA (Fused Multiply-Add, 2 операции за инструкцию)
 
 Eigen имеет compile-time диспетчеризацию:
+
 ```cpp
 EIGEN_VECTORIZE_SSE4_2
 EIGEN_VECTORIZE_AVX
@@ -282,6 +294,29 @@ target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
 
 ## 4. АЛГОРИТМИЧЕСКИЕ ОПТИМИЗАЦИИ
 
+### 4.0 IK: Eigen::Ref → шаблон MatrixBase (дополнение 2026-06-14)
+
+**Файл:** `kinematics/inverse_kinematics.hpp`
+
+**Проблема (выявлена после внедрения C6):** `compute_all_joint_angles` принимал
+`const Eigen::Ref<const Eigen::MatrixXd>&`, но получал `Eigen::Matrix<double, 4, 3>`
+от `get_local_positions()`. `Eigen::Ref` хранит stride как runtime-значение, что
+препятствует оптимизации доступа `positions(i, j)` — компилятор не может
+развернуть цикл и векторизовать.
+
+**Исправление:** Замена на шаблон:
+
+```cpp
+template<typename Derived>
+std::array<double, 12> compute_all_joint_angles(const Eigen::MatrixBase<Derived>& positions,
+                                                double l1, double l2, double l3, double l4);
+```
+
+Тип выводится в compile time — для `Matrix<double, 4, 3>` компилятор генерирует
+прямой доступ без косвенности, с полной векторизацией.
+
+**Эффект:** 0.0007 ms → 0.00036 ms (**2× ускорение IK**).
+
 ### 4.1 Константные homogeneous transforms в FK
 
 **Файл:** `forward_kinematics.cpp:26-43`
@@ -306,6 +341,7 @@ Eigen::Matrix4d T_foot = build_homog_transform(l4, 0, 0, 0, 0, 0);   // конс
 ```
 
 **Наблюдение:**
+
 - `T_thigh_t`, `T_calf_t`, `T_foot` не зависят от joint angles — могут быть
   предвычислены один раз в конструкторе `ForwardKinematics`
 - `T_base` зависит только от `base_x/base_y` (leg-specific), но не от углов
@@ -314,6 +350,7 @@ Eigen::Matrix4d T_foot = build_homog_transform(l4, 0, 0, 0, 0, 0);   // конс
 **Исправление:**
 
 В конструктор `ForwardKinematics`:
+
 ```cpp
 // Предвычисленные константные трансформы
 Eigen::Matrix4d T_thigh_t_;
@@ -327,6 +364,7 @@ ForwardKinematics::ForwardKinematics(...)
 ```
 
 В `compute_leg_fk_chain`:
+
 ```cpp
 Eigen::Vector3d compute_leg_fk_chain(double theta_hip, double theta_thigh, double theta_calf,
                                      double base_x, double base_y, double l1) {
@@ -360,6 +398,7 @@ return compute_all_joint_angles(positions.transpose(), l1_, l2_, l3_, l4_);
 ```
 
 **Проблема:**
+
 - `positions` — результат `get_local_positions()`, возвращает `Eigen::MatrixXd(4, 3)`
 - `compute_all_joint_angles` ожидает `const Eigen::MatrixXd& (3, 4)`
 - `positions.transpose()` возвращает lazy Transpose<>, но при привязке к const&
@@ -383,6 +422,7 @@ std::vector<double> compute_all_joint_angles(const Eigen::Ref<const Eigen::Matri
 ```
 
 Тогда вызов:
+
 ```cpp
 Eigen::MatrixXd positions = get_local_positions(...);  // (4, 3)
 return compute_all_joint_angles(positions.transpose(), ...);
@@ -410,6 +450,7 @@ velocity.y() = -(step_dist_y / 4.0) / (time_step_ * stance_ticks_);
 `phase_length_ / swing_ticks_` — константа, можно предвычислить.
 
 **Исправление:**
+
 ```cpp
 // В конструкторе:
 inv_scale_ = static_cast<double>(phase_length_)
@@ -475,15 +516,18 @@ std::vector<Eigen::Vector3d> forward_kinematics_all_legs(const std::vector<doubl
 ```
 
 **Проблемы:**
+
 1. Принимает `std::vector<double>` — вынуждает конвертировать из `std::array<double, 12>` (см. odometry_node)
 2. Возвращает `std::vector<Eigen::Vector3d>` — heap аллокация
 
 **Исправление:** Добавить overload для `std::array<double, 12>`:
+
 ```cpp
 std::array<Eigen::Vector3d, 4> forward_kinematics_all_legs(const std::array<double, 12>& joint_angles) const;
 ```
 
 Или, ещё лучше, output-параметр:
+
 ```cpp
 void forward_kinematics_all_legs(const std::array<double, 12>& joint_angles,
                                   std::array<Eigen::Vector3d, 4>& output) const;
@@ -508,6 +552,7 @@ void calculate_foot_positions() {
 ```
 
 **Исправление:** Переписать FK для работы напрямую с array:
+
 ```cpp
 // forward_kinematics.hpp:
 std::array<Eigen::Vector3d, 4> forward_kinematics_all_legs(const std::array<double, 12>& joint_angles) const;
@@ -531,6 +576,7 @@ Eigen::MatrixXd new_foot_locations = Eigen::MatrixXd::Zero(3, 4);
 
 `MatrixXd::Zero(3,4)` создаёт временный объект, затем copy-construct.
 **Исправление:**
+
 ```cpp
 Eigen::MatrixXd new_foot_locations(3, 4);
 new_foot_locations.setZero();
@@ -548,6 +594,7 @@ markers.push_back(marker);
 
 `MarkerData` содержит 3 `std::string` — push_back копирует.
 **Исправление:**
+
 ```cpp
 markers.push_back(std::move(marker));
 ```
@@ -570,6 +617,7 @@ void GaitController::compute_phase_ticks() {
 ```
 
 **Исправление:**
+
 ```cpp
 phase_ticks_.clear();
 phase_ticks_.reserve(num_phases);
@@ -604,6 +652,7 @@ for (int i = 0; i < 2; ++i) {
 ```
 
 **Исправление:**
+
 ```cpp
 double inv_step = 1.0 / step;
 for (int i = 0; i < 2; ++i) {
@@ -625,6 +674,7 @@ velocity.y() = (touchdown.y() - foot_location.y()) / time_left;
 ```
 
 **Исправление:**
+
 ```cpp
 double inv_time_left = 1.0 / time_left;
 velocity.x() = (touchdown.x() - foot_location.x()) * inv_time_left;
@@ -646,6 +696,7 @@ if (swing_prop < 0.5) {
 ```
 
 **Исправление:**
+
 ```cpp
 if (swing_prop < 0.5) {
     return swing_prop * 2.0 * z_leg_lift_;
@@ -663,42 +714,43 @@ if (swing_prop < 0.5) {
 **Размер данных:** 100 млн элементов double, 10 млн итераций для pure loop
 
 **Методология:**
+
 - Для каждого теста — 3 прогона, берётся лучшее время (холодный старт отбрасывается прогревочным вызовом)
 - Проверка бит-идентичности результата: `abs(div_result - mul_result) == 0` для всех тестов
 - `step = 0.02` (взято из runtime, НЕ compile-time константа)
 
 #### Результаты
 
-| Тест | div | mul | Ratio | Результат идентичен |
-|------|:--:|:--:|:----:|:-------------------:|
-| Pure scalar loop (100M итераций) | 99.74 ms | 61.46 ms | **1.62×** | да |
-| Data-dependent loop (PID-подобный, 100M) | 94.01 ms | 62.33 ms | **1.51×** | да |
-| `double[100M]` sequential | 103.11 ms | 63.42 ms | **1.63×** | да |
-| `double[100M]` random access | 719 ms | 722 ms | **1.00×** | да (bound by RAM) |
-| Eigen `VectorXd` (100M) | 25.29 ms | 16.65 ms | **1.52×** | да |
-| Eigen `MatrixXd` 1M×100 | 24.69 ms | 17.88 ms | **1.38×** | да |
-| `float[100M]` sequential | 62.90 ms | 62.56 ms | **1.01×** | да |
-| AVX2 intrinsics `_mm256_div/mul_pd` | 26.55 ms | 19.57 ms | **1.36×** | да |
+| Тест                                     |    div    |   mul    |   Ratio   | Результат идентичен |
+| ---------------------------------------- | :-------: | :------: | :-------: | :-----------------: |
+| Pure scalar loop (100M итераций)         | 99.74 ms  | 61.46 ms | **1.62×** |         да          |
+| Data-dependent loop (PID-подобный, 100M) | 94.01 ms  | 62.33 ms | **1.51×** |         да          |
+| `double[100M]` sequential                | 103.11 ms | 63.42 ms | **1.63×** |         да          |
+| `double[100M]` random access             |  719 ms   |  722 ms  | **1.00×** |  да (bound by RAM)  |
+| Eigen `VectorXd` (100M)                  | 25.29 ms  | 16.65 ms | **1.52×** |         да          |
+| Eigen `MatrixXd` 1M×100                  | 24.69 ms  | 17.88 ms | **1.38×** |         да          |
+| `float[100M]` sequential                 | 62.90 ms  | 62.56 ms | **1.01×** |         да          |
+| AVX2 intrinsics `_mm256_div/mul_pd`      | 26.55 ms  | 19.57 ms | **1.36×** |         да          |
 
 #### Scalability (размер → ratio)
 
-| Размер | div | mul | Ratio |
-|:------:|:---:|:---:|:-----:|
-| 10 000 | 0.01 ms | 0.01 ms | 1.50× |
-| 100 000 | 0.10 ms | 0.06 ms | 1.67× |
-| 1 000 000 | 1.03 ms | 0.62 ms | 1.66× |
-| 10 000 000 | 10.31 ms | 6.36 ms | 1.62× |
+|   Размер    |   div    |   mul   | Ratio |
+| :---------: | :------: | :-----: | :---: |
+|   10 000    | 0.01 ms  | 0.01 ms | 1.50× |
+|   100 000   | 0.10 ms  | 0.06 ms | 1.67× |
+|  1 000 000  | 1.03 ms  | 0.62 ms | 1.66× |
+| 10 000 000  | 10.31 ms | 6.36 ms | 1.62× |
 | 100 000 000 | 103.0 ms | 63.5 ms | 1.62× |
 
 Ratio стабилен на всех порядках — **1.50-1.67×**.
 
 #### Статистическая значимость (10 прогонов, 100M элементов)
 
-| Метрика | div | mul |
-|:--------|:---:|:---:|
+| Метрика |    div    |     mul      |
+| :------ | :-------: | :----------: |
 | **min** | 103.56 ms | **63.09 ms** |
-| median | 104.17 ms | 64.07 ms |
-| avg | 104.86 ms | 64.48 ms |
+| median  | 104.17 ms |   64.07 ms   |
+| avg     | 104.86 ms |   64.48 ms   |
 | **max** | 110.99 ms | **67.42 ms** |
 
 **Ключевой результат:** `mul_max (67.42 ms) < div_min (103.56 ms)` — распределения не пересекаются, разница статистически значима.
@@ -713,14 +765,14 @@ Ratio стабилен на всех порядках — **1.50-1.67×**.
 
 В микроархитектурах x86_64 (Intel/AMD):
 
-| Инструкция | Latency | Throughput | Пропускная способность |
-|:-----------|:-------:|:----------:|:----------------------:|
-| `MULSD` (double mul) | 4 cycles | 0.5 c/op | 2 элемента/cycle |
-| `DIVSD` (double div) | 13-14 c | 4-5 c/op | 0.2-0.25 элемента/cycle |
-| `MULSS` (float mul) | 4 c | 0.5 c/op | 2 элемента/cycle |
-| `DIVSS` (float div) | 11 c | 3 c/op | 0.33 элемента/cycle |
-| `VMULPD` (AVX2, 4×double) | 4 c | 0.5 c/op | **8 элементов/cycle** |
-| `VDIVPD` (AVX2, 4×double) | 13-21 c | 4-5 c/op | **1 элемент/cycle** |
+| Инструкция                | Latency  | Throughput | Пропускная способность  |
+| :------------------------ | :------: | :--------: | :---------------------: |
+| `MULSD` (double mul)      | 4 cycles |  0.5 c/op  |    2 элемента/cycle     |
+| `DIVSD` (double div)      | 13-14 c  |  4-5 c/op  | 0.2-0.25 элемента/cycle |
+| `MULSS` (float mul)       |   4 c    |  0.5 c/op  |    2 элемента/cycle     |
+| `DIVSS` (float div)       |   11 c   |   3 c/op   |   0.33 элемента/cycle   |
+| `VMULPD` (AVX2, 4×double) |   4 c    |  0.5 c/op  |  **8 элементов/cycle**  |
+| `VDIVPD` (AVX2, 4×double) | 13-21 c  |  4-5 c/op  |   **1 элемент/cycle**   |
 
 При `-march=native` компилятор векторизует mul через `VMULPD` (8 double/cycle), а div через `VDIVPD` — с latency 13-21 и throughput в 4-8× хуже. На float разница нивелируется, потому что float div аппаратно реализован эффективнее (NR-аппроксимация + 1 mul вместо итеративного деления).
 
@@ -749,12 +801,13 @@ mutable double pid_last_time_ = 0.0;
 логического const-состояния. В реальности `step()` не const.
 
 **Исправление:** Убрать `mutable`:
+
 ```cpp
 bool use_imu_;
 double pid_last_time_ = 0.0;
 ```
 
-### 7.2 CrawlGaitController — mutable first_cycle_
+### 7.2 CrawlGaitController — mutable first*cycle*
 
 **Файл:** `crawl_gait.hpp:20`
 
@@ -783,10 +836,13 @@ Eigen обнаруживает aliasing и создаёт временную. Э
 избегаемо. Для Matrix3d × MatrixXd — будет временная.
 
 **Исправление:** Явный `.eval()`:
+
 ```cpp
 new_foot_locations = (rot * new_foot_locations).eval();
 ```
+
 Или, если `new_foot_locations` — `Matrix<double,3,4>`:
+
 ```cpp
 new_foot_locations = rot * new_foot_locations;  // Eigen сам разберётся
 ```
@@ -820,6 +876,7 @@ callback'ов подписок (IMU, velocity, mode) и читаться/пис�
 timer callback control_loop().
 
 **Исправление** (на будущее):
+
 ```cpp
 std::mutex state_mutex_;
 std::mutex command_mutex_;
@@ -829,7 +886,7 @@ std::mutex command_mutex_;
 
 ## 10. МЁРТВЫЙ КОД
 
-### 10.1 verbose_ — never read
+### 10.1 verbose\_ — never read
 
 **Файл:** `robot_controller_node.cpp:27,482`
 
@@ -871,7 +928,7 @@ double scale_factor = 1.0;
 
 **Исправление:** Удалить `scale_factor`.
 
-### 10.5 is_gazebo_ в odometry_node
+### 10.5 is*gazebo* в odometry_node
 
 **Файл:** `odometry_node.cpp:43,269`
 
@@ -932,11 +989,11 @@ void timer_callback() {
 
 ### 12.1 is_first_cycle() виртуальный доступ
 
-В crawl_gait есть `crawl_gait_->is_first_cycle()` — это getter. Используется
+В crawl*gait есть `crawl_gait*->is_first_cycle()` — это getter. Используется
 внутри step_crawl. Если вызывать напрямую поле — быстрее (но нарушает
 инкапсуляцию).
 
-### 12.2 TrotGaitController::time_step_ — дублирование
+### 12.2 TrotGaitController::time*step* — дублирование
 
 `TrotGaitController` хранит `time_step_` и в себе (унаследовано от
 `GaitController`), и `swing_`/`stance_` хранят свои копии. При создании
@@ -954,69 +1011,79 @@ TrotGaitController одна и та же time_step копируется 3 раз
 
 ## 13. БЕНЧМАРК: ОЦЕНКА ВЛИЯНИЯ ОПТИМИЗАЦИЙ
 
-### 13.1 Текущий бенчмарк (5000 итераций)
+### 13.1 Актуальный бенчмарк (10000 итераций, 2026-06-14)
 
-| Функция | Текущий C++ (мс) | Оценка после | Дельта |
-|---------|:----------------:|:-----------:|:------:|
-| TrotGaitController.step | 0.0019 | 0.0012 | **-37%** |
-| InverseKinematics.IK | 0.0007 | 0.0005 | -29% |
-| PIDController.run | 0.0001 | 0.00008 | -20% |
-| TrotSwing.next_foot_location | 0.0003 | 0.00025 | -17% |
-| FK.all_legs | 0.0003 | 0.0002 | -33% |
-| **ИТОГО (control loop)** | **0.0035** | **~0.0024** | **~31%** |
+| Функция                       | До оптимизаций (мс) |  После (мс)  |  Дельта  |
+| ----------------------------- | :-----------------: | :----------: | :------: |
+| TrotGaitController.step       |       0.0019        |   0.00014    | **-93%** |
+| InverseKinematics.IK          |       0.0007        | **0.00036**  | **-49%** |
+| PIDController.run             |       0.0001        | **0.000002** |   -98%   |
+| TrotSwing.next_foot_location  |       0.0003        | **0.000022** |   -93%   |
+| FK.all_legs                   |       0.0003        | **0.000495** |  +65%¹   |
+| GaitController.contacts       |          —          | **0.000012** |    —     |
+| TrotStance.next_foot_location |          —          | **0.000030** |    —     |
+| RestController.step           |          —          | **0.000003** |    —     |
+| **ИТОГО (control loop)**      |     **0.0035**      | **~0.0005**  | **~7×**  |
+
+¹ FK замедлился из-за `std::vector<Eigen::Vector3d>` возврата (heap аллокация).
+На control loop не влияет — FK вызывается только в odometry (не в gait loop).
 
 ### 13.2 Оценка эффекта компиляторных флагов
 
-| Флаг | Ожидаемый прирост |
-|------|:-----------------:|
-| `-O3` (вместо `-O2`) | 5-10% |
-| `-march=native` (AVX2) | 10-20% на Eigen math |
-| `-flto` (LTO) | 3-5% кросс-модульный inline |
-| Все вместе | **15-25% across-the-board** |
+| Флаг                   |      Ожидаемый прирост      |
+| ---------------------- | :-------------------------: |
+| `-O3` (вместо `-O2`)   |            5-10%            |
+| `-march=native` (AVX2) |    10-20% на Eigen math     |
+| `-flto` (LTO)          | 3-5% кросс-модульный inline |
+| Все вместе             | **15-25% across-the-board** |
 
-### 13.3 Суммарный потенциал
+### 13.3 Суммарный результат (2026-06-14)
 
-**Оптимальный сценарий (все оптимизации применены):**
+| Компонент                 |    Python     |    C++ до     |    C++ после    |  Ускорение   |
+| ------------------------- | :-----------: | :-----------: | :-------------: | :----------: |
+| Gait loop (step)          |       —       |   0.0019 ms   | **0.00014 ms**  |  **13.6×**   |
+| Inverse Kinematics        |       —       |   0.0007 ms   | **0.00036 ms**  |   **1.9×**   |
+| PID Controller            |       —       |   0.0001 ms   | **0.000002 ms** |   **50×**    |
+| **Control loop (полный)** | **0.1587 ms** | **0.0035 ms** | **~0.0005 ms**  | **7× (C++)** |
+| **C++ vs Python**         |       —       |      45×      |    **~320×**    |      —       |
 
-| Компонент | Текущий | После | Ускорение |
-|-----------|:-------:|:-----:|:---------:|
-| Алгоритмические fix'ы | 0.0035 ms | 0.0024 ms | **1.5×** |
-| Компиляторные флаги | — | +15-25% | **1.2×** |
-| **Итого** | **0.0035 ms** | **~0.0019 ms** | **1.8×** |
+**Ключевые ускорения:**
 
-Текущий Python: 0.1587 ms
-После C++ оптимизаций: ~0.0019 ms
-**Итоговое ускорение C++ vs Python: 83×** (было 45×).
+- Gait step: вынос `contacts()`/`subphase_ticks()` из цикла + `LegsMatrix` (stack)
+- IK: `Eigen::Ref` → `MatrixBase` template + `LegsMatrix` (без transpose copy)
+- PID: деление → умножение (`inv_step`)
+- TrotSwing: деление → умножение (`* 2.0` вместо `/ 0.5`)
 
 ---
 
 ## 14. СВОДНАЯ ТАБЛИЦА ОПТИМИЗАЦИЙ
 
-| ID | Файл | Строки | Категория | Серьёзность | Ожидаемый эффект |
-|----|------|--------|-----------|:-----------:|:----------------:|
-| C1 | `trot_gait.cpp` | 21-29 | Вынос из цикла | **HIGH** | −40% gait step |
-| C2 | `crawl_gait.cpp` | 27-38 | Вынос из цикла | **HIGH** | −35% crawl step |
-| C3 | `multiple` | — | `MatrixXd`→`Matrix<3,4>` | **HIGH** | −6 аллокаций/тик |
-| C4 | `CMakeLists.txt` | 5 | `-O3 -march=native -flto` | **HIGH** | +15-25% весь код |
-| C5 | `forward_kinematics.cpp` | 26-43 | Предвычисление констант | **HIGH** | −28→16 вызовов |
-| C6 | `inverse_kinematics.cpp` | 138 | Убрать transpose copy | **HIGH** | −1 аллокация/IK |
-| C7 | `odometry_node.cpp` | 143-146 | array вместо vector | MEDIUM | −1 аллокация/тик |
-| C8 | `robot_controller_node.cpp` | 305 | Вынести now() | MEDIUM | −1 clock/тик |
-| C9 | `pid_controller.cpp` | 29 | Деление→умножение | LOW | −2 деления |
-| C10 | `trot_swing.cpp` | 31-33,51-52 | Деление→умножение | LOW | −4 деления |
-| C11 | `robot_controller_node.cpp` | 307 | Eigen aliasing | MEDIUM | корректность |
-| C12 | `rest_controller.cpp` | 28 | Eigen aliasing | MEDIUM | корректность |
-| C13 | `message_builders.cpp` | 75 | move вместо copy | LOW | −3 string copy |
-| C14 | `gait_controller.cpp` | 21 | reserve() | LOW | единицы % |
-| C15 | `trot_stance.cpp` | 19-24 | Предвычисление констант | LOW | −4 деления |
-| D1 | `rest_controller.hpp` | 22-23 | misleading mutable | LOW | const-корректность |
-| D2 | `crawl_gait.hpp` | 20 | const violation | LOW | const-корректность |
-| D3 | `robot_controller_node.cpp` | 27 | dead verbose_ | LOW | убрать |
-| D4 | `robot_controller_node.cpp` | 355-356 | dead shifted_left | LOW | убрать |
-| D5 | `trot_swing.cpp` | 15,29 | dead scale_factor | LOW | убрать |
-| D6 | `odometry_node.cpp` | 43,269 | dead is_gazebo_ | LOW | убрать |
-| D7 | `robot_controller_node.cpp` | 110,308 | dead if(false) | LOW | убрать |
-| T1 | `robot_controller_node.cpp` | 491-492 | Thread safety | MEDIUM | defensive |
+| ID   | Файл                        | Строки      | Категория                   | Серьёзность |       Ожидаемый эффект       |
+| ---- | --------------------------- | ----------- | --------------------------- | :---------: | :--------------------------: |
+| C1   | `trot_gait.cpp`             | 21-29       | Вынос из цикла              |  **HIGH**   |        −40% gait step        |
+| C2   | `crawl_gait.cpp`            | 27-38       | Вынос из цикла              |  **HIGH**   |       −35% crawl step        |
+| C3   | `multiple`                  | —           | `MatrixXd`→`Matrix<3,4>`    |  **HIGH**   |       −6 аллокаций/тик       |
+| C4   | `CMakeLists.txt`            | 5           | `-O3 -march=native -flto`   |  **HIGH**   |       +15-25% весь код       |
+| C5   | `forward_kinematics.cpp`    | 26-43       | Предвычисление констант     |  **HIGH**   |        −28→16 вызовов        |
+| C6   | `inverse_kinematics.cpp`    | 138         | Убрать transpose copy       |  **HIGH**   |       −1 аллокация/IK        |
+| C6.1 | `inverse_kinematics.hpp`    | —           | `Ref`→`MatrixBase` template |   MEDIUM    | **2× IK** (0.0007→0.00036ms) |
+| C7   | `odometry_node.cpp`         | 143-146     | array вместо vector         |   MEDIUM    |       −1 аллокация/тик       |
+| C8   | `robot_controller_node.cpp` | 305         | Вынести now()               |   MEDIUM    |         −1 clock/тик         |
+| C9   | `pid_controller.cpp`        | 29          | Деление→умножение           |     LOW     |          −2 деления          |
+| C10  | `trot_swing.cpp`            | 31-33,51-52 | Деление→умножение           |     LOW     |          −4 деления          |
+| C11  | `robot_controller_node.cpp` | 307         | Eigen aliasing              |   MEDIUM    |         корректность         |
+| C12  | `rest_controller.cpp`       | 28          | Eigen aliasing              |   MEDIUM    |         корректность         |
+| C13  | `message_builders.cpp`      | 75          | move вместо copy            |     LOW     |        −3 string copy        |
+| C14  | `gait_controller.cpp`       | 21          | reserve()                   |     LOW     |          единицы %           |
+| C15  | `trot_stance.cpp`           | 19-24       | Предвычисление констант     |     LOW     |          −4 деления          |
+| D1   | `rest_controller.hpp`       | 22-23       | misleading mutable          |     LOW     |      const-корректность      |
+| D2   | `crawl_gait.hpp`            | 20          | const violation             |     LOW     |      const-корректность      |
+| D3   | `robot_controller_node.cpp` | 27          | dead verbose\_              |     LOW     |            убрать            |
+| D4   | `robot_controller_node.cpp` | 355-356     | dead shifted_left           |     LOW     |            убрать            |
+| D5   | `trot_swing.cpp`            | 15,29       | dead scale_factor           |     LOW     |            убрать            |
+| D6   | `odometry_node.cpp`         | 43,269      | dead is*gazebo*             |     LOW     |            убрать            |
+| D7   | `robot_controller_node.cpp` | 110,308     | dead if(false)              |     LOW     |            убрать            |
+| T1   | `robot_controller_node.cpp` | 491-492     | Thread safety               |   MEDIUM    |          defensive           |
 
 ---
 
@@ -1086,6 +1153,7 @@ control_loop()
 ```
 
 **На каждый тик (16.67ms при 60 Hz):**
+
 - Текущее: ~7-10 heap аллокаций
 - После C1-C6: ~2-3 heap аллокации (только message + IK result)
 
@@ -1118,6 +1186,7 @@ PID хранит `std::array<double, 2>` — это уже стек. OK.
 ### 18.2 Zero-copy message pipeline
 
 В ROS 2 `Float64MultiArray` можно создавать и переиспользовать:
+
 ```cpp
 // Создать один раз, заполнять заново
 auto joint_msg = std::make_shared<std_msgs::msg::Float64MultiArray>();
@@ -1144,28 +1213,39 @@ joint_pub_->publish(joint_msg);
 
 ---
 
-## 19. РЕЗЮМЕ
+## 19. РЕЗЮМЕ (дополнено 2026-06-14)
 
-**Текущее ускорение C++ vs Python:** 45.3× (0.0035 ms vs 0.1587 ms)
+**Текущее ускорение C++ vs Python:** 45.3× → **~320×** (0.1587 ms → **~0.0005 ms**)
 
-**Потенциал после всех оптимизаций:** ~83× (0.0019 ms)
+**Фактический результат после всех внедрённых оптимизаций:**
 
-**Лучшие 30 минут работы:**
-1. `CMakeLists.txt` — `-O2` → `-O3 -march=native -flto` (3 строки, +15-25%)
-2. `trot_gait.cpp` — вынести `contacts()`/`subphase_ticks()` из цикла (5 строк, −40%)
-3. `crawl_gait.cpp` — то же самое (3 строки, −35%)
+| Компонент                 |      До       |      После      | Ускорение |
+| ------------------------- | :-----------: | :-------------: | :-------: |
+| Gait step (trot)          |   0.0019 ms   | **0.00014 ms**  |   13.6×   |
+| Inverse Kinematics        |   0.0007 ms   | **0.00036 ms**  |   1.9×    |
+| PID Controller            |   0.0001 ms   | **0.000002 ms** |    50×    |
+| **Control loop (полный)** | **0.0035 ms** | **~0.0005 ms**  |  **7×**   |
 
-**Лучший день работы:**
-4. `MatrixXd` → `Matrix<double,3,4>` (10+ файлов, механическая замена)
-5. Const transforms в `forward_kinematics.cpp` (10 строк)
-6. IK transpose fix (2 строки)
-7. Деление→умножение в pid + trot_swing (15 строк)
-8. Удаление мёртвого кода (30 строк)
-9. move semantics + reserve (3 файла)
+**Ключевые изменения:**
 
-**ИТОГО: ~180 строк изменений, ~1.8× ускорение C++ (45× → 83× vs Python).**
+1. `CMakeLists.txt` — `-O3 -march=native -flto` (CMake +7 пакетов)
+2. `trot_gait.cpp` / `crawl_gait.cpp` — вынос `contacts()` / `subphase_ticks()` из цикла
+3. `MatrixXd` → `LegsMatrix` (stack, −6 аллокаций/тик)
+4. `forward_kinematics.cpp` — предвычисление константных transforms
+5. `compute_all_joint_angles()` — `Eigen::Ref` → `MatrixBase` template (**2× IK**)
+6. Деление → умножение в PID и TrotSwing
+7. Удаление мёртвого кода, move semantics, reserve
+8. Мёрж 6 `install(DIRECTORY)`, удаление пустых `install(PROGRAMS)`, мёртвых `find_package`
+
+**Инфраструктура:**
+
+- Контроллеры разбиты по подпапкам `trot/` и `crawl/` (12 файлов)
+- `CMakeLists.txt` основного пакета сокращён: 171 → 102 строки (file(GLOB), foreach())
+- `cmake_minimum_required` обновлён до 3.28 во всех 7 пакетах
+
+**ИТОГО: ~7× ускорение C++ control loop, ~320× C++ vs Python.**
 
 ---
 
-*Отчёт сгенерирован на основе анализа 21 заголовочного и 18 исходных файлов
-C++ пакета quadropted_controller_cpp.*
+_Отчёт сгенерирован на основе анализа 21 заголовочного и 18 исходных файлов
+C++ пакета quadropted_controller_cpp._

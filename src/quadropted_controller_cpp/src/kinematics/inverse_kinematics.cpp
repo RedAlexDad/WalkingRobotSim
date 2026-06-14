@@ -80,47 +80,6 @@ std::array<double, 3> compute_joint_angles_for_leg(double x, double y, double z,
     return {theta1, theta3, theta4};
 }
 
-std::array<double, 12> compute_all_joint_angles(const Eigen::Ref<const Eigen::MatrixXd>& positions, double l1,
-                                                double l2, double l3, double l4) {
-    static const double LEG_SIGNS[] = {1.0, -1.0, 1.0, -1.0};
-
-    double l2_sq = l2 * l2;
-    double _2l3l4 = 2.0 * l3 * l4;
-    double inv_2l3l4 = 1.0 / _2l3l4;
-    double l3sq_l4sq = l3 * l3 + l4 * l4;
-
-    std::array<double, 12> angles{};
-
-    for (int i = 0; i < 4; ++i) {
-        double x = positions(i, 0);
-        double y = positions(i, 1);
-        double z = positions(i, 2);
-
-        double f_sq = x * x + y * y - l2_sq;
-        double F = (f_sq > 0.0) ? std::sqrt(f_sq) : 0.0;
-        double G = F - l1;
-        double H = std::sqrt(G * G + z * z);
-
-        double theta1 = -std::atan2(y, x) - std::atan2(F, l2 * LEG_SIGNS[i]);
-
-        double D = (H * H - l3sq_l4sq) * inv_2l3l4;
-        if (D > 1.0)
-            D = 1.0;
-        else if (D < -1.0)
-            D = -1.0;
-
-        double theta4 = -std::atan2(std::sqrt(1.0 - D * D), D);
-        double theta3 = std::atan2(z, G) - std::atan2(l4 * std::sin(theta4), l3 + l4 * std::cos(theta4));
-
-        int idx = i * 3;
-        angles[idx] = theta1;
-        angles[idx + 1] = theta3;
-        angles[idx + 2] = theta4;
-    }
-
-    return angles;
-}
-
 InverseKinematics::InverseKinematics(double body_length, double body_width, double l1, double l2, double l3, double l4)
     : fk_(body_length, body_width, l1, l2, l3, l4),
       body_length_(body_length),
