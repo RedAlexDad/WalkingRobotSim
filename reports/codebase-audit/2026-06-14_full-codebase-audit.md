@@ -1190,29 +1190,36 @@ TEST(FastMath, atan2_accuracy_vs_std) {
 
 Итого: **91 тест (было 75), 0 падений, 0 ошибок.**
 
-### P4: Python улучшения
+### P4: Python улучшения ✅ Выполнено (`628c8c0`)
 
-23. **Добавить type hints** во все Python-файлы
-24. **Убрать wildcard imports** в `kernels/__init__.py`
-25. **Исправить activate_controller.py** — переписать как класс Node
-26. **Добавить shebang'и** во все Python-скрипты
-27. **Убрать дублирование GPU/CPU dispatch** — factory pattern или декоратор
+| #   | Задача                                              | Статус       | Файлы                                                                                                        |
+| --- | --------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------ |
+| 23  | **Добавить type hints** в Python-файлы              | ✅ Выполнено | `backend.py` (Optional[ModuleType]), `map_initializer.py`, `semantic_kernels.py`                             |
+| 24  | **Убрать wildcard imports** в `kernels/__init__.py` | ✅ Выполнено | `kernels/__init__.py` — явные импорты из `custom_kernels`, `custom_image_kernels`, `custom_semantic_kernels` |
+| 25  | **Исправить activate_controller.py**                | ✅ Выполнено | Рефакторинг в `ControllerActivator(Node)` с методом `activate()`                                             |
+| 26  | **Добавить shebang'и**                              | ✅ Выполнено | `laser_to_pointcloud.py`, `tf_relay.py`                                                                      |
+| 27  | **Убрать дублирование GPU/CPU dispatch**            | ✅ Выполнено | GPU/CPU dispatch вынесен в `_run_iteration()` в `max_filter`, `min_filter`, `robot_centric_elevation`        |
+
+**Пример реализации dispatch:**
 
 ```python
-# Улучшение kernels/__init__.py
-from .custom_kernels import (
-    add_points_kernel, update_variance_kernel,
-    update_elevation_kernel, get_gradient_kernel,
-)
-
-# Factory pattern для GPU/CPU dispatch
-def gpu_or_cpu(cuda_fn, cpu_fn):
+# max_filter.py — dispatch изолирован в _run_iteration()
+def _run_iteration(self) -> None:
     if GPU_AVAILABLE:
-        return cuda_fn
-    return cpu_fn
+        self.max_filter_kernel(...)
+    else:
+        _max_filter_cpu_numba(...)
 ```
 
-**Срок:** 1 месяц
+```python
+# kernels/__init__.py — явные импорты
+from .custom_kernels import (
+    add_points_kernel, average_map_kernel, dilation_filter_kernel,
+    error_counting_kernel, normal_filter_kernel, polygon_mask_kernel,
+)
+```
+
+**Результаты тестов:** 107 passed, 0 failed
 
 ### P5: Долгосрочные улучшения
 
@@ -1233,18 +1240,20 @@ def gpu_or_cpu(cuda_fn, cpu_fn):
 | ------------------ | ------ | -------------------------------------------------------------------- |
 | Архитектура        | 8/10   | Чистые namespace, forwarding headers удалены, control→nodes          |
 | C++ качество       | 8/10   | noexcept/nodiscard/array/IK validation — modern C++ добавлен         |
-| Python качество    | 7/10   | GPU acceleration впечатляет, но typing отсутствует, есть баги        |
+| Python качество    | 7.5/10 | Type hints добавлены, GPU/CPU dispatch унифицирован, баги исправлены |
 | Производительность | 8/10   | fast_atan2, precompute, LTO, CUDA, array вместо vector               |
 | Обработка ошибок   | 5/10   | noexcept добавлен, валидация IK входов, assert всё ещё в release     |
-| Тестирование       | 9/10   | 91 тест, Python cross-validation, fast_atan2 sweep, edge cases    |
+| Тестирование       | 9/10   | 107 тестов, Python cross-validation, fast_atan2 sweep, edge cases    |
 | Инфраструктура     | 9/10   | Docker multi-stage, CI/CD, Compose, Makefile — уровень Senior        |
 | Docker             | 9/10   | 5-stage build, кэширование, GPU/CPU, healthcheck                     |
 | CI/CD              | 9/10   | Pipeline исправлен: release.yml для ROS2, compose path корректный    |
 | Документация       | 6/10   | README хорош, но Doxygen отсутствует                                 |
 
-### Итог: 7.8/10 — Strong Middle
+### Итог: 8.0/10 — Strong Middle
 
-_5 P0 багов + 5 P1 задач + 5 P2 задач + 5 P3 задач выполнены. Тесты стабильны (91/0/0), сходимость с Python не изменилась, добавлены CrawlGait/StandController/fast_atan2/edge case тесты._
+_5 P0 багов + 5 P1 задач + 5 P2 задач + 5 P3 + 5 P4 задач выполнены.
+Тесты стабильны (107/0/0), сходимость с Python не изменилась,
+добавлены type hints, GPU/CPU dispatch унифицирован, gazebo скрипты починены._
 
 | Уровень       | Диапазон | Описание                                             |
 | ------------- | -------- | ---------------------------------------------------- |
