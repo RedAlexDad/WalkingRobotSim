@@ -1049,15 +1049,15 @@ Color-coded output, X11 setup, проверки контейнера.
 
 ## 9. БАГИ И ПРОБЛЕМЫ
 
-### 9.1 Критические баги
+### 9.1 Критические баги — все исправлены в ветке `fix/critical-bugs-p0`
 
-| #   | Баг                             | Файл            | Строка | Описание                                                     |
-| --- | ------------------------------- | --------------- | ------ | ------------------------------------------------------------ |
-| 1   | Crawl swing body shift заглушка | crawl_swing.cpp | 58     | `shifted_left = false` hardcoded. TODO не выполнено          |
-| 2   | Crawl stance не вызывается      | crawl_gait.cpp  | 30-31  | step() пропускает stance\_ для опорных ног                   |
-| 3   | Дублирование методов tf_relay   | tf_relay.py     | 43-47  | cb_tf и cb_tf_static определены дважды, логирование потеряно |
-| 4   | Release.yml от другого проекта  | release.yml     | весь   | cargo build для audiosub, не для ROS2                        |
-| 5   | CI compose path не существует   | ci.yml          | -      | $DOCKER_DIR/compose.yml отсутствует                          |
+| #   | Баг                             | Файл            | Строка | Описание                                                     | Статус       |
+| --- | ------------------------------- | --------------- | ------ | ------------------------------------------------------------ | ------------ |
+| 1   | Crawl swing body shift заглушка | crawl_swing.cpp | 58     | `shifted_left = false` hardcoded. TODO не выполнено          | ✅ Исправлен |
+| 2   | Crawl stance не вызывается      | crawl_gait.cpp  | 30-31  | step() пропускает stance\_ для опорных ног                   | ✅ Исправлен |
+| 3   | Дублирование методов tf_relay   | tf_relay.py     | 43-47  | cb_tf и cb_tf_static определены дважды, логирование потеряно | ✅ Исправлен |
+| 4   | Release.yml от другого проекта  | release.yml     | весь   | cargo build для audiosub, не для ROS2                        | ✅ Исправлен |
+| 5   | CI compose path не существует   | ci.yml          | -      | $DOCKER_DIR/compose.yml отсутствует                          | ✅ Исправлен |
 
 ### 9.2 Существенные проблемы
 
@@ -1093,43 +1093,23 @@ Color-coded output, X11 setup, проверки контейнера.
 
 ## 10. УЛУЧШЕНИЯ И ПРИОРИТЕТЫ
 
-### P0: Критические исправления (сделать немедленно)
+### P0: Критические исправления ✅ Выполнены
 
-1. **Исправить crawl_swing.cpp:58** — передать `shifted_left` из `crawl_gait`
-2. **Исправить crawl_gait.cpp** — вызывать `stance_` в `step()`
-3. **Исправить tf_relay.py** — удалить дублированные методы
-4. **Исправить release.yml** — удалить или переписать для ROS2
-5. **Исправить CI compose path** — указать правильный путь
+Все 5 P0 багов исправлены и смержены в `fix/critical-bugs-p0`:
 
-```cpp
-// Исправление crawl_swing.cpp
-// Было:
-bool shifted_left = false;  // заглушка
-(void)shifted_left;
+| #   | Коммит    | Файлы                                                    | Изменения                                                                                                                                                     |
+| --- | --------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `6ddd371` | `crawl_swing.cpp`, `crawl_gait.cpp`, `crawl_control.cpp` | Убрана заглушка `shifted_left=false` — значение вычисляется из контактной маски: `shifted_left = (contacts(0) == 0 \|\| contacts(2) == 0)`                    |
+| 2   | `de91ed2` | `crawl_gait.cpp`, `crawl_gait.hpp`                       | `step()` вызывает `stance_.next_foot_location()` с `phase_index`/`move_sideways`/`move_left` вместо возврата `current.col(leg_index)`                         |
+| 3   | `d877907` | `tf_relay.py`                                            | Удалены вторые объявления `cb_tf`/`cb_tf_static`, перезаписывавшие первые                                                                                     |
+| 4   | `791ac3b` | `release.yml`                                            | Заменён cargo build для audiosub (whisper, tui) на сборку Docker-образа симулятора из `src/docker/Dockerfile`                                                 |
+| 5   | `3932a96` | `ci.yml`                                                 | `DOCKER_DIR=src/docker` → `COMPOSE_FILE=compose.yml`. Добавлен `docker tag` для `:latest`. Все `cd $DOCKER_DIR` заменены на `docker compose -f $COMPOSE_FILE` |
 
-// Стало:
-bool shifted_left = (phase_index == 1 || phase_index == 2);
-// или передавать phase_index через метод:
-void CrawlSwingController::set_shifted(bool s) { shifted_left_ = s; }
-```
+**Результаты тестов:**
 
-```python
-# Исправление tf_relay.py — удалить дубликаты
-class TfRelay(Node):
-    def cb_tf(self, msg: tf2_msgs.msg.TFMessage) -> None:
-        if not self._first_tf:
-            self.get_logger().info(f"First TF received: {len(msg.transforms)} transforms")
-            self._first_tf = True
-        self._tf_pub.publish(msg)
-
-    def cb_tf_static(self, msg) -> None:  # один раз, не дублировать!
-        if not self._first_static:
-            self.get_logger().info("First static TF received")
-            self._first_static = True
-        self._tf_static_pub.publish(msg)
-```
-
-**Срок:** 1 день
+- **75 тестов, 0 ошибок, 0 падений**
+- **Сходимость с Python не изменилась** — все кросс-валидационные тесты (`phase_ticks_matches_python`, `contacts_match_python`, `fk_ik_roundtrip`, `swing_height_*`) проходят без изменений
+- **Crawl-тесты отсутствуют** — проверка сходимости crawl-режима возможна только через gazebo-симуляцию
 
 ### P1: Архитектурные улучшения (сделать в ближайшую неделю)
 
@@ -1271,13 +1251,15 @@ def gpu_or_cpu(cuda_fn, cpu_fn):
 | Python качество    | 7/10   | GPU acceleration впечатляет, но typing отсутствует, есть баги                      |
 | Производительность | 8/10   | fast_atan2, precompute, LTO, CUDA — осознанная оптимизация                         |
 | Обработка ошибок   | 4/10   | Слабое место: assert в release, нет валидации, нет noexcept                        |
-| Тестирование       | 7/10   | 72 теста, Python cross-validation — отлично, но PID/Crawl не покрыты               |
+| Тестирование       | 8/10   | 75 тестов, Python cross-validation — отлично, но Crawl не тестирован               |
 | Инфраструктура     | 9/10   | Docker multi-stage, CI/CD, Compose, Makefile — уровень Senior                      |
 | Docker             | 9/10   | 5-stage build, кэширование, GPU/CPU, healthcheck                                   |
-| CI/CD              | 7/10   | Comprehensive pipeline, но release.yml от другого проекта                          |
+| CI/CD              | 9/10   | Pipeline исправлен: release.yml для ROS2, compose path корректный                  |
 | Документация       | 6/10   | README хорош, но Doxygen отсутствует                                               |
 
-### Итог: 7.1/10 — Strong Middle (Junior+/Mid+)
+### Итог: 7.3/10 — Strong Middle (Junior+/Mid+)
+
+_5 P0 багов исправлено, тесты стабильны (75/0/0), сходимость с Python не изменилась._
 
 | Уровень       | Диапазон | Описание                                             |
 | ------------- | -------- | ---------------------------------------------------- |
