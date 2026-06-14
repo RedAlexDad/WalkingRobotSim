@@ -8,7 +8,7 @@ namespace quadropted {
 class CrawlGaitController : public GaitController {
   public:
     CrawlGaitController(double stance_time, double swing_time, double time_step, Eigen::MatrixXd default_stance);
-    LegsMatrix step(int ticks, const LegsMatrix& current, const Eigen::Vector3d& cmd_vel);
+    LegsMatrix step(int ticks, const LegsMatrix& current, const Eigen::Vector3d& cmd_vel, double robot_height);
     void reset();
     CrawlSwingController& swing() { return swing_; }
     CrawlStanceController& stance() { return stance_; }

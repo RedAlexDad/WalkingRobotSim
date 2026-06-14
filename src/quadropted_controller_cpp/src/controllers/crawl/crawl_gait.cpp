@@ -18,22 +18,25 @@ void CrawlGaitController::reset() {
     first_cycle_ = true;
 }
 
-LegsMatrix CrawlGaitController::step(int ticks, const LegsMatrix& current, const Eigen::Vector3d& cmd_vel) {
+LegsMatrix CrawlGaitController::step(int ticks, const LegsMatrix& current, const Eigen::Vector3d& cmd_vel,
+                                     double robot_height) {
     LegsMatrix new_foot_locations{};
 
     Eigen::VectorXi contact_modes = contacts(ticks);
+    int phase_idx = phase_index(ticks);
     double swing_prop = static_cast<double>(subphase_ticks(ticks)) / static_cast<double>(swing_ticks());
+    bool move_sideways = (phase_idx == 0 || phase_idx == 4);
+    bool move_left = (phase_idx == 0);
 
     for (int leg_index = 0; leg_index < 4; ++leg_index) {
         int contact_mode = contact_modes(leg_index);
         if (contact_mode == 1) {
-            // Stance — возвращаем текущую позицию
-            new_foot_locations.col(leg_index) = current.col(leg_index);
+            new_foot_locations.col(leg_index) =
+                stance_.next_foot_location(leg_index, current, cmd_vel, robot_height, first_cycle_, move_sideways, move_left);
         } else {
-            // Swing — body shift в сторону опорных ног для устойчивости
             bool shifted_left = (contact_modes(0) == 0 || contact_modes(2) == 0);
             new_foot_locations.col(leg_index) =
-                swing_.next_foot_location(swing_prop, leg_index, current, cmd_vel, 0.25, shifted_left);
+                swing_.next_foot_location(swing_prop, leg_index, current, cmd_vel, robot_height, shifted_left);
         }
     }
 
