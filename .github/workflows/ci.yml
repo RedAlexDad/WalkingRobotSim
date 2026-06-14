@@ -52,7 +52,38 @@ jobs:
             xargs clang-format --dry-run --Werror
 
   # ════════════════════════════════════════════════════════════
-  # 2. C++ UNIT TESTS — внутри Docker контейнера (10-15 min)
+  # 2. DOCS — генерация Doxygen документации (1-2 min)
+  # ════════════════════════════════════════════════════════════
+  docs:
+    name: Doxygen Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Doxygen
+        run: sudo apt-get update && sudo apt-get install -y doxygen
+
+      - name: Build Doxygen
+        run: |
+          cd src/quadropted_controller_cpp
+          cmake -B build_doc -S . -DCMAKE_BUILD_TYPE=Release
+          cmake --build build_doc --target doc 2>&1 || {
+            echo "Doxygen target not found — running doxygen directly"
+            doxygen doc/Doxyfile.in 2>&1 || true
+          }
+
+      - name: Upload docs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: doxygen-html
+          path: src/quadropted_controller_cpp/build_doc/doxygen/html/
+          retention-days: 7
+
+  # ════════════════════════════════════════════════════════════
+  # 3. C++ UNIT TESTS — внутри Docker контейнера (10-15 min)
   # ════════════════════════════════════════════════════════════
   cpp-tests:
     name: C++ Unit Tests

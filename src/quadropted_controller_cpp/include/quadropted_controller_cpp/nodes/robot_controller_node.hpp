@@ -1,3 +1,5 @@
+/// @brief Main control node — gait switching, IK, joint publishing.
+
 #pragma once
 
 #include <memory>
@@ -18,6 +20,8 @@
 
 namespace quadropted {
 
+/// Central robot controller node: subscribes to IMU/velocity/mode, selects
+/// active gait controller, runs IK, publishes joint positions and foot contacts.
 class RobotControllerNode : public rclcpp::Node {
   public:
     RobotControllerNode();

@@ -65,6 +65,7 @@ include makefiles/yolo.mk
 include makefiles/experiment.mk
 include makefiles/ci.mk
 include makefiles/test.mk
+include makefiles/doc.mk
 
 # ════════════════════════════════════════════════════════════
 # DEFAULT TARGET

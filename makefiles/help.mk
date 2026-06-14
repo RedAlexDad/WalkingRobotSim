@@ -90,6 +90,8 @@ help:
 	@printf "  ${GREEN}${BOLD}make clean-build-logs${NC}             Очистка логов сборки (>30дн)\n"
 	@printf "  ${GREEN}${BOLD}make clean-gazebo-logs${NC}            Очистка логов Gazebo\n"
 	@printf "  ${GREEN}${BOLD}make clean${NC}                        Полная очистка Docker\n"
+	@printf "  ${GREEN}${BOLD}make doc${NC}                          Сборка Doxygen документации и открыть в браузере\n"
+	@printf "  ${GREEN}${BOLD}make doc-open${NC}                     Открыть уже собранную документацию\n"
 	@printf "  ${GREEN}${BOLD}make help${NC}                         Эта справка\n"
 	@echo ""
 	@printf "${BOLD}Технологии:${NC}\n"

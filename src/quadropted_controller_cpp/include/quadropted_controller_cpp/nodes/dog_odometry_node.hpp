@@ -1,3 +1,40 @@
+/// @file dog_odometry_node.hpp
+/// @brief Узел одометрии — слияние контактов лап + IMU + FK.
+///
+/// DogOdometryNode оценивает положение робота в плоскости (x, y, θ)
+/// на основе данных:
+/// - Положения лап (через ForwardKinematics)
+/// - Контакты лап (RobotFootContact)
+/// - IMU (sensor_msgs/Imu)
+///
+/// ## Алгоритм
+/// ```
+/// 1. imu_callback() — сохраняет угловую скорость и ускорения
+/// 2. joint_states_callback() — вычисляет FK → foot_positions
+/// 3. timer_callback (50 Гц) ← цикл управления:
+///    a. foot_contacts → prev/current foot deltas
+///    b. update_odometry_step() → скользящее среднее дельт
+///    c. publish_odometry() → nav_msgs/Odometry
+///    d. publish_markers() → RViz маркеры
+///    e. publish_stall_status() → bool (пробуксовка)
+/// ```
+///
+/// ## Топики
+/// | Направление | Топик | Тип |
+/// |------------|-------|-----|
+/// | Input  | /imu | sensor_msgs/Imu |
+/// | Input  | /joint_states | std_msgs/Float64MultiArray |
+/// | Input  | /foot_contacts | RobotFootContact |
+/// | Output | /odom | nav_msgs/Odometry |
+/// | Output | /stall_status | std_msgs/Bool |
+/// | Output | /foot_markers | MarkerArray |
+/// | Output | /tf | TF |
+///
+/// @warning Одометрия дрейфует на скользких поверхностях (пробуксовка).
+///   Используйте stall_pub_ для внешней коррекции.
+///
+/// @see OdometryState, ForwardKinematics, OdometryData
+
 #pragma once
 
 #include <tf2_ros/transform_broadcaster.h>
@@ -16,8 +53,20 @@
 #include "quadropted_controller_cpp/kinematics/forward_kinematics.hpp"
 #include "quadropted_controller_cpp/odometry/odometry.hpp"
 
+/// Узел одометрии: контакты лап + IMU → положение (x, y, θ).
+///
+/// Публикует nav_msgs/Odometry, TF (odom→base) и маркеры лап в RViz.
+/// Работает на частоте 50 Гц (timer_callback).
 class DogOdometryNode : public rclcpp::Node {
   public:
+    /// Конструктор: инициализирует подписчики, издатели, FK и OdometryState.
+    ///
+    /// Параметры читаются из YAML-конфига (robot_controller.yaml):
+    ///   - body_length, body_width, l1–l4: геометрия
+    ///   - filter_window_size: окно скользящего среднего
+    ///   - stall_window, stall_ang_vel_threshold: детекция пробуксовки
+    ///   - publish_rate: частота публикации
+    ///   - enable_odom_tf: публиковать ли TF
     DogOdometryNode();
 
   private:

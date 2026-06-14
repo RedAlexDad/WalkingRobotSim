@@ -93,6 +93,20 @@ install(TARGETS benchmark DESTINATION lib/${PROJECT_NAME})
 # Установка
 # ════════════════════════════════════════════════════════════
 
+# ════════════════════════════════════════════════════════════
+# Документация (Doxygen)
+# ════════════════════════════════════════════════════════════
+
+find_package(Doxygen QUIET)
+if(Doxygen_FOUND)
+  configure_file(doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+  add_custom_target(doc
+    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Generating API documentation with Doxygen"
+    VERBATIM)
+endif()
+
 install(DIRECTORY include/ DESTINATION include)
 install(DIRECTORY config/ DESTINATION share/${PROJECT_NAME}/config)
 install(DIRECTORY launch/ DESTINATION share/${PROJECT_NAME}/launch)
