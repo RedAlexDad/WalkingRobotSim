@@ -30,7 +30,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 file(GLOB _SRCS CONFIGURE_DEPENDS
   src/utils/*.cpp src/kinematics/*.cpp src/odometry/*.cpp src/states/*.cpp
   src/controllers/*.cpp src/controllers/trot/*.cpp src/controllers/crawl/*.cpp
-  src/control/*.cpp)
+  src/nodes/*_control.cpp)
 add_library(${PROJECT_NAME} SHARED ${_SRCS})
 
 target_include_directories(${PROJECT_NAME} PUBLIC

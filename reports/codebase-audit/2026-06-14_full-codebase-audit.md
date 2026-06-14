@@ -165,9 +165,9 @@ WalkingRobotSim/
 
 Тесты используют короткий путь, исходники — полный. Это legacy-артефакт миграции.
 
-**3.6 src/control/ vs src/controllers/**
+**3.6 src/nodes/ — консолидированные файлы node-уровня**
 
-`control/` содержит методы `RobotControllerNode` (например, `step_trot()`), в то время как `controllers/` содержит классы контроллеров. `control/` — по сути реализация нод, размазанная по файлам. Логичнее было бы поместить их в `nodes/`.
+Ранее `src/control/` содержал файлы уровня node (например, `trot_control.cpp`, `crawl_control.cpp`), что создавало путаницу с `src/controllers/`. Переименованы в `src/nodes/`: все файлы в `nodes/` — node-level entry points, вызываемые из `robot_controller_node.cpp`.
 
 **3.7 Пустые файлы**
 
@@ -490,10 +490,10 @@ void OdometryUpdate::update_with_stall_check(...) {
 
 - `include/quadropted_controller_cpp/nodes/robot_controller_node.hpp`
 - `src/nodes/robot_controller_node.cpp`
-- `src/control/trot_control.cpp`
-- `src/control/crawl_control.cpp`
-- `src/control/stand_control.cpp`
-- `src/control/rest_control.cpp`
+- `src/nodes/trot_control.cpp`
+- `src/nodes/crawl_control.cpp`
+- `src/nodes/stand_control.cpp`
+- `src/nodes/rest_control.cpp`
 
 **Качество: Удовлетворительно (6/10)**
 
@@ -1074,10 +1074,10 @@ Color-coded output, X11 setup, проверки контейнера.
 ### 9.3 Архитектурные проблемы
 
 | #   | Проблема                   | Описание                                                                   |
-| --- | -------------------------- | -------------------------------------------------------------------------- |
+| --- | -------------------------- | -------------------------------------------------------------------------- | ------------- |
 | 13  | Двойные forwarding headers | include/inverse_kinematics.hpp → include/kinematics/inverse_kinematics.hpp | ✅ Исправлено |
 | 14  | Пустые .cpp файлы          | math_utils.cpp, state_command.cpp                                          |
-| 15  | control/ vs controllers/   | Размазывание ответственности                                               |
+| 15  | control/ vs controllers/   | Размазывание ответственности                                               | ✅ Исправлено |
 | 16  | Hardcoded config           | PID gains, timestep, namespace, пути                                       |
 
 ### 9.4 Проблемы тестирования
@@ -1115,7 +1115,7 @@ Color-coded output, X11 setup, проверки контейнера.
 
 6. **Удалить пустые .cpp файлы** — удалить `math_utils.cpp`, `state_command.cpp` из CMakeLists и файловой системы
 7. **Консолидировать заголовки** — ✅ Выполнено (`bc59aef`): удалены 8 forwarding headers, все include переведены на прямые пути в `kinematics/`, `controllers/`, `utils/`
-8. **Переместить `control/` в `nodes/`** — или переименовать для ясности
+8. **Переместить `control/` в `nodes/`** — ✅ Выполнено (`c8079f7`): `control/` переименован в `nodes/`, все файлы уровня node консолидированы в одной директории
 9. **Заменить bool флаги на enum dispatch** — убрать `use_trot_`, `use_crawl_`, `use_stand_` → switch на `BehaviorState`
 10. **Добавить config файл** — вынести PID gains, timestep в параметры YAML
 
@@ -1244,18 +1244,18 @@ def gpu_or_cpu(cuda_fn, cpu_fn):
 
 ### Сводная таблица
 
-| Категория          | Оценка | Обоснование                                                                        |
-| ------------------ | ------ | ---------------------------------------------------------------------------------- |
-| Архитектура        | 8/10   | Чистые namespace, логическое разделение, forwarding headers удалены               |
-| C++ качество       | 7/10   | Сильная математика, Eigen грамотно, но слабый modern C++                           |
-| Python качество    | 7/10   | GPU acceleration впечатляет, но typing отсутствует, есть баги                      |
-| Производительность | 8/10   | fast_atan2, precompute, LTO, CUDA — осознанная оптимизация                         |
-| Обработка ошибок   | 4/10   | Слабое место: assert в release, нет валидации, нет noexcept                        |
-| Тестирование       | 8/10   | 75 тестов, Python cross-validation — отлично, но Crawl не тестирован               |
-| Инфраструктура     | 9/10   | Docker multi-stage, CI/CD, Compose, Makefile — уровень Senior                      |
-| Docker             | 9/10   | 5-stage build, кэширование, GPU/CPU, healthcheck                                   |
-| CI/CD              | 9/10   | Pipeline исправлен: release.yml для ROS2, compose path корректный                  |
-| Документация       | 6/10   | README хорош, но Doxygen отсутствует                                               |
+| Категория          | Оценка | Обоснование                                                          |
+| ------------------ | ------ | -------------------------------------------------------------------- |
+| Архитектура        | 8/10   | Чистые namespace, логическое разделение, forwarding headers удалены  |
+| C++ качество       | 7/10   | Сильная математика, Eigen грамотно, но слабый modern C++             |
+| Python качество    | 7/10   | GPU acceleration впечатляет, но typing отсутствует, есть баги        |
+| Производительность | 8/10   | fast_atan2, precompute, LTO, CUDA — осознанная оптимизация           |
+| Обработка ошибок   | 4/10   | Слабое место: assert в release, нет валидации, нет noexcept          |
+| Тестирование       | 8/10   | 75 тестов, Python cross-validation — отлично, но Crawl не тестирован |
+| Инфраструктура     | 9/10   | Docker multi-stage, CI/CD, Compose, Makefile — уровень Senior        |
+| Docker             | 9/10   | 5-stage build, кэширование, GPU/CPU, healthcheck                     |
+| CI/CD              | 9/10   | Pipeline исправлен: release.yml для ROS2, compose path корректный    |
+| Документация       | 6/10   | README хорош, но Doxygen отсутствует                                 |
 
 ### Итог: 7.3/10 — Strong Middle (Junior+/Mid+)
 
