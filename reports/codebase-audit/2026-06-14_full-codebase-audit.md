@@ -1075,7 +1075,7 @@ Color-coded output, X11 setup, проверки контейнера.
 
 | #   | Проблема                   | Описание                                                                   |
 | --- | -------------------------- | -------------------------------------------------------------------------- |
-| 13  | Двойные forwarding headers | include/inverse_kinematics.hpp → include/kinematics/inverse_kinematics.hpp |
+| 13  | Двойные forwarding headers | include/inverse_kinematics.hpp → include/kinematics/inverse_kinematics.hpp | ✅ Исправлено |
 | 14  | Пустые .cpp файлы          | math_utils.cpp, state_command.cpp                                          |
 | 15  | control/ vs controllers/   | Размазывание ответственности                                               |
 | 16  | Hardcoded config           | PID gains, timestep, namespace, пути                                       |
@@ -1114,7 +1114,7 @@ Color-coded output, X11 setup, проверки контейнера.
 ### P1: Архитектурные улучшения (сделать в ближайшую неделю)
 
 6. **Удалить пустые .cpp файлы** — удалить `math_utils.cpp`, `state_command.cpp` из CMakeLists и файловой системы
-7. **Консолидировать заголовки** — удалить forwarding headers, унифицировать include пути
+7. **Консолидировать заголовки** — ✅ Выполнено (`bc59aef`): удалены 8 forwarding headers, все include переведены на прямые пути в `kinematics/`, `controllers/`, `utils/`
 8. **Переместить `control/` в `nodes/`** — или переименовать для ясности
 9. **Заменить bool флаги на enum dispatch** — убрать `use_trot_`, `use_crawl_`, `use_stand_` → switch на `BehaviorState`
 10. **Добавить config файл** — вынести PID gains, timestep в параметры YAML
@@ -1246,7 +1246,7 @@ def gpu_or_cpu(cuda_fn, cpu_fn):
 
 | Категория          | Оценка | Обоснование                                                                        |
 | ------------------ | ------ | ---------------------------------------------------------------------------------- |
-| Архитектура        | 7/10   | Чистые namespace, логическое разделение, но forwarding headers и control/ путаница |
+| Архитектура        | 8/10   | Чистые namespace, логическое разделение, forwarding headers удалены               |
 | C++ качество       | 7/10   | Сильная математика, Eigen грамотно, но слабый modern C++                           |
 | Python качество    | 7/10   | GPU acceleration впечатляет, но typing отсутствует, есть баги                      |
 | Производительность | 8/10   | fast_atan2, precompute, LTO, CUDA — осознанная оптимизация                         |
