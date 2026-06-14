@@ -119,6 +119,31 @@ jobs:
             build/quadropted_controller_cpp/Testing/**/*.xml
           retention-days: 7
 
+      - name: Run benchmarks
+        run: |
+          docker compose -f ${{ env.COMPOSE_FILE }} exec -T simulator bash -c "
+            source /opt/ros/jazzy/setup.bash
+            source /root/ws/install/setup.bash
+            cd /root/ws
+            ./install/quadropted_controller_cpp/lib/quadropted_controller_cpp/benchmark 100000 \
+              > /tmp/benchmark_output.txt 2>&1
+          "
+          docker compose -f ${{ env.COMPOSE_FILE }} exec -T simulator bash -c "cat /tmp/benchmark_output.txt" \
+            > benchmark_output.txt
+
+      - name: Check benchmark regression
+        run: |
+          pip install --break-system-packages pyyaml 2>/dev/null || true
+          python3 scripts/check_benchmark_regression.py benchmark_output.txt
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-results
+          path: benchmark_output.txt
+          retention-days: 30
+
       - name: Cleanup
         if: always()
         run: |

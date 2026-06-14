@@ -1,0 +1,24 @@
+{
+  "_meta": {
+    "description": "Baseline timing for C++ controller benchmarks (microseconds per call).",
+    "unit": "us",
+    "threshold_pct": 20.0,
+    "created": "2026-06-14",
+    "update": "Run: python3 scripts/check_benchmark_regression.py --update-baseline"
+  },
+  "benchmarks": {
+    "GaitController.contacts()": 0.01,
+    "GaitController.subphase_ticks()": 0.01,
+    "TrotSwingController.swing_height()": 0.01,
+    "TrotSwingController.next_foot_location()": 0.05,
+    "TrotSwingController.raibert_touchdown()": 0.02,
+    "TrotStanceController.position_delta()": 0.05,
+    "TrotStanceController.next_foot_location()": 0.05,
+    "StandController.run()": 0.05,
+    "ForwardKinematics.forward_kinematics_all_legs()": 0.10,
+    "RestController.step()": 0.05,
+    "InverseKinematics.inverse_kinematics()": 0.50,
+    "PIDController.run()": 0.01,
+    "Trot Step (full cycle)": 0.50
+  }
+}
