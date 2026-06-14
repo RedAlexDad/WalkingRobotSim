@@ -169,12 +169,7 @@ WalkingRobotSim/
 
 Ранее `src/control/` содержал файлы уровня node (например, `trot_control.cpp`, `crawl_control.cpp`), что создавало путаницу с `src/controllers/`. Переименованы в `src/nodes/`: все файлы в `nodes/` — node-level entry points, вызываемые из `robot_controller_node.cpp`.
 
-**3.7 Пустые файлы**
-
-- `src/utils/math_utils.cpp` — пустой (функции определены в rotation_matrices.cpp)
-- `src/states/state_command.cpp` — пустой (всё в header)
-
-Это лишние translation unit'ы, замедляющие сборку.
+**3.7 Пустые .cpp файлы** — ✅ Исправлено (`1eb47c7`): файлы удалены
 
 ---
 
@@ -563,7 +558,7 @@ target_link_options(${PROJECT_NAME} PRIVATE -flto)
 **Проблемы:**
 
 - `-O3 -march=native -flto` в `target_compile_options` — это должно быть в `Release` конфигурации, а не безусловно
-- Пустые .cpp файлы (`math_utils.cpp`, `state_command.cpp`) лишние в сборке
+- ~~Пустые .cpp файлы (`math_utils.cpp`, `state_command.cpp`) лишние в сборке — ✅ Исправлено~~
 - Нет `install(TARGETS ...)` для бенчмарков
 
 ---
@@ -1074,7 +1069,7 @@ Color-coded output, X11 setup, проверки контейнера.
 | #   | Проблема                   | Описание                                                                   |
 | --- | -------------------------- | -------------------------------------------------------------------------- | ------------- |
 | 13  | Двойные forwarding headers | include/inverse_kinematics.hpp → include/kinematics/inverse_kinematics.hpp | ✅ Исправлено |
-| 14  | Пустые .cpp файлы          | math_utils.cpp, state_command.cpp                                          |
+| 14  | Пустые .cpp файлы          | math_utils.cpp, state_command.cpp                                          | ✅ Исправлено |
 | 15  | control/ vs controllers/   | Размазывание ответственности                                               | ✅ Исправлено |
 | 16  | Hardcoded config           | PID gains, timestep, namespace, пути                                       | ✅ Частично: node params в YAML |
 
@@ -1111,7 +1106,7 @@ Color-coded output, X11 setup, проверки контейнера.
 
 ### P1: Архитектурные улучшения (сделать в ближайшую неделю)
 
-6. **Удалить пустые .cpp файлы** — удалить `math_utils.cpp`, `state_command.cpp` из CMakeLists и файловой системы
+6. **Удалить пустые .cpp файлы** — ✅ Выполнено (`1eb47c7`): удалены `math_utils.cpp`, `state_command.cpp`
 7. **Консолидировать заголовки** — ✅ Выполнено (`bc59aef`): удалены 8 forwarding headers, все include переведены на прямые пути в `kinematics/`, `controllers/`, `utils/`
 8. **Переместить `control/` в `nodes/`** — ✅ Выполнено (`c8079f7`): `control/` переименован в `nodes/`, все файлы уровня node консолидированы в одной директории
 9. **Заменить bool флаги на enum dispatch** — ✅ Выполнено (`7386335`): удалены `use_trot_`, `use_crawl_`, `use_stand_`, `controller_change_needed_`; диспетчеризация через `switch (state_.behavior_state)`
