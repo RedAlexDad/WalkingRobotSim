@@ -5,6 +5,7 @@
 
 #include "quadropted_controller_cpp/kinematics/forward_kinematics.hpp"
 #include "quadropted_controller_cpp/states/state_command.hpp"
+#include "quadropted_controller_cpp/utils/fast_math.hpp"
 
 namespace quadropted {
 
@@ -35,7 +36,7 @@ std::array<double, 12> compute_all_joint_angles(const Eigen::MatrixBase<Derived>
         double G = F - l1;
         double H = std::sqrt(G * G + z * z);
 
-        double theta1 = -std::atan2(y, x) - std::atan2(F, l2 * LEG_SIGNS[i]);
+        double theta1 = -fast_atan2(y, x) - fast_atan2(F, l2 * LEG_SIGNS[i]);
 
         double D = (H * H - l3sq_l4sq) * inv_2l3l4;
         if (D > 1.0)
@@ -43,8 +44,9 @@ std::array<double, 12> compute_all_joint_angles(const Eigen::MatrixBase<Derived>
         else if (D < -1.0)
             D = -1.0;
 
-        double theta4 = -std::atan2(std::sqrt(1.0 - D * D), D);
-        double theta3 = std::atan2(z, G) - std::atan2(l4 * std::sin(theta4), l3 + l4 * std::cos(theta4));
+        double sqrt_1_D2 = std::sqrt(std::max(0.0, 1.0 - D * D));
+        double theta4 = -fast_atan2(sqrt_1_D2, D);
+        double theta3 = fast_atan2(z, G) - fast_atan2(-l4 * sqrt_1_D2, l3 + l4 * D);
 
         int idx = i * 3;
         angles[idx] = theta1;

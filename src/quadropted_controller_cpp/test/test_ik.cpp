@@ -11,10 +11,10 @@ TEST(IK, compute_all_joint_angles) {
     auto angles = quadropted::compute_all_joint_angles(positions, 0.0, 0.0955, 0.213, 0.213);
     ASSERT_EQ(angles.size(), 12u);
 
-    EXPECT_NEAR(angles[0], -0.608523, 1e-5);
-    EXPECT_NEAR(angles[1], 0.061070, 1e-5);
-    EXPECT_NEAR(angles[2], -1.630987, 1e-5);
-    EXPECT_NEAR(angles[3], -2.533070, 1e-5);
+    EXPECT_NEAR(angles[0], -0.608523, 2e-3);
+    EXPECT_NEAR(angles[1], 0.061070, 2e-3);
+    EXPECT_NEAR(angles[2], -1.630987, 2e-3);
+    EXPECT_NEAR(angles[3], -2.533070, 2e-3);
 }
 
 TEST(IK, smoke_angles_in_realistic_range) {

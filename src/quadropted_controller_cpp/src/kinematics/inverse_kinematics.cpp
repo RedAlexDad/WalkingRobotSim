@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 
+#include "quadropted_controller_cpp/utils/fast_math.hpp"
 #include "quadropted_controller_cpp/utils/math_utils.hpp"
 
 namespace quadropted {
@@ -68,7 +69,7 @@ std::array<double, 3> compute_joint_angles_for_leg(double x, double y, double z,
     double G = F - l1;
     double H = std::sqrt(G * G + z * z);
 
-    double theta1 = -std::atan2(y, x) - std::atan2(F, l2 * LEG_SIGNS[leg_index]);
+    double theta1 = -fast_atan2(y, x) - fast_atan2(F, l2 * LEG_SIGNS[leg_index]);
 
     double _2l3l4 = 2.0 * l3 * l4;
     double l3sq_l4sq = l3 * l3 + l4 * l4;
@@ -78,8 +79,9 @@ std::array<double, 3> compute_joint_angles_for_leg(double x, double y, double z,
     else if (D < -1.0)
         D = -1.0;
 
-    double theta4 = -std::atan2(std::sqrt(1.0 - D * D), D);
-    double theta3 = std::atan2(z, G) - std::atan2(l4 * std::sin(theta4), l3 + l4 * std::cos(theta4));
+    double sqrt_1_D2 = std::sqrt(std::max(0.0, 1.0 - D * D));
+    double theta4 = -fast_atan2(sqrt_1_D2, D);
+    double theta3 = fast_atan2(z, G) - fast_atan2(-l4 * sqrt_1_D2, l3 + l4 * D);
 
     return {theta1, theta3, theta4};
 }
