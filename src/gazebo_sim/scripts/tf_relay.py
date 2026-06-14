@@ -40,12 +40,6 @@ class TFRelay(Node):
     def cb_tf_static(self, msg):
         self.pub_static.publish(msg)
 
-    def cb_tf(self, msg):
-        self.pub.publish(msg)
-
-    def cb_tf_static(self, msg):
-        self.pub_static.publish(msg)
-
 
 def main(args=None):
     rclpy.init(args=args)
