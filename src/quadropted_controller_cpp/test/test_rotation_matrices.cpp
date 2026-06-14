@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "quadropted_controller_cpp/rotation_matrices.hpp"
+#include "quadropted_controller_cpp/utils/rotation_matrices.hpp"
 
 TEST(RotMatrices, rotx) {
     auto m = quadropted::rotx(M_PI / 2);

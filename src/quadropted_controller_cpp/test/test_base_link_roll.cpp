@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "quadropted_controller_cpp/rotation_matrices.hpp"
+#include "quadropted_controller_cpp/utils/rotation_matrices.hpp"
 
 // ════════════════════════════════════════════════════════════
 // Base Link Roll Tests — критические тесты для проверки крена

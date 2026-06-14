@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "quadropted_controller_cpp/forward_kinematics.hpp"
+#include "quadropted_controller_cpp/kinematics/forward_kinematics.hpp"
 
 TEST(FK, forward_kinematics_all_legs) {
     // angles = [0, 0.3, -0.6] * 4

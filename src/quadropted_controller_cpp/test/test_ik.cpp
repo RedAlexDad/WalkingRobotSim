@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "quadropted_controller_cpp/inverse_kinematics.hpp"
+#include "quadropted_controller_cpp/kinematics/inverse_kinematics.hpp"
 
 TEST(IK, compute_all_joint_angles) {
     // Python: [-0.608523, 0.061070, -1.630987, -2.533070, ...]

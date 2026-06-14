@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "quadropted_controller_cpp/gait_controller.hpp"
+#include "quadropted_controller_cpp/controllers/gait_controller.hpp"
 
 TEST(Gait, phase_ticks_has_4_elements) {
     Eigen::MatrixXi cp(4, 4);

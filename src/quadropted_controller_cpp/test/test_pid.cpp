@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "quadropted_controller_cpp/pid_controller.hpp"
+#include "quadropted_controller_cpp/controllers/pid_controller.hpp"
 
 TEST(PID, run_returns_2_elements) {
     quadropted::PIDController pid(0.15, 0.02, 0.002);

@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "quadropted_controller_cpp/message_builders.hpp"
+#include "quadropted_controller_cpp/utils/message_builders.hpp"
 
 TEST(MessageBuilders, build_odometry_data_has_keys) {
     auto data = quadropted::build_odometry_data(1.0, 2.0, 0.5, 0.1, 0.05, 0.02, "odom", "base", "now");

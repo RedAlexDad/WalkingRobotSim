@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "quadropted_controller_cpp/homogeneous_transforms.hpp"
+#include "quadropted_controller_cpp/utils/homogeneous_transforms.hpp"
 
 TEST(HomogTransform, transxyz) {
     auto m = quadropted::homog_transxyz(0.1, 0.2, 0.3);
