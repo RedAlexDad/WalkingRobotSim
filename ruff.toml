@@ -1,0 +1,29 @@
+target-version = "py312"
+line-length = 120
+
+[lint]
+select = [
+  "F",   # pyflakes — errors
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "I",   # isort
+  "N",   # pep8-naming
+  "UP",  # pyupgrade
+  "S",   # bandit security
+  "BLE", # blind except
+  "RUF", # ruff-specific
+]
+ignore = [
+  "E501",      # line-length handled by ruff-formatter
+  "S101",      # allow assert
+  "E402",      # allow module-level imports after code
+  "N802",      # allow lowercase function names (ROS 2 conventions)
+  "N803",      # allow argument names (ROS 2 style)
+  "N806",      # allow non-uppercase global variable names
+]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
