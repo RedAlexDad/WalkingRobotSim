@@ -7,20 +7,60 @@
 
 namespace quadropted {
 
-RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), rate_(60), state_(0.25) {
-    double body[] = {0.3762, 0.0935};
-    double legs[] = {0.0, 0.0955, 0.213, 0.213};
+RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), state_(0.25) {
+    declare_parameter("rate", 60);
+    declare_parameter("body_length", 0.3762);
+    declare_parameter("body_width", 0.0935);
+    declare_parameter("leg_l1", 0.0);
+    declare_parameter("leg_l2", 0.0955);
+    declare_parameter("leg_l3", 0.213);
+    declare_parameter("leg_l4", 0.213);
+    declare_parameter("dx_front_offset", 0.02);
+    declare_parameter("dx_back_offset", 0.0);
+    declare_parameter("trot_stance_time", 0.04);
+    declare_parameter("trot_swing_time", 0.18);
+    declare_parameter("trot_dt", 0.02);
+    declare_parameter("trot_use_imu", false);
+    declare_parameter("crawl_stance_time", 0.55);
+    declare_parameter("crawl_swing_time", 0.45);
+    declare_parameter("crawl_dt", 0.02);
+    declare_parameter("crawl_max_vx", 0.011);
+    declare_parameter("crawl_max_vy_scale", 0.5);
+    declare_parameter("crawl_max_yaw", 0.15);
+    declare_parameter("verbose", false);
 
-    double dx_front = body[0] * 0.5 + 0.02;
-    double dx_back = body[0] * 0.5 + 0.0;
-    double dy = body[1] * 0.5 + legs[1];
+    rate_ = get_parameter("rate").as_int();
+    double body_length = get_parameter("body_length").as_double();
+    double body_width = get_parameter("body_width").as_double();
+    double leg_l1 = get_parameter("leg_l1").as_double();
+    double leg_l2 = get_parameter("leg_l2").as_double();
+    double leg_l3 = get_parameter("leg_l3").as_double();
+    double leg_l4 = get_parameter("leg_l4").as_double();
+    double dx_front_offset = get_parameter("dx_front_offset").as_double();
+    double dx_back_offset = get_parameter("dx_back_offset").as_double();
+    double trot_stance_time = get_parameter("trot_stance_time").as_double();
+    double trot_swing_time = get_parameter("trot_swing_time").as_double();
+    double trot_dt = get_parameter("trot_dt").as_double();
+    bool trot_use_imu = get_parameter("trot_use_imu").as_bool();
+    double crawl_stance_time = get_parameter("crawl_stance_time").as_double();
+    double crawl_swing_time = get_parameter("crawl_swing_time").as_double();
+    double crawl_dt = get_parameter("crawl_dt").as_double();
+    double crawl_max_vx = get_parameter("crawl_max_vx").as_double();
+    double crawl_max_vy_scale = get_parameter("crawl_max_vy_scale").as_double();
+    double crawl_max_yaw = get_parameter("crawl_max_yaw").as_double();
+    debug_mode_ = get_parameter("verbose").as_bool();
+
+    double dx_front = body_length * 0.5 + dx_front_offset;
+    double dx_back = body_length * 0.5 + dx_back_offset;
+    double dy = body_width * 0.5 + leg_l2;
     default_stance_ << dx_front, dx_front, -dx_back, -dx_back, -dy, dy, -dy, dy, 0, 0, 0, 0;
 
     state_.foot_locations = default_stance_;
     state_.behavior_state = BehaviorState::REST;
 
-    trot_gait_ = std::make_unique<TrotGaitController>(0.04, 0.18, 0.02, false, default_stance_);
-    crawl_gait_ = std::make_unique<CrawlGaitController>(0.55, 0.45, 0.02, default_stance_);
+    trot_gait_ =
+        std::make_unique<TrotGaitController>(trot_stance_time, trot_swing_time, trot_dt, trot_use_imu, default_stance_);
+    crawl_gait_ = std::make_unique<CrawlGaitController>(crawl_stance_time, crawl_swing_time, crawl_dt, default_stance_);
     rest_ctrl_ = std::make_unique<RestController>(default_stance_);
     stand_ctrl_ = std::make_unique<StandController>(default_stance_);
 
@@ -28,14 +68,16 @@ RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), rate_
     command_.rest_event = true;
     change_controller();
 
-    ik_ = std::make_unique<InverseKinematics>(body[0], body[1], legs[0], legs[1], legs[2], legs[3]);
+    ik_ = std::make_unique<InverseKinematics>(body_length, body_width, leg_l1, leg_l2, leg_l3, leg_l4);
 
     joint_pub_ = create_publisher<std_msgs::msg::Float64MultiArray>("joint_group_controller/commands", 10);
     foot_contact_pub_ =
         create_publisher<quadropted_msgs::msg::RobotFootContact>("foot_contact", rclcpp::SensorDataQoS());
 
     velocity_sub_ = create_subscription<quadropted_msgs::msg::RobotVelocity>(
-        "robot_velocity", 10, [this](const quadropted_msgs::msg::RobotVelocity::SharedPtr msg) {
+        "robot_velocity", 10,
+        [this, crawl_max_vx, crawl_max_vy_scale,
+         crawl_max_yaw](const quadropted_msgs::msg::RobotVelocity::SharedPtr msg) {
             if (msg->robot_id == 1) {
                 command_.velocity = {msg->cmd_vel.linear.x, msg->cmd_vel.linear.y, msg->cmd_vel.linear.z};
                 command_.yaw_rate = {msg->cmd_vel.angular.x, msg->cmd_vel.angular.y, msg->cmd_vel.angular.z};
@@ -47,10 +89,9 @@ RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), rate_
                 }
 
                 if (state_.behavior_state == BehaviorState::CRAWL) {
-                    constexpr double crawl_max_vx = 0.011;
-                    constexpr double crawl_max_yaw = 0.15;
                     command_.velocity[0] = std::clamp(command_.velocity[0], -crawl_max_vx, crawl_max_vx);
-                    command_.velocity[1] = std::clamp(command_.velocity[1], -crawl_max_vx * 0.5, crawl_max_vx * 0.5);
+                    command_.velocity[1] = std::clamp(command_.velocity[1], -crawl_max_vx * crawl_max_vy_scale,
+                                                      crawl_max_vx * crawl_max_vy_scale);
                     command_.yaw_rate[2] = std::clamp(command_.yaw_rate[2], -crawl_max_yaw, crawl_max_yaw);
                 }
             }

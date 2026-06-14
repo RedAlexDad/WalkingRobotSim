@@ -1,8 +1,17 @@
+import os
+
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    config = os.path.join(
+        get_package_share_directory("quadropted_controller_cpp"),
+        "config",
+        "robot_controller.yaml",
+    )
+
     return LaunchDescription(
         [
             Node(
@@ -25,7 +34,7 @@ def generate_launch_description():
                 executable="robot_controller_node",
                 name="robot_controller_cpp",
                 namespace="robot1",
-                parameters=[{"verbose": False}],
+                parameters=[config],
                 remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
             ),
         ]

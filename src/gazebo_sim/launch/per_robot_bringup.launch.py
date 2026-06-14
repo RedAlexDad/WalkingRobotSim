@@ -27,8 +27,13 @@ def _initial_pose(context, ns, x_pose, y_pose):
     return [
         ExecuteProcess(
             cmd=[
-                "ros2", "topic", "pub", "-t", "3",
-                "--qos-reliability", "reliable",
+                "ros2",
+                "topic",
+                "pub",
+                "-t",
+                "3",
+                "--qos-reliability",
+                "reliable",
                 topic,
                 "geometry_msgs/PoseWithCovarianceStamped",
                 msg,
@@ -199,11 +204,18 @@ def generate_launch_description():
         remappings=remaps,
     )
 
+    controller_config = os.path.join(
+        get_package_share_directory("quadropted_controller_cpp"),
+        "config",
+        "robot_controller.yaml",
+    )
+
     controller = Node(
         package="quadropted_controller_cpp",
         executable="robot_controller_node",
         name="robot_controller_cpp",
         namespace=ns,
+        parameters=[controller_config],
         output="screen",
         remappings=remaps,
     )

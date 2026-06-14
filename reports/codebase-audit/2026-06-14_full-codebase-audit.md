@@ -501,6 +501,7 @@ void OdometryUpdate::update_with_stall_check(...) {
 class RobotControllerNode : public rclcpp::Node {
     // Единый источник истины — BehaviorState enum
     // Диспетчеризация через switch без дублирования флагов
+    // 20 параметров из config/robot_controller.yaml
 };
 ```
 
@@ -1075,7 +1076,7 @@ Color-coded output, X11 setup, проверки контейнера.
 | 13  | Двойные forwarding headers | include/inverse_kinematics.hpp → include/kinematics/inverse_kinematics.hpp | ✅ Исправлено |
 | 14  | Пустые .cpp файлы          | math_utils.cpp, state_command.cpp                                          |
 | 15  | control/ vs controllers/   | Размазывание ответственности                                               | ✅ Исправлено |
-| 16  | Hardcoded config           | PID gains, timestep, namespace, пути                                       |
+| 16  | Hardcoded config           | PID gains, timestep, namespace, пути                                       | ✅ Частично: node params в YAML |
 
 ### 9.4 Проблемы тестирования
 
@@ -1114,7 +1115,7 @@ Color-coded output, X11 setup, проверки контейнера.
 7. **Консолидировать заголовки** — ✅ Выполнено (`bc59aef`): удалены 8 forwarding headers, все include переведены на прямые пути в `kinematics/`, `controllers/`, `utils/`
 8. **Переместить `control/` в `nodes/`** — ✅ Выполнено (`c8079f7`): `control/` переименован в `nodes/`, все файлы уровня node консолидированы в одной директории
 9. **Заменить bool флаги на enum dispatch** — ✅ Выполнено (`7386335`): удалены `use_trot_`, `use_crawl_`, `use_stand_`, `controller_change_needed_`; диспетчеризация через `switch (state_.behavior_state)`
-10. **Добавить config файл** — вынести PID gains, timestep в параметры YAML
+10. **Добавить config файл** — ✅ Выполнено (`864abb4`): создан `config/robot_controller.yaml` с 20 параметрами (rate, body geometry, gait timings, velocity limits); нода читает их через `declare_parameter/get_parameter`; launch файлы загружают YAML
 
 ```cpp
 // Реализовано: dispatch в control_loop()

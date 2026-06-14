@@ -1,0 +1,37 @@
+robot_controller_cpp:
+  ros__parameters:
+    # Control loop frequency (Hz)
+    rate: 60
+
+    # Robot body dimensions (meters)
+    body_length: 0.3762
+    body_width: 0.0935
+
+    # Leg link lengths (meters)
+    leg_l1: 0.0
+    leg_l2: 0.0955
+    leg_l3: 0.213
+    leg_l4: 0.213
+
+    # Default stance offsets (meters)
+    dx_front_offset: 0.02
+    dx_back_offset: 0.0
+
+    # Trot gait parameters
+    trot_stance_time: 0.04
+    trot_swing_time: 0.18
+    trot_dt: 0.02
+    trot_use_imu: false
+
+    # Crawl gait parameters
+    crawl_stance_time: 0.55
+    crawl_swing_time: 0.45
+    crawl_dt: 0.02
+
+    # Crawl velocity limits
+    crawl_max_vx: 0.011
+    crawl_max_vy_scale: 0.5
+    crawl_max_yaw: 0.15
+
+    # Verbose logging
+    verbose: false
