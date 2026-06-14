@@ -33,10 +33,6 @@ class RobotControllerNode : public rclcpp::Node {
 
     int rate_;
     bool debug_mode_ = false;
-    bool controller_change_needed_ = false;
-    bool use_trot_ = false;
-    bool use_crawl_ = false;
-    bool use_stand_ = false;
     int startup_grace_ = 120;
 
     LegsMatrix default_stance_;

@@ -495,22 +495,19 @@ void OdometryUpdate::update_with_stall_check(...) {
 - `src/nodes/stand_control.cpp`
 - `src/nodes/rest_control.cpp`
 
-**Качество: Удовлетворительно (6/10)**
+**Качество: Хорошо (7/10)**
 
 ```cpp
 class RobotControllerNode : public rclcpp::Node {
-    bool use_trot_ = false;
-    bool use_crawl_ = false;
-    bool use_stand_ = false;
-    bool controller_change_needed_ = false;
-    // вместо использования BehaviorState enum
+    // Единый источник истины — BehaviorState enum
+    // Диспетчеризация через switch без дублирования флагов
 };
 ```
 
 **Проблемы:**
 
-- **Redundant boolean flags**: три bool флага + `BehaviorState` enum. Флаги избыточны
-- **Race condition**: `controller_change_needed_` флаг устанавливается в callback'е подписки, проверяется в `control_loop()`. Если два изменения произойдут до цикла — последнее выигрывает
+- ~~**Redundant boolean flags**: три bool флага + `BehaviorState` enum. Флаги избыточны — ✅ Исправлено~~
+- ~~**Race condition**: `controller_change_needed_` флаг — ~~ ✅ Исправлено~~
 - `using namespace quadropted;` внутри класса, который и так в том же namespace
 
 ---
@@ -1069,7 +1066,7 @@ Color-coded output, X11 setup, проверки контейнера.
 | 9   | Нет валидации IK входов      | inverse_kinematics.cpp    | Средняя     |
 | 10  | static для debug counter     | stand_control.cpp         | Низкая      |
 | 11  | robot_height sign convention | state_command.hpp         | Средняя     |
-| 12  | 3 bool флага вместо enum     | robot_controller_node.hpp | Средняя     |
+| 12  | 3 bool флага вместо enum     | robot_controller_node.hpp | Средняя     | ✅ Исправлено |
 
 ### 9.3 Архитектурные проблемы
 
@@ -1116,30 +1113,26 @@ Color-coded output, X11 setup, проверки контейнера.
 6. **Удалить пустые .cpp файлы** — удалить `math_utils.cpp`, `state_command.cpp` из CMakeLists и файловой системы
 7. **Консолидировать заголовки** — ✅ Выполнено (`bc59aef`): удалены 8 forwarding headers, все include переведены на прямые пути в `kinematics/`, `controllers/`, `utils/`
 8. **Переместить `control/` в `nodes/`** — ✅ Выполнено (`c8079f7`): `control/` переименован в `nodes/`, все файлы уровня node консолидированы в одной директории
-9. **Заменить bool флаги на enum dispatch** — убрать `use_trot_`, `use_crawl_`, `use_stand_` → switch на `BehaviorState`
+9. **Заменить bool флаги на enum dispatch** — ✅ Выполнено (`7386335`): удалены `use_trot_`, `use_crawl_`, `use_stand_`, `controller_change_needed_`; диспетчеризация через `switch (state_.behavior_state)`
 10. **Добавить config файл** — вынести PID gains, timestep в параметры YAML
 
 ```cpp
-// Улучшение robot_controller_node.hpp
-enum class GaitMode : uint8_t {
-    REST = 0,
-    STAND = 1,
-    TROT = 2,
-    CRAWL = 3
-};
-
-class RobotControllerNode : public rclcpp::Node {
-    GaitMode current_gait_ = GaitMode::REST;
-
-    void switch_gait(GaitMode new_mode) {
-        // Единая точка переключения
-        switch (new_mode) {
-            case GaitMode::TROT: /* ... */ break;
-            case GaitMode::CRAWL: /* ... */ break;
-            // ...
-        }
-    }
-};
+// Реализовано: dispatch в control_loop()
+switch (state_.behavior_state) {
+    case BehaviorState::TROT:
+        leg_positions = step_trot(state_, command_, now.seconds());
+        break;
+    case BehaviorState::CRAWL:
+        leg_positions = step_crawl(state_, command_);
+        break;
+    case BehaviorState::STAND:
+        leg_positions = step_stand(state_, command_);
+        break;
+    case BehaviorState::REST:
+    default:
+        leg_positions = step_rest(state_, command_);
+        break;
+}
 ```
 
 **Срок:** 1 неделя

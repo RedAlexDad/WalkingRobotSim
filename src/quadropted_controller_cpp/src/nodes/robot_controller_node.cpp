@@ -23,8 +23,6 @@ RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), rate_
     crawl_gait_ = std::make_unique<CrawlGaitController>(0.55, 0.45, 0.02, default_stance_);
     rest_ctrl_ = std::make_unique<RestController>(default_stance_);
     stand_ctrl_ = std::make_unique<StandController>(default_stance_);
-    use_trot_ = false;
-    use_stand_ = false;
 
     command_.trot_event = true;
     command_.rest_event = true;
@@ -93,7 +91,6 @@ RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), rate_
                     command_.stand_event = true;
                 }
                 change_controller();
-                controller_change_needed_ = true;
             }
         });
 
@@ -117,7 +114,6 @@ RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), rate_
                 command_.trot_event = false;
                 command_.crawl_event = false;
                 change_controller();
-                controller_change_needed_ = true;
                 state_.body_local_position[2] = -0.15;
                 response->success = true;
                 response->message = "Robot sat down.";
@@ -127,7 +123,6 @@ RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), rate_
                 command_.trot_event = false;
                 command_.crawl_event = false;
                 change_controller();
-                controller_change_needed_ = true;
                 state_.body_local_position[2] = 0.0;
                 response->success = true;
                 response->message = "Robot stood up.";
@@ -137,7 +132,6 @@ RobotControllerNode::RobotControllerNode() : Node("robot_controller_cpp"), rate_
                 command_.stand_event = false;
                 command_.crawl_event = false;
                 change_controller();
-                controller_change_needed_ = true;
                 state_.body_local_position[2] = 0.0;
                 response->success = true;
                 response->message = "Robot started walking.";
@@ -155,47 +149,25 @@ void RobotControllerNode::change_controller() {
         command_.rest_event = false;
 
         state_.behavior_state = BehaviorState::TROT;
-        use_crawl_ = false;
-        use_trot_ = true;
         trot_gait_->pid_controller().reset(this->now().seconds());
         state_.ticks = 0;
         state_.body_local_position[2] = 0.0;
         command_.trot_event = false;
         RCLCPP_INFO(get_logger(), "Switched to TROT controller");
     } else if (command_.trot_event) {
-        if (state_.behavior_state == BehaviorState::REST) {
-            state_.behavior_state = BehaviorState::TROT;
-            use_trot_ = true;
-            use_crawl_ = false;
-            use_stand_ = false;
-            trot_gait_->pid_controller().reset(this->now().seconds());
-            state_.ticks = 0;
-            state_.body_local_position[2] = 0.0;
-        } else if (state_.behavior_state == BehaviorState::CRAWL) {
-            state_.behavior_state = BehaviorState::TROT;
-            use_trot_ = true;
-            use_crawl_ = false;
-            use_stand_ = false;
-            trot_gait_->pid_controller().reset(this->now().seconds());
-            state_.ticks = 0;
-            state_.body_local_position[2] = 0.0;
+        auto prev = state_.behavior_state;
+        state_.behavior_state = BehaviorState::TROT;
+        trot_gait_->pid_controller().reset(this->now().seconds());
+        state_.ticks = 0;
+        state_.body_local_position[2] = 0.0;
+        command_.trot_event = false;
+        if (prev == BehaviorState::CRAWL) {
             RCLCPP_INFO(get_logger(), "Switched to TROT controller (from CRAWL)");
-        } else if (state_.behavior_state == BehaviorState::STAND) {
-            state_.behavior_state = BehaviorState::TROT;
-            use_trot_ = true;
-            use_crawl_ = false;
-            use_stand_ = false;
-            trot_gait_->pid_controller().reset(this->now().seconds());
-            state_.ticks = 0;
-            state_.body_local_position[2] = 0.0;
+        } else if (prev == BehaviorState::STAND) {
             RCLCPP_INFO(get_logger(), "Switched to TROT controller (from STAND)");
         }
-        command_.trot_event = false;
     } else if (command_.rest_event) {
         state_.behavior_state = BehaviorState::REST;
-        use_crawl_ = false;
-        use_trot_ = false;
-        use_stand_ = false;
         rest_ctrl_->pid().reset(this->now().seconds());
         state_.body_local_position[2] = -0.15;
         command_.rest_event = false;
@@ -203,18 +175,12 @@ void RobotControllerNode::change_controller() {
     } else if (command_.stand_event) {
         if (state_.behavior_state != BehaviorState::STAND) {
             state_.behavior_state = BehaviorState::STAND;
-            use_stand_ = true;
-            use_trot_ = false;
-            use_crawl_ = false;
             state_.body_local_position[2] = 0.005;
             RCLCPP_INFO(get_logger(), "Switched to STAND controller");
         }
         command_.stand_event = false;
     } else if (command_.crawl_event) {
         state_.behavior_state = BehaviorState::CRAWL;
-        use_crawl_ = true;
-        use_trot_ = false;
-        use_stand_ = false;
         crawl_gait_->reset();
         state_.ticks = 0;
         state_.body_local_position[2] = 0.0;
@@ -224,16 +190,21 @@ void RobotControllerNode::change_controller() {
 
 void RobotControllerNode::publish_foot_contacts() {
     auto msg = std::make_unique<quadropted_msgs::msg::RobotFootContact>();
-    if (state_.behavior_state == BehaviorState::REST || state_.behavior_state == BehaviorState::STAND) {
-        msg->contacts = {true, true, true, true};
-    } else if (use_trot_) {
-        Eigen::VectorXi contacts = trot_gait_->contacts(state_.ticks);
-        msg->contacts = {contacts(0) != 0, contacts(1) != 0, contacts(2) != 0, contacts(3) != 0};
-    } else if (use_crawl_) {
-        Eigen::VectorXi contacts = crawl_gait_->contacts(state_.ticks);
-        msg->contacts = {contacts(0) != 0, contacts(1) != 0, contacts(2) != 0, contacts(3) != 0};
-    } else {
-        msg->contacts = {true, true, true, true};
+    switch (state_.behavior_state) {
+        case BehaviorState::REST:
+        case BehaviorState::STAND:
+            msg->contacts = {true, true, true, true};
+            break;
+        case BehaviorState::TROT: {
+            Eigen::VectorXi contacts = trot_gait_->contacts(state_.ticks);
+            msg->contacts = {contacts(0) != 0, contacts(1) != 0, contacts(2) != 0, contacts(3) != 0};
+            break;
+        }
+        case BehaviorState::CRAWL: {
+            Eigen::VectorXi contacts = crawl_gait_->contacts(state_.ticks);
+            msg->contacts = {contacts(0) != 0, contacts(1) != 0, contacts(2) != 0, contacts(3) != 0};
+            break;
+        }
     }
     foot_contact_pub_->publish(std::move(msg));
 }
@@ -249,23 +220,24 @@ void RobotControllerNode::control_loop() {
 
     rclcpp::Time now = this->now();
     LegsMatrix leg_positions;
-    if (use_trot_) {
-        leg_positions = step_trot(state_, command_, now.seconds());
-    } else if (use_crawl_) {
-        leg_positions = step_crawl(state_, command_);
-    } else if (use_stand_) {
-        leg_positions = step_stand(state_, command_);
-    } else {
-        leg_positions = step_rest(state_, command_);
+    switch (state_.behavior_state) {
+        case BehaviorState::TROT:
+            leg_positions = step_trot(state_, command_, now.seconds());
+            break;
+        case BehaviorState::CRAWL:
+            leg_positions = step_crawl(state_, command_);
+            break;
+        case BehaviorState::STAND:
+            leg_positions = step_stand(state_, command_);
+            break;
+        case BehaviorState::REST:
+        default:
+            leg_positions = step_rest(state_, command_);
+            break;
     }
 
     state_.foot_locations = leg_positions;
     state_.robot_height = command_.robot_height;
-
-    if (controller_change_needed_) {
-        change_controller();
-        controller_change_needed_ = false;
-    }
 
     publish_foot_contacts();
 
