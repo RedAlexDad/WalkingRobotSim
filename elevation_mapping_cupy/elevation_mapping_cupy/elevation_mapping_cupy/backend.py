@@ -1,14 +1,16 @@
 import importlib.util
+from types import ModuleType
+from typing import Optional
 
 import numpy as np
 
-GPU_AVAILABLE = False
-cp = None
-xp = np
-scipy_ndimage = None
+GPU_AVAILABLE: bool = False
+cp: Optional[ModuleType] = None
+xp: ModuleType = np
+scipy_ndimage: Optional[ModuleType] = None
 
 
-def _detect_cuda():
+def _detect_cuda() -> None:
     global GPU_AVAILABLE, cp, xp, scipy_ndimage
 
     cp_spec = importlib.util.find_spec("cupy")
@@ -34,7 +36,7 @@ def _detect_cuda():
         scipy_ndimage = scipy.ndimage
 
 
-def asnumpy(array, stream=None):
+def asnumpy(array, stream=None) -> np.ndarray:
     if GPU_AVAILABLE and hasattr(array, "get"):
         if stream is not None:
             return array.get(stream=stream)
@@ -42,7 +44,7 @@ def asnumpy(array, stream=None):
     return np.asarray(array)
 
 
-def get_stream():
+def get_stream() -> Optional[object]:
     if GPU_AVAILABLE:
         return cp.cuda.Stream.null
     return None

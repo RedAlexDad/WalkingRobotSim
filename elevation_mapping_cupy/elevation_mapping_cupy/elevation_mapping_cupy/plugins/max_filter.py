@@ -36,7 +36,9 @@ def _max_filter_cpu_numba(max_filtered, max_filtered_mask, dilation, h, w):
 
 
 class MaxFilter(PluginBase):
-    def __init__(self, cell_n: int = 100, dilation_size: int = 5, iteration_n: int = 5, **kwargs):
+    def __init__(
+        self, cell_n: int = 100, dilation_size: int = 5, iteration_n: int = 5, **kwargs
+    ):
         super().__init__()
         self.iteration_n = iteration_n
         self.width = cell_n
@@ -104,27 +106,29 @@ class MaxFilter(PluginBase):
     ) -> np.ndarray:
         self.max_filtered = elevation_map[0].copy()
         self.max_filtered_mask = elevation_map[2].copy()
-        for i in range(self.iteration_n):
-            if GPU_AVAILABLE:
-                self.max_filter_kernel(
-                    self.max_filtered.copy(),
-                    self.max_filtered_mask.copy(),
-                    self.max_filtered,
-                    self.max_filtered_mask,
-                    size=(self.width * self.height),
-                )
-            else:
-                self._max_filter_cpu()
+        for _ in range(self.iteration_n):
+            self._run_iteration()
             if (self.max_filtered_mask > 0.5).all():
                 break
-        max_filtered = xp.where(self.max_filtered_mask > 0.5, self.max_filtered.copy(), xp.nan)
+        max_filtered = xp.where(
+            self.max_filtered_mask > 0.5, self.max_filtered.copy(), xp.nan
+        )
         return max_filtered
 
-    def _max_filter_cpu(self):
-        _max_filter_cpu_numba(
-            self.max_filtered,
-            self.max_filtered_mask,
-            self.dilation_size,
-            self.height,
-            self.width,
-        )
+    def _run_iteration(self) -> None:
+        if GPU_AVAILABLE:
+            self.max_filter_kernel(
+                self.max_filtered.copy(),
+                self.max_filtered_mask.copy(),
+                self.max_filtered,
+                self.max_filtered_mask,
+                size=(self.width * self.height),
+            )
+        else:
+            _max_filter_cpu_numba(
+                self.max_filtered,
+                self.max_filtered_mask,
+                self.dilation_size,
+                self.height,
+                self.width,
+            )

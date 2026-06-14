@@ -13,7 +13,9 @@ from .plugin_manager import PluginBase
 
 
 @njit
-def _base_elevation_cpu_numba(min_filtered, elevation_map, mask, rotation, h, w, res, use_th, th):
+def _base_elevation_cpu_numba(
+    min_filtered, elevation_map, mask, rotation, h, w, res, use_th, th
+):
     r6 = rotation[2, 0]
     r7 = rotation[2, 1]
     r8 = rotation[2, 2]
@@ -83,7 +85,9 @@ class RobotCentricElevation(PluginBase):
                                          float r0, float r1, float r2) {
                         return r0 * x + r1 * y + r2 * z ;
                     }
-                    """).substitute(width=self.width, height=self.height, resolution=resolution),
+                    """).substitute(
+                    width=self.width, height=self.height, resolution=resolution
+                ),
                 operation=string.Template("""
                     U rz = map[get_map_idx(i, 0)];
                     U valid = mask[get_map_idx(i, 0)];
@@ -103,7 +107,9 @@ class RobotCentricElevation(PluginBase):
                             newmap[get_map_idx(i, 0)] = z_b;
                         }
                     }
-                    """).substitute(threshold=threshold, use_threshold=int(use_threshold)),
+                    """).substitute(
+                    threshold=threshold, use_threshold=int(use_threshold)
+                ),
                 name="base_elevation_kernel",
             )
 
@@ -119,27 +125,29 @@ class RobotCentricElevation(PluginBase):
         *args,
     ) -> np.ndarray:
         self.min_filtered = elevation_map[0].copy()
+        self._run_iteration(elevation_map[0], elevation_map[2], rotation)
+        return self.min_filtered
+
+    def _run_iteration(
+        self, elevation_map: np.ndarray, mask: np.ndarray, rotation
+    ) -> None:
         if GPU_AVAILABLE:
             self.base_elevation_kernel(
-                elevation_map[0],
-                elevation_map[2],
+                elevation_map,
+                mask,
                 rotation,
                 self.min_filtered,
                 size=(self.width * self.height),
             )
         else:
-            self._base_elevation_cpu(elevation_map[0], elevation_map[2], rotation)
-        return self.min_filtered
-
-    def _base_elevation_cpu(self, elevation_map, mask, rotation):
-        _base_elevation_cpu_numba(
-            self.min_filtered,
-            elevation_map,
-            mask,
-            rotation,
-            self.height,
-            self.width,
-            self.resolution,
-            self.use_threshold,
-            self.threshold,
-        )
+            _base_elevation_cpu_numba(
+                self.min_filtered,
+                elevation_map,
+                mask,
+                rotation,
+                self.height,
+                self.width,
+                self.resolution,
+                self.use_threshold,
+                self.threshold,
+            )

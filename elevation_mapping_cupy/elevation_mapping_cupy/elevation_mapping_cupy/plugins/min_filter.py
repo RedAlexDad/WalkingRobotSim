@@ -34,7 +34,9 @@ def _min_filter_cpu_numba(min_filtered, min_filtered_mask, orig_mask, dilation, 
 
 
 class MinFilter(PluginBase):
-    def __init__(self, cell_n: int = 100, dilation_size: int = 5, iteration_n: int = 5, **kwargs):
+    def __init__(
+        self, cell_n: int = 100, dilation_size: int = 5, iteration_n: int = 5, **kwargs
+    ):
         super().__init__()
         self.iteration_n = iteration_n
         self.width = cell_n
@@ -104,28 +106,30 @@ class MinFilter(PluginBase):
     ) -> np.ndarray:
         self.min_filtered = elevation_map[0].copy()
         self.min_filtered_mask = elevation_map[2].copy()
-        for i in range(self.iteration_n):
-            if GPU_AVAILABLE:
-                self.min_filter_kernel(
-                    elevation_map[0],
-                    elevation_map[2],
-                    self.min_filtered,
-                    self.min_filtered_mask,
-                    size=(self.width * self.height),
-                )
-            else:
-                self._min_filter_cpu(elevation_map[0], elevation_map[2])
+        for _ in range(self.iteration_n):
+            self._run_iteration(elevation_map[0], elevation_map[2])
             if (self.min_filtered_mask > 0.5).all():
                 break
-        min_filtered = xp.where(self.min_filtered_mask > 0.5, self.min_filtered.copy(), xp.nan)
+        min_filtered = xp.where(
+            self.min_filtered_mask > 0.5, self.min_filtered.copy(), xp.nan
+        )
         return min_filtered
 
-    def _min_filter_cpu(self, orig_map, orig_mask):
-        _min_filter_cpu_numba(
-            self.min_filtered,
-            self.min_filtered_mask,
-            orig_mask,
-            self.dilation_size,
-            self.height,
-            self.width,
-        )
+    def _run_iteration(self, orig_map: np.ndarray, orig_mask: np.ndarray) -> None:
+        if GPU_AVAILABLE:
+            self.min_filter_kernel(
+                orig_map,
+                orig_mask,
+                self.min_filtered,
+                self.min_filtered_mask,
+                size=(self.width * self.height),
+            )
+        else:
+            _min_filter_cpu_numba(
+                self.min_filtered,
+                self.min_filtered_mask,
+                orig_mask,
+                self.dilation_size,
+                self.height,
+                self.width,
+            )
