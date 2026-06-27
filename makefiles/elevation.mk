@@ -17,15 +17,15 @@ if [ -z "$$(docker ps -q -f name=elevation_mapping_cpu)" ]; then \
 fi
 
 ## Сборка GPU-образа для elevation mapping (умная: только при изменениях)
-elevation-build:
+elevation-build: nvidia-check
 	@bash scripts/smart-elevation.bash
 
 ## Принудительная пересборка GPU-образа
-elevation-force-build:
+elevation-force-build: nvidia-check
 	@bash scripts/smart-elevation.bash --build
 
 ## Запуск elevation mapping в фоне (без логов)
-elevation-bg:
+elevation-bg: nvidia-check
 	@xhost +local: >/dev/null 2>&1 || true
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск elevation mapping в фоне...${NC}\n"
 	@$(COMPOSE) up -d elevation_mapping
@@ -33,7 +33,7 @@ elevation-bg:
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Логи: make elevation-logs${NC}\n"
 
 ## Запуск elevation mapping с логами (foreground)
-elevation:
+elevation: nvidia-check
 	@xhost +local: >/dev/null 2>&1 || true
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск elevation mapping с логами...${NC}\n"
 	@$(COMPOSE) up elevation_mapping

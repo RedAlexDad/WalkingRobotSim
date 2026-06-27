@@ -59,9 +59,12 @@ RUN python3 -m pip install --no-cache-dir --break-system-packages -U --extra-ind
     torch torchvision torchaudio
 
 # Pin numpy < 2 for compatibility with apt scipy/transforms3d
-RUN python3 -m pip install --no-cache-dir --break-system-packages \
+# Build CuPy from source (cupy-cuda12x has no sdist, only wheels).
+# RTX 5070 Ti = Blackwell sm_120, not in prebuilt wheels.
+RUN CUPY_NVCC_GENCODE="arch=compute_120,code=sm_120" \
+    python3 -m pip install --no-cache-dir --break-system-packages \
     "numpy<2" \
-    cupy-cuda12x \
+    cupy --no-binary cupy \
     simple-parsing \
     numba
 

@@ -57,6 +57,7 @@ endef
 
 include makefiles/help.mk
 include makefiles/docker.mk
+include makefiles/nvidia.mk
 include makefiles/elevation.mk
 include makefiles/simulation.mk
 include makefiles/controller.mk
