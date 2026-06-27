@@ -1,5 +1,5 @@
 # Jazzy targets Ubuntu 24.04. Use an NVIDIA CUDA base so CuPy + torch can use the GPU.
-FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04
+FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu24.04
 
 ARG ROS_DISTRO=jazzy
 ARG USERNAME=ubuntu
@@ -54,13 +54,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       python3-ruamel.yaml \
     && rm -rf /var/lib/apt/lists/*
 
-# Torch: traversability filter backend (CUDA). Use cu121 wheels (works on modern drivers).
-RUN python3 -m pip install --no-cache-dir --break-system-packages -U --extra-index-url https://download.pytorch.org/whl/cu126 \
+# Torch: traversability filter backend (CUDA). Use cu128 wheels (works on modern drivers).
+RUN python3 -m pip install --no-cache-dir --break-system-packages -U --extra-index-url https://download.pytorch.org/whl/cu128 \
     torch torchvision torchaudio
 
 # Pin numpy < 2 for compatibility with apt scipy/transforms3d
 # Build CuPy from source (cupy-cuda12x has no sdist, only wheels).
 # RTX 5070 Ti = Blackwell sm_120, not in prebuilt wheels.
+# Requires CUDA >= 12.8 for sm_120 support.
 RUN CUPY_NVCC_GENCODE="arch=compute_120,code=sm_120" \
     python3 -m pip install --no-cache-dir --break-system-packages \
     "numpy<2" \
