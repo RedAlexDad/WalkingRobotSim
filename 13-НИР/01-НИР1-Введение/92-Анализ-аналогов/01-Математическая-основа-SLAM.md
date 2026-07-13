@@ -32,9 +32,9 @@ $$\overline{bel}(x_t) = \int p(x_t | u_t, x_{t-1}) bel(x_{t-1}) dx_{t-1}$$
 
 $$bel(x_t) = \eta \cdot p(z_t | x_t) \cdot \overline{bel}(x_t)$$
 
-![Два примера обратной измерительной модели](images/fig14-inverse-sensor-model.png)
+![Два примера обратной измерительной модели](99-images/fig14-inverse-sensor-model.png)
 
-![Факторный подход в SLAM](images/fig15-factor-approach.png)
+![Факторный подход в SLAM](99-images/fig15-factor-approach.png)
 
 ## EKF SLAM
 
