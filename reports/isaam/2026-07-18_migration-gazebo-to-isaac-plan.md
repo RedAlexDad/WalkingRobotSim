@@ -203,40 +203,35 @@ environment:
 
 ### 5.1 Системные требования — результаты проверки
 
-Проверка выполнена **2026-07-18 01:11 MSK** на целевой машине.
+Проверка выполнена **2026-07-18 01:23 MSK** на целевой машине.
 
-| Компонент         | Требование                       | Результат                                                                                  |
-| ----------------- | -------------------------------- | ------------------------------------------------------------------------------------------ |
-| **OS**            | Ubuntu 24.04 LTS                 | ✅ Ubuntu 24.04.4 LTS (Noble Numbat)                                                       |
-| **CPU**           | x86_64, >= 8 ядер                | ✅ AMD Ryzen 7 H 255 w/ Radeon 780M Graphics, 16 ядер                                      |
-| **NVIDIA GPU**    | RTX 3070+ / RTX 5070 Ti          | ✅ NVIDIA GeForce RTX 5070 Ti (Blackwell sm_120), 16 GB VRAM, 300W TDP                     |
-| **NVIDIA Driver** | >= 550 (рекомендуется 570+)      | ✅ **595.71.05** (свежий, поддерживает CUDA 13.2)                                          |
-| **CUDA (host)**   | 12.8+ (для Isaac Sim 6.x)        | ⚠️ **nvcc 12.0** — нужен апгрейд до 12.8+ для сборки CUDA-расширений вне Docker            |
-| **CUDA (Docker)** | 12.8+ (для Isaac Sim 6.x)        | ✅ Образ `nvidia/cuda:12.8.0-cudnn-devel-ubuntu24.04` уже используется в elevation mapping |
-| **Docker**        | 24+ с `nvidia-container-toolkit` | ✅ **Docker 29.4.0**, nvidia-container-toolkit **1.19.1**, runtime настроен                |
-| **RAM**           | >= 32 GB (рекомендуется 64 GB)   | ⚠️ **30 GB** — на грани. Isaac Sim может подтормаживать при всех 5 контейнерах             |
-| **Диск**          | >= 100 GB free                   | ✅ **937 GB NVMe, 398 GB свободно** (56% занято)                                           |
-| **nvidia-smi**    | —                                | ✅ GPU 0%, 54°C, 31W / 300W (простой), 478 MiB / 16303 MiB used                            |
+| Компонент         | Требование                       | Результат                                                                                 |
+| ----------------- | -------------------------------- | ----------------------------------------------------------------------------------------- |
+| **OS**            | Ubuntu 24.04 LTS                 | ✅ Ubuntu 24.04.4 LTS (Noble Numbat)                                                      |
+| **CPU**           | x86_64, >= 8 ядер                | ✅ AMD Ryzen 7 H 255 w/ Radeon 780M Graphics, 16 ядер                                     |
+| **NVIDIA GPU**    | RTX 3070+ / RTX 5070 Ti          | ✅ NVIDIA GeForce RTX 5070 Ti (Blackwell sm_120, cc 12.0, 70 SM, ~8960 CUDA cores)        |
+| **NVIDIA Driver** | >= 550 (рекомендуется 570+)      | ✅ **595.71.05** (поддерживает CUDA 13.2)                                                 |
+| **CUDA (host)**   | 12.8+ (для Isaac Sim 6.x)        | ✅ **nvcc 12.8.93** — `/usr/local/cuda-12.8/bin/nvcc`, альтернатива установлена           |
+| **CUDA (Docker)** | 12.8+ (для Isaac Sim 6.x)        | ✅ Образ `nvidia/cuda:12.8.0-cudnn-devel-ubuntu24.04` используется в elevation mapping    |
+| **Docker**        | 24+ с `nvidia-container-toolkit` | ✅ **Docker 29.4.0**, nvidia-container-toolkit **1.19.1**, runtime `nvidia` настроен      |
+| **RAM**           | >= 32 GB (рекомендуется 64 GB)   | ⚠️ **30 GB** — на грани. 17 GB доступно. Isaac Sim может подтормаживать при 5 контейнерах |
+| **Диск**          | >= 100 GB free                   | ✅ **937 GB NVMe, 386 GB свободно** (57% занято)                                          |
+| **nvidia-smi**    | —                                | ✅ GPU 0%, 54°C, 32W / 300W, 478 MiB / 16303 MiB used                                     |
 
 ### 5.2 Выявленные проблемы
 
-| Проблема                                       | Влияние                                                 | Решение                                                                                    |
-| ---------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| **CUDA toolkit на хосте 12.0**                 | Не соберутся Isaac Sim CUDA-расширения вне Docker       | Установить `cuda-toolkit-12-8` с NVIDIA repo, либо всё делать внутри Docker (там уже 12.8) |
-| **RAM 30 GB**                                  | Isaac Sim официально требует 32 GB. Впритык.            | Закрыть браузер/сторонние приложения при запуске. Если не хватит — запускать `--headless`  |
-| **Нет локального `nvidia/cuda:12.8.0` образа** | При первом `docker compose up` будет скачивание ~3.5 GB | `docker pull nvidia/cuda:12.8.0-base-ubuntu24.04` заранее                                  |
+| Проблема                                       | Влияние                                                 | Решение                                                                                   |
+| ---------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **RAM 30 GB**                                  | Isaac Sim официально требует 32 GB. Впритык.            | Закрыть браузер/сторонние приложения при запуске. Если не хватит — запускать `--headless` |
+| **Нет локального `nvidia/cuda:12.8.0` образа** | При первом `docker compose up` будет скачивание ~3.5 GB | `docker pull nvidia/cuda:12.8.0-base-ubuntu24.04` заранее                                 |
 
 ### 5.3 Зависимости
 
 ```bash
-# Опционально: установка CUDA 12.8 на хост (если нужно собирать вне Docker)
-wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
-sudo dpkg -i cuda-keyring_1.1-1_all.deb
-sudo apt update
-sudo apt install cuda-toolkit-12-8
-```
+# Уже выполнено: установка CUDA 12.8 на хост
+# sudo apt install cuda-toolkit-12-8
+# /usr/local/cuda -> /usr/local/cuda-12.8 (alternatives)
 
-```bash
 # Предзагрузка образов (экономит время при первом запуске)
 docker pull nvidia/cuda:12.8.0-base-ubuntu24.04
 docker pull nvidia/cuda:12.8.0-runtime-ubuntu24.04
