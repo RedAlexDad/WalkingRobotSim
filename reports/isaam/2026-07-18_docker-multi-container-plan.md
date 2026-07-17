@@ -12,7 +12,7 @@
 2. [Текущая архитектура Docker](#2-текущая-архитектура-docker)
 3. [Анализ зависимостей и граф пакетов](#3-анализ-зависимостей-и-граф-пакетов)
 4. [Целевая архитектура](#4-целевая-архитектура)
-5. [Сервис: gazebo-sim](#5-сервис-gazebo-sim)
+5. [Сервис: gazebo-sim (альтернатива: Isaac Sim)](#5-сервис-gazebo-sim)
 6. [Сервис: ros2-core](#6-сервис-ros2-core)
 7. [Сервис: nav2](#7-сервис-nav2)
 8. [Сервис: yolo-detection](#8-сервис-yolo-detection)
@@ -386,7 +386,9 @@ graph LR
 
 ### 5.1 Назначение
 
-Только Gazebo Sim. Никаких ROS2-нод (кроме bridge неявно — но bridge вынесен в ros2-core).
+Только симулятор физики/рендеринга. Никаких ROS2-нод (кроме bridge неявно — но bridge вынесен в ros2-core).
+
+**Альтернатива:** вместо Gazebo Sim можно использовать **NVIDIA Isaac Sim** (см. раздел 5.5). Микросервисная архитектура позволяет заменить симулятор без изменения остальных сервисов.
 
 ### 5.2 Dockerfile
 
@@ -436,6 +438,37 @@ Gazebo сам по себе публикует:
 - `/world/*/dynamic_pose/info` — позы всех объектов
 - `/lidar` (если настроен в SDF)
 - `/camera` (если настроен)
+
+### 5.5 Альтернатива: Isaac Sim
+
+Вместо Gazebo Sim в сервисе `gazebo-sim` можно использовать **NVIDIA Isaac Sim** (см. отчёт `reports/isaam/2026-07-17_isaac-sim-vs-gazebo-terrain-report.md`):
+
+```yaml
+services:
+  gazebo-sim:
+    image: nvcr.io/nvidia/isaac-sim:6.0.1
+    runtime: nvidia
+    network_mode: host
+    environment:
+      - ACCEPT_EULA=Y
+      - PRIVACY_CONSENT=Y
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /usr/share/vulkan/icd.d:/usr/share/vulkan/icd.d:ro
+      - ./src:/workspace/src:ro
+    entrypoint: ["/workspace/src/docker/isaac-entrypoint.sh"]
+    profiles: ["full", "isaac"]
+```
+
+**Ключевые отличия от Gazebo:**
+
+- Образ с `nvidia` runtime (нестандартный `runc`)
+- Другой GPU-стек: Vulkan/RTX вместо OGRE
+- Isaac Sim публикует те же ROS2-топики (честь встроенный ROS2 bridge с `use_sim_time:=true`)
+- Нужен GCC 11, установленный внутри образа Isaac Sim (не влияет на `ros2-core`)
+- EULA — требуется `ACCEPT_EULA=Y`
+
+**Совместимость:** `ros2-core`, `nav2`, `yolo-detection`, `elevation-mapping` **не меняются** — меняется только источник данных. Это главное преимущество микросервисной архитектуры.
 
 ---
 
