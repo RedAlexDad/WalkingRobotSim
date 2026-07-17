@@ -271,29 +271,24 @@ OCuLink-подключение означает, что GPU находится �
 
 NVIDIA Isaac Sim построен на трёх ключевых технологиях:
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                     Isaac Sim 6.0                               │
-│  ┌─────────────────────────────────────────────────────────┐  │
-│  │                     Omniverse Kit                        │  │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐  │  │
-│  │  │ USD      │  │ RTX      │  │ PhysX    │  │ Python │  │  │
-│  │  │ Pipeline │  │ Renderer │  │ PhysX 5  │  │ Script │  │  │
-│  │  └──────────┘  └──────────┘  └──────────┘  └────────┘  │  │
-│  └─────────────────────────────────────────────────────────┘  │
-│  ┌─────────────────────────────────────────────────────────┐  │
-│  │                  Extensions (omni.*)                     │  │
-│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────────┐│  │
-│  │  │ ROS2 Bridge  │ │ Heightmap    │ │ nvblox          ││  │
-│  │  │ omni.isaac.  │ │ Importer     │ │ isaac_ros_      ││  │
-│  │  │ ros2_bridge  │ │              │ │ nvblox          ││  │
-│  │  └──────────────┘ └──────────────┘ └──────────────────┘│  │
-│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────────┐│  │
-│  │  │ Occupancy    │ │ Map Generator│ │ Replicator      ││  │
-│  │  │ Map          │ │ (terrain)    │ │ (synthetic data)││  │
-│  │  └──────────────┘ └──────────────┘ └──────────────────┘│  │
-│  └─────────────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Isaac_Sim["Isaac Sim 6.0"]
+        subgraph Kit["Omniverse Kit"]
+            USD["USD Pipeline"]
+            RTX["RTX Renderer"]
+            PX["PhysX 5"]
+            PY["Python Script"]
+        end
+        subgraph Ext["Extensions (omni.*)"]
+            ROS2["ROS2 Bridge / omni.isaac.ros2_bridge"]
+            HI["Heightmap Importer"]
+            NVB["nvblox / isaac_ros_nvblox"]
+            OM["Occupancy Map"]
+            MG["Map Generator (terrain)"]
+            REP["Replicator (synthetic data)"]
+        end
+    end
 ```
 
 ### 4.2 Компоненты, релевантные для проекта
@@ -707,23 +702,27 @@ gdal_translate -of PNG terrain.tif terrain_height.png  # для Gazebo
 
 ### 8.1 Архитектура ROS2 bridge в Isaac Sim
 
+```mermaid
+graph LR
+    subgraph Isaac["Isaac Sim App"]
+        RB["ROS2 Bridge Extension"]
+        SN["Sensors (camera / lidar)"]
+    end
+    subgraph ROS2["ROS2 (Jazzy) — WalkingRobot"]
+        CV["/cmd_vel"]
+        OD["/odom"]
+        SC["/scan"]
+        TF["/tf"]
+        EM["elevation_mapping_cupy"]
+    end
+    RB -->|publish| OD
+    RB -->|publish| SC
+    RB -->|publish| TF
+    RB -->|subscribe| CV
+    SN -->|publish| EM
 ```
-Isaac Sim                 ROS2 (Jazzy)
-┌─────────────────┐      ┌─────────────────┐
-│  Isaac Sim App  │      │  WalkingRobot   │
-│  ┌───────────┐  │      │  ┌───────────┐  │
-│  │ ROS2      │──┼──────┼─→│ /cmd_vel  │  │
-│  │ Bridge    │  │      │  │ /odom     │  │
-│  │ Extension │←─┼──────┼──│ /scan     │  │
-│  └───────────┘  │      │  │ /tf       │  │
-│                 │      │  └───────────┘  │
-│  ┌───────────┐  │      │  ┌───────────┐  │
-│  │ Sensors   │  │      │  │ elevation │  │
-│  │ (camera/  │←─┼──────┼──│ _mapping  │  │
-│  │  lidar)   │  │      │  │ _cupy     │  │
-│  └───────────┘  │      │  └───────────┘  │
-└─────────────────┘      └─────────────────┘
-```
+
+**Двунаправленная связь:** Isaac Sim публикует `/odom`, `/scan`, `/tf`, `/points` и подписывается на `/cmd_vel`.
 
 ### 8.2 Поддерживаемые топики
 
@@ -799,42 +798,54 @@ isaac_sim:
 
 ### 9.1 Текущий пайплайн в Docker
 
-```
-Gazebo Sim (Docker)              ROS2 network          elevation_mapping_cupy (Docker)
-┌────────────────────┐                               ┌────────────────────────────┐
-│  /robot1/scan      │                               │  Ground Segmenter          │
-│  (Gazebo LiDAR)    │────→ /robot1/scan/points ────→│  → /ground_cloud           │
-│                    │                               │  → /obstacle_cloud         │
-│  gz_bridge.yaml    │                               │                            │
-│  → /points → ROS2  │                               │  Elevation Mapping Node    │
-└────────────────────┘                               │  → /elevation_map (GridMap)│
-                                                     │                            │
-                                                     │  Elevation to Costmap Node │
-                                                     │  → /elevation_costmap      │
-                                                     │  → /costmap (Nav2)         │
-                                                     └────────────────────────────┘
-                                                                    │
-                                                                    ↓
-                                                             Nav2 Navigation
+```mermaid
+graph LR
+    subgraph Gazebo["Gazebo Sim (Docker)"]
+        GL["/robot1/scan (Gazebo LiDAR)"]
+        GZ["gz_bridge.yaml → /points → ROS2"]
+    end
+    subgraph Net["ROS2 network"]
+        PTS["/robot1/scan/points"]
+    end
+    subgraph EMC["elevation_mapping_cupy (Docker)"]
+        GS["Ground Segmenter"]
+        GCL["→ /ground_cloud"]
+        OCL["→ /obstacle_cloud"]
+        EMN["Elevation Mapping Node"]
+        EGM["→ /elevation_map (GridMap)"]
+        ECN["Elevation to Costmap Node"]
+        ECM["→ /elevation_costmap → /costmap (Nav2)"]
+    end
+    subgraph NAV["Nav2 Navigation"]
+        NV["Nav2"]
+    end
+    GL --> GZ --> PTS
+    PTS --> GS
+    GS --> GCL
+    GS --> OCL
+    PTS --> EMN --> EGM
+    EMN --> ECN --> ECM --> NV
 ```
 
 ### 9.2 Тот же пайплайн с Isaac Sim
 
-```
-Isaac Sim (Docker)               ROS2 network          elevation_mapping_cupy (Docker)
-┌────────────────────┐                               ┌────────────────────────────┐
-│  Isaac Sim App     │                               │  Ground Segmenter          │
-│  ┌──────────────┐  │                               │  (без изменений)           │
-│  │ Lidar sensor │──┼────→ /robot1/scan/points ────→│                            │
-│  │ (depth → PC2)│  │                               │  Elevation Mapping Node    │
-│  └──────────────┘  │                               │  (без изменений)           │
-│                    │                               │                            │
-│  ROS2 bridge       │                               │  → /elevation_map          │
-│  → /scan           │                               └────────────────────────────┘
-│  → /points         │
-│  → /odom           │
-│  → /tf             │
-└────────────────────┘
+```mermaid
+graph LR
+    subgraph Isaac["Isaac Sim (Docker)"]
+        ISA["Isaac Sim App"]
+        LS["Lidar sensor (depth → PC2)"]
+        RB["ROS2 bridge → /scan /points /odom /tf"]
+    end
+    subgraph Net["ROS2 network"]
+        PTS["/robot1/scan/points"]
+    end
+    subgraph EMC["elevation_mapping_cupy (Docker)"]
+        GS["Ground Segmenter (без изменений)"]
+        EMN["Elevation Mapping Node (без изменений)"]
+        EGM["→ /elevation_map"]
+    end
+    ISA --> LS --> RB --> PTS
+    PTS --> GS --> EMN --> EGM
 ```
 
 **Изменения в elevation_mapping_cupy: НУЛЕВЫЕ.** Все топики (scan/points, ground_cloud, elevation_map, costmap) остаются теми же.
@@ -1150,19 +1161,24 @@ ros2 launch elevation_mapping_cupy elevation_mapping.launch.py
 
 ### 12.2 Общая архитектура после миграции
 
-```
-                                    WalkingRobotSim
-┌────────────┐     ┌────────────┐     ┌──────────────┐     ┌────────────┐
-│ Isaac Sim  │     │ ROS2       │     │ Gait         │     │ elevation  │
-│ (terrain)  │────→│ Bridge     │────→│ Controller   │←────│ _mapping   │
-│ PhysX +    │     │ (топики)   │     │ C++ / Python │     │ _cupy      │
-│ RTX render │←────│            │←────│              │────→│ (CuPy)     │
-└────────────┘     └────────────┘     └──────────────┘     └────────────┘
-       │                  │                                    │
-       ↓                  ↓                                    ↓
-   terrain.usd        Nav2, RViz                          GridMap
-   heightmap.         /cmd_vel, /odom,                    /elevation_map
-   png (вход)         /scan, /points, /tf                 /ground_cloud
+```mermaid
+graph LR
+    subgraph WRS["WalkingRobotSim"]
+        IS["Isaac Sim (terrain)<br/>PhysX + RTX"]
+        RB["ROS2 Bridge (топики)"]
+        GC["Gait Controller<br/>C++ / Python"]
+        EM["elevation_mapping_cupy (CuPy)"]
+        NAV["Nav2, RViz<br/>/cmd_vel, /odom, /scan, /points, /tf"]
+        GR["GridMap<br/>/elevation_map, /ground_cloud"]
+    end
+    IS --> RB
+    RB --> GC
+    GC --> RB
+    GC --> EM
+    EM --> RB
+    EM --> GR
+    RB --> NAV
+    IS -->|terrain.usd, heightmap.png (вход)| IS
 ```
 
 ### 12.3 make цели (план)
