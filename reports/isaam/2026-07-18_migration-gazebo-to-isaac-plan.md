@@ -136,11 +136,10 @@ services:
 graph TB
     subgraph "Хост (Ubuntu 24.04)"
         GPU[NVIDIA GPU<br>RTX 5070 Ti]
-        DDS[Cyclone DDS<br>ROS_DOMAIN_ID=0<br>network_mode=host]
+        ISAAC[Isaac Sim 6.0.1.0<br>venv ~/isaacsim-venv<br>Go2 URDF + ROS2 bridge<br>Terrain worlds]
     end
 
     subgraph "docker compose"
-        ISAAC[isaac-sim<br>nvidia/isaac-sim:latest<br>Go2 URDF + ROS2 bridge<br>Terrain worlds]
         ROS[ros2-base<br>ros:jazzy-ros-base<br>quadropted_controller_cpp<br>quadropted_msgs<br>walking_robot_utils]
         EL[elevation-mapping-gpu<br>elevation_mapping_cupy<br>GPU/CuPy]
         EL_CPU[elevation-mapping-cpu<br>elevation_mapping_cupy<br>CPU/Numba]
@@ -160,6 +159,10 @@ graph TB
     ROS -- /cmd_vel --> ISAAC
     EL -- /elevation_map --> NAV
     EL_CPU -- /elevation_map --> NAV
+
+    subgraph "Сеть"
+        DDS[Cyclone DDS<br>ROS_DOMAIN_ID=0<br>network_mode=host]
+    end
 ```
 
 ### 4.2 Поток данных (data flow)
@@ -232,19 +235,23 @@ environment:
 # sudo apt install cuda-toolkit-12-8
 # /usr/local/cuda -> /usr/local/cuda-12.8 (alternatives)
 
-# Предзагрузка образов (экономит время при первом запуске)
-docker pull nvidia/cuda:12.8.0-base-ubuntu24.04
-docker pull nvidia/cuda:12.8.0-runtime-ubuntu24.04
-docker pull nvcr.io/nvidia/isaac-sim:6.0.1  # ~25 GB, может занять часы
+# Уже выполнено: Isaac Sim 6.0.1.0 в venv
+# python3.12 -m venv ~/isaacsim-venv
+# source ~/isaacsim-venv/bin/activate
+# pip install isaacsim==6.0.1.0
+
+# Активация Isaac Sim:
+source ~/isaacsim-venv/bin/activate
+python3.12 -m isaacsim --accept license
 ```
 
 ---
 
-## 6. Этап 1: Isaac Sim Docker образ + ROS2 bridge + Go2 URDF
+## 6. Этап 1: Isaac Sim + ROS2 bridge + Go2 URDF (venv)
 
 ### 6.1 Цель
 
-Запустить Isaac Sim с Go2 роботом, опубликовать ROS2 топики:
+Запустить Isaac Sim с Go2 роботом из venv, опубликовать ROS2 топики:
 
 - `/joint_states` — состояние суставов
 - `/tf` — трансформации
@@ -254,43 +261,29 @@ docker pull nvcr.io/nvidia/isaac-sim:6.0.1  # ~25 GB, может занять ч
 - `/camera` — RGB камера
 - `/cmd_vel` — приём команд управления
 
-### 6.2 Два подхода
+### 6.2 Текущий статус
 
-#### Подход A: Системный Isaac Sim + ROS2 bridge (рекомендуется для разработки)
-
-Использовать нативный Isaac Sim (не в Docker) для интерактивной работы, ROS2 bridge через `isaacsim.ros2.bridge`.
+Isaac Sim **6.0.1.0** уже установлен и работает:
 
 ```bash
-# Установка Isaac Sim 6.x через Omniverse Launcher
-# Или через Docker (см. Подход B)
+# Активация venv и запуск
+source ~/isaacsim-venv/bin/activate
+python3.12 -m isaacsim --accept license
 ```
 
-**Плюсы:**
+**Venv содержит все необходимые пакеты:**
 
-- Работа Isaac App: можно редактировать сцены визуально
-- GUI для отладки (RViz, просмотр топиков)
+| Пакет             | Версия                  |
+| ----------------- | ----------------------- |
+| `isaacsim`        | 6.0.1.0                 |
+| `isaacsim-core`   | 6.0.1.0                 |
+| `isaacsim-ros2`   | 6.0.1.0 (ROS2 bridge)   |
+| `isaacsim-robot`  | 6.0.1.0 (Go2 URDF)      |
+| `isaacsim-sensor` | 6.0.1.0 (LiDAR, камера) |
+| `torch`           | 2.11.0                  |
+| `cuda-toolkit`    | 13.0.2 (внутри venv)    |
 
-**Минусы:**
-
-- Привязан к одной машине
-- Сложнее воспроизводить
-
-#### Подход B: Isaac Sim в Docker (рекомендуется для CI/воспроизводимости)
-
-```bash
-# Pull образа (разовый)
-docker pull nvcr.io/nvidia/isaac-sim:6.0.1
-
-# Запуск с ROS2 bridge
-docker run --name isaac-sim --runtime=nvidia --gpus all \
-  -e "ACCEPT_EULA=Y" \
-  -e "PRIVACY_CONSENT=Y" \
-  -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-  -v /path/to/go2_omniverse:/workspace:ro \
-  --network=host \
-  nvcr.io/nvidia/isaac-sim:6.0.1 \
-  python /workspace/omniverse_sim.py --rendering_mode quality
-```
+**ROS2 bridge** обеспечивается пакетом `isaacsim-ros2` — он автоматически публикует топики `/joint_states`, `/tf`, `/odom`, `/pointcloud`, `/scan`, `/camera` при загрузке Go2 в Isaac Sim.
 
 ### 6.3 Адаптация go2_omniverse скриптов
 
@@ -361,184 +354,73 @@ isaac_topic:
 
 ---
 
-## 7. Этап 2: Многослойный Docker compose.yml
+## 7. Этап 2: Архитектура запуска — два этапа
 
-### 7.1 Новая структура сервисов
+### 7.1 Фаза 1: Нативный запуск (сейчас)
+
+Isaac Sim работает в venv на хосте. ROS2-стек (контроллер, elevation mapping, Nav2, YOLO) — тоже нативно.
+
+```bash
+# Терминал 1: Isaac Sim
+source ~/isaacsim-venv/bin/activate
+python3.12 -m isaacsim --accept license
+
+# Терминал 2: ROS2 стек (после загрузки Isaac Sim)
+source /opt/ros/jazzy/setup.bash
+source ~/GitHub/WalkingRobotSim/install/setup.bash
+
+ros2 run quadropted_controller_cpp controller_node &
+ros2 run walking_robot_utils logging_node &
+ros2 launch elevation_mapping_cupy elevation_mapping.launch.py \
+  robot_config:=go2/go2_lidar3d.yaml launch_rviz:=true \
+  use_sim_time:=true &
+ros2 launch quadropted_perception yolo_detector.launch.py
+
+# Терминал 3: Nav2 (опционально)
+ros2 launch gazebo_sim nav2/bringup_launch.py use_sim_time:=true
+```
+
+**DDS:** Isaac Sim в venv публикует ROS2 топики на `ROS_DOMAIN_ID=0`. Все процессы на одном хосте видят друг друга через Cyclone DDS (без Docker, без сетевых настроек).
+
+### 7.2 Фаза 2: Docker (позже, после отладки)
+
+Когда всё заработает нативно — контейнеризировать ROS2-стек:
 
 ```yaml
-# compose.yml — основная конфигурация
 services:
-  # ─── Симулятор (Isaac Sim) ──────────────────────────────
-  isaac-sim:
-    image: nvidia/isaac-sim:6.0.1
-    container_name: isaac-sim
-    profiles: ["full", "sim"]  # полный запуск
-    network_mode: host
-    ipc: host
-    privileged: true
-    stdin_open: true
-    tty: true
-    group_add:
-      - "44"
-    environment:
-      ACCEPT_EULA: "Y"
-      PRIVACY_CONSENT: "Y"
-      DISPLAY:
-      XAUTHORITY: /root/.Xauthority
-      ROS_DISTRO: jazzy  # Isaac Sim сам содержит ROS2 bridge
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${HOME}/.Xauthority:/root/.Xauthority
-      - ./src/isaac/:/workspace/isaac/:ro
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    command: >
-      python /workspace/isaac/launch_sim.py
-        --terrain flat
-        --rendering_mode quality
-        --headless  # опционально: без GUI для CI
-
-  # ─── ROS2 база (наш стек) ───────────────────────────────
   ros2-base:
-    image: walking_robot_sim:ros2  # новый образ без Gazebo
-    container_name: walking_robot_sim
-    profiles: ["full", "base"]
+    image: walking_robot_sim:ros2
     network_mode: host
-    ipc: host
-    stdin_open: true
-    tty: true
-    privileged: true
     environment:
-      <<: [*env_gui, *env_ros]
-      GAZEBO_RESOURCE_PATH: ""          # удалено
-      GZ_SIM_RESOURCE_PATH: ""          # удалено
-      ISAAC_SIM_WS: "/workspace/isaac"  # добавлено
-    volumes:
-      - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
-      - ./logs/isaac:/root/ws/logs       # новые директории
-      - ./data/isaac:/root/ws/data
-      - project_src:/root/ws/src/
-    command: bash -c "
-      source /opt/ros/jazzy/setup.bash &&
-      source /root/ws/install/setup.bash &&
-      ros2 run quadropted_controller_cpp controller_node &
-      ros2 run walking_robot_utils logging_node &
-      wait
-    "
+      RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+      ROS_DOMAIN_ID: 0
+    # Isaac Sim на хосте — он вне Docker, но DDS видит топики через network_mode: host
 
-  # ─── Elevation Mapping GPU ───────────────────────────────
   elevation-mapping:
     image: elevation_mapping_cupy:jazzy
-    container_name: elevation_mapping
-    profiles: ["full", "elevation", "gpu"]
     network_mode: host
-    ipc: host
-    stdin_open: true
-    tty: true
-    privileged: true
-    group_add:
-      - "44"
-    environment: *el_env
-    volumes:
-      - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
-      - ./elevation_mapping_cupy/.../config/:/config/:ro
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: all
               capabilities: [gpu]
-    command: *el_command  # без изменений относительно текущей версии
+    # получает /pointcloud от Isaac Sim на хосте
 
-  # ─── Nav2 ────────────────────────────────────────────────
-  nav2:
-    image: walking_robot_sim:ros2
-    container_name: navigation
-    profiles: ["full", "nav"]
-    network_mode: host
-    ipc: host
-    stdin_open: true
-    tty: true
-    environment: *env_ros
-    command: bash -c "
-      source /opt/ros/jazzy/setup.bash &&
-      source /root/ws/install/setup.bash &&
-      ros2 launch gazebo_sim nav2/bringup_launch.py
-      use_sim_time:=true
-    "
-
-  # ─── YOLO Perception ─────────────────────────────────────
-  perception:
-    image: walking_robot_sim:ros2
-    container_name: perception
-    profiles: ["full", "perception"]
-    network_mode: host
-    ipc: host
-    stdin_open: true
-    tty: true
-    environment: *env_ros
-    command: bash -c "
-      source /opt/ros/jazzy/setup.bash &&
-      source /root/ws/install/setup.bash &&
-      ros2 launch quadropted_perception yolo_detector.launch.py
-    "
-
-volumes:
-  project_src:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./src
+  nav2: ...
+  perception: ...
 ```
 
-### 7.2 Makefile — новые цели
+Isaac Sim при этом остаётся в venv на хосте (Docker для него не обязателен — образ 25+ GB).
 
-```makefile
-# makefiles/isaac.mk — новые цели для Isaac Sim
+### 7.3 Чек-лист этапа 2 (фаза 1 — нативная)
 
-## Сборка isaac-sim образа (только pull)
-isaac-pull:
-	docker pull nvcr.io/nvidia/isaac-sim:6.0.1
-
-## Полный запуск с Isaac Sim
-deploy-isaac: build-ros2
-	$(COMPOSE) --profile full up -d
-
-## Запуск только ROS2 стека (без симулятора, для отладки)
-up-ros2:
-	$(COMPOSE) --profile base up -d
-
-## Запуск только elevation mapping (если симулятор уже запущен)
-up-elevation:
-	$(COMPOSE) --profile elevation up -d
-
-## Запуск Isaac Sim в headless режиме (без GUI)
-isaac-headless:
-	docker run --rm --gpus all --network=host \
-		nvcr.io/nvidia/isaac-sim:6.0.1 \
-		python /workspace/isaac/launch_sim.py --headless --terrain flat
-
-## Логи Isaac Sim
-logs-isaac:
-	$(COMPOSE) logs -f isaac-sim
-```
-
-### 7.3 Чек-лист этапа 2
-
-- [ ] Новый `compose.yml` с 5 сервисами
-- [ ] Новый `makefiles/isaac.mk`
-- [ ] `make isaac-pull` — скачивание образа
-- [ ] `make deploy-isaac` — запуск всех сервисов
-- [ ] Проверка DDS discovery между контейнерами (`ros2 topic list`)
-- [ ] Проверка что `ros2-base` видит топики `isaac-sim`
-- [ ] Проверка что `elevation-mapping` получает `/pointcloud`
+- [ ] Isaac Sim запущен в venv (`source ~/isaacsim-venv/bin/activate && python3.12 -m isaacsim`)
+- [ ] ROS2 топики видны (`ros2 topic list` показывает `/joint_states`, `/tf`, `/pointcloud` и т.д.)
+- [ ] Контроллер запущен и получает `/joint_states`
+- [ ] elevation_mapping получает `/pointcloud` и публикует `/elevation_map`
+- [ ] Nav2 получает costmap и строит маршрут
+- [ ] YOLO получает `/camera`
 
 **Ожидаемое время:** 4-6 часов
 
