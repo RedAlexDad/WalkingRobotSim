@@ -195,25 +195,20 @@ def generate_launch_description():
             )
         )
 
+        # ===== RUST ODOMETRY NODE =====
         odom = Node(
-            package='quadropted_controller_cpp',
+            package='quadropted_controller_rust',
             executable='odometry_node',
-            name='odometry_cpp',
+            name='odometry_rust',
             namespace=namespace,
             output='screen',
-            parameters=[{
-                "verbose": False,
-                'publish_rate': 50,
-                'open_loop': False,
-                'has_imu_heading': True,
-                'is_gazebo': True,
-                'imu_topic': f'/{namespace}/imu_plugin/out',
-                'base_frame_id': "base_link",
-                'odom_frame_id': "odom",
-                'clock_topic': '/clock',
-                'enable_odom_tf': False,
-            }],
-            remappings=remappings_initial
+            remappings=[
+                ("odom", "odom"),
+                ("joint_group_controller/commands", "joint_group_controller/commands"),
+                ("foot_contact", "foot_contact"),
+                ("imu", "imu_plugin/out"),
+                ("robot_velocity", "robot_velocity"),
+            ],
         )
 
         nav2_launch_file = os.path.join(pkg_path, 'launch', 'nav2', 'bringup_launch.py')
@@ -283,6 +278,15 @@ def generate_launch_description():
             output='log'
         )
         robot_localization_file_path = os.path.join(pkg_path, 'config', 'ekf.yaml')
+        # EKF подписывается на /robot1/odom (Rust odometry node). Без ремаппинга
+        # odom→odometry/filtered — в отличие от C++-схемы, где odom публиковался
+        # сразу на odometry/filtered. Свой выход EKF публикует на odometry/filtered
+        # по умолчанию, поэтому Nav2 продолжает работать без изменений.
+        ekf_remappings = [
+            ("/tf", "tf"),
+            ("/tf_static", "tf_static"),
+            ("/scan", "scan"),
+        ]
         start_robot_localization_cmd = Node(
             package='robot_localization',
             executable='ekf_node',
@@ -291,7 +295,7 @@ def generate_launch_description():
             output='screen',
             parameters=[robot_localization_file_path,
             {'use_sim_time': use_sim_time}],
-            remappings=remappings_initial)
+            remappings=ekf_remappings)
 
         robot_control = GroupAction([
             SetRemap(src="/tf", dst="tf"),

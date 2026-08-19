@@ -176,3 +176,64 @@ where
         }
     }
 }
+
+// ========================= quadropted_msgs/msg/RobotFootContact =========================
+
+#[link(name = "quadropted_msgs__rosidl_generator_c")]
+unsafe extern "C" {
+    fn quadropted_msgs__msg__RobotFootContact__init(msg: *mut RobotFootContact) -> bool;
+    fn quadropted_msgs__msg__RobotFootContact__fini(msg: *mut RobotFootContact);
+    fn quadropted_msgs__msg__RobotFootContact__Sequence__init(seq: *mut Sequence<RobotFootContact>, size: usize) -> bool;
+    fn quadropted_msgs__msg__RobotFootContact__Sequence__fini(seq: *mut Sequence<RobotFootContact>);
+}
+
+/// Robot foot contact message: `bool[4] contacts` — [FR, FL, RR, RL].
+#[repr(C)]
+#[derive(Clone, Debug)]
+pub struct RobotFootContact {
+    pub contacts: [bool; 4],
+}
+
+impl Default for RobotFootContact {
+    fn default() -> Self {
+        unsafe {
+            let mut msg = std::mem::zeroed();
+            if !quadropted_msgs__msg__RobotFootContact__init(&mut msg as *mut _) {
+                panic!("RobotFootContact__init failed");
+            }
+            msg
+        }
+    }
+}
+
+impl SequenceAlloc for RobotFootContact {
+    fn sequence_init(seq: &mut Sequence<Self>, size: usize) -> bool {
+        unsafe { quadropted_msgs__msg__RobotFootContact__Sequence__init(seq as *mut _, size) }
+    }
+    fn sequence_fini(seq: &mut Sequence<Self>) {
+        unsafe { quadropted_msgs__msg__RobotFootContact__Sequence__fini(seq as *mut _) }
+    }
+    fn sequence_copy(_in: &Sequence<Self>, _out: &mut Sequence<Self>) -> bool { true }
+}
+
+impl Message for RobotFootContact {
+    type RmwMsg = Self;
+    fn into_rmw_message(msg: std::borrow::Cow<'_, Self>) -> std::borrow::Cow<'_, Self> { msg }
+    fn from_rmw_message(msg: Self) -> Self { msg }
+}
+
+impl RmwMessage for RobotFootContact
+where
+    Self: Sized,
+{
+    const TYPE_NAME: &'static str = "quadropted_msgs/msg/RobotFootContact";
+    fn get_type_support() -> *const std::ffi::c_void {
+        unsafe {
+            extern "C" {
+                fn rosidl_typesupport_c__get_message_type_support_handle__quadropted_msgs__msg__RobotFootContact()
+                    -> *const std::ffi::c_void;
+            }
+            rosidl_typesupport_c__get_message_type_support_handle__quadropted_msgs__msg__RobotFootContact()
+        }
+    }
+}

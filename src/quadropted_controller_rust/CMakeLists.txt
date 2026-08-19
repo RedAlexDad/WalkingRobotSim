@@ -22,9 +22,10 @@ if(NOT result EQUAL 0)
     message(FATAL_ERROR "cargo build failed: ${result}")
 endif()
 
-# Install the specific executable
+# Install the specific executables
 install(
     PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/target/release/robot_controller_node
+            ${CMAKE_CURRENT_SOURCE_DIR}/target/release/odometry_node
     DESTINATION lib/${PROJECT_NAME}
 )
 

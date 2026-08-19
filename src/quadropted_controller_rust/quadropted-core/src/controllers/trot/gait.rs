@@ -7,29 +7,6 @@ use super::swing::TrotSwingController;
 use crate::controllers::gait::GaitController;
 use crate::controllers::pid::PIDController;
 use nalgebra::{DMatrix, SMatrix};
-use std::fs::OpenOptions;
-use std::io::Write;
-use std::sync::atomic::{AtomicU64, Ordering};
-
-// #region agent log
-static LOG_SEQ_TROT: AtomicU64 = AtomicU64::new(0);
-const DEBUG_LOG_PATH: &str = "/home/redalexdad/GitHub/WalkingRobotSim/.cursor/debug-f81059.log";
-
-fn dbg_log_trot(run_id: &str, hypothesis_id: &str, location: &str, message: &str, data: &str) {
-    let seq = LOG_SEQ_TROT.fetch_add(1, Ordering::Relaxed);
-    let ts = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_millis())
-        .unwrap_or(0);
-    let line = format!(
-        "{{\"sessionId\":\"f81059\",\"id\":\"f81059-trot-{}\",\"timestamp\":{},\"location\":\"{}\",\"message\":\"{}\",\"data\":{},\"runId\":\"{}\",\"hypothesisId\":\"{}\"}}",
-        seq, ts, location, message, data, run_id, hypothesis_id
-    );
-    if let Ok(mut f) = OpenOptions::new().create(true).append(true).open(DEBUG_LOG_PATH) {
-        let _ = writeln!(f, "{}", line);
-    }
-}
-// #endregion
 
 /// Trot Gait Controller
 pub struct TrotGaitController {
@@ -100,20 +77,6 @@ impl TrotGaitController {
         let mut next = *current;
         let contacts = self.gait.contacts(ticks);
         let sub = self.gait.subphase_ticks(ticks);
-        // #region agent log
-        if ticks <= 24 || ticks % 120 == 0 {
-            dbg_log_trot(
-                "pre-fix",
-                "H1_CONTACT_PHASE_LAYOUT",
-                "trot/gait.rs:step_phase",
-                "trot contacts and phase",
-                &format!(
-                    "{{\"ticks\":{},\"phase_index\":{},\"subphase_ticks\":{},\"contacts\":[{},{},{},{}]}}",
-                    ticks, self.gait.phase_index(ticks), sub, contacts[0], contacts[1], contacts[2], contacts[3]
-                ),
-            );
-        }
-        // #endregion
 
         for leg in 0..4 {
             if contacts[leg] == 1 {

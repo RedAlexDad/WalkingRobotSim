@@ -244,11 +244,11 @@ shell:
 
 .PHONY: gazebo gazebo-py gazebo-cpp gazebo-rust teleop exec kill-ros test-aliases
 
-## Запуск Gazebo симуляции (C++ контроллер)
+## Запуск Gazebo симуляции (Rust контроллер — по умолчанию)
 gazebo:
 	$(require-container)
 	$(check-x11)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Gazebo симуляции (ROS $(ROS_DISTRO) + Gazebo Harmonic)...${NC}\n"
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Gazebo симуляции (Rust контроллер, ROS $(ROS_DISTRO) + Gazebo Harmonic)...${NC}\n"
 	@docker exec -it $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
@@ -617,12 +617,27 @@ backup:
 # ТЕСТЫ
 # ════════════════════════════════════════════════════════════
 
-.PHONY: test test-build test-container test-clean
+.PHONY: test test-build test-container test-clean test-rust
 
 ## Полный цикл тестирования
 test: check-deps check-structure test-yaml test-build test-container
 	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Все тесты пройдены успешно!${NC}\n"
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Теперь можно выполнять git push${NC}\n"
+
+## Все автоматические тесты Rust: юнит + кросс-валидация + интеграционные
+test-rust:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск всех Rust тестов (юнит + кросс-валидация + интеграционные)...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		cd /root/ws/src/quadropted_controller_rust && cargo test --workspace 2>&1 | tail -40"
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск скрипта кросс-валидации...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		cd /root/ws && bash scripts/test_cross_validation.sh 2>&1 | tail -30"
+	@printf "${GREEN}${BOLD}[✓]${NC} ${GREEN}Rust тесты завершены${NC}\n"
 
 ## Только сборка образа для теста
 test-build: check-deps check-structure test-yaml

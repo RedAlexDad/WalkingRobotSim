@@ -72,6 +72,9 @@ impl CrawlSwingController {
     }
 
     /// Compute next foot location for a leg in swing
+    ///
+    /// Matches the active C++ runtime path (`robot_controller_node.cpp::step_crawl`),
+    /// where `shifted_left` is hardcoded to `false` (stub in `crawl_swing.cpp`).
     pub fn next_foot_location(
         &self,
         swing_prop: f64,
@@ -79,16 +82,14 @@ impl CrawlSwingController {
         current: &SMatrix<f64, 3, 4>,
         cmd_vel: &Vector3<f64>,
         robot_height: f64,
-        first_cycle: bool,
-        phase_index: usize,
     ) -> Vector3<f64> {
         assert!(swing_prop >= 0.0 && swing_prop <= 1.0);
 
         let foot_location: Vector3<f64> = current.column(leg_index).into();
         let swing_h = self.swing_height(swing_prop);
 
-        // shifted_left determined by phase_index (phases 4-7 are shifted left)
-        let shifted_left = phase_index >= 4;
+        // C++ runtime hardcodes shifted_left = false (TODO stub in crawl_swing.cpp).
+        let shifted_left = false;
         let touchdown = self.raibert_touchdown_location(leg_index, cmd_vel, shifted_left);
 
         let time_left = self.time_step * self.swing_ticks as f64 * (1.0 - swing_prop);
@@ -139,7 +140,7 @@ mod tests {
         let foot = default_stance();
         let cmd_vel = Vector3::zeros();
 
-        let result = controller.next_foot_location(0.5, 0, &foot, &cmd_vel, -0.25, true, 0);
+        let result = controller.next_foot_location(0.5, 0, &foot, &cmd_vel, -0.25);
 
         // With zero velocity, Z should be robot_height + swing_height
         let expected_z = -0.17;
@@ -158,5 +159,23 @@ mod tests {
         // Y should differ by 2 * body_shift_y
         let diff = (result_left.y - result_right.y).abs();
         assert!((diff - 0.04).abs() < 1e-10, "Y diff = {}, expected 0.04", diff);
+    }
+
+    #[test]
+    fn test_crawl_swing_runtime_uses_shifted_left_false() {
+        // The active C++ runtime path hardcodes shifted_left = false.
+        // At the end of the swing (time_left < 1e-6) the foot equals the
+        // touchdown location, which must match the shifted_left=false variant.
+        let stance = default_stance();
+        let controller = CrawlSwingController::new(173, 0.02, 0.08, stance.clone(), 200, 27, 0.02);
+        let cmd_vel = Vector3::zeros();
+
+        let result = controller.next_foot_location(1.0, 0, &stance, &cmd_vel, -0.25);
+        let expected = controller.raibert_touchdown_location(0, &cmd_vel, false);
+        assert!(
+            (result.y - expected.y).abs() < 1e-10,
+            "swing touchdown should match shifted_left=false (C++ runtime), got y={}, expected y={}",
+            result.y, expected.y
+        );
     }
 }

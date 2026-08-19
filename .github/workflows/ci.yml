@@ -129,6 +129,81 @@ jobs:
         docker compose down -v --remove-orphans
 
   # ════════════════════════════════════════════════════════════
+  # 2b. RUST TESTS — юнит + кросс-валидация + интеграционные (10-15 min)
+  # ════════════════════════════════════════════════════════════
+  rust-tests:
+    name: Rust Tests (unit + cross-val + integration)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [lint]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet /opt/ghc "/usr/local/share/boost"
+        sudo apt-get clean
+        docker system prune -a -f
+        df -h
+
+    - name: Build Docker image
+      run: |
+        # Строим из корня проекта чтобы COPY src/ работал правильно
+        docker build -f src/docker/Dockerfile -t walking_robot_sim:ci .
+
+    - name: Start container
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker compose up -d
+
+    - name: Wait for workspace
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        echo "Waiting for workspace (max 60s)..."
+        for i in $(seq 1 30); do
+          if docker compose exec -T simulator bash -c \
+            "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && ros2 node list" 2>/dev/null | grep -q .; then
+            echo "Workspace ready at ${i}s"
+            exit 0
+          fi
+          sleep 2
+        done
+        echo "WARNING: Workspace not ready, continuing anyway"
+
+    - name: Build Rust workspace
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker compose exec -T simulator bash -c "
+          source /opt/ros/jazzy/setup.bash
+          source /root/ws/install/setup.bash 2>/dev/null || true
+          cd /root/ws/src/quadropted_controller_rust
+          cargo build --workspace"
+
+    - name: Run Rust unit tests
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker compose exec -T simulator bash -c "
+          source /opt/ros/jazzy/setup.bash
+          source /root/ws/install/setup.bash 2>/dev/null || true
+          cd /root/ws/src/quadropted_controller_rust
+          cargo test --workspace"
+
+    - name: Run cross-validation + integration tests
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker compose exec -T simulator bash -c "
+          source /opt/ros/jazzy/setup.bash
+          source /root/ws/install/setup.bash 2>/dev/null || true
+          cd /root/ws
+          bash scripts/test_cross_validation.sh"
+
+    - name: Cleanup
+      if: always()
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker compose down -v --remove-orphans
+
+  # ════════════════════════════════════════════════════════════
   # 3. DOCKER BUILD — сборка образа с кэшированием (20-40 min / 5-10 cached)
   # ════════════════════════════════════════════════════════════
   docker-build:

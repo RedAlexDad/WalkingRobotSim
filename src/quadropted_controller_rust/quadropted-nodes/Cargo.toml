@@ -8,6 +8,10 @@ description = "ROS 2 nodes for Quadropted robot"
 name = "robot_controller_node"
 path = "src/bin/robot_controller_node.rs"
 
+[[bin]]
+name = "odometry_node"
+path = "src/bin/odometry_node.rs"
+
 [dependencies]
 rclrs = "0.7"
 rosidl_runtime_rs = "0.6"
@@ -17,3 +21,5 @@ geometry_msgs_rs = { path = "../../geometry_msgs_rs" }
 quadropted_msgs_rs = { path = "../../quadropted_msgs_rs" }
 sensor_msgs_rs = { path = "../../sensor_msgs_rs" }
 std_msgs_rs = { path = "../../std_msgs_rs" }
+nav_msgs_rs = { path = "../../nav_msgs_rs" }
+tf2_msgs_rs = { path = "../../tf2_msgs_rs" }

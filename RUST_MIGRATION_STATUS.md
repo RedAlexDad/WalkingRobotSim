@@ -1,8 +1,8 @@
 # 🦀 Rust Migration Status — WalkingRobotSim
 
-**Последнее обновление:** 2026-04-11  
+**Последнее обновление:** 2026-08-19  
 **Ветка:** `feat/rust-migration`  
-**Статус:** 🟡 В процессе (77% компонентов готовы)
+**Статус:** ✅ Завершено (контроллер 100%, одометрия реализована, C++ сохранён для сравнения)
 
 ---
 
@@ -10,16 +10,17 @@
 
 | Метрика | Значение |
 |---------|----------|
-| **Покрытие компонентов** | 10/13 (77%) |
-| **Функциональность** | ~40% |
-| **Unit тесты** | 46/46 ✅ |
+| **Покрытие компонентов** | ✅ Контроллер 100% (REST/TROT/CRAWL/STAND) |
+| **CRAWL режим** | ✅ бит-в-бит совпадает с C++ рантайм-путём, без насыщения IK |
+| **Odometry Node (Rust)** | ✅ реализован, 50 Гц, `/robot1/odom` + TF |
+| **Unit тесты** | 47/47 ✅ |
 | **Cross-validation** | 8/8 < 1e-10 ✅ |
-| **Коммиты** | 29 |
-| **Строк Rust кода** | ~2800 |
+| **Интеграционные тесты** | 7/7 ✅ (CRAWL no-saturation + Odometry < 1e-9) |
+| **Строк Rust кода** | ~4000 (включая биндинги сообщений) |
 
 ---
 
-## ✅ Готовые компоненты (10/13)
+## ✅ Готовые компоненты
 
 | Компонент | Статус | Тесты | Файл |
 |-----------|--------|-------|------|
@@ -31,18 +32,11 @@
 | TrotStance/Swing | ✅ | 5 | `controllers/trot/stance.rs`, `trot/swing.rs` |
 | TrotGaitController | ✅ | - | `controllers/trot/gait.rs` |
 | CrawlStance/Swing | ✅ | 5 | `controllers/crawl/stance.rs`, `crawl/swing.rs` |
-| **CrawlGaitController** | ✅ | 3 | `controllers/crawl/gait.rs` |
+| **CrawlGaitController** | ✅ (выровнен с C++ рантаймом) | 6 | `controllers/crawl/gait.rs` |
 | **BehaviorState** | ✅ | 3 | `state/behavior.rs` |
-
----
-
-## ❌ Не реализовано (3/13)
-
-| Компонент | Приоритет | Оценка | Блокирует |
-|-----------|-----------|--------|-----------|
-| **Behavior State Machine** | 🔴 Высокий | 2-3 ч | Переключение режимов |
-| **ROS Subscriptions** | 🔴 Высокий | 3-4 ч | `make trot/rest/stand/crawl`, `make teleop` |
-| **Odometry Node** | 🟡 Средний | 8-10 ч | Навигация |
+| **OdometryState + update** | ✅ | 7 | `odometry/state.rs`, `odometry/update.rs` |
+| **Odometry Node** | ✅ | 3 (интегр.) | `quadropted-nodes/src/bin/odometry_node.rs` |
+| **Биндинги nav_msgs/tf2_msgs/RobotFootContact** | ✅ | - | `nav_msgs_rs/`, `tf2_msgs_rs/`, `quadropted_msgs_rs/` |
 
 ---
 
@@ -92,58 +86,48 @@ src/quadropted_controller_rust/
 │   │   │   │   ├── stance.rs
 │   │   │   │   └── swing.rs
 │   │   │   ├── crawl/
-│   │   │   │   ├── gait.rs       # ✅ CrawlGait (новый)
+│   │   │   │   ├── gait.rs       # ✅ CrawlGait (выровнен с C++ рантаймом)
 │   │   │   │   ├── stance.rs
 │   │   │   │   └── swing.rs
 │   │   │   └── gait.rs           # Base GaitController
-│   │   ├── odometry/             # ❌ TODO
+│   │   ├── odometry/             # ✅ state.rs + update.rs (порт C++)
 │   │   └── state/
-│   │       ├── behavior.rs       # ✅ BehaviorState (новый)
+│   │       ├── behavior.rs       # ✅ BehaviorState
 │   │       └── command.rs
 │   └── tests/
-│       └── cross_validation.rs   # ✅ 8 тестов < 1e-10
+│       ├── cross_validation.rs            # ✅ 8 тестов < 1e-10
+│       ├── test_crawl_no_saturation.rs    # ✅ 4 интеграционных теста
+│       └── test_odometry_cross_validation.rs  # ✅ 3 интеграционных теста
 │
 └── quadropted-nodes/             # ROS 2 узлы
     └── src/bin/
-        └── robot_controller_node.rs  # ⚠️ Упрощенная версия
+        ├── robot_controller_node.rs  # ✅ State Machine + IK + подписки
+        └── odometry_node.rs          # ✅ 50 Гц, /robot1/odom + TF
 ```
 
 ---
 
 ## 🎯 Следующие шаги
 
-### 1. Behavior State Machine (2-3 часа)
-**Цель:** Переключение между REST/TROT/CRAWL/STAND
+### 1. Визуальная проверка в Gazebo (критерий 5)
+**Цель:** Убедиться, что робот ходит во всех режимах (TROT/CRAWL/STAND/REST) с Rust контроллером
 
 **Задачи:**
-- [ ] Добавить все 4 контроллера в `SharedState`
-- [ ] Реализовать `match self.behavior_state` в `step()`
-- [ ] Добавить логирование переключений
-- [ ] Протестировать вручную (изменяя код)
+- [ ] `make deploy` → `make gazebo` (Rust по умолчанию)
+- [ ] `make crawl` → проверить ходьбу без насыщения IK
+- [ ] `make trot` / `make stand` / `make rest` → проверить остальные режимы
+- [ ] `ros2 topic hz /robot1/odom` → убедиться в ~50 Гц
+- [ ] Для сравнения: `make gazebo-cpp`
 
-### 2. ROS Subscriptions (3-4 часа)
-**Цель:** Управление роботом через ROS топики
-
-**Задачи:**
-- [ ] Подписка на `/robot1/robot_mode` (RobotModeCommand)
-- [ ] Подписка на `/robot1/cmd_vel` (Twist)
-- [ ] Подписка на `/robot1/imu` (Imu)
-- [ ] Callback для обновления `SharedState`
-
-### 3. Odometry Node (8-10 часов)
-**Цель:** Публикация одометрии для навигации
-
-**Задачи:**
-- [ ] Реализовать `OdometryState` (sliding window)
-- [ ] Реализовать `update_odometry()`
-- [ ] Создать `odometry_node.rs`
-- [ ] Подписки на `joint_states`, `foot_contact`, `imu`
-- [ ] Публикация `nav_msgs/Odometry` и TF
+### 2. Известные предсуществующие C++ тесты (вне scope миграции)
+- [ ] `test_base_link_roll` / `test_ik_with_roll` — падают и без изменений Rust (см. `docs/fix-base_link-roll-plan.md`)
 
 ---
 
 ## 📚 Документация
 
+- **Финальный отчёт (эта сессия):** [`docs/rust-migration-final-report.md`](docs/rust-migration-final-report.md)
+- **Архитектура:** [`docs/architecture.md`](docs/architecture.md)
 - **Детальный отчет:** [`docs/rust-migration-status.md`](docs/rust-migration-status.md)
 - **План миграции:** [`docs/rust-migration-plan.md`](docs/rust-migration-plan.md)
 - **Отчет об устранении проблем:** [`docs/rust-fix-report-2026-04-11.md`](docs/rust-fix-report-2026-04-11.md)
@@ -152,26 +136,31 @@ src/quadropted_controller_rust/
 
 ## 🐛 Известные проблемы
 
-1. **Нет подписок на ROS топики** — робот не реагирует на внешние команды
-2. **Нет state machine** — робот всегда в режиме TROT
-3. **11 warnings** — unused imports и переменные
-4. **IK требует clamping** — углы выходят за пределы без ограничений
+1. ~~**Нет подписок на ROS топики**~~ — ✅ решено (robot_mode, robot_velocity, imu)
+2. ~~**Нет state machine**~~ — ✅ решено (REST/TROT/CRAWL/STAND)
+3. ~~**CRAWL насыщение IK**~~ — ✅ решено (выравнивание с C++ рантаймом, бит-в-бит)
+4. ~~**Odometry отсутствует**~~ — ✅ решено (state/update + odometry_node.rs)
+5. **C++ тесты `test_base_link_roll`, `test_ik_with_roll`** — предсуществующие FAIL, вне scope миграции
+6. **11 warnings** — unused imports (не критично, можно почистить `cargo fix`)
 
 ---
 
 ## 📈 История изменений
 
-### 2026-04-11 (последний коммит)
+### 2026-08-19 (эта сессия)
+- ✅ CRAWL fix: выравнивание с активным C++ рантайм-путём (`step_crawl`) — first_cycle не сбрасывается, swing `shifted_left=false`, лерп нулевой команды; бит-в-бит совпадение с C++
+- ✅ Odometry: `odometry/state.rs`, `odometry/update.rs` (порт C++), `odometry_node.rs` (50 Гц, `/robot1/odom` + TF)
+- ✅ Биндинги: `nav_msgs_rs`, `tf2_msgs_rs`, RobotFootContact, расширен `geometry_msgs_rs`
+- ✅ Инфраструктура: `launch.launch.py` (Rust по умолчанию), `make test-rust`, `gazebo` = Rust
+- ✅ Тесты: 47 unit + 8 cross-val + 7 интеграционных, всё зелёное
+- ✅ CI: job `rust-tests`
+
+### 2026-04-11 (предыдущий коммит)
 - ✅ Реализован `CrawlGaitController` с 8-фазным расписанием
 - ✅ Исправлен `CrawlSwing`: `phase_index` передается корректно
 - ✅ Добавлен `BehaviorState` enum
 - ✅ Все тесты проходят: 46/46
 - 📈 Покрытие: 67% → 77%
-
-### 2026-04-10
-- ✅ TrotGait миграция — 40% покрытия
-- ✅ ASYMMETRIC default stance + IK computation
-- ✅ Rust toolchain в Docker контейнере
 
 ---
 

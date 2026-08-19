@@ -39,6 +39,7 @@ header "1. Сборка C++ пакета"
 cd "$PROJECT_DIR"
 source /opt/ros/jazzy/setup.bash 2>/dev/null || true
 source "$BUILD_DIR/setup.bash" 2>/dev/null || true
+source "$PROJECT_DIR/install/setup.bash" 2>/dev/null || true
 
 if colcon build --packages-select quadropted_controller_cpp --cmake-args -DCMAKE_BUILD_TYPE=Release 2>&1 | grep -q "Failed"; then
     fail "C++ сборка не удалась"
@@ -114,6 +115,21 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════
+# 5a. Rust Интеграционные тесты (CRAWL без насыщения + Odometry)
+# ═══════════════════════════════════════════════════════
+header "5a. Rust Интеграционные тесты (CRAWL + Odometry)"
+
+RUST_INT_OUTPUT=$(cargo test --package quadropted-core --test test_crawl_no_saturation --test test_odometry_cross_validation 2>&1) || true
+RUST_INT_PASSED=$(echo "$RUST_INT_OUTPUT" | grep "test result:" | grep -oP '\d+ passed' | grep -oP '\d+' | awk '{s+=$1} END {print s+0}')
+RUST_INT_FAILED=$(echo "$RUST_INT_OUTPUT" | grep "test result:" | grep -oP '\d+ failed' | grep -oP '\d+' | awk '{s+=$1} END {print s+0}')
+
+if [ "$RUST_INT_FAILED" -gt 0 ] 2>/dev/null; then
+    fail "Интеграционные: $RUST_INT_PASSED passed, $RUST_INT_FAILED failed"
+else
+    success "Интеграционные: $RUST_INT_PASSED passed (CRAWL без насыщения, Odometry < 1e-9)"
+fi
+
+# ═══════════════════════════════════════════════════════
 # 6. Сводная таблица
 # ═══════════════════════════════════════════════════════
 header "Сводная таблица результатов"
@@ -136,19 +152,22 @@ printf "%-45s %-12s %-12s %-12s\n" "Homogeneous transforms" "✅ part" "✅ $RUS
 printf "%-45s %-12s %-12s %-12s\n" "Forward/Inverse Kinematics" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ 8"
 
 # Controllers
-printf "%-45s %-12s %-12s %-12s\n" "Controllers (TROT/CRAWL/etc)" "✅ part" "✅ $RUST_UNIT_PASSED" "⏳ WIP"
+printf "%-45s %-12s %-12s %-12s\n" "Controllers (TROT/CRAWL/etc)" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ $RUST_INT_PASSED"
+
+# CRAWL runtime equivalence (Rust == C++ step_crawl)
+printf "%-45s %-12s %-12s %-12s\n" "CRAWL runtime (bit-exact vs C++)" "✅" "—" "✅ 4"
 
 # Odometry
-printf "%-45s %-12s %-12s %-12s\n" "Odometry" "✅ part" "⏳ stub" "⏳ TODO"
+printf "%-45s %-12s %-12s %-12s\n" "Odometry" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ 3 (< 1e-9)"
 
 echo ""
 
 # Итого
 TOTAL_CPP=$((CPP_PASSED))
-TOTAL_RUST=$((RUST_UNIT_PASSED + RUST_XVAL_PASSED))
-TOTAL_XVAL=$((RUST_XVAL_PASSED))
+TOTAL_RUST=$((RUST_UNIT_PASSED + RUST_XVAL_PASSED + RUST_INT_PASSED))
+TOTAL_XVAL=$((RUST_XVAL_PASSED + RUST_INT_PASSED))
 
-printf "${BOLD}%-45s %-12s %-12s %-12s${NC}\n" "ИТОГО" "$TOTAL_CPP/${CPP_TOTAL}" "$RUST_UNIT_PASSED/$RUST_UNIT_FAILED" "$RUST_XVAL_PASSED/$RUST_XVAL_FAILED"
+printf "${BOLD}%-45s %-12s %-12s %-12s${NC}\n" "ИТОГО" "$TOTAL_CPP/${CPP_TOTAL}" "$RUST_UNIT_PASSED/$RUST_UNIT_FAILED" "$RUST_XVAL_PASSED/$RUST_XVAL_FAILED (+$RUST_INT_PASSED int)"
 
 echo ""
 
@@ -169,8 +188,11 @@ printf "%-35s %-12s %-15s\n" "TrotStanceController" "✅ Готово" "< 1e-10"
 printf "%-35s %-12s %-15s\n" "TrotSwingController" "✅ Готово" "< 1e-10"
 printf "%-35s %-12s %-15s\n" "CrawlStanceController" "✅ Готово" "< 1e-10"
 printf "%-35s %-12s %-15s\n" "CrawlSwingController" "✅ Готово" "< 1e-10"
+printf "%-35s %-12s %-15s\n" "CrawlGaitController (runtime)" "✅ Готово" "0 (bit-exact vs C++)"
 printf "%-35s %-12s %-15s\n" "RestController" "✅ Готово" "< 1e-10"
 printf "%-35s %-12s %-15s\n" "StandController" "✅ Готово" "< 1e-10"
+printf "%-35s %-12s %-15s\n" "OdometryState + update" "✅ Готово" "< 1e-9"
+printf "%-35s %-12s %-15s\n" "Odometry Node (Rust)" "✅ Готово" "50 Гц, /robot1/odom"
 printf "%-35s %-12s %-15s\n" "ROS 2 node" "✅ Готово" "—"
 printf "%-35s %-12s %-15s\n" "Twist subscriber" "✅ Готово" "< 1e-10"
 

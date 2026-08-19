@@ -96,7 +96,8 @@ docker compose ps
 
 - **REST** – Положение по умолчанию, робот не может двигаться
 - **STAND** – Режим, в котором робот может вращаться на месте  
-- **TROT** – Режим ходьбы
+- **TROT** – Режим ходьбы (рысь)
+- **CRAWL** – Режим ползания (медленная ходьба, пошаговый)
 
 Робот работает с 12 степенями свободы. Для включения вращения переключите режим в "STAND":
 
@@ -109,6 +110,22 @@ ros2 topic pub /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand "{mode: '
 ```bash
 ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel
 ```
+
+#### Контроллеры: Rust (по умолчанию) и C++
+Проект содержит две реализации контроллера:
+
+- **Rust** (`quadropted_controller_rust`) — основной контроллер, запускается по умолчанию (`make gazebo`). Включает Rust-версию Odometry Node (`/robot1/odom`, 50 Гц).
+- **C++** (`quadropted_controller_cpp`) — сохранён для сравнения (`make gazebo-cpp`).
+
+```bash
+# Rust контроллер (по умолчанию)
+make gazebo          # или: make gazebo-rust
+
+# C++ контроллер (для сравнения)
+make gazebo-cpp
+```
+
+Обе реализации используют одни и те же топики (`/robot1/robot_mode`, `/robot1/robot_velocity`, `/robot1/robot_mode`, `/robot1/joint_group_controller/commands`), поэтому взаимозаменяемы.
 
 #### Изменение поведения робота
 Робот может садиться и вставать с помощью сервиса `robot_behavior_command`:
@@ -157,6 +174,26 @@ ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehavi
 - ✅ Сборку Docker образа
 - ✅ Запуск и здоровье контейнера
 - ✅ ROS 2 функциональность
+
+### Rust тесты
+Все автоматические тесты Rust (юнит + кросс-валидация + интеграционные):
+
+```bash
+# Все тесты Rust внутри контейнера
+make test-rust
+
+# Или напрямую:
+cd src/quadropted_controller_rust
+cargo test --workspace                       # юнит-тесты (все пакеты)
+cargo test -p quadropted-core                # тесты core (включая интеграционные)
+
+# Кросс-валидация Rust vs C++ (формулы < 1e-10, CRAWL bit-exact, Odometry < 1e-9)
+./scripts/test_cross_validation.sh
+```
+
+Интеграционные тесты (headless, без GUI):
+- `test_crawl_no_saturation` — 30-секундная симуляция CRAWL (1800 тактов @ 60 Гц): ни один угол не выходит за URDF-пределы (hip ±1.0472, upper −1.5708..3.4907, lower −2.7227..−0.83776) более чем на 1% времени; Rust-путь бит-в-бит совпадает с C++ рантайм-путём.
+- `test_odometry_cross_validation` — тестовый маршрут 10 с: расхождение одометрии с C++-эталоном < 1e-9.
 
 ---
 
@@ -314,6 +351,8 @@ docker history walking_robot_sim:latest
 - [`src/INSTRUCTIONS.md`](src/INSTRUCTIONS.md) - Детальные инструкции
 - [`src/QUICK_REF.md`](src/QUICK_REF.md) - Быстрые команды
 - [`src/docker/QUICK_START.md`](src/docker/QUICK_START.md) - Docker гайд
+- [`docs/architecture.md`](docs/architecture.md) - Архитектура контроллеров (Rust основной, C++ опция)
+- [`docs/rust-migration-final-report.md`](docs/rust-migration-final-report.md) - Финальный отчёт миграции (CRAWL fix, Odometry Node, тесты)
 
 ### Внешние ресурсы
 - [ROS 2 Documentation](https://docs.ros.org/en/jazzy/)
