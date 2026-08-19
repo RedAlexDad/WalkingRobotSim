@@ -452,3 +452,100 @@ rust-lld: error: unable to find library -ltest_msgs__rosidl_typesupport_c
 | `a2cb81b` | feat(rust): синхронизировать с elevation-mapping — TROT лерп, stall detection, launch-аргументы |
 | `cc49df2` | docs: починить ссылки на reports/* после merge; C++ 12/12 |
 | `006ffe0` | fix(docker): починить make build (host-сеть, test-msgs, COLCON_IGNORE) |
+
+---
+
+## 15. Живая диагностика в симуляции (2026-08-19, продолжение)
+
+### 15.1. Проблема: Rust-узлы публиковали топики БЕЗ namespace
+В запущенной симуляции контроллер и odometry публиковали
+`/joint_group_controller/commands`, `/odom`, `/imu` (без `/robot1`), хотя launch
+задавал `-r __ns:=/robot1`. Робот стоял (joint_group_controller не получал
+команды), EKF не получал odom.
+
+**Причины и фикс:**
+1. **rclrs 0.7** — `Context::new([], ...)` не парсил `--ros-args -r __ns:=/robot1`
+   из launch → узел создавался в namespace `/`.
+   → Исправлено: `Context::new(std::env::args(), ...)` в обоих узлах
+   (`robot_controller_node.rs`, `odometry_node.rs`).
+2. **Относительные remappings** в launch (`"odom"→"odom"` и т.п.) делали топики
+   абсолютными (без namespace). → Убраны; оставлен только
+   `imu → /robot1/imu_plugin/out`.
+
+**Проверено:** `/robot1/robot_controller_rust`, `/robot1/odometry_rust`,
+`/robot1/joint_group_controller/commands` (1 pub + 1 sub → ros2_control).
+
+### 15.2. Проблема: odom со stamp=0 → EKF «jump back in time», картография ломалась
+Rust odometry_node не заполнял `header.stamp` (default 0). EKF/TF видели нулевой
+timestamp → бесконечные `Detected jump back in time. Clearing TF buffer`,
+`odometry/filtered` улетал на x=-0.7, y=1.2 при raw odom x=0.007.
+
+**Фикс (`odometry_node.rs`):**
+- `header.stamp` заполняется из ROS-часов (`node.get_clock().now()`) — sim-time из `/clock`.
+- `dt` считается из sim-time, а не wall-clock.
+- Проверено: odom stamp sec=54 при clock sec=55; odometry/filtered совпадает с raw odom.
+
+### 15.3. Картография (SLAM) не работала
+- `bringup_launch.py` поддерживает `slam:=True`, но `slam_launch.py` **не существовал**
+  в проекте (никогда) — SLAM не запускался, работал только AMCL по готовой карте.
+- **Добавлено:**
+  - `launch/nav2/slam_launch.py` — новый (slam_toolbox async, namespace);
+    убран двойной PushRosNamespace (`/robot1/robot1`);
+    map/map_metadata ремаппятся в `/robot1/map` (slam_toolbox жёстко публикует
+    map в корень, а Nav2 ждёт в namespace).
+  - `nav2_params.yaml` — секция `slam_toolbox` (mode mapping, resolution 0.05).
+  - `gazebo_multi_nav2_rust.launch.py` — аргумент `slam` по умолчанию `True`
+    (важно: значение `True` с большой буквы — bringup использует
+    `PythonExpression("not {slam}")`, `true` даёт `name 'true' is not defined`).
+- **Проверено:** `/robot1/slam_toolbox` active, `/robot1/map` публикуется
+  (189×430, resolution 0.05), Nav2 costmap подписан на `/robot1/map`.
+
+### 15.4. «Белый круг» при картографии — робот не двигался
+odom x застревал на 0.00679 при активных joint-командах. Причина: **Rust-контроллер
+не публиковал `foot_contact`** (в C++ есть `publish_foot_contacts()`), поэтому
+odometry не получал контакты → не считал перемещение из ног → odom замирал →
+SLAM строил «белый круг» вокруг стоящего робота.
+
+**Фикс (`robot_controller_node.rs`):**
+- добавлен publisher `foot_contact`;
+- в control loop публикуются контакты из gait (REST/STAND → все true,
+  TROT → `trot_gait.contacts()`, CRAWL → `crawl_gait.contacts()`);
+- добавлен геттер `TrotGaitController::contacts()` (в `trot/gait.rs`).
+
+### 15.5. Тормоза — наложение двух симуляций
+После нескольких перезапусков в контейнере оставались процессы старых launch
+(два parameter_bridge, два gz sim) + зомби. CPU 100%+. Решение: полный рестарт
+контейнера и один чистый launch.
+
+---
+
+## 16. Полная сверка C++ vs Rust — выявленные расхождения (миграция НЕ 100%)
+
+Пользователь указал, что миграция неполная. Проведена построчная сверка узлов
+C++ (`robot_controller_node.cpp` + `dog_odom_*.cpp`) с Rust.
+
+### 16.1. RobotControllerNode — расхождения
+| Фича | C++ | Rust | Статус |
+|---|---|---|---|
+| pub `joint_group_controller/commands` | ✅ | ✅ | ок |
+| pub `foot_contact` (SensorDataQoS) | ✅ | ✅ (добавлен §15.4) | ок |
+| srv `robot_behavior_command` (sit/up/walk) | ✅ | ❌ | **не реализован** |
+| startup_grace (2 сек, 120 тиков) | ✅ | ❌ | **не реализован** |
+| `body_local_position[2]` в IK (высота тела REST/STAND/TROT) | ✅ | ❌ (всегда 0.0) | **не реализован** |
+| CRAWL clamp vx/vy/yaw | ✅ (в velocity_sub) | ✅ (в step) | эквивалентно |
+| sub `robot_velocity`/`imu`/`robot_mode` | ✅ | ✅ | ок |
+| change_controller (ticks=0, PID reset) | ✅ | ✅ | ок |
+
+### 16.2. DogOdometryNode — расхождения
+| Фича | C++ | Rust | Статус |
+|---|---|---|---|
+| pub `odom` (50 Гц, sim-time stamp) | ✅ | ✅ | ок |
+| pub `stall_status` (std_msgs/Bool) | ✅ | ❌ | **не реализован** |
+| pub `foot_markers` (visualization_msgs/MarkerArray) | ✅ | ❌ | **не реализован** |
+| параметры: publish_rate, base_frame_id, odom_frame_id, imu_topic, stall_* | ✅ (declare_parameter) | ❌ hardcode | **не реализован** |
+| sub `imu` (из параметра imu_topic) | ✅ | ✅ (hardcode imu) | частично |
+| sub `joint_group_controller/commands`, `foot_contact`, `robot_velocity` | ✅ | ✅ | ок |
+
+> ⚠️ Секция 17 (завершение миграции) будет дополнена после реализации
+> недостающих фич: сервис robot_behavior_command, startup grace, body_local_position,
+> stall_status, foot_markers, параметры odometry.
