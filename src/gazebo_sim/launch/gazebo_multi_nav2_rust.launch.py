@@ -170,6 +170,10 @@ def generate_launch_description():
         )
 
         # ===== RUST CONTROLLER NODE =====
+        # ВАЖНО: НЕ указываем относительные remappings для топиков в namespace —
+        # в ROS 2 remapping с относительной правой частью делает топик АБСОЛЮТНЫМ
+        # (без namespace), ломая /robot1/... Топики и так получают namespace узла.
+        # Только imu ремаппится на абсолютный путь моста /robot1/imu_plugin/out.
         controller = Node(
             package='quadropted_controller_rust',
             executable='robot_controller_node',
@@ -177,10 +181,7 @@ def generate_launch_description():
             namespace=namespace,
             output='screen',
             remappings=[
-                ("joint_group_controller/commands", "joint_group_controller/commands"),
-                ("robot_mode", "robot_mode"),
-                ("robot_velocity", "robot_velocity"),
-                ("imu", "imu_plugin/out"),
+                ("imu", f"/{namespace}/imu_plugin/out"),
             ],
         )
 
@@ -209,11 +210,7 @@ def generate_launch_description():
             namespace=namespace,
             output='screen',
             remappings=[
-                ("odom", "odom"),
-                ("joint_group_controller/commands", "joint_group_controller/commands"),
-                ("foot_contact", "foot_contact"),
-                ("imu", "imu_plugin/out"),
-                ("robot_velocity", "robot_velocity"),
+                ("imu", f"/{namespace}/imu_plugin/out"),
             ],
         )
 

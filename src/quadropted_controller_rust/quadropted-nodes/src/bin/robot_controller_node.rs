@@ -160,7 +160,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🦀 Rust Robot Controller Node starting...");
     println!("   Features: State Machine (REST/TROT/CRAWL/STAND) + IK + Subscriptions\n");
 
-    let ctx = Context::new([], rclrs::InitOptions::new())?;
+    // Парсим аргументы процесса (--ros-args -r __ns:=/robot1 от launch), иначе
+    // namespace и remappings из launch-файла не применяются (rclrs 0.7).
+    let ctx = Context::new(std::env::args(), rclrs::InitOptions::new())?;
     let mut executor = ctx.create_basic_executor();
     let node = executor.create_node("robot_controller_rust")?;
     println!("✅ Node created: robot_controller_rust");
