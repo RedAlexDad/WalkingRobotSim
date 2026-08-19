@@ -328,7 +328,7 @@ docker exec -it walking_robot_sim bash -c \
 1. **Почему C++ «работал», а Rust «нет», при идентичных формулах**: активный путь C++ — это `step_crawl` в ноде, а не библиотечный `CrawlGaitController::step`. Rust транслировал библиотечный код, где `first_cycle_` сбрасывался и `shifted_left` зависел от фазы. Выравнивание с нодой дало бит-в-бит совпадение.
 2. **Пороги ТЗ (hip ±0.3 и т.д.)** — эмпирические, не соответствуют геометрии GO2; в тестах используются физические URDF-лимиты, что и есть настоящий критерий «нет насыщения IK».
 3. **TF в rclrs 0.7**: tf2_ros биндингов нет, поэтому TF публикуется через `tf2_msgs/TFMessage` (тот же механизм, что у robot_state_publisher). `enable_odom_tf` по умолчанию false (TF публикует EKF).
-4. **C++ тесты 10/12**: `test_base_link_roll` и `test_ik_with_roll` падают и без изменений этой сессии (подтверждено stash-проверкой) — это отдельная предсуществующая задача, не входит в scope.
+4. **C++ тесты 10/12**: `test_base_link_roll`/`test_ik_with_roll` падали до merge (подтверждено stash-проверкой); после merge elevation-mapping (коммит `d8ee746 fix: исправить знаки осей ног в FK и тесты`) — проходят.
 5. **Сборка Rust требует ROS**: `cargo build` для `quadropted-nodes` нуждается в `source /opt/ros/jazzy/setup.bash` и `source install/setup.bash` (линковка на `quadropted_msgs__rosidl_generator_c` и др.); это учтено в CI и `make test-rust`.
 
 ---

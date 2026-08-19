@@ -232,7 +232,7 @@ ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehavi
 - `up` — встать (REST), не двигаться
 - `sit` — сесть (STAND)
 
-[Сравнение реализации gait в Python и C++](reports/gait-switch-comparison.md)
+[Сравнение реализации gait в Python и C++](reports/controller/gait-switch-comparison.md)
 
 ---
 
@@ -253,9 +253,9 @@ ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehavi
 - Одометрия с O(1) скользящим средним
 - PID контроллер
 
-[Полный бенчмарк и отчёт](reports/benchmark-python-cpp.md)
-[Отчёт об оптимизации](reports/performance-optimization-report.md)
-[Результаты кросс-валидации](reports/python_vs-cpp-cross-validation.md)
+[Полный бенчмарк и отчёт](reports/benchmark/benchmark-python-cpp.md)
+[Отчёт об оптимизации](reports/benchmark/performance-optimization-report.md)
+[Результаты кросс-валидации](reports/benchmark/python_vs-cpp-cross-validation.md)
 
 ---
 
@@ -349,12 +349,12 @@ cargo test -p quadropted-core                # тесты core (включая �
 
 | Файл | О чём |
 |------|-------|
-| [waypoint-executor-fix.md](reports/waypoint-executor-fix.md) | Разработка waypoint навигации, 9 итераций |
-| [gait-switch-comparison.md](reports/gait-switch-comparison.md) | Сравнение gait Python vs C++ |
-| [benchmark-python-cpp.md](reports/benchmark-python-cpp.md) | Бенчмарк 53.5x ускорение |
-| [performance-optimization-report.md](reports/performance-optimization-report.md) | Оптимизация производительности C++ |
-| [python_vs-cpp-cross-validation.md](reports/python_vs-cpp-cross-validation.md) | Кросс-валидация, 12/12 тестов |
-| [python-odometry-drift-plan.md](reports/python-odometry-drift-plan.md) | План устранения дрифта одометрии |
+| [waypoint-executor-fix.md](reports/waypoint/waypoint-executor-fix.md) | Разработка waypoint навигации, 9 итераций |
+| [gait-switch-comparison.md](reports/controller/gait-switch-comparison.md) | Сравнение gait Python vs C++ |
+| [benchmark-python-cpp.md](reports/benchmark/benchmark-python-cpp.md) | Бенчмарк 53.5x ускорение |
+| [performance-optimization-report.md](reports/benchmark/performance-optimization-report.md) | Оптимизация производительности C++ |
+| [python_vs-cpp-cross-validation.md](reports/benchmark/python_vs-cpp-cross-validation.md) | Кросс-валидация, 12/12 тестов |
+| [python-odometry-drift-plan.md](reports/odometry/python-odometry-drift-plan.md) | План устранения дрифта одометрии |
 
 ### Внутренние пакеты
 
