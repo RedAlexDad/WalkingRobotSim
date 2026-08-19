@@ -1,8 +1,8 @@
 # 🦀 Rust Migration Status — WalkingRobotSim
 
 **Последнее обновление:** 2026-08-19  
-**Ветка:** `feat/rust-migration`  
-**Статус:** ✅ Завершено (контроллер 100%, одометрия реализована, C++ сохранён для сравнения)
+**Ветка:** `feat/rust-migration` (синхронизирована с `feat/elevation-mapping`)  
+**Статус:** ✅ Завершено (контроллер 100%, одометрия реализована, C++ сохранён для сравнения; `make build` работает)
 
 ---
 
@@ -154,6 +154,13 @@ src/quadropted_controller_rust/
 - ✅ Инфраструктура: `launch.launch.py` (Rust по умолчанию), `make test-rust`, `gazebo` = Rust
 - ✅ Тесты: 49 unit + 8 cross-val + 8 интеграционных, всё зелёное
 - ✅ CI: job `rust-tests`
+- 🔀 **Merge** `feat/elevation-mapping` (264 коммита): Makefile → модули `makefiles/*.mk`,
+  C++ рефакторинг (control/, odometry/dog_odom_*), elevation_mapping_cupy
+- ✅ **Синхронизация с новыми C++**: TROT-лерп нулевой команды + IMU-компенсация,
+  Odometry stall detection, imu linear acceleration, PID reset при переключении
+- ✅ **Фикс `make build`**: host-сеть для buildkit (packages.ros.org),
+  `ros-jazzy-test-msgs` в ros-deps (rclrs-линковка), COLCON_IGNORE для pubsub-test
+- ✅ C++ unit: **12/12** (base_link_roll/ik_with_roll починены в elevation)
 
 ### 2026-04-11 (предыдущий коммит)
 - ✅ Реализован `CrawlGaitController` с 8-фазным расписанием

@@ -1,8 +1,8 @@
 # 🦀 Rust Migration — Финальный отчёт: CRAWL fix, Odometry Node, инфраструктура, тесты
 
-**Дата:** 2026-08-19 (сессия финализации)
+**Дата:** 2026-08-19 (сессия финализации; обновлено после merge elevation-mapping и фикса `make build`)
 **Ветка:** `feat/rust-migration`
-**Статус:** ✅ Миграция контроллера завершена — Rust основной, C++ сохранён для сравнения
+**Статус:** ✅ Миграция контроллера завершена — Rust основной, C++ сохранён для сравнения; ветка синхронизирована с `feat/elevation-mapping`
 
 ---
 
@@ -13,10 +13,12 @@
 | Покрытие компонентов | 92% | **100% (контроллер + одометрия)** |
 | CRAWL режим | ❌ насыщение IK, робот не ходит | ✅ бит-в-бит совпадает с C++ рантаймом |
 | Odometry Node (Rust) | ❌ отсутствовал (`// TODO`) | ✅ реализован, 50 Гц, `/robot1/odom` |
-| Unit тесты Rust | 46 | **47** (добавлены тесты одометрии) |
+| Unit тесты Rust | 46 | **49** (+odometry state/update, +stall-детекции) |
 | Cross-validation | 8/8 < 1e-10 | **8/8 < 1e-10** (без изменений) |
-| Интеграционные тесты | — | **7** (CRAWL no-saturation + Odometry) |
+| Интеграционные тесты | — | **8** (CRAWL no-saturation 4 + Odometry 4) |
+| C++ unit тесты | 10/12 (2 FAIL) | **12/12** (починены в elevation-mapping) |
 | `make gazebo` | C++ контроллер | **Rust контроллер (по умолчанию)** |
+| `make build` (Docker) | ❌ падал (сеть + rclrs libs) | ✅ собирается (host-сеть + test-msgs) |
 | CI | только C++ | **+ job `rust-tests`** |
 
 ### Затронутые пакеты
@@ -197,20 +199,21 @@ URDF-нарушения: hip=0.0%  upper=0.0%  lower ≤ 0.4%  (порог те�
 
 Пороги: hip ±1.0472, upper −1.5708..3.4907, lower −2.7227..−0.83776; допуск ≤ 1% времени; плюс проверка, что ноги реально двигаются (`max per-tick change > 1e-6`).
 
-### 6.2. `quadropted-core/tests/test_odometry_cross_validation.rs` (3 теста)
-- `test_odometry_cross_validation_10s_route`: маршрут 500 тактов (10 с @ 50 Гц) с циклом контактов и дрейфом стоп — расхождение x/y с C++-трансляцией **< 1e-9** (по факту < 1e-12);
-- `test_odometry_velocity_fallback`: 500 тактов без контактов при vx=0.1 → x = 1.0 м;
-- `test_odometry_theta_from_imu_like_input`: yaw из IMU-кватерниона.
+### 6.2. `quadropted-core/tests/test_odometry_cross_validation.rs` (4 теста)
+- `test_odometry_cross_validation_10s_route`: маршрут 500 тактов (10 с @ 50 Гц) с циклом контактов и дрейфом стоп — расхождение x/y с C++-трансляцией **< 1e-9** (по факту < 1e-12); CppOdom-эталон включает stall-логику (как C++), маршрут задаёт `imu_angular_velocity = 0.2` (> stall-порога), чтобы не было ложного «застревания»;
+- `test_odometry_velocity_fallback`: 500 тактов без контактов при vx=0.1 (IMU вращается → без stall) → x = 1.0 м;
+- `test_odometry_theta_from_imu_like_input`: yaw из IMU-кватерниона;
+- `test_odometry_stall_freezes_position`: ноги движутся, IMU стоит → после `stall_window` отсчётов интеграция замораживается (как в C++ odometry_update.cpp).
 
 ### 6.3. Юнит-тесты
-- `quadropted-core --lib`: **49 passed** (+2 stall-детекции после merge elevation).
+- `quadropted-core --lib`: **49 passed** (+2 stall-детекции после merge elevation: `test_stall_detection_stops_integration`, `test_no_stall_when_imu_rotating`).
 - `cross_validation.rs`: **8 passed** < 1e-10 (без изменений).
 - `quadropted-nodes`: бинари собираются, тестов нет.
 
 ### 6.4. `scripts/test_cross_validation.sh`
 - Исправлен source: добавлен `$PROJECT_DIR/install/setup.bash` (иначе `cargo build --release` не находил `libquadropted_msgs__rosidl_generator_c`).
 - Добавлен шаг **5a «Интеграционные тесты»** (`test_crawl_no_saturation` + `test_odometry_cross_validation`).
-- Обновлена сводная таблица: CRAWL runtime (bit-exact vs C++) ✅ 4, Odometry ✅ 3 (< 1e-9); убраны «stub»/«TODO».
+- Обновлена сводная таблица: CRAWL runtime (bit-exact vs C++) ✅ 4, Odometry ✅ 4 (< 1e-9); убраны «stub»/«TODO».
 - Обновлена таблица статусов миграции (CrawlGaitController runtime, OdometryState+update, Odometry Node).
 
 ---
@@ -222,7 +225,7 @@ URDF-нарушения: hip=0.0%  upper=0.0%  lower ≤ 0.4%  (порог те�
 quadropted_core (lib):         49 passed; 0 failed
 cross_validation:               8 passed; 0 failed
 test_crawl_no_saturation:       4 passed; 0 failed  (0.14 s)
-test_odometry_cross_validation: 3 passed; 0 failed
+test_odometry_cross_validation: 4 passed; 0 failed
 quadropted_nodes + bins:        собрались, 0 тестов
 ```
 
@@ -230,17 +233,24 @@ quadropted_nodes + bins:        собрались, 0 тестов
 ```
 [PASS] C++ пакет собран
 [PASS] Rust пакет собран
-[PASS] C++ unit: 10/12 (test_base_link_roll, test_ik_with_roll — ПРЕДСУЩЕСТВУЮЩИЙ FAIL, C++ код не менялся;
-       см. docs/fix-base_link-roll-plan.md; подтверждено: падают и без изменений этой сессии)
+[PASS] C++ unit: 12/12 (test_base_link_roll, test_ik_with_roll — починены в elevation-mapping, d8ee746)
 [PASS] Rust unit: 49 passed
 [PASS] Cross-validation: 8 passed (все < 1e-10)
-[PASS] Интеграционные: 7 passed (CRAWL без насыщения, Odometry < 1e-9)
+[PASS] Интеграционные: 8 passed (CRAWL без насыщения, Odometry < 1e-9)
+ИТОГО: C++ 12/12, Rust 49/0, cross-val 8/0, интеграционные 8/0
 ```
 
 ### 7.3. Release-сборка
 ```
 cargo build --release --workspace  →  target/release/robot_controller_node (1.6 МБ)
                                       target/release/odometry_node (1.6 МБ)
+```
+
+### 7.4. `make build` (Docker) — исправлен
+```
+✅ walking_robot_sim:latest собран (9 пакетов, включая quadropted_controller_rust)
+✅ Контейнер запущен: make up → «ROS окружение готово (0 сек)»
+✅ Узлы установлены: robot_controller_node + odometry_node
 ```
 
 ---
@@ -251,9 +261,9 @@ cargo build --release --workspace  →  target/release/robot_controller_node (1.
 |---|---|---|
 | 1 | CRAWL исправлен: `make gazebo` + `make crawl` → робот двигается без насыщения IK, углы не залипают | ✅ автоматически: 30 с симуляция, URDF-лимиты ≤ 0.4% времени (порог 1%), Rust бит-в-бит = C++ рантайм |
 | 2 | Odometry Node: `/robot1/odom` ~50 Гц, кросс-валидация с C++ < 1e-6 за 10 с | ✅ узел публикует odom на 50 Гц; тест маршрута 10 с: расхождение < 1e-9 |
-| 3 | Инфраструктура: `make gazebo` = Rust, `make gazebo-cpp` = C++, документация обновлена | ✅ Makefile, launch.launch.py, README.md, docs/architecture.md |
-| 4 | Все тесты: `cargo test --workspace`, `test_cross_validation.sh` (8 < 1e-10), `test_crawl_no_saturation` — зелёные | ✅ 49 unit + 8 cross-val + 8 интеграционных |
-| 5 | Визуальная проверка в Gazebo (TROT/CRAWL/STAND/REST) | ⏳ требует GUI/Docker: `make deploy` → `make gazebo` → `make crawl` (см. §9) |
+| 3 | Инфраструктура: `make gazebo` = Rust, `make gazebo-cpp` = C++, документация обновлена | ✅ Makefile (модули makefiles/*.mk), launch.launch.py, README.md, docs/architecture.md |
+| 4 | Все тесты: `cargo test --workspace`, `test_cross_validation.sh` (8 < 1e-10), `test_crawl_no_saturation` — зелёные | ✅ 49 unit + 8 cross-val + 8 интеграционных; C++ 12/12 |
+| 5 | Визуальная проверка в Gazebo (TROT/CRAWL/STAND/REST) | ⏳ требует GUI: контейнер собран, `make gazebo` → `make crawl` (см. §9) |
 
 ---
 
@@ -291,29 +301,33 @@ docker exec -it walking_robot_sim bash -c \
 |---|---|
 | `quadropted-core/src/controllers/crawl/gait.rs` | CRAWL fix: лерп нулевой команды, first_cycle не сбрасывается, убран логгер |
 | `quadropted-core/src/controllers/crawl/swing.rs` | сигнатура как в C++, `shifted_left=false`, тесты |
-| `quadropted-core/src/controllers/trot/gait.rs` | убран файловый debug-логгер |
-| `quadropted-core/src/odometry/state.rs` | реализован (порт odometry_state.cpp) |
-| `quadropted-core/src/odometry/update.rs` | реализован (порт odometry_update.cpp) |
-| `quadropted-nodes/src/bin/robot_controller_node.rs` | удалены debug-логгеры и шумный вывод |
+| `quadropted-core/src/controllers/trot/gait.rs` | убран файловый debug-логгер; геттеры `use_imu()`/`pid_controller()` |
+| `quadropted-core/src/odometry/state.rs` | реализован (порт odometry_state.cpp) + stall-поля, imu_acceleration |
+| `quadropted-core/src/odometry/update.rs` | реализован (порт odometry_update.cpp) + stall detection |
+| `quadropted-nodes/src/bin/robot_controller_node.rs` | удалены логгеры; TROT-лерп + IMU-компенсация; PID reset при переключении |
+| `quadropted-nodes/src/bin/odometry_node.rs` | Odometry Node; imu linear acceleration |
 | `quadropted-nodes/Cargo.toml` | бин odometry_node, deps nav_msgs_rs/tf2_msgs_rs |
 | `quadropted_controller_rust/CMakeLists.txt` | установка odometry_node |
 | `quadropted_controller_rust/package.xml` | deps nav_msgs/tf2_msgs |
 | `quadropted_controller_rust/launch/launch_rust.launch.py` | делегирует в дефолтный launch (Rust) |
 | `geometry_msgs_rs/src/lib.rs` | Point/Pose/PoseWithCovariance/TwistWithCovariance/Transform/TransformStamped/Header |
 | `quadropted_msgs_rs/src/lib.rs` | RobotFootContact |
-| `gazebo_sim/launch/gazebo_multi_nav2_rust.launch.py` | Rust odometry + EKF на /robot1/odom |
-| `Makefile` | gazebo=Rust, test-rust |
+| `gazebo_sim/launch/gazebo_multi_nav2_rust.launch.py` | Rust odometry + EKF на /robot1/odom + camera_fps |
+| `gazebo_sim/launch/launch.launch.py` | дефолтный launch (Rust); аргументы camera_fps/use_elevation |
+| `Makefile` / `makefiles/*.mk` | gazebo=Rust, test-rust (после merge — модули) |
 | `scripts/test_cross_validation.sh` | source install, шаг интеграционных, таблицы |
 | `.github/workflows/ci.yml` | job rust-tests |
-| `README.md` | контроллеры Rust/C++, test-rust |
+| `README.md` | контроллеры Rust/C++, test-rust; починены ссылки reports/* |
+| `compose.yml` | build: network=host (фикс make build) |
+| `src/docker/Dockerfile` | test-msgs в ros-deps (фикс make build) |
+| `src/ros2_rust_pubsub_test/COLCON_IGNORE` | исключён из colcon-сборки (не нужен роботу) |
 
 ### Новые
 | Файл | Суть |
 |---|---|
-| `gazebo_sim/launch/launch.launch.py` | дефолтный launch (Rust) |
 | `quadropted-nodes/src/bin/odometry_node.rs` | Odometry Node (Rust) |
 | `quadropted-core/tests/test_crawl_no_saturation.rs` | интеграционные тесты CRAWL |
-| `quadropted-core/tests/test_odometry_cross_validation.rs` | интеграционные тесты Odometry |
+| `quadropted-core/tests/test_odometry_cross_validation.rs` | интеграционные тесты Odometry (вкл. stall) |
 | `nav_msgs_rs/` | биндинги nav_msgs/Odometry |
 | `tf2_msgs_rs/` | биндинги tf2_msgs/TFMessage |
 | `docs/architecture.md` | архитектура контроллеров и одометрии |
@@ -362,7 +376,7 @@ docker exec -it walking_robot_sim bash -c \
 | `robot_controller_node.cpp` | принята версия elevation (step_crawl в src/control/) |
 
 ### 12.3. Новые C++ изменения, портированные в Rust
-Анализ diff `merge-base..HEAD` по C++ выявил два **содержательных** изменения
+Анализ diff `merge-base..HEAD` по C++ выявил **четыре содержательных** изменения
 (остальное — precompute-оптимизации и рефакторинг, математика та же):
 
 | C++ изменение | Rust-порт |
@@ -384,3 +398,57 @@ docker exec -it walking_robot_sim bash -c \
   всё зелёное; release-сборка успешна.
 - Интеграционные тесты одометрии задают `imu_angular_velocity = 0.2` (> stall-порога),
   чтобы валидировать именно алгоритм интеграции (stall покрыт отдельными тестами).
+
+---
+
+## 13. Фикс `make build` (Docker-сборка)
+
+После merge сборка Docker падала. Диагностика выявила **три независимые причины**:
+
+### 13.1. buildkit-сеть не могла достучаться до `packages.ros.org`
+```
+apt-get: Err:20 http://packages.ros.org/ros2/ubuntu noble InRelease  Connection failed [IP: 64.50.236.52 80]
+```
+- curl с хоста и из обычного `docker run` давал 200 OK, а внутри buildkit-сборки — Connection failed.
+- DNS отдаёт IPv6 (2600:...), apt пробует IPv4 (64.50.x.x) — из buildkit-сети IPv4-маршрут не работал.
+- **Решение:** `compose.yml` — `network: host` в build-конфиге сервиса `simulator`.
+  Проверено изолированно: `docker build --network=host` с apt-get update прошёл за ~10 с.
+
+### 13.2. rclrs 0.7 (crates.io) требует `libtest_msgs__rosidl_*` при линковке
+```
+rust-lld: error: unable to find library -ltest_msgs__rosidl_generator_c
+rust-lld: error: unable to find library -ltest_msgs__rosidl_typesupport_c
+```
+- rclrs 0.7 включает `vendor/test_msgs` с `#[link(name = "test_msgs__rosidl_generator_c")]` —
+  глобальная линковка, тянется во все бинари, использующие rclrs.
+- Пакет `ros-jazzy-test-msgs` ставился только в этап `ros-tools` (боковая ветка
+  Dockerfile), а `workspace` (где собирается Rust) наследуется от `ros-deps`/`base-system`.
+- **Решение:** `src/docker/Dockerfile` — добавлен `apt-get install ros-${ROS_DISTRO}-test-msgs`
+  в этап `ros-deps` (перед colcon build workspace).
+
+### 13.3. `ros2_rust_pubsub_test` не собирается в Docker
+- Пакет добавлен веткой rust-migration (коммиты ec2267f/32793a5), линкуется с примерами
+  rclrs, требующими Rust-биндингов `test_msgs` из внешнего репозитория `ros2_rust`
+  (gitignored — в Docker-контексте отсутствует).
+- **Решение:** `src/ros2_rust_pubsub_test/COLCON_IGNORE` — исключён из colcon-сборки
+  (изолированный тест, для робота не нужен).
+
+### 13.4. Результат
+```
+✅ Image walking_robot_sim:latest Built  (9 packages, включая quadropted_controller_rust)
+✅ Container walking_robot_sim Started — «ROS окружение готово (0 сек)»
+✅ Узлы: /root/ws/install/quadropted_controller_rust/lib/ → robot_controller_node, odometry_node
+```
+
+---
+
+## 14. Итоговые коммиты сессии
+
+| Коммит | Содержание |
+|---|---|
+| `900d7d5` | feat(rust): завершить миграцию — CRAWL fix, Odometry Node, инфраструктура и тесты |
+| `1b56b27` | fix(Makefile): обновить help — make gazebo = Rust, добавить gazebo-rust/test-rust |
+| `3417b56` | merge: feat/elevation-mapping в feat/rust-migration (264 коммита, 6 конфликтов) |
+| `a2cb81b` | feat(rust): синхронизировать с elevation-mapping — TROT лерп, stall detection, launch-аргументы |
+| `cc49df2` | docs: починить ссылки на reports/* после merge; C++ 12/12 |
+| `006ffe0` | fix(docker): починить make build (host-сеть, test-msgs, COLCON_IGNORE) |
