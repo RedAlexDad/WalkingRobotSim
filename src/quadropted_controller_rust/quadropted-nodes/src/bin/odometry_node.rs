@@ -27,14 +27,14 @@ const L4: f64 = 0.213;
 
 struct OdomShared {
     state: OdometryState,
-    last_update: std::time::Instant,
+    last_sim_time: f64,
 }
 
 impl OdomShared {
     fn new(window: usize) -> Self {
         Self {
             state: OdometryState::new(window),
-            last_update: std::time::Instant::now(),
+            last_sim_time: 0.0,
         }
     }
 }
@@ -57,6 +57,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ctx = Context::new(std::env::args(), rclrs::InitOptions::new())?;
     let mut executor = ctx.create_basic_executor();
     let node = executor.create_node("dog_odometry")?;
+    // ROS-часы (sim-time из /clock) — нужны для корректного header.stamp,
+    // иначе EKF/TF видят нулевой timestamp и «прыжки назад во времени».
+    let clock = node.get_clock();
 
     // Parameters (with C++-compatible defaults)
     let publish_rate = 50u64;
@@ -161,10 +164,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 s.state.foot_states[i].position = foot;
             }
 
-            // dt from wall clock (odom node is not sim-time driven here)
-            let now = std::time::Instant::now();
-            let dt = now.duration_since(s.last_update).as_secs_f64();
-            s.last_update = now;
+            // dt из ROS-времени (sim-time)
+            let now_time = clock.now();
+            let (sec, nanosec) = now_time.to_sec_nanosec().unwrap_or((0, 0));
+            let now_secs = sec as f64 + nanosec as f64 * 1e-9;
+            let dt = now_secs - s.last_sim_time;
+            s.last_sim_time = now_secs;
 
             update_odometry(&mut s.state, dt, 0.65);
 
@@ -172,7 +177,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut odom = Odometry::default();
             odom.header.frame_id = odom_frame_id.clone().into();
             odom.child_frame_id = base_frame_id.clone().into();
-            // header.stamp — leave default (wall time unavailable via rclrs Time without clock)
+            // header.stamp из ROS-часов (sim-time), иначе TF/EKF ломаются
+            odom.header.stamp.sec = sec;
+            odom.header.stamp.nanosec = nanosec;
 
             odom.pose.pose.position.x = s.state.x;
             odom.pose.pose.position.y = s.state.y;
@@ -192,6 +199,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let mut tf_msg = tf2_msgs_rs::TFMessage::default();
                 let mut seq = Sequence::new(1);
                 let mut ts = TransformStamped::default();
+                ts.header.stamp.sec = sec;
+                ts.header.stamp.nanosec = nanosec;
                 ts.header.frame_id = odom_frame_id.clone().into();
                 ts.child_frame_id = base_frame_id.clone().into();
                 ts.transform.translation.x = s.state.x;

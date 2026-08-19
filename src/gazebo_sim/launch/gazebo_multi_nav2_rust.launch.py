@@ -53,9 +53,17 @@ def generate_launch_description():
         name='camera_fps', default_value='10', description='FPS камеры для image bridge'
     )
 
+    # SLAM (картография) по умолчанию включён; slam:=False — AMCL локализация
+    slam_arg = LaunchConfiguration('slam', default='true')
+    declare_slam = DeclareLaunchArgument(
+        name='slam', default_value='true',
+        description='Включить SLAM (slam_toolbox) для построения карты; false — AMCL'
+    )
+
     ld.add_action(declare_enable_rviz)
     ld.add_action(declare_use_sim_time)
     ld.add_action(declare_camera_fps)
+    ld.add_action(declare_slam)
 
     remappings_initial = [
         ("/tf", "tf"),
@@ -239,7 +247,9 @@ def generate_launch_description():
                 'autostart': 'true',
                 'use_sim_time': 'true',
                 'log_level': 'warn',
-                'map_server': 'True'
+                'map_server': 'True',
+                # SLAM по умолчанию (картография); slam:=False — AMCL локализация
+                'slam': slam_arg,
             }.items()
         )
 
