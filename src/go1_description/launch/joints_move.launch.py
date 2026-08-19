@@ -39,11 +39,11 @@ def generate_launch_description():
         output="screen",
     )
 
-    # Node for controlling the robot
+    # Node for controlling the robot (C++)
     controller = Node(
-        package='quadropted_controller',
-        executable='robot_controller_gazebo.py',
-        name='quadruped_controller',
+        package='quadropted_controller_cpp',
+        executable='robot_controller_node',
+        name='robot_controller_cpp',
         output='screen',
     )
 
@@ -56,11 +56,11 @@ def generate_launch_description():
         output='screen',
     )
 
-    # Command velocity publisher
+    # Command velocity publisher (C++)
     cmd_vel_pub = Node(
-        package='quadropted_controller',
-        executable='cmd_vel_pub.py',
-        name='cmd_vel_pub',
+        package='quadropted_controller_cpp',
+        executable='cmd_vel_pub',
+        name='cmd_vel_pub_cpp',
         output='screen',
     )
 

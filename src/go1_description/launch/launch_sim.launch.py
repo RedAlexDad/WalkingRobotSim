@@ -26,6 +26,11 @@ def generate_launch_description():
     ]
 
 
+    use_elevation = LaunchConfiguration('use_elevation', default='false')
+    declare_use_elevation = DeclareLaunchArgument(
+        'use_elevation', default_value='false', description='Use elevation costmap layer'
+    )
+
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
     declare_use_sim_time = DeclareLaunchArgument(
         name='use_sim_time', default_value=use_sim_time, description='Использовать симуляционное время'
@@ -107,48 +112,45 @@ def generate_launch_description():
 
     )
 
-    # Ноды для управления роботом
+    # Ноды для управления роботом (C++)
     controller = Node(
-        package='quadropted_controller',
-        executable='robot_controller_gazebo.py',
-        name='quadruped_controller',
+        package='quadropted_controller_cpp',
+        executable='robot_controller_node',
+        name='robot_controller_cpp',
         namespace=namespace,
         output='screen',
         remappings=remappings
-
     )
 
-
     cmd_vel_pub = Node(
-        package='quadropted_controller',
-        executable='cmd_vel_pub.py',
-        name='cmd_vel_pub',
+        package='quadropted_controller_cpp',
+        executable='cmd_vel_pub',
+        name='cmd_vel_pub_cpp',
         namespace=namespace,
         output='screen',
     )
 
-    odom =Node(
-        package='quadropted_controller',
-        executable='QuadrupedOdometryNode.py',
-        name='odom',
+    odom = Node(
+        package='quadropted_controller_cpp',
+        executable='odometry_node',
+        name='odometry_cpp',
         namespace=namespace,
         output='screen',
         parameters=[{
-                "verbose": False,
-                'publish_rate': 50,
-                'open_loop': False,
-                'has_imu_heading': True,
-                'is_gazebo': True,
-                'imu_topic': f"/{namespace}/imu",
-                'base_frame_id': "base",
-                'odom_frame_id': "odom",
-                'clock_topic': '/clock',
-                'enable_odom_tf': True,
+            "verbose": False,
+            'publish_rate': 50,
+            'open_loop': False,
+            'has_imu_heading': True,
+            'is_gazebo': True,
+            'imu_topic': f"/{namespace}/imu_plugin/out",
+            'base_frame_id': "base_link",
+            'odom_frame_id': "odom",
+            'clock_topic': '/clock',
+            'enable_odom_tf': True,
         }],
         remappings=remappings
     )
 
-    params_file = os.path.join(get_package_share_directory(package_name), 'config', 'nav2_params.yaml')
     map_dir = os.path.join(get_package_share_directory(package_name), 'maps', 'warehouse_map.yaml')
 
     bringup_cmd = IncludeLaunchDescription(
@@ -158,7 +160,7 @@ def generate_launch_description():
             'map': map_dir,
             'use_namespace': 'True',
             'namespace': namespace,
-            'params_file': params_file,
+            'use_elevation': use_elevation,
             'autostart': 'true',
             'use_sim_time': 'True',
             'log_level': 'warn',
@@ -179,6 +181,7 @@ def generate_launch_description():
     # Launch them all!
     return LaunchDescription([
         declare_use_sim_time,
+        declare_use_elevation,
         node_robot_state_publisher,
         gazebo,
         spawn_entity,

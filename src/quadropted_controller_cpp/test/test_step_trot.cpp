@@ -2,8 +2,8 @@
 
 #include <Eigen/Dense>
 
-#include "quadropted_controller_cpp/controllers/trot_gait.hpp"
-#include "quadropted_controller_cpp/controllers/trot_stance.hpp"
+#include "quadropted_controller_cpp/controllers/trot/trot_gait.hpp"
+#include "quadropted_controller_cpp/controllers/trot/trot_stance.hpp"
 #include "quadropted_controller_cpp/utils/rotation_matrices.hpp"
 
 using namespace quadropted;
@@ -130,7 +130,7 @@ TEST_F(StepTrotCrossValidationTest, sign_consistency_with_cpp) {
     EXPECT_NEAR(delta_pos.z(), 0.0, 0.001);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

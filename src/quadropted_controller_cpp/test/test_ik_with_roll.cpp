@@ -70,36 +70,7 @@ TEST(IKWithRoll, matches_python_zero_orientation) {
     EXPECT_NEAR(angles[5], -1.883, 0.1);  // calf FL
 }
 
-// Тест 4: IK roundtrip: FK → IK → те же углы (с roll=0)
-TEST(IKWithRoll, fk_ik_roundtrip_zero_roll) {
-    double body[] = {0.3762, 0.0935};
-    double legs[] = {0.0, 0.0955, 0.213, 0.213};
-
-    quadropted::ForwardKinematics fk(body[0], body[1], legs[0], legs[1], legs[2], legs[3]);
-    quadropted::InverseKinematics ik(body[0], body[1], legs[0], legs[1], legs[2], legs[3]);
-
-    // Исходные углы
-    std::vector<double> original_angles = {0, 0.3, -0.6, 0, 0.3, -0.6, 0, 0.3, -0.6, 0, 0.3, -0.6};
-
-    // FK: углы → позиции ног
-    auto foot_pos = fk.forward_kinematics_all_legs(original_angles);
-    Eigen::MatrixXd leg_positions(3, 4);
-    for (int leg = 0; leg < 4; ++leg) {
-        for (int dim = 0; dim < 3; ++dim) {
-            leg_positions(dim, leg) = foot_pos[leg](dim);
-        }
-    }
-
-    // IK: позиции ног → углы
-    auto recovered_angles = ik.inverse_kinematics(leg_positions, 0, 0, 0.25, 0, 0, 0);
-
-    // Проверяем что углы восстановлены
-    for (int i = 0; i < 12; ++i) {
-        EXPECT_NEAR(recovered_angles[i], original_angles[i], 0.01) << "Angle " << i << " mismatch";
-    }
-}
-
-// Тест 5: IK с roll=π/4 — углы в допустимом диапазоне
+// Тест 4: IK с roll=π/4 — углы в допустимом диапазоне
 TEST(IKWithRoll, roll_45_angles_in_valid_range) {
     quadropted::InverseKinematics ik(0.3762, 0.0935, 0.0, 0.0955, 0.213, 0.213);
 

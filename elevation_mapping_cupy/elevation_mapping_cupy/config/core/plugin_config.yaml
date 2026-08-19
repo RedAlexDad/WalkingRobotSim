@@ -1,0 +1,68 @@
+# min_filter fills in minimum value around the invalid cell.
+min_filter:
+  enable: True # weather to load this plugin
+  fill_nan: False # Fill nans to invalid cells of elevation layer.
+  is_height_layer: True # If this is a height layer (such as elevation) or not (such as traversability)
+  layer_name: "min_filter" # The layer name.
+  extra_params: # This params are passed to the plugin class on initialization.
+    dilation_size: 1 # The patch size to apply
+    iteration_n: 30 # The number of iterations
+# Apply smoothing.
+smooth_filter:
+  enable: True
+  fill_nan: False
+  is_height_layer: True
+  layer_name: "smooth"
+  extra_params:
+    input_layer_name: "min_filter"
+# Apply inpainting using opencv
+inpainting:
+  enable: True
+  fill_nan: False
+  is_height_layer: True
+  layer_name: "inpaint"
+  extra_params:
+    method: "telea" # telea or ns
+# Compute surface slope from elevation gradient
+surface_gradient:
+  enable: True
+  fill_nan: True
+  is_height_layer: False
+  layer_name: "slope"
+  extra_params:
+    input_layer_name: "inpaint"
+# Compute terrain roughness as local std dev of elevation
+roughness:
+  enable: True
+  fill_nan: True
+  is_height_layer: False
+  layer_name: "roughness"
+  extra_params:
+    input_layer_name: "inpaint"
+    window_size: 5
+# Compute hand-crafted traversability cost from slope, roughness, elevation_diff
+cost_function:
+  enable: True
+  fill_nan: True
+  is_height_layer: False
+  layer_name: "cost"
+  extra_params:
+    slope_layer_name: "slope"
+    roughness_layer_name: "roughness"
+    max_slope: 0.35
+    max_roughness: 0.05
+    max_elevation_diff: 0.3
+    weight_slope: 0.4
+    weight_roughness: 0.4
+    weight_elevation: 0.2
+# Apply smoothing for inpainted layer
+erosion:
+  enable: True
+  fill_nan: False
+  is_height_layer: False
+  layer_name: "erosion"
+  extra_params:
+    input_layer_name: "traversability"
+    dilation_size: 3
+    iteration_n: 20
+    reverse: True

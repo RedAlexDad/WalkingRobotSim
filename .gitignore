@@ -40,6 +40,7 @@ CMakeLists.txt.user
 *.user
 qtcreator-*
 .idea/
+.vscode/
 .vscode/*
 
 # Файлы точечной карты и облака
@@ -108,3 +109,21 @@ wheels/
 # External repos (clone separately)
 src/ros2_rust/
 src/rosidl_rust/
+
+# Coverage (pytest-cov)
+.coverage
+coverage/
+htmlcov/
+.coverage.*
+
+# Артефакты тестов
+test_detail.xml
+
+# Clangd compile commands (симлинк в корне)
+compile_commands.json
+
+# Авто-генерируемый хеш последней сборки
+.last_build_commit
+
+# Примеры НИРС (большие PDF, не часть кода)
+docs/NIRS/examples/.last_elevation_build_commit

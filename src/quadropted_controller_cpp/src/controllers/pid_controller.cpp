@@ -1,7 +1,5 @@
 #include "quadropted_controller_cpp/controllers/pid_controller.hpp"
 
-#include <cmath>
-
 namespace quadropted {
 
 PIDController::PIDController(double kp, double ki, double kd) : kp_(kp), ki_(ki), kd_(kd) {}
@@ -19,6 +17,7 @@ std::array<double, 2> PIDController::run(double roll, double pitch, double curre
         return {0.0, 0.0};
     }
 
+    double inv_step = 1.0 / step;
     for (int i = 0; i < 2; ++i) {
         i_term_[i] += error[i] * step;
         if (i_term_[i] < -max_i_)
@@ -26,7 +25,7 @@ std::array<double, 2> PIDController::run(double roll, double pitch, double curre
         else if (i_term_[i] > max_i_)
             i_term_[i] = max_i_;
 
-        d_term_[i] = (error[i] - last_error_[i]) / step;
+        d_term_[i] = (error[i] - last_error_[i]) * inv_step;
     }
 
     last_time_ = current_time;

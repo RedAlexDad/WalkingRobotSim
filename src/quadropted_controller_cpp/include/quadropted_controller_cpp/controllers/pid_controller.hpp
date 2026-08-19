@@ -20,7 +20,7 @@ class PIDController {
     std::array<double, 2> desired_roll_pitch_{0.0, 0.0};
     std::array<double, 2> i_term_{0.0, 0.0}, d_term_{0.0, 0.0};
     std::array<double, 2> last_error_{0.0, 0.0};
-    double max_i_ = 0.2;
+    static constexpr double max_i_ = 0.2;
     double last_time_ = -1.0;
 };
 

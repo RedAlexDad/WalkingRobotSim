@@ -1,0 +1,137 @@
+x-basic: &basic
+  ipc: host
+  stdin_open: true
+  network_mode: host
+  tty: true
+  privileged: true
+  environment:
+    DISPLAY:
+    XAUTHORITY: "/root/.Xauthority"
+    QT_X11_NO_MITSHM: "1"
+    XDG_RUNTIME_DIR:
+  volumes:
+    - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    - ${HOME}/.Xauthority:/root/.Xauthority
+
+x-env-gui: &env_gui
+  DISPLAY:
+  XAUTHORITY: "/root/.Xauthority"
+  QT_X11_NO_MITSHM: "1"
+  XDG_RUNTIME_DIR:
+
+x-env-ros: &env_ros
+  RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+  ROS_DOMAIN_ID: 0
+  ROS_DISTRO: jazzy
+  CYCLONEDDS_URI: file:///cyclonedds.xml
+
+x-el-env: &el_env
+  <<: *env_gui
+  RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+  ROS_DOMAIN_ID: 0
+  ROS_DISTRO: jazzy
+  CYCLONEDDS_URI: file:///cyclonedds.xml
+  MESA_GLSL_CACHE_DISABLE: "true"
+  QT_QPA_PLATFORM: "xcb"
+
+x-el-volumes: &el_volumes
+  - ./elevation_mapping_cupy/elevation_mapping_cupy/launch/elevation_mapping.launch.py:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/launch/elevation_mapping.launch.py:ro
+  - ./elevation_mapping_cupy/elevation_mapping_cupy/launch/elevation_to_costmap.launch.py:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/launch/elevation_to_costmap.launch.py:ro
+  - ./elevation_mapping_cupy/elevation_mapping_cupy/config/core/core_param.yaml:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/config/core/core_param.yaml:ro
+  - ./elevation_mapping_cupy/elevation_mapping_cupy/config/setups/go2/go2_lidar3d.yaml:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/config/setups/go2/go2_lidar3d.yaml:ro
+  - ./elevation_mapping_cupy/elevation_mapping_cupy/scripts/elevation_to_costmap_node.py:/elevation_to_costmap_node.py:ro
+  - ./elevation_mapping_cupy/elevation_mapping_cupy/scripts/elevation_mapping_node.py:/ws/install/elevation_mapping_cupy/lib/elevation_mapping_cupy/elevation_mapping_node.py:ro
+  - ./elevation_mapping_cupy/elevation_mapping_cupy/elevation_mapping_cupy/:/ws/install/elevation_mapping_cupy/lib/python3.12/site-packages/elevation_mapping_cupy/:ro
+  - ./elevation_mapping_cupy/elevation_mapping_cupy/rviz/:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/rviz/:ro
+  - ./src/gazebo_sim/scripts/tf_relay.py:/tf_relay.py:ro
+  - ./src/gazebo_sim/scripts/ground_segmenter.py:/ground_segmenter.py:ro
+  - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
+  - ./src/walking_robot_utils/:/ws/install/elevation_mapping_cupy/lib/python3.12/site-packages/walking_robot_utils/:ro
+
+x-el-command: &el_command
+  >
+    bash -c '
+      set -e;
+      source /opt/ros/jazzy/setup.bash;
+      source /ws/install/setup.bash;
+      echo "Elevation mapping node ready. Ground segmenter -> /ground_cloud";
+      python3 /tf_relay.py &
+      python3 /ground_segmenter.py &
+      python3 /elevation_to_costmap_node.py &
+      ros2 launch elevation_mapping_cupy elevation_mapping.launch.py \
+        robot_config:=go2/go2_lidar3d.yaml launch_rviz:=true \
+        use_sim_time:=true \
+        rviz_config:=/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/rviz/go2_elevation_nav2.rviz;
+    '
+
+services:
+  simulator:
+    <<: *basic
+    image: walking_robot_sim:latest
+    container_name: walking_robot_sim
+    command: bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && tail -f /dev/null"
+    environment:
+      <<: [*env_gui, *env_ros]
+      GAZEBO_RESOURCE_PATH: "/usr/share/gz/gazebo-8"
+      GZ_SIM_RESOURCE_PATH: "/root/ws/src/gazebo_sim/models/"
+      GAZEBO_MODEL_PATH: "/usr/share/gazebo-11/models/:/opt/ros/jazzy/share/turtlebot3_gazebo/models/"
+      WORKSPACE_DIR: "/root/ws"
+      ROS_LOG_DIR: "/root/ws/logs"
+    build:
+      context: .
+      dockerfile: src/docker/Dockerfile
+      args:
+        BASE_IMG: osrf/ros:jazzy-desktop
+        ROS_DISTRO: jazzy
+      target: final
+    volumes:
+      - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
+      - ./logs/gazebo:/root/ws/logs
+      - ./data/gazebo:/root/ws/data
+      - project_src:/root/ws/src/
+    restart: unless-stopped
+
+  elevation_mapping:
+    <<: *basic
+    image: elevation_mapping_cupy:jazzy
+    container_name: elevation_mapping
+    profiles: ["elevation"]
+    group_add:
+      - "44"
+    environment:
+      <<: *el_env
+    build:
+      context: ./elevation_mapping_cupy
+      dockerfile: docker/Dockerfile.x64
+    volumes: *el_volumes
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: *el_command
+
+  elevation_mapping_cpu:
+    <<: *basic
+    image: elevation_mapping_cupy:cpu-jazzy
+    container_name: elevation_mapping_cpu
+    profiles: ["cpu"]
+    group_add:
+      - "44"
+    environment:
+      <<: *el_env
+    build:
+      context: ./elevation_mapping_cupy
+      dockerfile: docker/Dockerfile.cpu
+    volumes: *el_volumes
+    command: *el_command
+
+volumes:
+  project_src:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./src

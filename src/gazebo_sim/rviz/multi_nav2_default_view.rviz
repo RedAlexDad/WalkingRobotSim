@@ -10,12 +10,11 @@ Panels:
         - /TF1/Frames1
         - /TF1/Tree1
       Splitter Ratio: 0.5833333134651184
-    Tree Height: 368
+    Tree Height: 382
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
-    Expanded:
-      - /Publish Point1
+    Expanded: ~
     Name: Tool Properties
     Splitter Ratio: 0.5886790156364441
   - Class: rviz_common/Views
@@ -85,6 +84,10 @@ Visualization Manager:
         All Enabled: false
         base_link:
           Value: true
+        base_link_gt:
+          Value: true
+        camera_face:
+          Value: true
         imu_link:
           Value: true
         laser_frame:
@@ -106,6 +109,8 @@ Visualization Manager:
         lh_upper_leg_link:
           Value: true
         map:
+          Value: true
+        gt_odom:
           Value: true
         odom:
           Value: true
@@ -134,33 +139,30 @@ Visualization Manager:
       Show Names: false
       Tree:
         map:
+          gt_odom:
+            base_link_gt: {}
           odom:
             base_link:
-              imu_link:
-                {}
-              laser_frame:
-                {}
+              camera_face: {}
+              imu_link: {}
+              laser_frame: {}
               trunk:
                 lf_hip_link:
                   lf_upper_leg_link:
                     lf_lower_leg_link:
-                      lf_foot_link:
-                        {}
+                      lf_foot_link: {}
                 lh_hip_link:
                   lh_upper_leg_link:
                     lh_lower_leg_link:
-                      lh_foot_link:
-                        {}
+                      lh_foot_link: {}
                 rf_hip_link:
                   rf_upper_leg_link:
                     rf_lower_leg_link:
-                      rf_foot_link:
-                        {}
+                      rf_foot_link: {}
                 rh_hip_link:
                   rh_upper_leg_link:
                     rh_lower_leg_link:
-                      rh_foot_link:
-                        {}
+                      rh_foot_link: {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -449,8 +451,7 @@ Visualization Manager:
         - Class: rviz_default_plugins/MarkerArray
           Enabled: false
           Name: Trajectories
-          Namespaces:
-            {}
+          Namespaces: {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -559,15 +560,52 @@ Visualization Manager:
       Name: Realsense
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
-      Name: MarkerArray
-      Namespaces:
-        {}
+      Name: WaypointMarkers
+      Namespaces: {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /waypoint_markers
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: false
+      Name: OldMarkerArray
+      Namespaces: {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /robot1/waypoints
+      Value: false
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz_default_plugins/Odometry
+      Color: 255; 85; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.05000000074505806
+      Name: GroundTruth Odometry
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: Arrows
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot1/ground_truth/odom
       Value: true
   Enabled: true
   Global Options:
@@ -577,10 +615,6 @@ Visualization Manager:
   Name: root
   Tools:
     - Class: rviz_default_plugins/MoveCamera
-    - Class: rviz_default_plugins/Select
-    - Class: rviz_default_plugins/FocusCamera
-    - Class: rviz_default_plugins/Measure
-      Line color: 128; 128; 0
     - Class: rviz_default_plugins/SetInitialPose
       Covariance x: 0.25
       Covariance y: 0.25
@@ -591,15 +625,9 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /robot1/initialpose
-    - Class: rviz_default_plugins/PublishPoint
-      Single click: true
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /robot1/clicked_point
     - Class: nav2_rviz_plugins/GoalTool
+    - Class: rviz_waypoint_tool/WaypointTool
+      Topic: /custom_goal_pose
   Transformation:
     Current:
       Class: rviz_default_plugins/TF
@@ -627,12 +655,12 @@ Window Geometry:
     collapsed: false
   Docking:
     collapsed: false
-  Height: 840
+  Height: 1178
   Hide Left Dock: false
   Hide Right Dock: false
   Navigation 2:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd000000040000000000000156000002f2fc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000100044006900730070006c006100790073010000003b000001ab000000c700fffffffb0000000e0044006f0063006b0069006e006701000001ec000001410000013900fffffffb0000001e005200650061006c00730065006e0073006500430061006d00650072006100000002c6000000c10000001600ffffff0000000100000147000002f2fc0200000005fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b0000011d000000a000fffffffb00000018004e0061007600690067006100740069006f006e00200032010000015e000001cf000001c700fffffffb0000001000530065006c006500630074006f007202000004f50000021b00000147000000d5fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004420000003efc0100000002fb0000000800540069006d00650100000000000004420000000000000000fb0000000800540069006d00650100000000000004500000000000000000000001df000002f200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001f200000408fc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b000000ab00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000100044006900730070006c0061007900730100000069000001e20000017800fffffffb0000000e0044006f0063006b0069006e006701000002570000021a0000021a00fffffffb0000001e005200650061006c00730065006e0073006500430061006d00650072006100000002c6000000c10000002100ffffff000000010000022400000408fc0200000005fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730100000069000001230000012300fffffffb00000018004e0061007600690067006100740069006f006e002000320100000198000002d9000002d900fffffffb0000001000530065006c006500630074006f007202000004f50000021b00000147000000d5fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004420000003efc0100000002fb0000000800540069006d00650100000000000004420000000000000000fb0000000800540069006d00650100000000000004500000000000000000000003520000040800000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   RealsenseCamera:
     collapsed: false
   Selection:
@@ -643,6 +671,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1160
-  X: 759
-  Y: 35
+  Width: 1920
+  X: 4800
+  Y: 0

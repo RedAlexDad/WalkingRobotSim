@@ -1,0 +1,27 @@
+/elevation_mapping_node:
+  ros__parameters:
+    map_frame: "map"
+    base_frame: "base_link"
+    corrected_map_frame: "map"
+
+    subscribers:
+      depth:
+        topic_name: "/ground_cloud"
+        data_type: "pointcloud"
+      obstacle:
+        topic_name: "/obstacle_cloud"
+        data_type: "pointcloud"
+
+    publishers:
+      elevation_map:
+        layers:
+          [
+            "elevation",
+            "variance",
+            "traversability",
+            "slope",
+            "roughness",
+            "cost",
+          ]
+        basic_layers: ["elevation"]
+        fps: 10.0

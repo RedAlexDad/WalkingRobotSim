@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.28)
 project(quadropted_msgs)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -17,10 +17,16 @@ set(msg_files
   "msg/RobotGaitCommand.msg"
   "msg/RobotModeCommand.msg"
   "msg/RobotFootContact.msg"
+  "msg/Waypoint.msg"
+  "msg/Detection.msg"
+  "msg/DetectionArray.msg"
 )
 
 set(srv_files
   "srv/RobotBehaviorCommand.srv"
+  "srv/WaypointNavigate.srv"
+  "srv/LoadWaypoints.srv"
+  "srv/GetWaypoints.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

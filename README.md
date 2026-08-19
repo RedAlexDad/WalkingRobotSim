@@ -1,114 +1,204 @@
-# 🤖 Walking Robot Simulator
+# Walking Robot Simulator
 
-Полноценный симулятор ходячих роботов на базе ROS 2 Jazzy с Docker-контейнеризацией и CI/CD pipeline.
+Полноценный симулятор четвероногого робота на базе ROS 2 Jazzy с Gazebo Sim,
+Docker-контейнеризацией, Nav2 навигацией и CI/CD пайплайном.
+
+Возможности:
+- Физическая симуляция в Gazebo Sim с динамикой четырёхногого робота
+- Две реализации контроллера ходьбы: **Python** и **C++** (53.5x быстрее)
+- [Навигация по waypoints](docs/navigation.md) через Nav2 + кастомный RViz инструмент
+- Одометрия на основе кинематики ног, EKF фильтрация с IMU
+- Мультироботная симуляция с изолированными namespace
+- Docker образ с 6-stage кэшируемой сборкой
 
 ---
 
-## 🚀 Быстрый старт
+## Содержание
+
+- [Архитектура проекта](docs/architecture.md)
+- [Быстрый старт](#быстрый-старт)
+- [Управление симуляцией](#управление-симуляцией)
+- [Waypoint навигация](docs/navigation.md)
+- [Режимы работы робота](#режимы-работы-робота)
+- [Python vs C++](#python-vs-c)
+- [CI/CD](docs/ci-cd.md)
+- [Технические детали](#технические-детали)
+- [Документация](#документация)
+- [Благодарности](#благодарности)
+
+---
+
+## Архитектура проекта
+
+[Полное описание архитектуры](docs/architecture.md)
+
+```
+WalkingRobotSim/
+├── Makefile                     # Полное управление: сборка, запуск, навигация
+├── src/
+│   ├── docker/                  # Docker конфигурация (compose.yml, Dockerfile)
+│   ├── gazebo_sim/              # Launch файлы, миры Gazebo, waypoints, SDF
+│   ├── go1_description/         # URDF описание робота Unitree Go1
+│   ├── go2_description/         # URDF описание робота Unitree Go2
+│   ├── quadrapted_perception/   # YOLO детектор + визуализация RViz
+│   ├── quadropted_controller_cpp/   # C++ контроллер (RobotController, одометрия, 53.5x ускорение)
+│   ├── quadropted_msgs/         # ROS 2 сообщения (Waypoint, RobotVelocity и др.)
+│   ├── rviz_waypoint_tool/      # Кастомный RViz инструмент для waypoints
+│   └── tests/                   # Интеграционные тесты Python vs C++
+├── docs/                        # Документация
+├── reports/                     # Отчёты и анализ
+└── .github/workflows/           # GitHub Actions CI/CD
+```
+
+---
+
+## Быстрый старт
 
 ### Требования
-- Docker 20.10+ с BuildKit
-- Docker Compose
-- 8GB+ RAM, 4+ CPU cores
-- Linux (рекомендуется Ubuntu 22.04+)
 
-### Установка и запуск
+- Docker 20.10+ с BuildKit
+- Docker Compose v2
+- Linux с X11 (для GUI симуляции)
+- 8GB+ RAM, 4+ CPU cores
+
+### Запуск симуляции
 
 ```bash
-# 1. Клонируйте репозиторий
+# Клонирование
 git clone https://github.com/RedAlexDad/WalkingRobotSim.git
 cd WalkingRobotSim
 
-# 2. Сделайте скрипт исполняемым
-chmod +x test-workflows.sh
+# Сборка + запуск контейнера
+make deploy
 
-# 3. Соберите Docker образ (15-30 минут первый раз)
-cd src/docker
-docker compose build
+# Python контроллер (основной режим)
+make gazebo-py
 
-# 4. Запустите симулятор
-docker compose up -d
-
-# 5. Проверьте статус
-docker compose ps
+# C++ контроллер (производительный режим)
+make gazebo-cpp
 ```
+
+[Docker окружение](src/docker/README.md)
+[Запуск симуляции](src/gazebo_sim/README.md)
 
 ---
 
-## 🏗️ Архитектура проекта
+## Управление симуляцией
 
-### Структура директорий
-```
-WalkingRobotSim/
-├── src/                          # Исходный код
-│   ├── docker/                   # Docker конфигурация
-│   │   ├── compose.yml           # Основной compose файл
-│   │   ├── compose.multistage.yml # Multistage конфигурация
-│   │   └── Dockerfile            # 6-stage сборка
-│   ├── gazebo_sim/               # Симулятор Gazebo
-│   ├── go1_description/          # Описание робота Go1
-│   ├── go2_description/          # Описание робота Go2
-│   └── ...                       # Другие ROS пакеты
-├── .github/workflows/            # GitHub Actions CI/CD
-│   └── ci.yml                    # Автоматизированное тестирование
-├── test-workflows.sh             # Локальное тестирование
-└── README.md                     # Этот файл
+### Makefile
+
+Вся работа с симулятором — через `make`. Основные цели:
+
+| Команда | Описание |
+|---------|----------|
+| `make deploy` | Сборка образа + запуск контейнера |
+| `make up` | Запуск остановленного контейнера |
+| `make down` | Остановка контейнера |
+| `make shell` | Вход в bash контейнера |
+| `make logs` | Логи контейнера |
+| `make gazebo` | Запуск симуляции (дефолтный контроллер) |
+| `make gazebo-py` | Запуск с Python контроллером |
+| `make gazebo-cpp` | Запуск с C++ контроллером |
+| `make yolo-detector`    | YOLO распознавание объектов (лог в терминал) |
+| `make yolo-visualizer`  | RViz split-screen: камера + детекции |
+| `make teleop` | Управление с клавиатуры |
+
+Полный список целей:
+```bash
+make help
 ```
 
-### Docker Multi-stage Build
-- **Stage 1:** Базовый образ с системными зависимостями
-- **Stage 2:** ROS Core пакеты  
-- **Stage 3:** ROS Control и Simulation
-- **Stage 4:** ROS Navigation и Vision
-- **Stage 5:** Python зависимости и инструменты
-- **Stage 6:** Финальный production-ready образ
+### Переключение моделей роботов
+
+Робот определяется в launch файле через URDF пакет:
+- `go2_description` — Unitree Go2 (по умолчанию)
+- `go1_description` — Unitree Go1
+
+Настройка в `src/gazebo_sim/launch/`.
+
+### Мультироботная симуляция
+
+Поддерживается одновременная работа нескольких роботов. Каждый имеет собственный namespace и Nav2. Настройка в `robot.config` параметрах launch файла.
+
+[Подробнее о мультироботном запуске](src/gazebo_sim/README.md)
 
 ---
 
-## 🎮 Управление симулятором
+## Waypoint навигация
 
-### Основные команды
-```bash
-# Запуск симулятора
-cd src/docker
-docker compose up -d
+[Полное описание](docs/navigation.md)
 
-# Остановка
-docker compose down
+Система навигации позволяет расставлять точки в RViz через WaypointTool и запускать маршрут.
 
-# Просмотр логов
-docker compose logs -f
+### Makefile цели для waypoints
 
-# Вход в контейнер
-docker compose exec simulator bash
+| Команда | Описание |
+|---------|----------|
+| `make waypoint-start` | Загрузить waypoints и начать навигацию |
+| `make waypoint-navigate` | Начать/продолжить навигацию |
+| `make waypoint-stop` | Остановить навигацию (с сохранением прогресса) |
+| `make waypoint-resume` | Продолжить с прерванного waypoint |
+| `make waypoint-clear` | Очистить все waypoints |
+| `make waypoint-load FILE=test` | Загрузить waypoints из YAML/JSON файла |
+| `make waypoint-get` | Показать текущие waypoints |
 
-# Пересборка образа
-docker compose build --no-cache
+---
 
-# Проверка здоровья контейнера
-docker compose ps
+---
+
+## YOLO Object Detection
+
+Распознавание объектов через YOLO (Ultralytics) с камеры робота.
+
+### Архитектура
+
+```
+Gazebo Camera ──→ /robot1/color/image_raw ──→ yolo_detector ──→ /detected_image
+                                                         │
+                                                         └──→ /detections ──→ visualizer ──→ RViz markers
 ```
 
-### Управление роботом
-
-#### Режимы работы робота
-Робот поддерживает несколько режимов:
-
-- **REST** – Положение по умолчанию, робот не может двигаться
-- **STAND** – Режим, в котором робот может вращаться на месте  
-- **TROT** – Режим ходьбы (рысь)
-- **CRAWL** – Режим ползания (медленная ходьба, пошаговый)
-
-Робот работает с 12 степенями свободы. Для включения вращения переключите режим в "STAND":
+### Запуск
 
 ```bash
-ros2 topic pub /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand "{mode: 'STAND', robot_id: 1}"
+make yolo-detector     # YOLO детектор (лог в терминал)
+make yolo-visualizer   # RViz split-screen: сырая камера + детекции с bbox
 ```
 
-После переключения режимов управляйте роботом с помощью команд скорости:
+### Визуализация
+
+RViz показывает два изображения:
+- **Camera (raw)** — сырое изображение с камеры
+- **Detected (bbox)** — изображение с нарисованными bounding boxes
+
+Маркеры детекций отображаются в 3D сцене (зелёные bbox + подписи).
+
+[Подробнее о YOLO](docs/yolo.md)
+
+---
+
+## Режимы работы робота
+
+Робот имеет 4 режима движения:
+
+| Режим | Описание |
+|-------|----------|
+| REST | Положение стоя, робот не двигается |
+| STAND | Повороты на месте, подготовка к ходьбе |
+| TROT | Рысь — базовый режим ходьбы |
+| CRAWL | Ползком — медленное движение с опорой на 3 ноги |
+
+### Переключение режимов
 
 ```bash
-ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel
+# Через топик
+ros2 topic pub /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand "{mode: 'TROT', robot_id: 1}"
+
+# Через Makefile
+make trot
+make rest
+make crawl
+make stand
 ```
 
 #### Контроллеры: Rust (по умолчанию) и C++
@@ -125,46 +215,65 @@ make gazebo          # или: make gazebo-rust
 make gazebo-cpp
 ```
 
-Обе реализации используют одни и те же топики (`/robot1/robot_mode`, `/robot1/robot_velocity`, `/robot1/robot_mode`, `/robot1/joint_group_controller/commands`), поэтому взаимозаменяемы.
+Обе реализации используют одни и те же топики (`/robot1/robot_mode`, `/robot1/robot_velocity`, `/robot1/joint_group_controller/commands`), поэтому взаимозаменяемы.
 
-#### Изменение поведения робота
-Робот может садиться и вставать с помощью сервиса `robot_behavior_command`:
+### Управление движением
 
 ```bash
+# Через клавиатуру
+make teleop
+
+# Через сервис поведения
 ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehaviorCommand "{command: 'walk'}"
 ```
 
-Возможные команды:
-- `walk` – Робот встает (REST) и может ходить (TROT)
-- `up` – Робот встает (REST) и блокирует движение
-- `sit` – Робот садится (STAND)
+Команды сервиса поведения:
+- `walk` — встать (REST) и перейти в TROT
+- `up` — встать (REST), не двигаться
+- `sit` — сесть (STAND)
 
-#### Мультироботная симуляция
-Репозиторий поддерживает одновременную работу нескольких роботов. У каждого робота есть доступ к Nav2. В файле robot.config добавьте namespace робота и координаты спавна в мире.
-
-#### Переключение моделей роботов
-Можно переключаться между моделями роботов (go2, go1) в файле gazebo_multi_nav2_world.launch.py:
-- Для go2: используйте "go2_description"  
-- Для go1: используйте "go1_description"
+[Сравнение реализации gait в Python и C++](reports/gait-switch-comparison.md)
 
 ---
 
-## 🔧 Локальное тестирование
+## Python vs C++
 
-Используйте `test-workflows.sh` для локального тестирования перед пушем:
+Контроллер реализован на двух языках:
 
+| Характеристика | Python | C++ |
+|----------------|--------|-----|
+| Время полного цикла | 0.148 ms | 0.003 ms |
+| Ускорение | 1x | **53.5x** |
+| Unit тесты | 34 | 27 |
+| Кросс-валидация | — | 12/12 совпадений с Python |
+
+Ключевые компоненты C++ пакета:
+- TrotGaitController, CrawlGaitController, RestController, StandController
+- Forward/Inverse Kinematics с Eigen3
+- Одометрия с O(1) скользящим средним
+- PID контроллер
+
+[Полный бенчмарк и отчёт](reports/benchmark-python-cpp.md)
+[Отчёт об оптимизации](reports/performance-optimization-report.md)
+[Результаты кросс-валидации](reports/python_vs-cpp-cross-validation.md)
+
+---
+
+## CI/CD
+
+[Полное описание](docs/ci-cd.md)
+
+Два workflow GitHub Actions:
+
+| Workflow | Описание | Время |
+|----------|----------|-------|
+| **CI** | Docker build, линтинг (Python/C++/YAML), C++ unit тесты | 5-10 мин |
+| **Simulation Test** | Интеграционные тесты в контейнере | 15-20 мин |
+
+Локальные проверки:
 ```bash
-# Полный цикл тестирования
-./test-workflows.sh test
-
-# Только сборка
-./test-workflows.sh build
-
-# Очистка ресурсов
-./test-workflows.sh clean
-
-# Справка
-./test-workflows.sh help
+make ci-lint       # Линтинг всех языков
+make ci-test-cpp   # C++ unit тесты
 ```
 
 ### Что проверяет скрипт:
@@ -197,216 +306,70 @@ cargo test -p quadropted-core                # тесты core (включая �
 
 ---
 
-## 🔄 CI/CD Pipeline
-
-Автоматизированное тестирование в GitHub Actions включает:
-
-### Job: docker-build
-- Сборка Docker образа
-- Базовый тест контейнера
-
-### Job: simulation-test
-- Запуск полной симуляции
-- Проверка ROS узлов
-- Вывод всех доступных топиков
-- Тест teleop функциональности
-- Проверка данных с лидара
-- Тест стабильности робота
-
-### Триггеры
-- Push в ветки: `main`, `jazzy`
-- Pull Request в ветки: `main`, `jazzy`
-
----
-
-## 🤖 Поддерживаемые роботы
-
-### Unitree Go1
-- Четырехногий робот средней размерности
-- Полная модель URDF
-- Настроенные контроллеры
-
-### Unitree Go2  
-- Улучшенная версия Go1
-- Оптимизированная динамика
-- Расширенная сенсорика
-
----
-
-## 📊 Технические характеристики
+## Технические детали
 
 ### Docker образ
+
 - **Базовый образ:** `osrf/ros:jazzy-desktop`
 - **Размер:** 5-6 GB
-- **Сборка с кэшем:** 30-60 секунд
-- **Первая сборка:** 15-30 минут
+- **6-stage сборка:** зависимости ROS, симуляция, навигация, Python, финальный
+- **Кэш первого уровня:** 30-60 секунд при повторной сборке
 
-### Системные требования
-- **CPU:** 4+ cores (рекомендуется 8)
-- **RAM:** 8GB+ (рекомендуется 16GB)
-- **Storage:** 20GB+ свободного места
-- **GPU:** Опционально для визуализации
+[Docker конфигурация](src/docker/README.md)
 
 ### ROS 2 компоненты
-- **Версия:** Jazzy (совместим с Humble)
+
+- **Версия:** Jazzy (совместимость с Humble)
 - **DDS:** CycloneDDS
-- **Симулятор:** Gazebo 11
+- **Симулятор:** Gazebo Sim 8
 - **Навигация:** Nav2
-- **Контроллеры:** ros2_control
+- **Контроллеры:** ros2_control (JointGroupPositionController)
+- **Локализация:** AMCL, EKF (robot_localization)
+
+### Теги версий
+
+- [v.0.0.1](https://github.com/RedAlexDad/WalkingRobotSim/releases/tag/v.0.0.1) — Первая стабильная версия: C++ контроллер, trot gait, кросс-валидация
+- [v.0.0.2](https://github.com/RedAlexDad/WalkingRobotSim/releases/tag/v.0.0.2) — Waypoint навигация, YAML конфиги, GetWaypoints сервис, исправлен circular import одометрии
 
 ---
 
-## 🐛 Troubleshooting
+## Документация
 
-### Проблемы с Docker
-```bash
-# Очистка Docker
-docker system prune -a
+### docs/ — документация
 
-# Пересборка без кэша
-docker compose build --no-cache
+| Файл | О чём |
+|------|-------|
+| [architecture.md](docs/architecture.md) | Архитектура проекта, топики, пакеты |
+| [navigation.md](docs/navigation.md) | Waypoint навигация, инструменты, форматы |
+| [yolo.md](docs/yolo.md) | YOLO object detection |
+| [ci-cd.md](docs/ci-cd.md) | CI/CD пайплайн, GitHub Actions |
+| [rust-migration-final-report.md](docs/rust-migration-final-report.md) | Финальный отчёт миграции контроллера на Rust (CRAWL fix, Odometry Node, тесты) |
 
-# Проверка статуса
-docker compose ps
-```
+### reports/ — отчёты и анализ
 
-### Проблемы с ROS
-```bash
-# Проверка переменных окружения
-env | grep ROS
+| Файл | О чём |
+|------|-------|
+| [waypoint-executor-fix.md](reports/waypoint-executor-fix.md) | Разработка waypoint навигации, 9 итераций |
+| [gait-switch-comparison.md](reports/gait-switch-comparison.md) | Сравнение gait Python vs C++ |
+| [benchmark-python-cpp.md](reports/benchmark-python-cpp.md) | Бенчмарк 53.5x ускорение |
+| [performance-optimization-report.md](reports/performance-optimization-report.md) | Оптимизация производительности C++ |
+| [python_vs-cpp-cross-validation.md](reports/python_vs-cpp-cross-validation.md) | Кросс-валидация, 12/12 тестов |
+| [python-odometry-drift-plan.md](reports/python-odometry-drift-plan.md) | План устранения дрифта одометрии |
 
-# Перезапуск DDS
-export RMW_IMPLEMENTATION=rmw_cyclonedx_cpp
+### Внутренние пакеты
 
-# Диагностика узлов
-ros2 doctor
-```
+- [Docker окружение](src/docker/README.md)
+- [Запуск симуляции](src/gazebo_sim/README.md)
 
-### Проблемы с GUI
-```bash
-# Настройка DISPLAY
-export DISPLAY=:0
-xhost +local:root
+## Благодарности
 
-# Перезапуск с GUI
-docker compose down
-docker compose up -d
-```
+Проект основан на работе:
 
----
+- **mike4192** — [SpotMicro](https://github.com/mike4192/spotMicro) (кинематика четвероногих)
+- **Unitree Robotics** — [A1 ROS](https://github.com/unitreerobotics/a1_ros)
+- **lnotspotl** — алгоритмы ходьбы и оптимизация
+- **anujjain-dev** — [unitree-go2-ros2](https://github.com/anujjain-dev/unitree-go2-ros2) (адаптация под ROS 2 Jazzy)
 
-## 📈 Мониторинг и отладка
+### Лицензия
 
-### Просмотр логов
-```bash
-# Логи контейнера
-docker compose logs -f simulator
-
-# Логи ROS
-docker compose exec simulator tail -f /root/ws/logs/*.log
-```
-
-### Мониторинг ресурсов
-```bash
-# Статистика Docker
-docker stats
-
-# Использование памяти
-docker compose exec simulator free -h
-
-# Загрузка CPU
-docker compose exec simulator top
-```
-
-### Отладка сборки
-```bash
-# Детальный вывод сборки
-docker compose build --progress=plain
-
-# Проверка слоев
-docker history walking_robot_sim:latest
-```
-
----
-
-## 🤝 Вклад в проект
-
-### Ветки разработки
-- `main` - стабильная версия
-- `jazzy` - разработка под ROS 2 Jazzy
-- `humble` - поддержка ROS 2 Humble (ограничена)
-
-### Процесс внесения изменений
-1. Fork репозитория
-2. Создайте feature branch
-3. Внесите изменения
-4. Протестируйте локально: `./test-workflows.sh test`
-5. Создайте Pull Request
-
----
-
-## 📚 Документация
-
-### Внутренние ресурсы
-- [`src/INSTRUCTIONS.md`](src/INSTRUCTIONS.md) - Детальные инструкции
-- [`src/QUICK_REF.md`](src/QUICK_REF.md) - Быстрые команды
-- [`src/docker/QUICK_START.md`](src/docker/QUICK_START.md) - Docker гайд
-- [`docs/architecture.md`](docs/architecture.md) - Архитектура контроллеров (Rust основной, C++ опция)
-- [`docs/rust-migration-final-report.md`](docs/rust-migration-final-report.md) - Финальный отчёт миграции (CRAWL fix, Odometry Node, тесты)
-
-### Внешние ресурсы
-- [ROS 2 Documentation](https://docs.ros.org/en/jazzy/)
-- [Gazebo Simulator](http://gazebosim.org/)
-- [Unitree Robots](https://www.unitree.com/)
-- [Docker Compose](https://docs.docker.com/compose/)
-
----
-
-## � Благодарности и Credits
-
-Этот проект стал возможен благодаря работе и вкладу следующих авторов и проектов:
-
-### Основные источники вдохновения и кода
-- **mike4192** - [SpotMicro](https://github.com/mike4192/spotMicro) - Кинематика и управление четырехногими роботами
-- **Unitree Robotics** - [A1 ROS](https://github.com/unitreerobotics/a1_ros) - Официальная поддержка роботов Unitree
-- **QUADRUPED ROBOTICS** - [Quadruped](https://quadruped.de) - Алгоритмы ходьбы и навигации
-- **lnotspotl** - [GitHub](https://github.com/lnotspotl) - Оптимизация и улучшения симуляции
-- **anujjain-dev** - [Unitree-go2 ROS2](https://github.com/anujjain-dev/unitree-go2-ros2) - Адаптация под ROS 2 Jazzy
-
-### Использованные технологии
-- **ROS 2 Jazzy** - Робототехническая middleware
-- **Gazebo Sim** - Физический симулятор
-- **Nav2** - Стек навигации
-- **Docker** - Контейнеризация
-
-### Особая благодарность
-Сообществу разработчиков робототехники за открытые исходные коды, документацию и постоянную поддержку в развитии четырехногой робототехники.
-
----
-
-## �📄 Лицензия
-
-Этот проект распространяется под лицензией MIT. Подробности в файле [LICENSE](LICENSE).
-
----
-
-## 👥 Автор
-
-- **RedAlexDad** - Основная разработка и архитектура
-
----
-
-## 📞 Поддержка
-
-### Связь
-- **GitHub Issues:** [Сообщить о проблеме](https://github.com/RedAlexDad/WalkingRobotSim/issues)
-- **Discussions:** [Вопросы и обсуждения](https://github.com/RedAlexDad/WalkingRobotSim/discussions)
-
-### Быстрая помощь
-```bash
-# Проверить всё ли работает
-./test-workflows.sh test
-
-# Получить справку
-./test-workflows.sh help
-```
+MIT License — [LICENSE](LICENSE)

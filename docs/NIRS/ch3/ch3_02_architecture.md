@@ -1,0 +1,161 @@
+# Глава 3. Разработка модуля Elevation Mapping и terrain-aware планирования
+
+## 3.2 Архитектура модуля
+
+Проектирование архитектуры является ключевым этапом разработки любой сложной робототехнической системы. Модуль Elevation Mapping и terrain-aware планирования построен на основе микросервисной архитектуры ROS 2, где каждый функциональный компонент реализован в виде отдельной ноды. Компоненты обмениваются данными через топики и сервисы, что обеспечивает слабую связанность и возможность независимого развития каждого модуля. Такой подход позволяет легко заменять отдельные компоненты без изменения всей системы. В данном разделе рассматривается общая структура системы, её ключевые компоненты и их взаимодействие.
+
+### 3.2.1 Общая архитектура и развёртывание
+
+Разработанный модуль состоит из нескольких компонентов, взаимодействующих через ROS 2-топики и сервисы. Схема взаимодействия представлена на Рисунке 3.1.
+
+```mermaid
+flowchart TB
+    subgraph Sim["Контейнер Simulator"]
+        GZ[Gazebo Harmonic<br/>gpu_lidar]
+        L2C[laser_to_cloud_converter<br/>C++]
+        RSP[robot_state_publisher]
+        REL[tf_relay.py]
+        GZB[ros_gz_bridge]
+    end
+
+    subgraph Elev["Контейнер Elevation"]
+        GS[ground_segmenter.py]
+        EM[elevation_mapping_node<br/>CuPy/CUDA]
+        CB[elevation_to_costmap_node]
+        GA[gait_adaptor]
+        GT[ground_truth_publisher]
+        RV[RViz2]
+    end
+
+    subgraph Nav2["Nav2 (planner)"]
+        SP[SmacPlanner 2D]
+    end
+
+    GZ -->|/scan| L2C
+    L2C -->|/robot1/scan/points| EM
+    RSP -->|/robot1/tf| REL
+    REL -->|/tf| EM
+    GZB -->|/robot1/ground_truth| GT
+    GZ -->|/model/robot1_my_bot/pose| GT
+    GT -->|/robot1/ground_truth| RV
+    GS -->|/ground_cloud| EM
+    GS -->|/obstacle_cloud| EM
+    EM -->|/elevation_map| CB
+    EM -->|/traversability| GA
+    CB -->|/elevation_costmap| SP
+    EM -->|/elevation_map| RV
+    EM -->|/stall_status| RV
+
+    L2C -.->|" "| GS
+    GA -.->|" "| SP
+```
+
+Рисунок 3.1 — Схема взаимодействия компонентов системы
+
+На верхнем уровне выделяются два Docker-контейнера. Контейнер Simulator использует образ `osrf/ros:jazzy-desktop` и включает Gazebo Harmonic с gpu_lidar (16×360 лучей), ROS 2 Gazebo Bridge, C++ конвертер `laser_to_cloud_converter.cc`, robot_state_publisher и `tf_relay.py`. Контейнер Elevation использует образ `nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.10` и включает Python 3.12 с CuPy (CUDA 12.x), PyTorch 2.x, ROS 2 Jazzy с Cyclone DDS RMW, пакет `elevation_mapping_cupy` с GPU-ядрами обновления карты, библиотеку `grid_map` и RViz2.
+
+Компоненты внутри elevation-контейнера образуют конвейер обработки: LiDAR PointCloud → ground_seg → ground_cloud → elevation_mapping, ground_seg → obstacle_cloud → traversability, traversability → gait_adaptor → robot_controller, elevation_map → costmap_bridge → Nav2 [14]. Дополнительно разработаны вспомогательные мосты: ground_truth_publisher (Gazebo → ROS 2 odometry для диагностики) и elevation_to_costmap_node (конвертация GridMap → OccupancyGrid для Nav2).
+
+Ключевым архитектурным решением стало разделение на два Docker-контейнера, обеспечивающее следующие преимущества:
+
+— независимая сборка и обновление: simulator-образ (~2–3 ГБ с Gazebo) не требует пересборки при изменении GPU-части, что экономит около 30 минут на каждой пересборке;
+
+— изолированные зависимости: контейнеры могут использовать разные версии библиотек — например, CuPy требует numpy<2, в то время как simulator этой проблемы не имеет;
+
+— различные базовые образы: CPU-часть использует официальный ROS-образ, GPU-часть — CUDA-образ с драйверами NVIDIA, что исключает конфликты драйверов;
+
+— масштабирование: при необходимости можно запускать несколько elevation-контейнеров для разных роботов, используя различные ROS_DOMAIN_ID.
+
+Размещение контейнеров на одном хосте и их взаимодействие через Cyclone DDS показано на Рисунке 3.2.
+
+```mermaid
+flowchart TB
+    subgraph Host["Хост (ПК)<br/>192.168.1.100"]
+        direction TB
+        OS["ОС: Ubuntu 24.10"]
+        DOCKER["Docker Engine"]
+        subgraph Sim["Контейнер Simulator"]
+            direction TB
+            S_NODES[Ноды ROS 2:<br/>Gazebo Harmonic<br/>laser_to_cloud<br/>robot_state_publisher<br/>tf_relay<br/>ros_gz_bridge]
+        end
+        subgraph Elev["Контейнер Elevation"]
+            direction TB
+            E_NODES[Ноды ROS 2:<br/>ground_segmenter<br/>elevation_mapping_node<br/>gait_adaptor<br/>ground_truth_publisher<br/>RViz2]
+        end
+        DOCKER --- Sim
+        DOCKER --- Elev
+    end
+
+    Sim <-->|Cyclone DDS<br/>host network<br/>ROS_DOMAIN_ID=0| Elev
+```
+
+Рисунок 3.2 — Развёртывание контейнеров на хосте
+
+### 3.2.2 Коммуникационная инфраструктура
+
+Для обмена данными между контейнерами используется общая сеть (host network) с Cyclone DDS в качестве RMW-реализации [8]. Ключевые настройки: RMW_IMPLEMENTATION = `rmw_cyclonedds_cpp` для обоих контейнеров, ROS_DOMAIN_ID = 0 (единый domain ID для discovery). Конфигурационный файл Cyclone DDS монтируется в оба контейнера и содержит настройки, явно указывающие сетевой интерфейс, отключающие Shared Memory (так как контейнеры не имеют общей разделяемой памяти) и включающие трассировку для диагностики discovery.
+
+Для корректной работы elevation_mapping_node требуется полное TF-дерево, включающее трансформации между всеми фреймами робота. Используются следующие механизмы:
+
+1. robot_state_publisher в simulator-контейнере публикует статические и динамические трансформации на топики `/robot1/tf` и `/robot1/tf_static` (namespaced, так как в симуляции может быть несколько роботов);
+
+2. tf_relay.py перепубликует эти трансформации на `/tf` и `/tf_static`, используя корректные QoS-профили (BEST_EFFORT для `/robot1/tf`, TRANSIENT_LOCAL для `/robot1/tf_static`);
+
+3. статический publisher в elevation-контейнере публикует трансформацию `map` → `odom` с нулевым смещением для привязки глобальной системы координат.
+
+### 3.2.3 Поток данных и топики
+
+Рассмотрим поток данных от сенсора до исполнительных механизмов (Рисунок 3.3).
+
+```mermaid
+flowchart TB
+    A["Шаг 1: LiDAR<br/>захват 360×16, 10 Гц"]
+    B["Шаг 2: laser_to_cloud<br/>LaserScan → PointCloud2"]
+    C["Шаг 3: DDS<br/>Cyclone передача"]
+    D["Шаг 4: ground_segmenter<br/>GPF RANSAC"]
+    E["Шаг 5: elevation_mapping<br/>GPU карта высот"]
+    F["Шаг 6: Плагины<br/>slope + roughness<br/>+ traversability"]
+    G["Шаг 7: costmap_bridge<br/>GridMap → OccupancyGrid"]
+    H["Шаг 8: Nav2<br/>SmacPlanner"]
+    I["Шаг 9: gait_adaptor<br/>адаптация походки"]
+
+    A --> B --> C --> D --> E --> F --> G --> H --> I
+```
+
+Рисунок 3.3 — Поток данных от сенсора до исполнительных механизмов
+
+Шаг 1 — захват данных: gpu_lidar в Gazebo генерирует лазерные измерения (360×16 точек, 10 Гц). Измерения передаются как `gz.msgs.LaserScan`.
+
+Шаг 2 — конвертация в PointCloud2: C++ конвертер `laser_to_cloud_converter.cc` принимает LaserScan, проецирует точки в трёхмерное пространство с учётом вертикальных углов и публикует `gz.msgs.PointCloudPacked`. ros_gz_bridge конвертирует его в `sensor_msgs/PointCloud2` на топик `/robot1/scan/points`.
+
+Шаг 3 — транспортировка через DDS: PointCloud2 передаётся через Cyclone DDS из simulator-контейнера в elevation-контейнер.
+
+Шаг 4 — ground segmentation: нода `ground_segmenter` принимает облако точек, выполняет Ground Plane Fitting (RANSAC, 3 итерации) и разделяет на ground_cloud и obstacle_cloud.
+
+Шаг 5 — обновление карты высот: `elevation_mapping_node` принимает ground_cloud (или полное облако, если ground segmentation отключена) и обновляет карту высот на GPU.
+
+Шаг 6 — анализ traversability: traversability estimator вычисляет gradient, roughness и traversability для каждой ячейки карты. Используются три плагина: surface_gradient.py (уклон), roughness.py (шероховатость) и cost_function.py (итоговая traversability как взвешенная сумма).
+
+Шаг 7 — конвертация в costmap: elevation_to_costmap_node конвертирует GridMap в OccupancyGrid для Nav2, публикует на топик /elevation_costmap.
+
+Шаг 8 — планирование: Nav2 плагин (SmacPlanner) использует /elevation_costmap как глобальную costmap, прокладывает путь с учётом traversability.
+
+Шаг 9 — адаптация походки: gait_adaptor читает traversability под опорами робота и корректирует параметры походки (высота шага, частота, скорость).
+
+Основные топики в системе приведены в Таблице 3.1.
+
+Таблица 3.1 — Основные ROS 2-топики системы
+
+| Направление             | Топик                | Тип сообщения | Частота |
+| ----------------------- | -------------------- | ------------- | ------- |
+| sim — elevation         | /robot1/scan/points  | PointCloud2   | 10 Гц   |
+| sim — elevation         | /robot1/tf           | TFMessage     | 100 Гц  |
+| sim — elevation         | /robot1/tf_static    | TFMessage     | static  |
+| elevation — rviz        | /elevation_map       | GridMap       | 10 Гц   |
+| elevation — rviz        | /ground_cloud        | PointCloud2   | 10 Гц   |
+| elevation — rviz        | /obstacle_cloud      | PointCloud2   | 10 Гц   |
+| elevation — gait        | /traversability      | GridMap       | 10 Гц   |
+| elevation — nav2        | /elevation_costmap   | OccupancyGrid | 10 Гц   |
+| sim — elevation         | /robot1/ground_truth | Odometry      | 10 Гц   |
+| elevation — diagnostics | /stall_status        | Bool          | 10 Гц   |
+| gait — controller       | /gait_params         | GaitParams    | 10 Гц   |

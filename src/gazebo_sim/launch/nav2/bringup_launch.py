@@ -16,10 +16,15 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import (
+    DeclareLaunchArgument,
+    GroupAction,
+    IncludeLaunchDescription,
+    SetEnvironmentVariable,
+)
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration, PythonExpression, TextSubstitution
 from launch_ros.actions import PushRosNamespace
 
 
@@ -36,43 +41,101 @@ def generate_launch_description():
     slam = LaunchConfiguration("slam")
     map_yaml_file = LaunchConfiguration("map")
     use_sim_time = LaunchConfiguration("use_sim_time")
+    use_elevation = LaunchConfiguration("use_elevation")
     params_file = LaunchConfiguration("params_file")
     autostart = LaunchConfiguration("autostart")
 
-    stdout_linebuf_envvar = SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1")
-
-    declare_namespace_cmd = DeclareLaunchArgument("namespace", default_value="", description="Top-level namespace")
-
-    declare_use_namespace_cmd = DeclareLaunchArgument("use_namespace", default_value="false", description="Whether to apply a namespace to the navigation stack")
-
-    declare_slam_cmd = DeclareLaunchArgument("slam", default_value="False", description="Whether run a SLAM")
-
-    declare_map_yaml_cmd = DeclareLaunchArgument("map", description="Full path to map yaml file to load")
-
-    declare_use_sim_time_cmd = DeclareLaunchArgument("use_sim_time", default_value="True", description="Use simulation (Gazebo) clock if true")
-
-    declare_params_file_cmd = DeclareLaunchArgument(
-        "params_file", default_value=os.path.join(robot_dir, "config", "nav2_params.yaml"), description="Full path to the ROS2 parameters file to use for all launched nodes"
+    stdout_linebuf_envvar = SetEnvironmentVariable(
+        "RCUTILS_LOGGING_BUFFERED_STREAM", "1"
     )
 
-    declare_autostart_cmd = DeclareLaunchArgument("autostart", default_value="true", description="Automatically startup the nav2 stack")
+    declare_namespace_cmd = DeclareLaunchArgument(
+        "namespace", default_value="", description="Top-level namespace"
+    )
+
+    declare_use_namespace_cmd = DeclareLaunchArgument(
+        "use_namespace",
+        default_value="false",
+        description="Whether to apply a namespace to the navigation stack",
+    )
+
+    declare_slam_cmd = DeclareLaunchArgument(
+        "slam", default_value="False", description="Whether run a SLAM"
+    )
+
+    declare_map_yaml_cmd = DeclareLaunchArgument(
+        "map", description="Full path to map yaml file to load"
+    )
+
+    declare_use_sim_time_cmd = DeclareLaunchArgument(
+        "use_sim_time",
+        default_value="True",
+        description="Use simulation (Gazebo) clock if true",
+    )
+
+    declare_use_elevation_cmd = DeclareLaunchArgument(
+        "use_elevation",
+        default_value="false",
+        description="Use elevation costmap layer",
+    )
+
+    default_params_file = PythonExpression(
+        [
+            "'" + os.path.join(robot_dir, "config", "nav2_params_elevation.yaml") + "'",
+            " if '",
+            use_elevation,
+            "' == 'true' else '",
+            os.path.join(robot_dir, "config", "nav2_params.yaml"),
+            "'",
+        ]
+    )
+
+    declare_params_file_cmd = DeclareLaunchArgument(
+        "params_file",
+        default_value=default_params_file,
+        description="Full path to the ROS2 parameters file to use for all launched nodes",
+    )
+
+    declare_autostart_cmd = DeclareLaunchArgument(
+        "autostart",
+        default_value="true",
+        description="Automatically startup the nav2 stack",
+    )
 
     # Specify the actions
     bringup_cmd_group = GroupAction(
         [
             PushRosNamespace(condition=IfCondition(use_namespace), namespace=namespace),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(robot_launch_dir, "slam_launch.py")),
+                PythonLaunchDescriptionSource(
+                    os.path.join(robot_launch_dir, "slam_launch.py")
+                ),
                 condition=IfCondition(slam),
-                launch_arguments={"namespace": namespace, "use_sim_time": use_sim_time, "autostart": autostart, "params_file": params_file}.items(),
+                launch_arguments={
+                    "namespace": namespace,
+                    "use_sim_time": use_sim_time,
+                    "autostart": autostart,
+                    "params_file": params_file,
+                }.items(),
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(robot_launch_dir, "localization_launch.py")),
+                PythonLaunchDescriptionSource(
+                    os.path.join(robot_launch_dir, "localization_launch.py")
+                ),
                 condition=IfCondition(PythonExpression(["not ", slam])),
-                launch_arguments={"namespace": namespace, "map": map_yaml_file, "use_sim_time": use_sim_time, "autostart": autostart, "params_file": params_file, "use_lifecycle_mgr": "false"}.items(),
+                launch_arguments={
+                    "namespace": namespace,
+                    "map": map_yaml_file,
+                    "use_sim_time": use_sim_time,
+                    "autostart": autostart,
+                    "params_file": params_file,
+                    "use_lifecycle_mgr": "false",
+                }.items(),
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(robot_launch_dir, "navigation_launch.py")),
+                PythonLaunchDescriptionSource(
+                    os.path.join(robot_launch_dir, "navigation_launch.py")
+                ),
                 launch_arguments={
                     "namespace": namespace,
                     "use_sim_time": use_sim_time,
@@ -97,6 +160,7 @@ def generate_launch_description():
     ld.add_action(declare_slam_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
+    ld.add_action(declare_use_elevation_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
 
