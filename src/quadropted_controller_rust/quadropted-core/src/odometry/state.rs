@@ -23,6 +23,9 @@ pub struct OdometryState {
     pub linear_velocity_x: f64,
     pub linear_velocity_y: f64,
     pub imu_angular_velocity: f64,
+    pub imu_linear_acceleration_x: f64,
+    pub imu_linear_acceleration_y: f64,
+    pub imu_linear_acceleration_z: f64,
 
     pub filter_window_size: usize,
     delta_x_queue: Vec<f64>,
@@ -38,6 +41,14 @@ pub struct OdometryState {
     pub gazebo_clock_sec: i32,
     pub gazebo_clock_nanosec: i32,
     pub encoder_pos: i32,
+
+    /// Stall detection state (как в C++ odometry.hpp).
+    pub is_stalled: bool,
+    pub stall_consecutive_count: i32,
+    /// Stall detection thresholds (как в C++).
+    pub stall_window: i32,
+    pub stall_ang_vel_threshold: f64,
+    pub stall_exit_ang_vel_threshold: f64,
 }
 
 impl OdometryState {
@@ -50,6 +61,9 @@ impl OdometryState {
             linear_velocity_x: 0.0,
             linear_velocity_y: 0.0,
             imu_angular_velocity: 0.0,
+            imu_linear_acceleration_x: 0.0,
+            imu_linear_acceleration_y: 0.0,
+            imu_linear_acceleration_z: 0.0,
             filter_window_size,
             delta_x_queue: Vec::new(),
             delta_y_queue: Vec::new(),
@@ -60,6 +74,11 @@ impl OdometryState {
             gazebo_clock_sec: 0,
             gazebo_clock_nanosec: 0,
             encoder_pos: 0,
+            is_stalled: false,
+            stall_consecutive_count: 0,
+            stall_window: 20,
+            stall_ang_vel_threshold: 0.05,
+            stall_exit_ang_vel_threshold: 0.1,
         }
     }
 
@@ -93,6 +112,9 @@ impl OdometryState {
         self.linear_velocity_x = 0.0;
         self.linear_velocity_y = 0.0;
         self.imu_angular_velocity = 0.0;
+        self.imu_linear_acceleration_x = 0.0;
+        self.imu_linear_acceleration_y = 0.0;
+        self.imu_linear_acceleration_z = 0.0;
         self.delta_x_queue.clear();
         self.delta_y_queue.clear();
         self.sum_delta_x = 0.0;
@@ -102,6 +124,9 @@ impl OdometryState {
         self.gazebo_clock_sec = 0;
         self.gazebo_clock_nanosec = 0;
         self.encoder_pos = 0;
+        // Как в C++ odometry_state.cpp: сброс stall-состояния
+        self.is_stalled = false;
+        self.stall_consecutive_count = 0;
     }
 }
 

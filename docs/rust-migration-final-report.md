@@ -203,7 +203,7 @@ URDF-нарушения: hip=0.0%  upper=0.0%  lower ≤ 0.4%  (порог те�
 - `test_odometry_theta_from_imu_like_input`: yaw из IMU-кватерниона.
 
 ### 6.3. Юнит-тесты
-- `quadropted-core --lib`: **47 passed** (было 46; +2 одометрия в state, +1 в update = 47).
+- `quadropted-core --lib`: **49 passed** (+2 stall-детекции после merge elevation).
 - `cross_validation.rs`: **8 passed** < 1e-10 (без изменений).
 - `quadropted-nodes`: бинари собираются, тестов нет.
 
@@ -219,7 +219,7 @@ URDF-нарушения: hip=0.0%  upper=0.0%  lower ≤ 0.4%  (порог те�
 
 ### 7.1. `cargo test --workspace`
 ```
-quadropted_core (lib):         47 passed; 0 failed
+quadropted_core (lib):         49 passed; 0 failed
 cross_validation:               8 passed; 0 failed
 test_crawl_no_saturation:       4 passed; 0 failed  (0.14 s)
 test_odometry_cross_validation: 3 passed; 0 failed
@@ -232,7 +232,7 @@ quadropted_nodes + bins:        собрались, 0 тестов
 [PASS] Rust пакет собран
 [PASS] C++ unit: 10/12 (test_base_link_roll, test_ik_with_roll — ПРЕДСУЩЕСТВУЮЩИЙ FAIL, C++ код не менялся;
        см. docs/fix-base_link-roll-plan.md; подтверждено: падают и без изменений этой сессии)
-[PASS] Rust unit: 47 passed
+[PASS] Rust unit: 49 passed
 [PASS] Cross-validation: 8 passed (все < 1e-10)
 [PASS] Интеграционные: 7 passed (CRAWL без насыщения, Odometry < 1e-9)
 ```
@@ -252,7 +252,7 @@ cargo build --release --workspace  →  target/release/robot_controller_node (1.
 | 1 | CRAWL исправлен: `make gazebo` + `make crawl` → робот двигается без насыщения IK, углы не залипают | ✅ автоматически: 30 с симуляция, URDF-лимиты ≤ 0.4% времени (порог 1%), Rust бит-в-бит = C++ рантайм |
 | 2 | Odometry Node: `/robot1/odom` ~50 Гц, кросс-валидация с C++ < 1e-6 за 10 с | ✅ узел публикует odom на 50 Гц; тест маршрута 10 с: расхождение < 1e-9 |
 | 3 | Инфраструктура: `make gazebo` = Rust, `make gazebo-cpp` = C++, документация обновлена | ✅ Makefile, launch.launch.py, README.md, docs/architecture.md |
-| 4 | Все тесты: `cargo test --workspace`, `test_cross_validation.sh` (8 < 1e-10), `test_crawl_no_saturation` — зелёные | ✅ 47 unit + 8 cross-val + 7 интеграционных |
+| 4 | Все тесты: `cargo test --workspace`, `test_cross_validation.sh` (8 < 1e-10), `test_crawl_no_saturation` — зелёные | ✅ 49 unit + 8 cross-val + 8 интеграционных |
 | 5 | Визуальная проверка в Gazebo (TROT/CRAWL/STAND/REST) | ⏳ требует GUI/Docker: `make deploy` → `make gazebo` → `make crawl` (см. §9) |
 
 ---
@@ -330,3 +330,57 @@ docker exec -it walking_robot_sim bash -c \
 3. **TF в rclrs 0.7**: tf2_ros биндингов нет, поэтому TF публикуется через `tf2_msgs/TFMessage` (тот же механизм, что у robot_state_publisher). `enable_odom_tf` по умолчанию false (TF публикует EKF).
 4. **C++ тесты 10/12**: `test_base_link_roll` и `test_ik_with_roll` падают и без изменений этой сессии (подтверждено stash-проверкой) — это отдельная предсуществующая задача, не входит в scope.
 5. **Сборка Rust требует ROS**: `cargo build` для `quadropted-nodes` нуждается в `source /opt/ros/jazzy/setup.bash` и `source install/setup.bash` (линковка на `quadropted_msgs__rosidl_generator_c` и др.); это учтено в CI и `make test-rust`.
+
+---
+
+## 12. Синхронизация с feat/elevation-mapping (2026-08-19, merge 3417b56)
+
+### 12.1. Что пришло из elevation-mapping
+Ветка `feat/elevation-mapping` (264 коммита) смержена в `feat/rust-migration`:
+
+- **C++ рефакторинг**: контроллеры вынесены из монолитной ноды в
+  `src/control/{crawl,trot,rest,stand}_control.cpp`, одометрия —
+  в `src/odometry/dog_odom_{callbacks,publish,update}.cpp`, заголовки —
+  в `include/.../nodes/`, `utils/fast_math.hpp` (быстрый atan2).
+- **Makefile**: реструктурирован в модули `makefiles/*.mk`
+  (help/docker/nvidia/elevation/simulation/controller/navigation/yolo/
+  experiment/ci/test). Rust-правки перенесены: `gazebo` = Rust (simulation.mk),
+  `gazebo-rust`, `test-rust` (test.mk), help.mk обновлён.
+- **Новые пакеты**: `elevation_mapping_cupy` (GPU карта высот), reports/,
+  launch `per_robot_bringup.launch.py`, удалён Python-контроллер.
+- **Dockerfile**: +`python3-colcon-common-extensions`, torch/ultralytics (YOLO);
+  Rust toolchain сохранён.
+
+### 12.2. Конфликты (6 файлов) — как разрешены
+| Файл | Решение |
+|---|---|
+| `.gitignore` | объединены Rust-блок (target/, Cargo.lock) + elevation-блок (coverage, artifacts) |
+| `docs/architecture.md` | add/add: elevation-обзор + Rust-раздел в одном файле |
+| `Makefile` | принята модульная структура elevation; Rust-цели перенесены в makefiles |
+| `README.md` | 4 конфликтные секции объединены: Rust/C++ контроллеры сохранены |
+| `src/docker/Dockerfile` | объединены Rust toolchain + cyclonedds + colcon/torch/ultralytics |
+| `robot_controller_node.cpp` | принята версия elevation (step_crawl в src/control/) |
+
+### 12.3. Новые C++ изменения, портированные в Rust
+Анализ diff `merge-base..HEAD` по C++ выявил два **содержательных** изменения
+(остальное — precompute-оптимизации и рефакторинг, математика та же):
+
+| C++ изменение | Rust-порт |
+|---|---|
+| **`step_trot`: лерп нулевой команды** (alpha=0.1 к default stance) | `robot_controller_node.rs` TROT-ветка: has_command → лерп + IMU-компенсация через PID (`trot_gait.pid_controller()`) |
+| **Odometry stall detection** (ноги движутся, IMU стоит → заморозка интеграции; пороги stall_window=20, ang_vel=0.05/0.1) | `odometry/update.rs`: точная трансляция C++ `odometry_update.cpp`; новые поля в `odometry/state.rs` (`is_stalled`, `stall_*`, `imu_linear_acceleration_*`) |
+| **IMU linear acceleration** в odometry node | `odometry_node.rs` imu-колбэк: `imu_linear_acceleration_{x,y,z}` (как C++ `dog_odom_callbacks.cpp`) |
+| **PID reset при переключении в TROT** | `robot_controller_node.rs` mode_sub: `trot_gait.pid_controller().reset(now)` (как C++ change_controller) |
+
+Быстрое сравнение подтвердило, что IK/FK/crawl/trot/rest/stand математически
+идентичны C++ (fast_atan2 — только производительность; точные atan2 в Rust
+дают результат в пределах допусков C++-тестов 2e-3).
+
+### 12.4. Тесты после синхронизации
+- stall detection добавлен в юнит-тесты (`test_stall_detection_stops_integration`,
+  `test_no_stall_when_imu_rotating`) и интеграционные
+  (`test_odometry_stall_freezes_position`); CppOdom-эталон обновлён под stall.
+- Итог: `cargo test --workspace` = **49 unit + 8 cross-val + 4 crawl + 4 odometry**,
+  всё зелёное; release-сборка успешна.
+- Интеграционные тесты одометрии задают `imu_angular_velocity = 0.2` (> stall-порога),
+  чтобы валидировать именно алгоритм интеграции (stall покрыт отдельными тестами).

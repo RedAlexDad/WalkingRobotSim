@@ -12,18 +12,26 @@ use quadropted_core::odometry::update::{normalize_angle, update_odometry};
 
 const TICKS: usize = 500; // 10 s @ 50 Hz
 
-/// Direct C++ translation of update_odometry (odometry_update.cpp).
+/// Direct C++ translation of update_odometry (odometry_update.cpp),
+/// including the stall detection added in feat/elevation-mapping.
 struct CppOdom {
     x: f64,
     y: f64,
     theta: f64,
     linear_velocity_x: f64,
     linear_velocity_y: f64,
+    imu_angular_velocity: f64,
     window: usize,
     dx_queue: Vec<f64>,
     dy_queue: Vec<f64>,
     sum_dx: f64,
     sum_dy: f64,
+    // Stall detection (C++ odometry.hpp / odometry_update.cpp)
+    is_stalled: bool,
+    stall_consecutive_count: i32,
+    stall_window: i32,
+    stall_ang_vel_threshold: f64,
+    stall_exit_ang_vel_threshold: f64,
 }
 
 impl CppOdom {
@@ -31,8 +39,14 @@ impl CppOdom {
         Self {
             x: 0.0, y: 0.0, theta: 0.0,
             linear_velocity_x: 0.0, linear_velocity_y: 0.0,
+            imu_angular_velocity: 0.0,
             window, dx_queue: Vec::new(), dy_queue: Vec::new(),
             sum_dx: 0.0, sum_dy: 0.0,
+            is_stalled: false,
+            stall_consecutive_count: 0,
+            stall_window: 20,
+            stall_ang_vel_threshold: 0.05,
+            stall_exit_ang_vel_threshold: 0.1,
         }
     }
 
@@ -53,6 +67,25 @@ impl CppOdom {
             return (0.0, 0.0);
         }
         (self.sum_dx / n as f64, self.sum_dy / n as f64)
+    }
+
+    /// Stall detection — exact translation of C++ odometry_update.cpp
+    fn update_stall(&mut self, avg_dx: f64, avg_dy: f64) {
+        let delta_mag = (avg_dx * avg_dx + avg_dy * avg_dy).sqrt();
+        let legs_moving = delta_mag > 0.0001;
+        let body_still = self.imu_angular_velocity.abs() < self.stall_ang_vel_threshold;
+
+        if legs_moving && body_still {
+            self.stall_consecutive_count += 1;
+            if self.stall_consecutive_count >= self.stall_window {
+                self.is_stalled = true;
+            }
+        } else {
+            self.stall_consecutive_count = 0;
+            if self.is_stalled && self.imu_angular_velocity.abs() > self.stall_exit_ang_vel_threshold {
+                self.is_stalled = false;
+            }
+        }
     }
 }
 
@@ -106,6 +139,11 @@ fn test_odometry_cross_validation_10s_route() {
     // To keep the reference faithful, we re-run the same sequence.
     let mut cpp_prev: [Option<Vector3<f64>>; 4] = [None, None, None, None];
 
+    // Робот движется (не stalled): угловая скорость IMU выше порога stall,
+    // иначе и Rust, и C++ заморозят интеграцию.
+    rust_state.imu_angular_velocity = 0.2;
+    cpp.imu_angular_velocity = 0.2;
+
     for tick in 0..TICKS {
         let contacts = route.contacts(tick);
         let feet = route.foot_positions(tick, &contacts);
@@ -138,6 +176,11 @@ fn test_odometry_cross_validation_10s_route() {
         } else {
             (0.01 * dt, 0.0)
         };
+        // Stall detection (C++ odometry_update.cpp)
+        cpp.update_stall(avg_dx, avg_dy);
+        if cpp.is_stalled {
+            continue;
+        }
         cpp.append_delta(avg_dx, avg_dy);
         let (a, b) = cpp.average_delta();
         let (ct, st) = (cpp.theta.cos(), cpp.theta.sin());
@@ -154,8 +197,10 @@ fn test_odometry_cross_validation_10s_route() {
 #[test]
 fn test_odometry_velocity_fallback() {
     // No contact data → must fall back to commanded velocity (like C++)
+    // IMU показывает вращение (> stall-порога), чтобы stall не заморозил интеграцию.
     let mut state = OdometryState::new(14);
     state.linear_velocity_x = 0.1;
+    state.imu_angular_velocity = 0.2;
     for _ in 0..500 {
         update_odometry(&mut state, 0.02, 0.65);
     }
@@ -169,4 +214,40 @@ fn test_odometry_theta_from_imu_like_input() {
     // Simulate IMU yaw = 90°
     state.theta = normalize_angle(std::f64::consts::FRAC_PI_2);
     assert!((state.theta - std::f64::consts::FRAC_PI_2).abs() < 1e-12);
+}
+
+#[test]
+fn test_odometry_stall_freezes_position() {
+    // Ноги движутся (контакт + дрейф), IMU показывает покой → робот застрял.
+    // После stall_window отсчётов интеграция останавливается (как в C++).
+    let mut state = OdometryState::new(14);
+    state.stall_window = 20;
+
+    for tick in 0..100 {
+        let contacts = [true, true, true, true];
+        for i in 0..4 {
+            state.foot_states[i].contact = contacts[i];
+            // Ноги дрейфуют вперёд в body frame (тело едет, ноги «отстают»)
+            let drift = 0.0005 * tick as f64;
+            state.foot_states[i].position =
+                nalgebra::Vector3::new(0.2081 - drift, -0.14225 + i as f64 * 0.28, -0.25);
+        }
+        update_odometry(&mut state, 0.02, 0.65);
+    }
+
+    assert!(state.is_stalled, "stall должен сработать при проскальзывании ног");
+    // После stall позиция не растёт: зафиксируем значение и убедимся, что оно стабильно
+    let frozen_x = state.x;
+    let frozen_y = state.y;
+    for tick in 100..120 {
+        let drift = 0.0005 * tick as f64;
+        for i in 0..4 {
+            state.foot_states[i].contact = true;
+            state.foot_states[i].position =
+                nalgebra::Vector3::new(0.2081 - drift, -0.14225 + i as f64 * 0.28, -0.25);
+        }
+        update_odometry(&mut state, 0.02, 0.65);
+    }
+    assert!((state.x - frozen_x).abs() < 1e-12, "x должен быть заморожен: {} vs {}", state.x, frozen_x);
+    assert!((state.y - frozen_y).abs() < 1e-12, "y должен быть заморожен: {} vs {}", state.y, frozen_y);
 }

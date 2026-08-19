@@ -13,9 +13,9 @@
 | **Покрытие компонентов** | ✅ Контроллер 100% (REST/TROT/CRAWL/STAND) |
 | **CRAWL режим** | ✅ бит-в-бит совпадает с C++ рантайм-путём, без насыщения IK |
 | **Odometry Node (Rust)** | ✅ реализован, 50 Гц, `/robot1/odom` + TF |
-| **Unit тесты** | 47/47 ✅ |
+| **Unit тесты** | 49/49 ✅ |
 | **Cross-validation** | 8/8 < 1e-10 ✅ |
-| **Интеграционные тесты** | 7/7 ✅ (CRAWL no-saturation + Odometry < 1e-9) |
+| **Интеграционные тесты** | 8/8 ✅ (CRAWL no-saturation + Odometry < 1e-9) |
 | **Строк Rust кода** | ~4000 (включая биндинги сообщений) |
 
 ---
@@ -152,7 +152,7 @@ src/quadropted_controller_rust/
 - ✅ Odometry: `odometry/state.rs`, `odometry/update.rs` (порт C++), `odometry_node.rs` (50 Гц, `/robot1/odom` + TF)
 - ✅ Биндинги: `nav_msgs_rs`, `tf2_msgs_rs`, RobotFootContact, расширен `geometry_msgs_rs`
 - ✅ Инфраструктура: `launch.launch.py` (Rust по умолчанию), `make test-rust`, `gazebo` = Rust
-- ✅ Тесты: 47 unit + 8 cross-val + 7 интеграционных, всё зелёное
+- ✅ Тесты: 49 unit + 8 cross-val + 8 интеграционных, всё зелёное
 - ✅ CI: job `rust-tests`
 
 ### 2026-04-11 (предыдущий коммит)

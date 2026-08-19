@@ -52,6 +52,31 @@ pub fn update_odometry(state: &mut OdometryState, dt: f64, contact_count_coeff: 
         (state.linear_velocity_x * dt, state.linear_velocity_y * dt)
     };
 
+    // Stall detection (как в C++ odometry_update.cpp):
+    // Если ноги дают ненулевую дельту, но IMU показывает, что корпус не
+    // вращается — робот, вероятно, застрял (ноги скользят, корпус стоит).
+    let delta_mag = (avg_delta_x * avg_delta_x + avg_delta_y * avg_delta_y).sqrt();
+    let legs_moving = delta_mag > 0.0001;
+    let body_still = state.imu_angular_velocity.abs() < state.stall_ang_vel_threshold;
+
+    if legs_moving && body_still {
+        state.stall_consecutive_count += 1;
+        if state.stall_consecutive_count >= state.stall_window {
+            state.is_stalled = true;
+        }
+    } else {
+        state.stall_consecutive_count = 0;
+        if state.is_stalled {
+            if state.imu_angular_velocity.abs() > state.stall_exit_ang_vel_threshold {
+                state.is_stalled = false;
+            }
+        }
+    }
+
+    if state.is_stalled {
+        return;
+    }
+
     state.append_delta(avg_delta_x, avg_delta_y);
     let (avg_x, avg_y) = state.average_delta();
 
@@ -123,5 +148,61 @@ mod tests {
         let body_dx = 0.01 / 0.65;
         assert!((state.x - 0.0).abs() < 1e-12, "x = {}", state.x);
         assert!((state.y - body_dx).abs() < 1e-12, "y = {}", state.y);
+    }
+
+    #[test]
+    fn test_stall_detection_stops_integration() {
+        // C++ odometry_update.cpp: если ноги движутся, но IMU показывает покой —
+        // робот застрял; после stall_window отсчётов интеграция останавливается.
+        let mut state = OdometryState::new(3);
+        state.stall_window = 5;
+        state.foot_states[0].contact = true;
+        state.foot_states[0].prev_position = Some(Vector3::new(0.20, -0.14, -0.25));
+        state.foot_states[0].position = Vector3::new(0.21, -0.14, -0.25);
+        // imu_angular_velocity = 0 → body_still = true, legs_moving = true
+
+        for _ in 0..6 {
+            state.foot_states[0].prev_position = Some(state.foot_states[0].position);
+            state.foot_states[0].position.x += 0.01;
+            update_odometry(&mut state, 0.02, 0.65);
+        }
+
+        assert!(state.is_stalled, "stall should be detected");
+        // Позиция не должна накапливаться после срабатывания stall
+        let x_after_stall = state.x;
+        for _ in 0..5 {
+            state.foot_states[0].prev_position = Some(state.foot_states[0].position);
+            state.foot_states[0].position.x += 0.01;
+            update_odometry(&mut state, 0.02, 0.65);
+        }
+        assert!(
+            (state.x - x_after_stall).abs() < 1e-12,
+            "x should freeze after stall: before={} after={}",
+            x_after_stall, state.x
+        );
+
+        // Выход из stall при достаточной угловой скорости IMU
+        state.imu_angular_velocity = 0.2; // > stall_exit_ang_vel_threshold (0.1)
+        update_odometry(&mut state, 0.02, 0.65);
+        assert!(!state.is_stalled, "stall should be cleared by IMU motion");
+    }
+
+    #[test]
+    fn test_no_stall_when_imu_rotating() {
+        // При вращении IMU stall не срабатывает (body не still)
+        let mut state = OdometryState::new(3);
+        state.stall_window = 5;
+        state.imu_angular_velocity = 0.2;
+        state.foot_states[0].contact = true;
+        state.foot_states[0].prev_position = Some(Vector3::new(0.20, -0.14, -0.25));
+        state.foot_states[0].position = Vector3::new(0.21, -0.14, -0.25);
+
+        for _ in 0..6 {
+            state.foot_states[0].prev_position = Some(state.foot_states[0].position);
+            state.foot_states[0].position.x += 0.01;
+            update_odometry(&mut state, 0.02, 0.65);
+        }
+
+        assert!(!state.is_stalled, "no stall when IMU is rotating");
     }
 }

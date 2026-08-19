@@ -48,8 +48,14 @@ def generate_launch_description():
         name='enable_rviz', default_value=enable_rviz, description='Enable rviz launch'
     )
 
+    camera_fps = LaunchConfiguration('camera_fps', default='10')
+    declare_camera_fps = DeclareLaunchArgument(
+        name='camera_fps', default_value='10', description='FPS камеры для image bridge'
+    )
+
     ld.add_action(declare_enable_rviz)
     ld.add_action(declare_use_sim_time)
+    ld.add_action(declare_camera_fps)
 
     remappings_initial = [
         ("/tf", "tf"),

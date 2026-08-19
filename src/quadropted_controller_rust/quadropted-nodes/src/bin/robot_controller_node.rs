@@ -23,6 +23,7 @@ use std::time::Duration;
 struct SharedState {
     ticks: i32,
     foot_locations: SMatrix<f64, 3, 4>,
+    default_stance: SMatrix<f64, 3, 4>,
     behavior_state: BehaviorState,
     trot_gait: TrotGaitController,
     crawl_gait: CrawlGaitController,
@@ -67,6 +68,7 @@ impl SharedState {
         Self {
             ticks: 0,
             foot_locations: default_stance.clone(),
+            default_stance,
             behavior_state: BehaviorState::REST,
             trot_gait,
             crawl_gait,
@@ -96,12 +98,33 @@ impl SharedState {
             }
             BehaviorState::TROT => {
                 let gait_cmd = [self.cmd_linear[0], self.cmd_linear[1], self.cmd_angular[2]];
-                self.trot_gait.step(
-                    self.ticks,
-                    &self.foot_locations,
-                    &gait_cmd,
-                    robot_height,
-                )
+                // C++ step_trot: при нулевой скорости — плавное возвращение к default_stance
+                let has_command =
+                    gait_cmd[0].abs() > 1e-4 || gait_cmd[1].abs() > 1e-4 || gait_cmd[2].abs() > 1e-4;
+                if !has_command {
+                    let mut result = self.default_stance;
+                    result.row_mut(2).fill(robot_height);
+                    let alpha = 0.1;
+                    self.foot_locations * (1.0 - alpha) + result * alpha
+                } else {
+                    let mut new_foot = self.trot_gait.step(
+                        self.ticks,
+                        &self.foot_locations,
+                        &gait_cmd,
+                        robot_height,
+                    );
+                    // IMU compensation (как в C++ step_trot)
+                    if self.trot_gait.use_imu() {
+                        let now_sec = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .map(|d| d.as_secs_f64())
+                            .unwrap_or(0.0);
+                        let comp = self.trot_gait.pid_controller().run(self.imu_roll, self.imu_pitch, now_sec);
+                        let rot = quadropted_core::math::rotation::rotxyz(-comp[0], -comp[1], 0.0);
+                        new_foot = rot * new_foot;
+                    }
+                    new_foot
+                }
             }
             BehaviorState::CRAWL => {
                 // Clamp velocity for crawl mode
@@ -162,9 +185,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 s.behavior_state = new_state;
                 s.ticks = 0;
 
-                // Reset controllers on mode change
-                if new_state == BehaviorState::CRAWL {
-                    s.crawl_gait.reset();
+                // Reset controllers on mode change (как в C++ change_controller)
+                match new_state {
+                    BehaviorState::CRAWL => {
+                        s.crawl_gait.reset();
+                    }
+                    BehaviorState::TROT => {
+                        // C++: trot_gait_->pid_controller().reset(this->now().seconds())
+                        s.trot_gait.pid_controller().reset(
+                            std::time::SystemTime::now()
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .map(|d| d.as_secs_f64())
+                                .unwrap_or(0.0),
+                        );
+                    }
+                    _ => {}
                 }
             } else {
                 println!("[Rust] Ignored unknown mode: '{}'", mode_str);

@@ -115,6 +115,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let yaw = siny_cosp.atan2(cosy_cosp);
                 s.state.theta = normalize_angle(yaw);
                 s.state.imu_angular_velocity = -msg.angular_velocity.z;
+                // Линейные ускорения (как в C++ dog_odom_callbacks.cpp)
+                s.state.imu_linear_acceleration_x = msg.linear_acceleration.x;
+                s.state.imu_linear_acceleration_y = msg.linear_acceleration.y;
+                s.state.imu_linear_acceleration_z = msg.linear_acceleration.z;
             },
         )?;
         println!("✅ Subscription: imu");

@@ -117,4 +117,19 @@ impl TrotGaitController {
     pub fn swing_ticks(&self) -> i32 {
         self.gait.swing_ticks
     }
+
+    /// Whether IMU compensation is enabled
+    pub fn use_imu(&self) -> bool {
+        self.use_imu
+    }
+
+    /// Mutable access to the PID controller (for IMU compensation)
+    pub fn pid_controller(&mut self) -> &mut PIDController {
+        &mut self.pid_
+    }
+
+    /// Mutable access to the gait (for reset)
+    pub fn gait_mut(&mut self) -> &mut GaitController {
+        &mut self.gait
+    }
 }
