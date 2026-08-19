@@ -84,6 +84,9 @@ services:
         BASE_IMG: osrf/ros:jazzy-desktop
         ROS_DISTRO: jazzy
       target: final
+      # host-сеть при сборке: buildkit-сеть не может достучаться до
+      # packages.ros.org (Connection failed), host-сеть — может.
+      network: host
     volumes:
       - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
       - ./logs/gazebo:/root/ws/logs
