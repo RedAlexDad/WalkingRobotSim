@@ -98,6 +98,52 @@ else
     fail "нет данных после TROT"
 fi
 
+# ── 6. foot_contact публикуется (нужен для одометрии) ───
+echo ""
+echo "[6] foot_contact от контроллера:"
+FC=$(run "timeout 4 ros2 topic echo /robot1/foot_contact --once 2>&1")
+if echo "$FC" | grep -q "contacts:"; then
+    ok "foot_contact публикуется: $(echo "$FC" | grep -A1 contacts | tr '\n' ' ')"
+else
+    fail "foot_contact НЕ публикуется — одометрия не будет считать перемещение!"
+fi
+
+# ── 7. odom движется при команде скорости ───────────────
+echo ""
+echo "[7] Odometry реагирует на движение (x должен расти):"
+run "ros2 topic pub -r 10 /robot1/robot_velocity quadropted_msgs/msg/RobotVelocity '{robot_id: 1, cmd_vel: {linear: {x: 0.08, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}}'" >/dev/null 2>&1 &
+PUB_PID=$!
+sleep 3
+X1=$(run "timeout 3 ros2 topic echo /robot1/odom --once 2>&1" | grep -E '^      x:' | head -1 | grep -oP '[\d.-]+')
+sleep 2
+X2=$(run "timeout 3 ros2 topic echo /robot1/odom --once 2>&1" | grep -E '^      x:' | head -1 | grep -oP '[\d.-]+')
+kill $PUB_PID 2>/dev/null
+if [ -n "${X1:-}" ] && [ -n "${X2:-}" ] && [ "$(echo "$X2 > $X1" | bc -l 2>/dev/null || echo 1)" = "1" ]; then
+    ok "odom растёт: x1=$X1 → x2=$X2"
+else
+    warn "odom x: $X1 → $X2 (может быть 0 если stall/контакты не пришли)"
+fi
+
+# ── 8. stall_status публикуется ─────────────────────────
+echo ""
+echo "[8] stall_status (std_msgs/Bool):"
+ST=$(run "timeout 4 ros2 topic echo /robot1/stall_status --once 2>&1")
+if echo "$ST" | grep -q "data:"; then
+    ok "stall_status: $(echo "$ST" | grep data | tr -d ' ')"
+else
+    fail "stall_status НЕ публикуется"
+fi
+
+# ── 9. Сервис robot_behavior_command ────────────────────
+echo ""
+echo "[9] Сервис robot_behavior_command (sit/up/walk):"
+SRV=$(run "timeout 6 ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehaviorCommand '{command: up}' 2>&1")
+if echo "$SRV" | grep -q "success"; then
+    ok "сервис отвечает: $(echo "$SRV" | grep -E 'success|message' | tr '\n' ' ' | head -c 120)"
+else
+    fail "сервис robot_behavior_command не отвечает"
+fi
+
 echo ""
 echo "═══════════════════════════════════════════════════"
 echo " Готово. Если все ✅ — контроллер работает."

@@ -529,9 +529,9 @@ C++ (`robot_controller_node.cpp` + `dog_odom_*.cpp`) с Rust.
 |---|---|---|---|
 | pub `joint_group_controller/commands` | ✅ | ✅ | ок |
 | pub `foot_contact` (SensorDataQoS) | ✅ | ✅ (добавлен §15.4) | ок |
-| srv `robot_behavior_command` (sit/up/walk) | ✅ | ❌ | **не реализован** |
-| startup_grace (2 сек, 120 тиков) | ✅ | ❌ | **не реализован** |
-| `body_local_position[2]` в IK (высота тела REST/STAND/TROT) | ✅ | ❌ (всегда 0.0) | **не реализован** |
+| srv `robot_behavior_command` (sit/up/walk) | ✅ | ✅ | ok (§17.1) |
+| startup_grace (2 сек, 120 тиков) | ✅ | ✅ | ok (§17.1) |
+| `body_local_position[2]` в IK (высота тела REST/STAND/TROT) | ✅ | ✅ | ok (§17.1) |
 | CRAWL clamp vx/vy/yaw | ✅ (в velocity_sub) | ✅ (в step) | эквивалентно |
 | sub `robot_velocity`/`imu`/`robot_mode` | ✅ | ✅ | ок |
 | change_controller (ticks=0, PID reset) | ✅ | ✅ | ок |
@@ -540,12 +540,37 @@ C++ (`robot_controller_node.cpp` + `dog_odom_*.cpp`) с Rust.
 | Фича | C++ | Rust | Статус |
 |---|---|---|---|
 | pub `odom` (50 Гц, sim-time stamp) | ✅ | ✅ | ок |
-| pub `stall_status` (std_msgs/Bool) | ✅ | ❌ | **не реализован** |
-| pub `foot_markers` (visualization_msgs/MarkerArray) | ✅ | ❌ | **не реализован** |
-| параметры: publish_rate, base_frame_id, odom_frame_id, imu_topic, stall_* | ✅ (declare_parameter) | ❌ hardcode | **не реализован** |
+| pub `stall_status` (std_msgs/Bool) | ✅ | ✅ | ok (§17.2) |
+| pub `foot_markers` (visualization_msgs/MarkerArray) | ✅ | ✅ | ok (§17.2) |
+| параметры: publish_rate, base_frame_id, odom_frame_id, stall_* | ✅ (declare_parameter) | ✅ | ok (§17.2) |
 | sub `imu` (из параметра imu_topic) | ✅ | ✅ (hardcode imu) | частично |
 | sub `joint_group_controller/commands`, `foot_contact`, `robot_velocity` | ✅ | ✅ | ок |
 
-> ⚠️ Секция 17 (завершение миграции) будет дополнена после реализации
-> недостающих фич: сервис robot_behavior_command, startup grace, body_local_position,
-> stall_status, foot_markers, параметры odometry.
+> ✅ Все расхождения §16 закрыты в §17 (миграция завершена).
+
+---
+
+## 17. Завершение миграции — недостающие фичи реализованы (2026-08-19)
+
+По итогам сверки §16 реализованы все выявленные расхождения.
+
+### 17.1. Контроллер (`robot_controller_node.rs`)
+| Фича | Реализация |
+|---|---|
+| **srv `robot_behavior_command`** | Биндинг сервиса в `quadropted_msgs_rs` (Request command / Response success+message) + `node.create_service` в контроллере: sit→STAND(z=−0.15), up→REST(z=0.0), walk→REST→TROT + PID reset |
+| **startup_grace (2 сек)** | Поле `startup_grace=120` в SharedState; control loop пропускает шаги первые 120 тиков (как C++ `startup_grace_`) |
+| **body_local_position[2] в IK** | IK теперь получает `body_local_position`/`body_local_orientation` (а не нули): REST→−0.15, STAND→0.005, TROT/CRAWL→0.0 при переключении |
+| **foot_contact** | Добавлен publisher `foot_contact` (был в §15.4) + геттер `TrotGaitController::contacts()` |
+
+### 17.2. Odometry (`odometry_node.rs`)
+| Фича | Реализация |
+|---|---|
+| **pub `stall_status` (std_msgs/Bool)** | Биндинг `Bool` в `std_msgs_rs` + publisher + публикация `is_stalled` каждый такт |
+| **pub `foot_markers` (MarkerArray)** | Новый крейт `visualization_msgs_rs` (Marker/MarkerArray/ColorRGBA, 415 строк) + publisher + 4 SPHERE-маркера (как C++ publish_markers) |
+| **параметры** | `use_undeclared_parameters()`: publish_rate, has_imu_heading, enable_odom_tf, filter_window_size, base_frame_id, odom_frame_id, stall_window, stall_ang_vel_threshold, stall_exit_ang_vel_threshold (дефолты как C++) |
+| **launch-параметры** | `gazebo_multi_nav2_rust.launch.py`: odometry_rust получает те же параметры, что C++ odometry (publish_rate=50, base_link, odom, stall_*) |
+
+### 17.3. Проверки
+- `cargo test --workspace`: **49 unit + 8 cross-val + 4 crawl + 4 odometry** — всё зелёное.
+- Бинари `robot_controller_node`, `odometry_node` собраны (release) и синхронизированы с контейнером (md5 совпадают).
+- `verify_rust_controller.sh` расширен до 9 секций: foot_contact, odom-движение, stall_status, сервис robot_behavior_command.

@@ -237,3 +237,156 @@ where
         }
     }
 }
+
+// ========================= quadropted_msgs/srv/RobotBehaviorCommand =========================
+
+#[link(name = "quadropted_msgs__rosidl_generator_c")]
+unsafe extern "C" {
+    fn quadropted_msgs__srv__RobotBehaviorCommand_Request__init(msg: *mut RobotBehaviorCommand_Request) -> bool;
+    fn quadropted_msgs__srv__RobotBehaviorCommand_Request__fini(msg: *mut RobotBehaviorCommand_Request);
+    fn quadropted_msgs__srv__RobotBehaviorCommand_Response__init(msg: *mut RobotBehaviorCommand_Response) -> bool;
+    fn quadropted_msgs__srv__RobotBehaviorCommand_Response__fini(msg: *mut RobotBehaviorCommand_Response);
+}
+
+/// RobotBehaviorCommand_Request — string command (sit/up/walk)
+#[repr(C)]
+pub struct RobotBehaviorCommand_Request {
+    pub command: rosidl_runtime_rs::String,
+}
+
+impl Default for RobotBehaviorCommand_Request {
+    fn default() -> Self {
+        unsafe {
+            let mut msg = std::mem::zeroed();
+            if !quadropted_msgs__srv__RobotBehaviorCommand_Request__init(&mut msg as *mut _) {
+                panic!("RobotBehaviorCommand_Request__init failed");
+            }
+            msg
+        }
+    }
+}
+
+impl Clone for RobotBehaviorCommand_Request {
+    fn clone(&self) -> Self {
+        Self {
+            command: self.command.clone(),
+        }
+    }
+}
+
+impl std::fmt::Debug for RobotBehaviorCommand_Request {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RobotBehaviorCommand_Request")
+            .field("command", &self.command.to_cstr())
+            .finish()
+    }
+}
+
+impl Drop for RobotBehaviorCommand_Request {
+    fn drop(&mut self) {
+        unsafe {
+            quadropted_msgs__srv__RobotBehaviorCommand_Request__fini(self as *mut _);
+        }
+    }
+}
+
+impl rosidl_runtime_rs::Message for RobotBehaviorCommand_Request {
+    type RmwMsg = Self;
+    fn into_rmw_message(msg: std::borrow::Cow<'_, Self>) -> std::borrow::Cow<'_, Self> { msg }
+    fn from_rmw_message(msg: Self) -> Self { msg }
+}
+
+impl rosidl_runtime_rs::RmwMessage for RobotBehaviorCommand_Request {
+    const TYPE_NAME: &'static str = "quadropted_msgs/srv/RobotBehaviorCommand_Request";
+    fn get_type_support() -> *const std::ffi::c_void {
+        unsafe {
+            extern "C" {
+                fn rosidl_typesupport_c__get_message_type_support_handle__quadropted_msgs__srv__RobotBehaviorCommand_Request()
+                    -> *const std::ffi::c_void;
+            }
+            rosidl_typesupport_c__get_message_type_support_handle__quadropted_msgs__srv__RobotBehaviorCommand_Request()
+        }
+    }
+}
+
+/// RobotBehaviorCommand_Response — success bool + message string
+#[repr(C)]
+pub struct RobotBehaviorCommand_Response {
+    pub success: bool,
+    pub message: rosidl_runtime_rs::String,
+}
+
+impl Default for RobotBehaviorCommand_Response {
+    fn default() -> Self {
+        unsafe {
+            let mut msg = std::mem::zeroed();
+            if !quadropted_msgs__srv__RobotBehaviorCommand_Response__init(&mut msg as *mut _) {
+                panic!("RobotBehaviorCommand_Response__init failed");
+            }
+            msg
+        }
+    }
+}
+
+impl Clone for RobotBehaviorCommand_Response {
+    fn clone(&self) -> Self {
+        Self {
+            success: self.success,
+            message: self.message.clone(),
+        }
+    }
+}
+
+impl std::fmt::Debug for RobotBehaviorCommand_Response {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RobotBehaviorCommand_Response")
+            .field("success", &self.success)
+            .field("message", &self.message.to_cstr())
+            .finish()
+    }
+}
+
+impl Drop for RobotBehaviorCommand_Response {
+    fn drop(&mut self) {
+        unsafe {
+            quadropted_msgs__srv__RobotBehaviorCommand_Response__fini(self as *mut _);
+        }
+    }
+}
+
+impl rosidl_runtime_rs::Message for RobotBehaviorCommand_Response {
+    type RmwMsg = Self;
+    fn into_rmw_message(msg: std::borrow::Cow<'_, Self>) -> std::borrow::Cow<'_, Self> { msg }
+    fn from_rmw_message(msg: Self) -> Self { msg }
+}
+
+impl rosidl_runtime_rs::RmwMessage for RobotBehaviorCommand_Response {
+    const TYPE_NAME: &'static str = "quadropted_msgs/srv/RobotBehaviorCommand_Response";
+    fn get_type_support() -> *const std::ffi::c_void {
+        unsafe {
+            extern "C" {
+                fn rosidl_typesupport_c__get_message_type_support_handle__quadropted_msgs__srv__RobotBehaviorCommand_Response()
+                    -> *const std::ffi::c_void;
+            }
+            rosidl_typesupport_c__get_message_type_support_handle__quadropted_msgs__srv__RobotBehaviorCommand_Response()
+        }
+    }
+}
+
+/// RobotBehaviorCommand service marker type
+pub struct RobotBehaviorCommand;
+
+impl rosidl_runtime_rs::Service for RobotBehaviorCommand {
+    type Request = RobotBehaviorCommand_Request;
+    type Response = RobotBehaviorCommand_Response;
+
+    fn get_type_support() -> *const std::ffi::c_void {
+        unsafe {
+            extern "C" {
+                fn rosidl_typesupport_c__get_service_type_support_handle__quadropted_msgs__srv__RobotBehaviorCommand()
+                    -> *const std::ffi::c_void;
+            }
+            rosidl_typesupport_c__get_service_type_support_handle__quadropted_msgs__srv__RobotBehaviorCommand()
+        }
+    }
+}

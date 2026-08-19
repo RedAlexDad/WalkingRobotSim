@@ -123,6 +123,12 @@ impl TrotGaitController {
         self.use_imu
     }
 
+    /// Contact mask for current tick in leg order FR, FL, RR, RL.
+    pub fn contacts(&self, ticks: i32) -> [i32; 4] {
+        let c = self.gait.contacts(ticks);
+        [c[0], c[1], c[2], c[3]]
+    }
+
     /// Mutable access to the PID controller (for IMU compensation)
     pub fn pid_controller(&mut self) -> &mut PIDController {
         &mut self.pid_

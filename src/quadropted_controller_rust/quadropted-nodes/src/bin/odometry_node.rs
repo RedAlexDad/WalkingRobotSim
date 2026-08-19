@@ -61,20 +61,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // иначе EKF/TF видят нулевой timestamp и «прыжки назад во времени».
     let clock = node.get_clock();
 
-    // Parameters (with C++-compatible defaults)
-    let publish_rate = 50u64;
-    let has_imu_heading = true;
-    let enable_odom_tf = false;
-    let filter_window = 14usize;
-    let base_frame_id = "base_link".to_string();
-    let odom_frame_id = "odom".to_string();
+    // Parameters (C++-совместимые, читаются из launch; дефолты как в C++)
+    let params = node.use_undeclared_parameters();
+    let publish_rate: i64 = params.get("publish_rate").unwrap_or(50);
+    let has_imu_heading: bool = params.get("has_imu_heading").unwrap_or(true);
+    let enable_odom_tf: bool = params.get("enable_odom_tf").unwrap_or(false);
+    let filter_window: i64 = params.get("filter_window_size").unwrap_or(14);
+    let base_frame_id: Arc<str> = params.get("base_frame_id").unwrap_or_else(|| "base_link".into());
+    let odom_frame_id: Arc<str> = params.get("odom_frame_id").unwrap_or_else(|| "odom".into());
+    let stall_window: i64 = params.get("stall_window").unwrap_or(20);
+    let stall_ang_vel_threshold: f64 = params.get("stall_ang_vel_threshold").unwrap_or(0.05);
+    let stall_exit_ang_vel_threshold: f64 = params.get("stall_exit_ang_vel_threshold").unwrap_or(0.1);
 
-    let shared = Arc::new(Mutex::new(OdomShared::new(filter_window)));
+    let shared = Arc::new(Mutex::new(OdomShared::new(filter_window.max(1) as usize)));
+    {
+        let mut s = shared.lock().unwrap();
+        s.state.stall_window = stall_window as i32;
+        s.state.stall_ang_vel_threshold = stall_ang_vel_threshold;
+        s.state.stall_exit_ang_vel_threshold = stall_exit_ang_vel_threshold;
+    }
 
     // Publishers
     let odom_pub: Publisher<Odometry> = node.create_publisher("odom")?;
     let tf_pub: Publisher<tf2_msgs_rs::TFMessage> = node.create_publisher("tf")?;
-    println!("✅ Publisher: odom (nav_msgs/Odometry), tf (tf2_msgs/TFMessage)");
+    // Stall status (как C++ stall_pub_)
+    let stall_pub: Publisher<std_msgs_rs::Bool> = node.create_publisher("stall_status")?;
+    // Foot markers для RViz (как C++ marker_pub_)
+    let marker_pub: Publisher<visualization_msgs_rs::MarkerArray> =
+        node.create_publisher("foot_markers")?;
+    println!("✅ Publisher: odom, tf, stall_status, foot_markers");
 
     // Subscription: joint commands (12 angles) — like C++ odometry_node
     let joint_state = shared.clone();
@@ -146,7 +161,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 50 Hz odometry loop
     let timer_node = node.clone();
     let _timer = timer_node.create_timer_repeating(
-        Duration::from_micros(1_000_000 / publish_rate),
+        Duration::from_micros(1_000_000 / publish_rate.max(1) as u64),
         move || {
             let mut s = shared.lock().unwrap();
 
@@ -191,6 +206,40 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             odom.twist.twist.angular.z = s.state.imu_angular_velocity;
 
             odom_pub.publish(&odom).ok();
+
+            // Stall status (как C++ publish_stall_status)
+            let mut stall_msg = std_msgs_rs::Bool::default();
+            stall_msg.data = s.state.is_stalled;
+            stall_pub.publish(&stall_msg).ok();
+
+            // Foot markers для RViz (как C++ publish_markers)
+            let mut ma = visualization_msgs_rs::MarkerArray::default();
+            let mut seq = Sequence::new(4);
+            let colors: [[f32; 3]; 4] = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 1.0, 0.0]];
+            for i in 0..4 {
+                let mut m = visualization_msgs_rs::Marker::default();
+                m.header.stamp.sec = sec;
+                m.header.stamp.nanosec = nanosec;
+                m.header.frame_id = base_frame_id.clone().into();
+                m.ns = "foot_markers".into();
+                m.id = i as i32;
+                m.r#type = 2; // SPHERE
+                m.action = 0; // ADD
+                m.pose.position.x = s.state.foot_states[i].position.x;
+                m.pose.position.y = s.state.foot_states[i].position.y;
+                m.pose.position.z = s.state.foot_states[i].position.z;
+                m.pose.orientation.w = 1.0;
+                m.scale.x = 0.05;
+                m.scale.y = 0.05;
+                m.scale.z = 0.05;
+                m.color.a = 1.0;
+                m.color.r = colors[i][0];
+                m.color.g = colors[i][1];
+                m.color.b = colors[i][2];
+                seq[i] = m;
+            }
+            ma.markers = seq;
+            marker_pub.publish(&ma).ok();
 
             // TF broadcast (odom → base_link) — via tf2_msgs/TFMessage like the
             // ROS 2 convention (robot_state_publisher style), since raw tf2_ros

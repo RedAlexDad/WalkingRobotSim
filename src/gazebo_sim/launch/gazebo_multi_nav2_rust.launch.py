@@ -219,6 +219,18 @@ def generate_launch_description():
             name='odometry_rust',
             namespace=namespace,
             output='screen',
+            parameters=[{
+                'publish_rate': 50,
+                'has_imu_heading': True,
+                'is_gazebo': True,
+                'base_frame_id': "base_link",
+                'odom_frame_id': "odom",
+                'enable_odom_tf': False,
+                'filter_window_size': 14,
+                'stall_window': 20,
+                'stall_ang_vel_threshold': 0.05,
+                'stall_exit_ang_vel_threshold': 0.1,
+            }],
             remappings=[
                 ("imu", f"/{namespace}/imu_plugin/out"),
             ],

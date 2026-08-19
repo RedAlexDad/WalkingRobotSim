@@ -23,3 +23,4 @@ sensor_msgs_rs = { path = "../../sensor_msgs_rs" }
 std_msgs_rs = { path = "../../std_msgs_rs" }
 nav_msgs_rs = { path = "../../nav_msgs_rs" }
 tf2_msgs_rs = { path = "../../tf2_msgs_rs" }
+visualization_msgs_rs = { path = "../../visualization_msgs_rs" }

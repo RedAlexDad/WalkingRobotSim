@@ -37,6 +37,7 @@ struct SharedState {
     imu_pitch: f64,
     mode_msg_count: u64,
     vel_msg_count: u64,
+    startup_grace: i32,
 }
 
 impl SharedState {
@@ -85,6 +86,7 @@ impl SharedState {
             imu_pitch: 0.0,
             mode_msg_count: 0,
             vel_msg_count: 0,
+            startup_grace: 120, // 2 сек @ 60 Гц (как C++ startup_grace_)
         }
     }
 
@@ -146,9 +148,12 @@ impl SharedState {
         };
 
         // IK: foot positions → joint angles
+        // C++ передаёт body_local_position/orientation (высота тела из change_controller)
+        let bp = &self.body_state.body_local_position;
+        let bo = &self.body_state.body_local_orientation;
         let local = compute_local_positions(
             &self.foot_locations, 0.3762, 0.0935,
-            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            bp[0], bp[1], bp[2], bo[0], bo[1], bo[2],
         );
         let angles = compute_all_joint_angles(&local, 0.0, 0.0955, 0.213, 0.213);
 
@@ -174,6 +179,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         node.create_publisher("joint_group_controller/commands")?;
     println!("✅ Publisher: joint_group_controller/commands");
 
+    // Publisher for foot contacts (для odometry — как C++ publish_foot_contacts)
+    let contact_pub: Publisher<quadropted_msgs_rs::RobotFootContact> =
+        node.create_publisher("foot_contact")?;
+    println!("✅ Publisher: foot_contact");
+
     // Subscription: robot_mode
     let mode_state = state.clone();
     let _mode_sub = node.create_subscription("robot_mode", move |msg: quadropted_msgs_rs::RobotModeCommand| {
@@ -191,6 +201,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 match new_state {
                     BehaviorState::CRAWL => {
                         s.crawl_gait.reset();
+                        s.body_state.body_local_position[2] = 0.0;
                     }
                     BehaviorState::TROT => {
                         // C++: trot_gait_->pid_controller().reset(this->now().seconds())
@@ -200,8 +211,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .map(|d| d.as_secs_f64())
                                 .unwrap_or(0.0),
                         );
+                        s.body_state.body_local_position[2] = 0.0;
                     }
-                    _ => {}
+                    BehaviorState::REST => {
+                        // C++: body_local_position[2] = -0.15 (лечь на землю)
+                        s.body_state.body_local_position[2] = -0.15;
+                    }
+                    BehaviorState::STAND => {
+                        // C++: body_local_position[2] = 0.005
+                        s.body_state.body_local_position[2] = 0.005;
+                    }
                 }
             } else {
                 println!("[Rust] Ignored unknown mode: '{}'", mode_str);
@@ -244,11 +263,74 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     })?;
     println!("✅ Subscription: imu");
 
+    // Service: robot_behavior_command (sit/up/walk) — как C++ behavior_srv_
+    let srv_state = state.clone();
+    let _behavior_srv = node.create_service::<quadropted_msgs_rs::RobotBehaviorCommand, _>(
+        "robot_behavior_command",
+        move |req: quadropted_msgs_rs::RobotBehaviorCommand_Request| {
+            let mut resp = quadropted_msgs_rs::RobotBehaviorCommand_Response::default();
+            let cmd = req.command.to_cstr().to_string_lossy().to_lowercase();
+            println!("[Rust] Received behavior command: {}", cmd);
+
+            let mut s = srv_state.lock().unwrap();
+            match cmd.as_str() {
+                "sit" => {
+                    s.behavior_state = BehaviorState::STAND;
+                    s.ticks = 0;
+                    s.body_state.body_local_position[2] = -0.15;
+                    resp.success = true;
+                    resp.message = "Robot sat down.".into();
+                }
+                "up" => {
+                    s.behavior_state = BehaviorState::REST;
+                    s.ticks = 0;
+                    s.body_state.body_local_position[2] = 0.0;
+                    resp.success = true;
+                    resp.message = "Robot stood up.".into();
+                }
+                "walk" => {
+                    s.behavior_state = BehaviorState::REST;
+                    s.ticks = 0;
+                    s.body_state.body_local_position[2] = 0.0;
+                    // C++: rest_event + trot_event → REST затем TROT
+                    s.behavior_state = BehaviorState::TROT;
+                    s.ticks = 0;
+                    s.trot_gait.pid_controller().reset(
+                        std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .map(|d| d.as_secs_f64())
+                            .unwrap_or(0.0),
+                    );
+                    resp.success = true;
+                    resp.message = "Robot started walking.".into();
+                }
+                other => {
+                    resp.success = false;
+                    resp.message = format!("Unknown command: {}", other).into();
+                }
+            }
+            resp
+        },
+    )?;
+    println!("✅ Service: robot_behavior_command");
+
     // 60Hz control loop
     let ctrl_state = state.clone();
     let ctrl_pub = joint_pub.clone();
     std::thread::spawn(move || loop {
         let mut s = ctrl_state.lock().unwrap();
+
+        // Startup grace period: ждём пока робот приземлится (как C++ startup_grace_)
+        if s.startup_grace > 0 {
+            s.startup_grace -= 1;
+            if s.startup_grace == 0 {
+                println!("[Rust] Startup grace period complete, controller active");
+            }
+            drop(s);
+            std::thread::sleep(Duration::from_millis(16));
+            continue;
+        }
+
         let angles = s.step(-0.25);
 
         if s.ticks % 120 == 0 {
@@ -261,6 +343,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         for (i, &val) in angles.iter().enumerate() { seq[i] = val; }
         msg.data = seq;
         ctrl_pub.publish(&msg).ok();
+
+        // Публикация контактов ног (для odometry) — как C++ publish_foot_contacts
+        let contact_msg = {
+            let mut cm = quadropted_msgs_rs::RobotFootContact::default();
+            match s.behavior_state {
+                BehaviorState::REST | BehaviorState::STAND => {
+                    cm.contacts = [true, true, true, true];
+                }
+                BehaviorState::TROT => {
+                    let c = s.trot_gait.contacts(s.ticks);
+                    cm.contacts = [c[0] != 0, c[1] != 0, c[2] != 0, c[3] != 0];
+                }
+                BehaviorState::CRAWL => {
+                    let c = s.crawl_gait.contacts(s.ticks);
+                    cm.contacts = [c[0] != 0, c[1] != 0, c[2] != 0, c[3] != 0];
+                }
+            }
+            cm
+        };
+        contact_pub.publish(&contact_msg).ok();
 
         drop(s);
         std::thread::sleep(Duration::from_millis(16)); // 60Hz
