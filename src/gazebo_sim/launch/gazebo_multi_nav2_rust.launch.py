@@ -54,10 +54,12 @@ def generate_launch_description():
     )
 
     # SLAM (картография) по умолчанию включён; slam:=False — AMCL локализация
-    slam_arg = LaunchConfiguration('slam', default='true')
+    # ВАЖНО: bringup_launch использует PythonExpression("not {slam}") — значение
+    # должно быть 'True'/'False' (как в Python), иначе 'name true is not defined'.
+    slam_arg = LaunchConfiguration('slam', default='True')
     declare_slam = DeclareLaunchArgument(
-        name='slam', default_value='true',
-        description='Включить SLAM (slam_toolbox) для построения карты; false — AMCL'
+        name='slam', default_value='True',
+        description='Включить SLAM (slam_toolbox) для построения карты; False — AMCL'
     )
 
     ld.add_action(declare_enable_rviz)

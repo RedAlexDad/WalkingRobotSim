@@ -21,7 +21,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import LoadComposableNodes, Node, PushRosNamespace
+from launch_ros.actions import LoadComposableNodes, Node
 from launch_ros.descriptions import ComposableNode
 from nav2_common.launch import RewrittenYaml
 
@@ -48,7 +48,14 @@ def generate_launch_description():
     # https://github.com/ros/robot_state_publisher/pull/30
     # TODO(orduno) Substitute with `PushNodeRemapping`
     #              https://github.com/ros2/launch_ros/issues/56
-    remappings = [("/tf", "tf"), ("/tf_static", "tf_static")]
+    # slam_toolbox жёстко публикует map в корень (/map). Ремаппим его в
+    # namespace, чтобы Nav2 (costmap) получал /robot1/map.
+    remappings = [
+        ("/tf", "tf"),
+        ("/tf_static", "tf_static"),
+        ("/map", ("/", namespace, "/map")),
+        ("/map_metadata", ("/", namespace, "/map_metadata")),
+    ]
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
@@ -107,10 +114,11 @@ def generate_launch_description():
         "log_level", default_value="info", description="log level"
     )
 
-    # Load the nav2 lifecycle nodes in composition or standalone
+    # Load the nav2 lifecycle nodes in composition or standalone.
+    # ВАЖНО: bringup_launch.py уже оборачивает нас в PushRosNamespace(namespace),
+    # поэтому здесь НЕ добавляем ещё один PushRosNamespace (иначе /robot1/robot1).
     load_nodes = GroupAction(
         [
-            PushRosNamespace(namespace),
             Node(
                 package="slam_toolbox",
                 executable="async_slam_toolbox_node",
@@ -120,6 +128,8 @@ def generate_launch_description():
                 respawn_delay=2.0,
                 parameters=[configured_params],
                 arguments=["--ros-args", "--log-level", log_level],
+                # Только tf ремаппится (относительно); map/scan остаются в
+                # namespace узла → /robot1/map, /robot1/scan (как ждёт Nav2).
                 remappings=remappings,
             ),
             Node(
