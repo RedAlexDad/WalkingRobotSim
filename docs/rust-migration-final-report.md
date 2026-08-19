@@ -11,10 +11,11 @@
 | Метрика | Было | Стало |
 |---|---|---|
 | Покрытие компонентов | 92% | **100% (контроллер + одометрия)** |
-| CRAWL режим | ❌ насыщение IK, робот не ходит | ✅ бит-в-бит совпадает с C++ рантаймом |
+| CRAWL режим | ❌ насыщение IK, робот не ходит | ✅ совпадает с C++ рантаймом (< 1e-9) |
 | Odometry Node (Rust) | ❌ отсутствовал (`// TODO`) | ✅ реализован, 50 Гц, `/robot1/odom` |
-| Unit тесты Rust | 46 | **49** (+odometry state/update, +stall-детекции) |
-| Cross-validation | 8/8 < 1e-10 | **8/8 < 1e-10** (без изменений) |
+| Unit тесты Rust | 46 | **58** (+odometry state/update, +stall-детекции, +accessor-тесты) |
+| Cross-validation | 8/8 формул < 1e-10 | **21/21 против реального C++-бинарника** (харнесс) |
+| Покрытие кода (tarpaulin) | — | **97.34%** (требование ≥ 90%) |
 | Интеграционные тесты | — | **8** (CRAWL no-saturation 4 + Odometry 4) |
 | C++ unit тесты | 10/12 (2 FAIL) | **12/12** (починены в elevation-mapping) |
 | `make gazebo` | C++ контроллер | **Rust контроллер (по умолчанию)** |
@@ -206,15 +207,45 @@ URDF-нарушения: hip=0.0%  upper=0.0%  lower ≤ 0.4%  (порог те�
 - `test_odometry_stall_freezes_position`: ноги движутся, IMU стоит → после `stall_window` отсчётов интеграция замораживается (как в C++ odometry_update.cpp).
 
 ### 6.3. Юнит-тесты
-- `quadropted-core --lib`: **49 passed** (+2 stall-детекции после merge elevation: `test_stall_detection_stops_integration`, `test_no_stall_when_imu_rotating`).
-- `cross_validation.rs`: **8 passed** < 1e-10 (без изменений).
+- `quadropted-core --lib`: **58 passed** (+2 stall-детекции после merge elevation: `test_stall_detection_stops_integration`, `test_no_stall_when_imu_rotating`; +accessor-тесты Trot/Crawl gait, PID `set_desired`, `Command`, `OdometryState::default`, FK panic, TrotSwing time_left-ветка).
+- `cross_validation.rs`: **21 passed** — теперь реальный вызов C++-бинарника `cpp_xval_harness` (см. §6.5).
 - `quadropted-nodes`: бинари собираются, тестов нет.
 
 ### 6.4. `scripts/test_cross_validation.sh`
 - Исправлен source: добавлен `$PROJECT_DIR/install/setup.bash` (иначе `cargo build --release` не находил `libquadropted_msgs__rosidl_generator_c`).
 - Добавлен шаг **5a «Интеграционные тесты»** (`test_crawl_no_saturation` + `test_odometry_cross_validation`).
-- Обновлена сводная таблица: CRAWL runtime (bit-exact vs C++) ✅ 4, Odometry ✅ 4 (< 1e-9); убраны «stub»/«TODO».
-- Обновлена таблица статусов миграции (CrawlGaitController runtime, OdometryState+update, Odometry Node).
+- Шаг 5 переведён на **реальный C++-харнесс** (`build/quadropted_controller_cpp/cpp_xval_harness`): проверяет наличие бинарника и запускает `cross_validation` с `CPP_XVAL_HARNESS` (для Docker-запуска).
+- Обновлена сводная таблица и статусы: математика < 1e-12, FK/local_positions/контроллеры < 1e-9, IK < 2e-3 (из-за `fast_atan2` в C++), покрытие ≥ 97%.
+
+### 6.5. C++ cross-validation harness (новое)
+`src/quadropted_controller_cpp/test/cpp_xval_harness.cpp` — обычный executable (не gmock), печатает JSON-эталон в stdout. Собирается colcon в `build/quadropted_controller_cpp/cpp_xval_harness` (и в контейнере `/root/ws/build/...`). Зарегистрирован в `CMakeLists.txt` (секция после benchmark, собирается всегда — его вызывает Rust-тест).
+
+Покрывает **21 тестовую группу** (см. таблицу ниже). Rust-тест `cross_validation.rs` находит бинарник через `$CPP_XVAL_HARNESS` → `build/` → `install/` и сравнивает JSON с Rust-вычислениями.
+
+| Тест харнесса | Что сравнивается | Допуск |
+|---|---|---|
+| `rotx` / `roty` / `rotz` | 6 углов × матрица 3×3 | < 1e-12 |
+| `rotxyz` | 4 набора (roll, pitch, yaw) | < 1e-12 |
+| `homog_transxyz` / `homog_transform` / `homog_inverse` | 3 случая × 4×4 | < 1e-12 |
+| `fk_leg` | 4 угловых набора × 4 ноги (`compute_leg_fk_chain`) | < 1e-9 |
+| `fk_all_legs` | 2 набора по 12 суставов (`forward_kinematics_all_legs`) | < 1e-9 |
+| `ik_leg` | 8 целей × углы ноги (`compute_joint_angles_for_leg`) | < 2e-3 (fast_atan2) |
+| `local_positions` | 3 случая, C++ 4×3 ↔ Rust 3×4 (транспонирование) | < 1e-9 |
+| `ik_all` | 3 случая, 12 углов (`inverse_kinematics`) | < 2e-3 (fast_atan2) |
+| `trot_gait_phases` | stance/swing/phase_length + 44 × phase_index/contacts | точное (int) |
+| `trot_stance_swing` | stance/position_delta/swing/raibert_td/swing_height × 4 ноги | < 1e-9 |
+| `trot_gait_step` | 44 такта `TrotGaitController::step` | < 1e-9 |
+| `crawl_gait_phases` | 196 × phase_index/contacts | точное (int) |
+| `crawl_stance_swing` | stance/swing/raibert_td/swing_height × 4 ноги | < 1e-9 |
+| `crawl_runtime_step` | активный runtime `step_crawl` C++ (с командой 88 тактов + без 10) | < 1e-9 |
+| `rest_stand` | REST ×2 с IMU, STAND ×2 + body_local_position | < 1e-9 |
+| `pid` | 10 тактов `PIDController::run` | < 1e-12 |
+| `odometry_update` | 50 тактов x (контакт + движение) + 50 тактов y (theta=0.5) + stall-флаг | < 1e-9 |
+
+**Найденные и исправленные расхождения в ходе валидации:**
+1. Rust `PIDController::max_i` был **1.0**, в C++ **0.2** (`static constexpr double max_i_ = 0.2`) → исправлено на 0.2 (не влияло на штатные настройки, но нарушало эквивалентность при больших ошибках).
+2. Rust `RestController::new` включает `use_imu: true`, а C++ — `use_imu_(false)`. Для честного сравнения харнесс вызывает `set_use_imu(true)`. В рантайме Rust-нода полагается на IMU-компенсацию REST — поведение сохранено, но дефолт отличается от C++; задокументировано.
+3. Rust `TrotStanceController::position_delta` использует `step_dist_y` (компонент Y), C++-версия — нет (`velocity.y() = -cmd_vel.y() * inv_scale_`). Проверено: C++ позиция Y тоже учитывается через `inv_scale_`; результаты совпадают < 1e-9.
 
 ---
 
@@ -222,8 +253,8 @@ URDF-нарушения: hip=0.0%  upper=0.0%  lower ≤ 0.4%  (порог те�
 
 ### 7.1. `cargo test --workspace`
 ```
-quadropted_core (lib):         49 passed; 0 failed
-cross_validation:               8 passed; 0 failed
+quadropted_core (lib):         58 passed; 0 failed
+cross_validation:              21 passed; 0 failed  (реальный C++ харнесс)
 test_crawl_no_saturation:       4 passed; 0 failed  (0.14 s)
 test_odometry_cross_validation: 4 passed; 0 failed
 quadropted_nodes + bins:        собрались, 0 тестов
@@ -234,11 +265,19 @@ quadropted_nodes + bins:        собрались, 0 тестов
 [PASS] C++ пакет собран
 [PASS] Rust пакет собран
 [PASS] C++ unit: 12/12 (test_base_link_roll, test_ik_with_roll — починены в elevation-mapping, d8ee746)
-[PASS] Rust unit: 49 passed
-[PASS] Cross-validation: 8 passed (все < 1e-10)
+[PASS] Rust unit: 58 passed
+[PASS] C++ харнесс найден: build/quadropted_controller_cpp/cpp_xval_harness
+[PASS] Cross-validation: 21 passed (математика < 1e-12, FK < 1e-9, IK < 2e-3 из-за fast_atan2)
 [PASS] Интеграционные: 8 passed (CRAWL без насыщения, Odometry < 1e-9)
-ИТОГО: C++ 12/12, Rust 49/0, cross-val 8/0, интеграционные 8/0
+ИТОГО: C++ 12/12, Rust 58/0, cross-val 21/0, интеграционные 8/0
 ```
+
+### 7.2a. Покрытие кода (tarpaulin, требование ≥ 90%)
+```
+cargo tarpaulin --package quadropted-core --tests
+97.34% coverage, 1099/1129 lines covered
+```
+Все `src/`-модули — 100% (кроме двух недостижимых defensive-веток в `gait.rs` fallback: 74, 87).
 
 ### 7.3. Release-сборка
 ```
@@ -259,10 +298,10 @@ cargo build --release --workspace  →  target/release/robot_controller_node (1.
 
 | # | Критерий | Статус |
 |---|---|---|
-| 1 | CRAWL исправлен: `make gazebo` + `make crawl` → робот двигается без насыщения IK, углы не залипают | ✅ автоматически: 30 с симуляция, URDF-лимиты ≤ 0.4% времени (порог 1%), Rust бит-в-бит = C++ рантайм |
+| 1 | CRAWL исправлен: `make gazebo` + `make crawl` → робот двигается без насыщения IK, углы не залипают | ✅ автоматически: 30 с симуляция, URDF-лимиты ≤ 0.4% времени (порог 1%), Rust vs C++ `step_crawl` < 1e-9 |
 | 2 | Odometry Node: `/robot1/odom` ~50 Гц, кросс-валидация с C++ < 1e-6 за 10 с | ✅ узел публикует odom на 50 Гц; тест маршрута 10 с: расхождение < 1e-9 |
 | 3 | Инфраструктура: `make gazebo` = Rust, `make gazebo-cpp` = C++, документация обновлена | ✅ Makefile (модули makefiles/*.mk), launch.launch.py, README.md, docs/architecture.md |
-| 4 | Все тесты: `cargo test --workspace`, `test_cross_validation.sh` (8 < 1e-10), `test_crawl_no_saturation` — зелёные | ✅ 49 unit + 8 cross-val + 8 интеграционных; C++ 12/12 |
+| 4 | Все тесты: `cargo test --workspace`, `test_cross_validation.sh` (реальный C++ харнесс), `test_crawl_no_saturation` — зелёные | ✅ 58 unit + 21 cross-val (против реального C++) + 8 интеграционных; C++ 12/12; покрытие tarpaulin **97.34%** (требование ≥ 90%) |
 | 5 | Визуальная проверка в Gazebo (TROT/CRAWL/STAND/REST) | ⏳ требует GUI: контейнер собран, `make gazebo` → `make crawl` (см. §9) |
 
 ---
@@ -315,7 +354,11 @@ docker exec -it walking_robot_sim bash -c \
 | `gazebo_sim/launch/gazebo_multi_nav2_rust.launch.py` | Rust odometry + EKF на /robot1/odom + camera_fps |
 | `gazebo_sim/launch/launch.launch.py` | дефолтный launch (Rust); аргументы camera_fps/use_elevation |
 | `Makefile` / `makefiles/*.mk` | gazebo=Rust, test-rust (после merge — модули) |
-| `scripts/test_cross_validation.sh` | source install, шаг интеграционных, таблицы |
+| `scripts/test_cross_validation.sh` | source install, шаг интеграционных, шаг 5 → реальный C++ харнесс, таблицы |
+| `quadropted_controller_cpp/CMakeLists.txt` | +target `cpp_xval_harness` (собирается всегда) |
+| `quadropted-core/src/controllers/pid.rs` | **фикс кросс-валидации**: `max_i` 1.0 → 0.2 (как C++), +тест `set_desired` |
+| `quadropted-core/tests/cross_validation.rs` | **переписан**: 8 формульных тестов → 21 тест против реального C++-бинарника |
+| `makefiles/test.mk` | `test-rust`: скрипт кросс-валидации запускается на хосте (в контейнере нет `scripts/`) |
 | `.github/workflows/ci.yml` | job rust-tests |
 | `README.md` | контроллеры Rust/C++, test-rust; починены ссылки reports/* |
 | `compose.yml` | build: network=host (фикс make build) |
@@ -328,6 +371,7 @@ docker exec -it walking_robot_sim bash -c \
 | `quadropted-nodes/src/bin/odometry_node.rs` | Odometry Node (Rust) |
 | `quadropted-core/tests/test_crawl_no_saturation.rs` | интеграционные тесты CRAWL |
 | `quadropted-core/tests/test_odometry_cross_validation.rs` | интеграционные тесты Odometry (вкл. stall) |
+| `quadropted_controller_cpp/test/cpp_xval_harness.cpp` | **C++ харнесс кросс-валидации** (JSON-эталон для Rust) |
 | `nav_msgs_rs/` | биндинги nav_msgs/Odometry |
 | `tf2_msgs_rs/` | биндинги tf2_msgs/TFMessage |
 | `docs/architecture.md` | архитектура контроллеров и одометрии |
@@ -394,10 +438,11 @@ docker exec -it walking_robot_sim bash -c \
 - stall detection добавлен в юнит-тесты (`test_stall_detection_stops_integration`,
   `test_no_stall_when_imu_rotating`) и интеграционные
   (`test_odometry_stall_freezes_position`); CppOdom-эталон обновлён под stall.
-- Итог: `cargo test --workspace` = **49 unit + 8 cross-val + 4 crawl + 4 odometry**,
+- Итог: `cargo test --workspace` = **58 unit + 21 cross-val (реальный C++ харнесс) + 4 crawl + 4 odometry**,
   всё зелёное; release-сборка успешна.
 - Интеграционные тесты одометрии задают `imu_angular_velocity = 0.2` (> stall-порога),
   чтобы валидировать именно алгоритм интеграции (stall покрыт отдельными тестами).
+- **Покрытие (tarpaulin): 97.34%** — требование ≥ 90% выполнено (см. §6.5 и §7.2a).
 
 ---
 
@@ -571,6 +616,7 @@ C++ (`robot_controller_node.cpp` + `dog_odom_*.cpp`) с Rust.
 | **launch-параметры** | `gazebo_multi_nav2_rust.launch.py`: odometry_rust получает те же параметры, что C++ odometry (publish_rate=50, base_link, odom, stall_*) |
 
 ### 17.3. Проверки
-- `cargo test --workspace`: **49 unit + 8 cross-val + 4 crawl + 4 odometry** — всё зелёное.
+- `cargo test --workspace`: **58 unit + 21 cross-val (реальный C++ харнесс) + 4 crawl + 4 odometry** — всё зелёное.
+- Покрытие кода: **97.34%** (tarpaulin, требование ≥ 90% выполнено).
 - Бинари `robot_controller_node`, `odometry_node` собраны (release) и синхронизированы с контейнером (md5 совпадают).
 - `verify_rust_controller.sh` расширен до 9 секций: foot_contact, odom-движение, stall_status, сервис robot_behavior_command.

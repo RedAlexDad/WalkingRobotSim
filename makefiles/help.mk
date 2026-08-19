@@ -80,6 +80,7 @@ help:
 	@printf "${BOLD}Тестирование и CI:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make test${NC}                 Полный цикл тестирования\n"
 	@printf "  ${GREEN}${BOLD}make test-rust${NC}            Все тесты Rust (юнит + кросс-валидация + интеграционные)\n"
+	@printf "  ${GREEN}${BOLD}make test-coverage${NC}        Покрытие кода Rust (tarpaulin, цель 90%%)\n"
 	@printf "  ${GREEN}${BOLD}make test-correctness${NC}     Тесты корректности Python\n"
 	@printf "  ${GREEN}${BOLD}make benchmark${NC}            Бенчмарк Python + C++\n"
 	@printf "  ${GREEN}${BOLD}make ci-lint${NC}              Линтинг всех языков\n"

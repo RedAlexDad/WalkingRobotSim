@@ -11,11 +11,12 @@
 | Метрика | Значение |
 |---------|----------|
 | **Покрытие компонентов** | ✅ Контроллер 100% (REST/TROT/CRAWL/STAND) |
-| **CRAWL режим** | ✅ бит-в-бит совпадает с C++ рантайм-путём, без насыщения IK |
+| **CRAWL режим** | ✅ совпадает с C++ рантайм-путём (< 1e-9), без насыщения IK |
 | **Odometry Node (Rust)** | ✅ реализован, 50 Гц, `/robot1/odom` + TF |
-| **Unit тесты** | 49/49 ✅ |
-| **Cross-validation** | 8/8 < 1e-10 ✅ |
+| **Unit тесты** | 58/58 ✅ |
+| **Cross-validation** | 21/21 ✅ против **реального C++-бинарника** (cpp_xval_harness) |
 | **Интеграционные тесты** | 8/8 ✅ (CRAWL no-saturation + Odometry < 1e-9) |
+| **Покрытие кода (tarpaulin)** | **97.34%** ✅ (требование ≥ 90%) |
 | **Строк Rust кода** | ~4000 (включая биндинги сообщений) |
 
 ---
@@ -152,7 +153,12 @@ src/quadropted_controller_rust/
 - ✅ Odometry: `odometry/state.rs`, `odometry/update.rs` (порт C++), `odometry_node.rs` (50 Гц, `/robot1/odom` + TF)
 - ✅ Биндинги: `nav_msgs_rs`, `tf2_msgs_rs`, RobotFootContact, расширен `geometry_msgs_rs`
 - ✅ Инфраструктура: `launch.launch.py` (Rust по умолчанию), `make test-rust`, `gazebo` = Rust
-- ✅ Тесты: 49 unit + 8 cross-val + 8 интеграционных, всё зелёное
+- ✅ Тесты: 58 unit + 21 cross-val + 8 интеграционных, всё зелёное
+- ✅ **Максимальная кросс-валидация**: C++-харнесс `quadropted_controller_cpp/test/cpp_xval_harness.cpp`
+  (JSON-эталон, собирается colcon) + Rust-тест `cross_validation.rs` (21 тест против реального
+  C++-бинарника): математика < 1e-12, FK/контроллеры < 1e-9, IK < 2e-3 (fast_atan2),
+  CRAWL runtime = C++ `step_crawl`, Odometry < 1e-9; **покрытие tarpaulin 97.34%** (требование ≥ 90%)
+- ✅ Найденные при валидации расхождения исправлены: Rust PID `max_i` 1.0 → 0.2 (как C++)
 - ✅ CI: job `rust-tests`
 - 🔀 **Merge** `feat/elevation-mapping` (264 коммита): Makefile → модули `makefiles/*.mk`,
   C++ рефакторинг (control/, odometry/dog_odom_*), elevation_mapping_cupy

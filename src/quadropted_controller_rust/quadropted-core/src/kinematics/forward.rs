@@ -125,4 +125,10 @@ mod tests {
                 "Leg {} Z: expected {}, got {}", leg, expected_z, result[leg].z);
         }
     }
+
+    #[test]
+    #[should_panic(expected = "Invalid leg_index")]
+    fn test_leg_base_positions_panics_on_invalid() {
+        leg_base_positions(4, 0.3762, 0.0935);
+    }
 }

@@ -203,6 +203,31 @@ mod tests {
     }
 
     #[test]
+    fn test_crawl_accessors_and_reset() {
+        let default_stance = SMatrix::<f64, 3, 4>::from_row_slice(&[
+            0.2081, 0.2081, -0.1881, -0.1881,
+            -0.14225, 0.14225, -0.14225, 0.14225,
+            0.0, 0.0, 0.0, 0.0,
+        ]);
+
+        let mut crawl = CrawlGaitController::new(0.55, 0.45, 0.02, default_stance);
+        assert_eq!(crawl.default_stance(), default_stance);
+        assert_eq!(crawl.phase_length(), 196);
+        assert!(crawl.is_first_cycle());
+
+        // contacts/phase_index/subphase_ticks доступны
+        let c = crawl.contacts(10);
+        assert_eq!(c.len(), 4);
+        let pi = crawl.phase_index(10);
+        assert!(pi < 8);
+        let _ = crawl.subphase_ticks(10);
+
+        // reset возвращает first_cycle
+        crawl.reset();
+        assert!(crawl.is_first_cycle());
+    }
+
+    #[test]
     fn test_crawl_gait_step() {
         let default_stance = SMatrix::<f64, 3, 4>::from_row_slice(&[
             0.2081, 0.2081, -0.1881, -0.1881,

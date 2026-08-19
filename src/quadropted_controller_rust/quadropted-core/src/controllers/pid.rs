@@ -21,7 +21,7 @@ impl PIDController {
             kp,
             ki,
             kd,
-            max_i: 1.0,
+            max_i: 0.2, // C++: static constexpr double max_i_ = 0.2;
             last_time: -1.0,
             i_term: [0.0; 2],
             d_term: [0.0; 2],
@@ -117,5 +117,18 @@ mod tests {
         // P term only: 0.75 * 0.0 = 0
         assert!((result[0]).abs() < 1e-10);
         assert!((result[1]).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_pid_set_desired() {
+        let mut pid = PIDController::new(0.75, 2.29, 0.0);
+        pid.set_desired(0.2, -0.1);
+        pid.reset(0.0);
+        pid.run(0.0, 0.0, 0.0); // инициализация last_time
+        // error = desired - measured = (0.2, -0.1)
+        let result = pid.run(0.0, 0.0, 0.02);
+        // P term: kp * 0.2 = 0.15, kp * (-0.1) = -0.075
+        assert!((result[0] - 0.15).abs() < 0.01, "P roll: {}", result[0]);
+        assert!((result[1] - (-0.075)).abs() < 0.01, "P pitch: {}", result[1]);
     }
 }

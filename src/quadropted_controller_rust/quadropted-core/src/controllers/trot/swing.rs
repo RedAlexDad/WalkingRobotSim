@@ -149,4 +149,14 @@ mod tests {
         let stance_x: f64 = stance[(0, 0)];
         assert!(touchdown.x > stance_x, "Touchdown X = {}, expected > {}", touchdown.x, stance_x);
     }
+
+    #[test]
+    fn test_swing_end_returns_touchdown() {
+        // swing_prop = 1.0 → time_left ≈ 0 → возвращаем touchdown (ветка time_left < 1e-6)
+        let controller = TrotSwingController::new(9, 0.02, 0.08, default_stance(), 11, 2);
+        let cmd_vel = Vector3::new(0.3, 0.0, 0.0);
+        let result = controller.next_foot_location(1.0, 0, &default_stance(), &cmd_vel, -0.25);
+        let td = controller.raibert_touchdown_location(0, &cmd_vel);
+        assert!((result.x - td.x).abs() < 1e-12 && (result.y - td.y).abs() < 1e-12);
+    }
 }

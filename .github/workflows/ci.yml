@@ -179,6 +179,16 @@ jobs:
           cd /root/ws/src/quadropted_controller_rust
           cargo build --workspace"
 
+    - name: Build C++ cross-validation harness
+      run: |
+        cd ${{ env.DOCKER_DIR }}
+        docker compose exec -T simulator bash -c "
+          source /opt/ros/jazzy/setup.bash
+          source /root/ws/install/setup.bash 2>/dev/null || true
+          cd /root/ws
+          colcon build --packages-select quadropted_controller_cpp --cmake-args -DBUILD_TESTING=ON
+          test -f /root/ws/build/quadropted_controller_cpp/cpp_xval_harness"
+
     - name: Run Rust unit tests
       run: |
         cd ${{ env.DOCKER_DIR }}
@@ -188,14 +198,15 @@ jobs:
           cd /root/ws/src/quadropted_controller_rust
           cargo test --workspace"
 
-    - name: Run cross-validation + integration tests
+    - name: Run C++ unit tests
       run: |
         cd ${{ env.DOCKER_DIR }}
         docker compose exec -T simulator bash -c "
           source /opt/ros/jazzy/setup.bash
           source /root/ws/install/setup.bash 2>/dev/null || true
           cd /root/ws
-          bash scripts/test_cross_validation.sh"
+          colcon test --packages-select quadropted_controller_cpp &&
+          colcon test-result --verbose"
 
     - name: Cleanup
       if: always()

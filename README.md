@@ -296,8 +296,14 @@ cd src/quadropted_controller_rust
 cargo test --workspace                       # юнит-тесты (все пакеты)
 cargo test -p quadropted-core                # тесты core (включая интеграционные)
 
-# Кросс-валидация Rust vs C++ (формулы < 1e-10, CRAWL bit-exact, Odometry < 1e-9)
+# Кросс-валидация Rust vs C++: запускает реальный C++-бинарник
+# (cpp_xval_harness) и сравнивает JSON с Rust-вычислениями.
+# 21 тест: математика < 1e-12, FK/контроллеры < 1e-9, IK < 2e-3 (fast_atan2),
+# CRAWL runtime = C++ step_crawl, Odometry < 1e-9.
 ./scripts/test_cross_validation.sh
+
+# Покрытие кода (требование ≥ 90%, факт 97.34%):
+cargo tarpaulin -p quadropted-core --tests --out Html
 ```
 
 Интеграционные тесты (headless, без GUI):

@@ -1,7 +1,16 @@
 # makefiles/test.mk
 
-.PHONY: test test-rust test-build test-container test-clean check-deps check-structure test-yaml setup backup check-x11
+.PHONY: test test-rust test-coverage test-build test-container test-clean check-deps check-structure test-yaml setup backup check-x11
 .PHONY: test-correctness test-benchmark benchmark benchmark-cpp
+
+## Покрытие кода Rust (tarpaulin, требование ≥ 90%)
+test-coverage:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Измерение покрытия кода (tarpaulin)...${NC}\n"
+	@source /opt/ros/$(ROS_DISTRO)/setup.bash 2>/dev/null; \
+	source install/setup.bash 2>/dev/null || true; \
+	cd $(PROJECT_ROOT)/src/quadropted_controller_rust && \
+	cargo tarpaulin --package quadropted-core --tests --out Stdout 2>&1 | tail -30
+	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Покрытие измерено (цель 90%%)${NC}\n"
 
 ## Полный цикл тестирования
 test: check-deps check-structure test-yaml test-build test-container
@@ -16,11 +25,8 @@ test-rust:
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
 		cd /root/ws/src/quadropted_controller_rust && cargo test --workspace 2>&1 | tail -40"
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск скрипта кросс-валидации...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		cd /root/ws && bash scripts/test_cross_validation.sh 2>&1 | tail -30"
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск скрипта кросс-валидации (на хосте, C++ харнесс + Rust)...${NC}\n"
+	@bash scripts/test_cross_validation.sh 2>&1 | tail -40
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Rust тесты завершены${NC}\n"
 
 ## Только сборка образа для теста

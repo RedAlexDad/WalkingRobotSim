@@ -139,3 +139,40 @@ impl TrotGaitController {
         &mut self.gait
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn default_stance() -> SMatrix<f64, 3, 4> {
+        let mut m = SMatrix::<f64, 3, 4>::zeros();
+        m[(0, 0)] = 0.2081; m[(1, 0)] = -0.14225;
+        m[(0, 1)] = 0.2081; m[(1, 1)] = 0.14225;
+        m[(0, 2)] = -0.1881; m[(1, 2)] = -0.14225;
+        m[(0, 3)] = -0.1881; m[(1, 3)] = 0.14225;
+        m
+    }
+
+    #[test]
+    fn test_trot_accessors() {
+        let st = default_stance();
+        let mut trot = TrotGaitController::new(0.04, 0.18, 0.02, false, st);
+        assert_eq!(trot.stance_ticks(), 2);
+        assert_eq!(trot.swing_ticks(), 9);
+        assert_eq!(trot.phase_length(), 22);
+        assert!(!trot.use_imu());
+        assert_eq!(trot.default_stance(), st);
+        let c = trot.contacts(1);
+        assert_eq!(c.len(), 4);
+        // pid_controller + gait_mut — доступны
+        let _ = trot.pid_controller().reset(0.0);
+        let _ = trot.gait_mut().phase_index(1);
+    }
+
+    #[test]
+    fn test_trot_use_imu_true() {
+        let st = default_stance();
+        let trot = TrotGaitController::new(0.04, 0.18, 0.02, true, st);
+        assert!(trot.use_imu());
+    }
+}

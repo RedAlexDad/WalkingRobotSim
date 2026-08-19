@@ -89,6 +89,15 @@ target_link_libraries(benchmark ${PROJECT_NAME})
 install(TARGETS benchmark DESTINATION lib/${PROJECT_NAME})
 
 # ════════════════════════════════════════════════════════════
+# Cross-validation harness (plain executable, JSON to stdout)
+# Собирается всегда: его вызывает Rust-тест cross_validation.rs
+# ════════════════════════════════════════════════════════════
+
+add_executable(cpp_xval_harness test/cpp_xval_harness.cpp)
+target_link_libraries(cpp_xval_harness ${PROJECT_NAME})
+install(TARGETS cpp_xval_harness DESTINATION lib/${PROJECT_NAME})
+
+# ════════════════════════════════════════════════════════════
 # Установка
 # ════════════════════════════════════════════════════════════
 

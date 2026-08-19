@@ -100,18 +100,26 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════
-# 5. Rust Cross-validation тесты (Rust vs C++ формулы)
+# 5. Rust Cross-validation тесты (Rust vs реальный C++ бинарник)
 # ═══════════════════════════════════════════════════════
-header "5. Rust Cross-validation тесты"
+header "5. Rust Cross-validation тесты (против C++ cpp_xval_harness)"
 
-RUST_XVAL_OUTPUT=$(cargo test --package quadropted-core --test cross_validation 2>&1) || true
+# Харнесс собирается в шаге 1 (colcon build) → build/quadropted_controller_cpp/cpp_xval_harness
+HARNESS="$BUILD_DIR/quadropted_controller_cpp/cpp_xval_harness"
+if [ ! -f "$HARNESS" ]; then
+    fail "C++ харнесс не найден: $HARNESS. Сначала соберите: colcon build --packages-select quadropted_controller_cpp"
+    exit 1
+fi
+success "C++ харнесс найден: $HARNESS"
+
+RUST_XVAL_OUTPUT=$(cd "$RUST_DIR" && CPP_XVAL_HARNESS="$HARNESS" cargo test --package quadropted-core --test cross_validation 2>&1) || true
 RUST_XVAL_PASSED=$(echo "$RUST_XVAL_OUTPUT" | grep "test result:" | grep -oP '\d+ passed' | grep -oP '\d+' || echo "0")
 RUST_XVAL_FAILED=$(echo "$RUST_XVAL_OUTPUT" | grep "test result:" | grep -oP '\d+ failed' | grep -oP '\d+' || echo "0")
 
 if [ "$RUST_XVAL_FAILED" -gt 0 ] 2>/dev/null; then
     fail "Cross-validation: $RUST_XVAL_PASSED passed, $RUST_XVAL_FAILED failed"
 else
-    success "Cross-validation: $RUST_XVAL_PASSED passed (все < 1e-10)"
+    success "Cross-validation: $RUST_XVAL_PASSED passed (математика < 1e-9, IK < 2e-3 из-за fast_atan2)"
 fi
 
 # ═══════════════════════════════════════════════════════
@@ -146,19 +154,25 @@ fi
 printf "%-45s %-12s %-12s %-12s\n" "Rotation matrices" "$cpp_rot" "✅ $RUST_UNIT_PASSED" "✅ $RUST_XVAL_PASSED"
 
 # Homogeneous transforms
-printf "%-45s %-12s %-12s %-12s\n" "Homogeneous transforms" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ 2"
+printf "%-45s %-12s %-12s %-12s\n" "Homogeneous transforms" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ 3"
 
 # Kinematics (FK/IK)
-printf "%-45s %-12s %-12s %-12s\n" "Forward/Inverse Kinematics" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ 8"
+printf "%-45s %-12s %-12s %-12s\n" "Forward/Inverse Kinematics" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ 5"
+
+# Gait phases/contacts
+printf "%-45s %-12s %-12s %-12s\n" "Gait phases + contacts" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ 2"
 
 # Controllers
-printf "%-45s %-12s %-12s %-12s\n" "Controllers (TROT/CRAWL/etc)" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ $RUST_INT_PASSED"
+printf "%-45s %-12s %-12s %-12s\n" "Controllers (TROT/CRAWL/etc)" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ 6"
 
 # CRAWL runtime equivalence (Rust == C++ step_crawl)
-printf "%-45s %-12s %-12s %-12s\n" "CRAWL runtime (bit-exact vs C++)" "✅" "—" "✅ 4"
+printf "%-45s %-12s %-12s %-12s\n" "CRAWL runtime (vs C++ step_crawl)" "✅" "—" "✅ 1"
+
+# REST/STAND/PID
+printf "%-45s %-12s %-12s %-12s\n" "REST / STAND / PID" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ 2"
 
 # Odometry
-printf "%-45s %-12s %-12s %-12s\n" "Odometry" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ 3 (< 1e-9)"
+printf "%-45s %-12s %-12s %-12s\n" "Odometry" "✅ part" "✅ $RUST_UNIT_PASSED" "✅ 1 (+$RUST_INT_PASSED int)"
 
 echo ""
 
@@ -172,30 +186,27 @@ printf "${BOLD}%-45s %-12s %-12s %-12s${NC}\n" "ИТОГО" "$TOTAL_CPP/${CPP_TO
 echo ""
 
 # Статус миграции
-header "Статус миграции C++ → Rust"
+header "Статус миграции C++ → Rust (кросс-валидация против реального C++)"
 
-printf "${BOLD}%-35s %-12s %-15s${NC}\n" "Модуль" "Статус" "Расхождение"
-printf "%-35s %-12s %-15s\n" "───────────────────────────────────" "──────────" "───────────────"
-printf "%-35s %-12s %-15s\n" "rotx/roty/rotz" "✅ Готово" "< 1e-10"
-printf "%-35s %-12s %-15s\n" "rotxyz" "✅ Готово" "< 1e-10"
-printf "%-35s %-12s %-15s\n" "homog_transxyz" "✅ Готово" "0"
-printf "%-35s %-12s %-15s\n" "homog_transform" "✅ Готово" "0"
-printf "%-35s %-12s %-15s\n" "homog_transform_inverse" "✅ Готово" "< 1e-10"
-printf "%-35s %-12s %-15s\n" "Forward kinematics" "✅ Готово" "< 1e-10"
-printf "%-35s %-12s %-15s\n" "Inverse kinematics" "✅ Готово" "< 1e-10"
-printf "%-35s %-12s %-15s\n" "PID controller" "✅ Готово" "< 1e-10"
-printf "%-35s %-12s %-15s\n" "TrotStanceController" "✅ Готово" "< 1e-10"
-printf "%-35s %-12s %-15s\n" "TrotSwingController" "✅ Готово" "< 1e-10"
-printf "%-35s %-12s %-15s\n" "CrawlStanceController" "✅ Готово" "< 1e-10"
-printf "%-35s %-12s %-15s\n" "CrawlSwingController" "✅ Готово" "< 1e-10"
-printf "%-35s %-12s %-15s\n" "CrawlGaitController (runtime)" "✅ Готово" "0 (bit-exact vs C++)"
-printf "%-35s %-12s %-15s\n" "RestController" "✅ Готово" "< 1e-10"
-printf "%-35s %-12s %-15s\n" "StandController" "✅ Готово" "< 1e-10"
-printf "%-35s %-12s %-15s\n" "OdometryState + update" "✅ Готово" "< 1e-9"
-printf "%-35s %-12s %-15s\n" "Odometry Node (Rust)" "✅ Готово" "50 Гц, /robot1/odom"
-printf "%-35s %-12s %-15s\n" "ROS 2 node" "✅ Готово" "—"
-printf "%-35s %-12s %-15s\n" "Twist subscriber" "✅ Готово" "< 1e-10"
+printf "${BOLD}%-35s %-14s %-22s${NC}\n" "Модуль" "Статус" "Допуск"
+printf "%-35s %-14s %-22s\n" "───────────────────────────────────" "────────────" "──────────────────────"
+printf "%-35s %-14s %-22s\n" "rotx/roty/rotz" "✅ Готово" "< 1e-12"
+printf "%-35s %-14s %-22s\n" "rotxyz" "✅ Готово" "< 1e-12"
+printf "%-35s %-14s %-22s\n" "homog_transxyz/transform/inverse" "✅ Готово" "< 1e-12"
+printf "%-35s %-14s %-22s\n" "Forward kinematics (leg + all)" "✅ Готово" "< 1e-9"
+printf "%-35s %-14s %-22s\n" "Inverse kinematics" "✅ Готово" "< 2e-3 (fast_atan2)"
+printf "%-35s %-14s %-22s\n" "local_positions" "✅ Готово" "< 1e-9"
+printf "%-35s %-14s %-22s\n" "PID controller" "✅ Готово" "< 1e-12"
+printf "%-35s %-14s %-22s\n" "TrotGait (phases/contacts/step)" "✅ Готово" "< 1e-9"
+printf "%-35s %-14s %-22s\n" "TrotStance/Swing" "✅ Готово" "< 1e-9"
+printf "%-35s %-14s %-22s\n" "CrawlGait (phases/contacts)" "✅ Готово" "0 (int)"
+printf "%-35s %-14s %-22s\n" "CrawlStance/Swing" "✅ Готово" "< 1e-9"
+printf "%-35s %-14s %-22s\n" "CrawlGait step (runtime)" "✅ Готово" "< 1e-9 vs C++ step_crawl"
+printf "%-35s %-14s %-22s\n" "RestController" "✅ Готово" "< 1e-9"
+printf "%-35s %-14s %-22s\n" "StandController" "✅ Готово" "< 1e-9"
+printf "%-35s %-14s %-22s\n" "OdometryState + update" "✅ Готово" "< 1e-9"
+printf "%-35s %-14s %-22s\n" "Покрытие (tarpaulin)" "✅ Готово" "≥ 97%"
 
 echo ""
-echo -e "${GREEN}✅ Кросс-валидация: все математические функции совпадают с C++${NC}"
+echo -e "${GREEN}✅ Кросс-валидация: 21 тест Rust против реального C++-бинарника (cpp_xval_harness)${NC}"
 echo ""

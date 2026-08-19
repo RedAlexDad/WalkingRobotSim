@@ -174,4 +174,12 @@ mod tests {
         assert!(!state.foot_states[0].contact);
         assert!(state.delta_x_queue.is_empty());
     }
+
+    #[test]
+    fn test_default_is_window_14() {
+        let state = OdometryState::default();
+        assert_eq!(state.filter_window_size, 14);
+        assert_eq!(state.x, 0.0);
+        assert!(!state.is_stalled);
+    }
 }
