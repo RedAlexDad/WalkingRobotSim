@@ -53,11 +53,19 @@ pub fn update_odometry(state: &mut OdometryState, dt: f64, contact_count_coeff: 
     };
 
     // Stall detection (как в C++ odometry_update.cpp):
-    // Если ноги дают ненулевую дельту, но IMU показывает, что корпус не
-    // вращается — робот, вероятно, застрял (ноги скользят, корпус стоит).
+    // Если ноги дают ненулевую дельту, НО робот не получил команду движения
+    // И IMU показывает, что корпус не вращается — робот, вероятно, застрял
+    // (ноги скользят, корпус стоит).
+    //
+    // FIX: проверка команды — при прямолинейном движении корпус не вращается
+    // (angular_velocity ≈ 0), поэтому критерий только по вращению давал ложное
+    // застревание через stall_window отсчётов и замораживал odom
+    // (SLAM «белый круг по центру»). Теперь stall срабатывает только если
+    // команды движения нет.
     let delta_mag = (avg_delta_x * avg_delta_x + avg_delta_y * avg_delta_y).sqrt();
     let legs_moving = delta_mag > 0.0001;
-    let body_still = state.imu_angular_velocity.abs() < state.stall_ang_vel_threshold;
+    let has_command = state.linear_velocity_x.abs() > 1e-4 || state.linear_velocity_y.abs() > 1e-4;
+    let body_still = !has_command && state.imu_angular_velocity.abs() < state.stall_ang_vel_threshold;
 
     if legs_moving && body_still {
         state.stall_consecutive_count += 1;
@@ -204,5 +212,29 @@ mod tests {
         }
 
         assert!(!state.is_stalled, "no stall when IMU is rotating");
+    }
+
+    #[test]
+    fn test_no_stall_when_command_given() {
+        // FIX-регрессия (SLAM «белый круг»): при прямолинейном движении тело не
+        // вращается (angular ≈ 0), поэтому старый критерий (только вращение)
+        // давал ложное застревание и замораживал odom. Теперь наличие команды
+        // движения (linear_velocity) отменяет stall.
+        let mut state = OdometryState::new(3);
+        state.stall_window = 5;
+        state.linear_velocity_x = 0.1; // робот получил команду движения
+        state.imu_angular_velocity = 0.0; // тело едет прямо, не вращается
+        state.foot_states[0].contact = true;
+        state.foot_states[0].prev_position = Some(Vector3::new(0.20, -0.14, -0.25));
+        state.foot_states[0].position = Vector3::new(0.21, -0.14, -0.25);
+
+        for _ in 0..10 {
+            state.foot_states[0].prev_position = Some(state.foot_states[0].position);
+            state.foot_states[0].position.x += 0.01;
+            update_odometry(&mut state, 0.02, 0.65);
+        }
+
+        assert!(!state.is_stalled, "no stall while commanded to move");
+        assert!(state.x > 0.0, "odom должен интегрироваться при команде, x = {}", state.x);
     }
 }

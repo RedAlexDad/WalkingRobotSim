@@ -73,7 +73,9 @@ impl CppOdom {
     fn update_stall(&mut self, avg_dx: f64, avg_dy: f64) {
         let delta_mag = (avg_dx * avg_dx + avg_dy * avg_dy).sqrt();
         let legs_moving = delta_mag > 0.0001;
-        let body_still = self.imu_angular_velocity.abs() < self.stall_ang_vel_threshold;
+        let has_command =
+            self.linear_velocity_x.abs() > 1e-4 || self.linear_velocity_y.abs() > 1e-4;
+        let body_still = !has_command && self.imu_angular_velocity.abs() < self.stall_ang_vel_threshold;
 
         if legs_moving && body_still {
             self.stall_consecutive_count += 1;

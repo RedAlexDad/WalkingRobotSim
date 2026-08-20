@@ -46,11 +46,21 @@ void update_odometry(OdometryState& state, double dt, double contact_count_coeff
     }
 
     // Stall detection:
-    // If legs compute a non-zero delta but the IMU shows the body is not
-    // rotating, the robot is likely stuck (legs slip, body doesn't move).
+    // If legs compute a non-zero delta but the robot is NOT commanded to move
+    // AND the IMU shows the body is not rotating, the robot is likely stuck
+    // (legs slip, body doesn't move).
+    //
+    // FIX: command check — при прямолинейном движении тело не вращается
+    // (angular_velocity ≈ 0), поэтому критерий только по вращению давал
+    // ложное застревание через stall_window отсчётов и замораживал odom
+    // (SLAM «белый круг по центру»). Теперь stall срабатывает только если
+    // команды движения нет.
     double delta_mag = std::hypot(avg_delta_x, avg_delta_y);
     bool legs_moving = delta_mag > 0.0001;
-    bool body_still = std::abs(state.imu_angular_velocity) < state.stall_ang_vel_threshold;
+    bool has_command = std::abs(state.linear_velocity_x) > 1e-4 ||
+                       std::abs(state.linear_velocity_y) > 1e-4;
+    bool body_still = !has_command &&
+                      std::abs(state.imu_angular_velocity) < state.stall_ang_vel_threshold;
 
     if (legs_moving && body_still) {
         state.stall_consecutive_count++;
