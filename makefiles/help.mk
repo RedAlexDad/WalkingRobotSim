@@ -20,6 +20,7 @@ help:
 	@printf "${BOLD}Симуляция:${NC}\n"
 	@printf "  ${GREEN}${BOLD}make gazebo${NC}         Запуск Gazebo симуляции (Rust контроллер — по умолчанию)\n"
 	@printf "  ${GREEN}${BOLD}make gazebo-rust${NC}    Запуск с Rust контроллером (+ Rust одометрия)\n"
+	@printf "  ${GREEN}${BOLD}make gazebo-lite${NC}    Лёгкий режим: без RViz, камера 5 FPS (меньше нагрузка)\n"
 	@printf "  ${GREEN}${BOLD}make gazebo-cpp${NC}     Запуск с C++ контроллером (для сравнения)\n"
 	@printf "  ${GREEN}${BOLD}make gazebo ELEVATION=true${NC}  С картой высот (elevation costmap)\n"
 	@printf "  ${GREEN}${BOLD}make teleop${NC}         Запуск управления роботом\n"

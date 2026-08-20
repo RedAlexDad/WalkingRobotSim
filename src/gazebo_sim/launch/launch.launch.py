@@ -24,6 +24,7 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
     camera_fps = LaunchConfiguration('camera_fps', default='10')
     use_elevation = LaunchConfiguration('use_elevation', default='false')
+    enable_rviz = LaunchConfiguration('enable_rviz', default='true')
 
     ld.add_action(DeclareLaunchArgument('use_sim_time', default_value='true',
                                        description='Использовать симуляционное время'))
@@ -31,6 +32,8 @@ def generate_launch_description():
                                        description='FPS камеры для image bridge'))
     ld.add_action(DeclareLaunchArgument('use_elevation', default_value='false',
                                        description='Использовать elevation costmap'))
+    ld.add_action(DeclareLaunchArgument('enable_rviz', default_value='true',
+                                       description='Включить RViz (false — лёгкий режим, меньше нагрузка на CPU)'))
     ld.add_action(SetParameter(name='use_sim_time', value=use_sim_time))
 
     world_file = os.path.join(pkg_path, 'world', 'cafe.world')
@@ -54,6 +57,7 @@ def generate_launch_description():
         ),
         launch_arguments={
             'camera_fps': camera_fps,
+            'enable_rviz': enable_rviz,
         }.items(),
     )
 
