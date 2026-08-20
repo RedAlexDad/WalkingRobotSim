@@ -111,13 +111,23 @@ fi
 # ── 7. odom движется при команде скорости ───────────────
 echo ""
 echo "[7] Odometry реагирует на движение (x должен расти):"
-run "ros2 topic pub -r 10 /robot1/robot_velocity quadropted_msgs/msg/RobotVelocity '{robot_id: 1, cmd_vel: {linear: {x: 0.08, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}}'" >/dev/null 2>&1 &
-PUB_PID=$!
-sleep 3
-X1=$(run "timeout 3 ros2 topic echo /robot1/odom --once 2>&1" | grep -E '^      x:' | head -1 | grep -oP '[\d.-]+')
-sleep 2
-X2=$(run "timeout 3 ros2 topic echo /robot1/odom --once 2>&1" | grep -E '^      x:' | head -1 | grep -oP '[\d.-]+')
-kill $PUB_PID 2>/dev/null
+# ВАЖНО: pub и kill выполняются ВНУТРИ контейнера одной bash-сессией —
+# иначе docker exec остаётся зомби-процессом (ros2 topic pub висит вечно).
+ODOM_MOVE=$(docker exec "$CONTAINER" bash -c "
+    source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null
+    ros2 topic pub -r 10 /robot1/robot_velocity quadropted_msgs/msg/RobotVelocity '{robot_id: 1, cmd_vel: {linear: {x: 0.08, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}}' >/dev/null 2>&1 &
+    PUB_PID=\$!
+    sleep 3
+    X1=\$(timeout 3 ros2 topic echo /robot1/odom --once 2>&1 | grep -E '^      x:' | head -1 | grep -oP '[\d.-]+')
+    sleep 2
+    X2=\$(timeout 3 ros2 topic echo /robot1/odom --once 2>&1 | grep -E '^      x:' | head -1 | grep -oP '[\d.-]+')
+    kill \$PUB_PID 2>/dev/null
+    # на всякий случай убить всех ros2 topic pub по этому топику (страховка от зомби)
+    pkill -f 'ros2 topic pub.*robot_velocity' 2>/dev/null
+    echo \"\$X1 \$X2\"
+")
+X1=$(echo "$ODOM_MOVE" | awk '{print $1}')
+X2=$(echo "$ODOM_MOVE" | awk '{print $2}')
 if [ -n "${X1:-}" ] && [ -n "${X2:-}" ] && [ "$(echo "$X2 > $X1" | bc -l 2>/dev/null || echo 1)" = "1" ]; then
     ok "odom растёт: x1=$X1 → x2=$X2"
 else
