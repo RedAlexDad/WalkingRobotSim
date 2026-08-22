@@ -33,6 +33,8 @@ x-el-env: &el_env
   CYCLONEDDS_URI: file:///cyclonedds.xml
   MESA_GLSL_CACHE_DISABLE: "true"
   QT_QPA_PLATFORM: "xcb"
+  # Для RViz: резолв package://go2_description / package://go1_description
+  AMENT_PREFIX_PATH: "/ws/install/go2_description:/ws/install/go1_description"
 
 x-el-volumes: &el_volumes
   - ./elevation_mapping_cupy/elevation_mapping_cupy/launch/elevation_mapping.launch.py:/ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/launch/elevation_mapping.launch.py:ro
@@ -47,11 +49,21 @@ x-el-volumes: &el_volumes
   - ./src/gazebo_sim/scripts/ground_segmenter.py:/ground_segmenter.py:ro
   - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
   - ./src/walking_robot_utils/:/ws/install/elevation_mapping_cupy/lib/python3.12/site-packages/walking_robot_utils/:ro
+  - ./src/go2_description/:/ws/install/go2_description/share/go2_description/:ro
+  - ./src/go1_description/:/ws/install/go1_description/share/go1_description/:ro
 
 x-el-command: &el_command
   >
     bash -c '
       set -e;
+      # RViz резолвит package://go2_description через /root/ws (из robot_description
+      # контейнера walking_robot_sim). Создаём symlink, чтобы rviz нашёл meshes.
+      if [ ! -e /root/ws/install/go2_description ]; then
+        sudo mkdir -p /root/ws/install
+        sudo chmod o+x /root /root/ws /root/ws/install
+        sudo ln -s /ws/install/go2_description /root/ws/install/go2_description
+        sudo ln -s /ws/install/go1_description /root/ws/install/go1_description
+      fi
       source /opt/ros/jazzy/setup.bash;
       source /ws/install/setup.bash;
       echo "Elevation mapping node ready. Ground segmenter -> /ground_cloud";
@@ -91,6 +103,7 @@ services:
       - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
       - ./logs/gazebo:/root/ws/logs
       - ./data/gazebo:/root/ws/data
+      - ./data/gazebo/maps:/root/ws/maps
       - project_src:/root/ws/src/
     restart: unless-stopped
 
