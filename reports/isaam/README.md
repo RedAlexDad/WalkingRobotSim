@@ -9,6 +9,7 @@
 | `2026-07-18_rust-isaac-integration.md` | **Rust + Isaac Sim** — интеграция rclrs-контроллера с Isaac Sim через Python bridge |
 | `2026-08-22_docker-microservices-v2.md` | **План декомпозиции монолита на микросервисы (v2)** — gazebo-sim + wrs-core + wrs-nav2 + wrs-rviz, Isaac Sim нативно |
 | `2026-08-22_simulation-issues-report.md` | **Отчёт о развёртывании и проблемах симуляции** — Часть A (деплой) + Часть B (5 проблем по цепочке Симптом→Гипотезы→Причина→Решение) |
+| `2026-08-23_isaac-sim-integration-report.md` | **Отчёт о развёртывании и проблемах Isaac Sim** — Часть A (мост Rust↔Isaac) + Часть B (6 проблем: память, rclpy-конфликт, импорт URDF, World API) |
 | `checklist-install.md` | Пошаговый чек-лист установки Isaac Sim |
 | `quick-reference.md` | Быстрый справочник команд и параметров |
 
@@ -18,7 +19,7 @@
   (`2026-07-18_migration-gazebo-to-isaac-plan.md`)
 - Отчёт про Rust-интеграцию: ветка `feat/rust-migration`
   (`2026-07-18_rust-isaac-integration.md`)
-- Дата: 2026-07-18 (обновлено 2026-08-22)
+- Дата: 2026-07-18 (обновлено 2026-08-23)
 - Система: Lenovo Lecoo Pro 14 N155A + RTX 5070 Ti (OCuLink)
 - OS: Ubuntu 24.04.4 LTS → 26.04 (Resolute)
 - Isaac Sim: 6.0.1.0 в `~/isaacsim-venv`

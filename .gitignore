@@ -131,5 +131,8 @@ docs/NIRS/examples/.last_elevation_build_commit
 # Нативная colcon-сборка (не в Docker)
 colcon_ws/
 
+# Артефакты импорта URDF в Isaac Sim (генерируются URDFImporter)
+src/go2_description/urdf/go2_description*/
+
 # Хеш последней сборки elevation
 .last_elevation_build_commit
