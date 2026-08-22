@@ -237,4 +237,107 @@ mod tests {
         assert!(!state.is_stalled, "no stall while commanded to move");
         assert!(state.x > 0.0, "odom должен интегрироваться при команде, x = {}", state.x);
     }
+
+    #[test]
+    fn test_stall_exit_requires_above_exit_threshold() {
+        // Если робот застрял, выход требует |angular| > stall_exit_ang_vel_threshold.
+        // Умеренное вращение между порогами (0.05..0.1) не должно разблокировать.
+        let mut state = OdometryState::new(3);
+        state.stall_window = 3;
+        state.foot_states[0].contact = true;
+        state.foot_states[0].prev_position = Some(Vector3::new(0.20, -0.14, -0.25));
+
+        // Накапливаем stall
+        for _ in 0..3 {
+            state.foot_states[0].prev_position = Some(state.foot_states[0].position);
+            state.foot_states[0].position.x += 0.01;
+            update_odometry(&mut state, 0.02, 0.65);
+        }
+        assert!(state.is_stalled);
+
+        // Вращение ниже exit-порога (0.1) → остаёмся в stall
+        state.imu_angular_velocity = 0.07;
+        state.foot_states[0].prev_position = Some(state.foot_states[0].position);
+        state.foot_states[0].position.x += 0.01;
+        update_odometry(&mut state, 0.02, 0.65);
+        assert!(state.is_stalled, "below exit threshold must keep stall");
+
+        // Вращение выше exit-порога → выходим
+        state.imu_angular_velocity = 0.15;
+        update_odometry(&mut state, 0.02, 0.65);
+        assert!(!state.is_stalled, "above exit threshold must clear stall");
+    }
+
+    #[test]
+    fn test_stall_ang_vel_threshold_boundary() {
+        // Граница stall_ang_vel_threshold: тело вращается ровно с порогом →
+        // |angular| < threshold false → body_still=false → no stall.
+        let mut state = OdometryState::new(3);
+        state.stall_window = 3;
+        state.imu_angular_velocity = state.stall_ang_vel_threshold; // ровно порог
+        state.foot_states[0].contact = true;
+        state.foot_states[0].prev_position = Some(Vector3::new(0.20, -0.14, -0.25));
+        for _ in 0..3 {
+            state.foot_states[0].prev_position = Some(state.foot_states[0].position);
+            state.foot_states[0].position.x += 0.01;
+            update_odometry(&mut state, 0.02, 0.65);
+        }
+        assert!(!state.is_stalled, "exactly at threshold body is considered moving");
+    }
+
+    #[test]
+    fn test_negative_dt_is_noop() {
+        // Отрицательный dt — защита от скачков времени назад (jump back in time)
+        let mut state = OdometryState::new(3);
+        state.linear_velocity_x = 0.1;
+        state.foot_states[0].contact = true;
+        state.foot_states[0].prev_position = Some(Vector3::new(0.20, -0.14, -0.25));
+        state.foot_states[0].position = Vector3::new(0.21, -0.14, -0.25);
+        update_odometry(&mut state, -0.02, 0.65);
+        assert_eq!(state.x, 0.0);
+        assert_eq!(state.stall_consecutive_count, 0);
+    }
+
+    #[test]
+    fn test_contact_without_prev_position_no_delta() {
+        // Первый контакт ноги (нет prev_position) — дельту не считаем,
+        // но prev_position должен запомниться для следующего тика.
+        let mut state = OdometryState::new(3);
+        state.foot_states[0].contact = true;
+        state.foot_states[0].prev_position = None;
+        state.foot_states[0].position = Vector3::new(0.21, -0.14, -0.25);
+        update_odometry(&mut state, 0.02, 0.65);
+        assert_eq!(state.x, 0.0, "no prev → no delta");
+        assert!(
+            state.foot_states[0].prev_position.is_some(),
+            "prev_position must be recorded after first contact"
+        );
+    }
+
+    #[test]
+    fn test_multi_foot_delta_averages() {
+        // Две ноги в контакте, каждая сдвигается на 0.01 → сумма / (2 * coeff)
+        let mut state = OdometryState::new(3);
+        for i in 0..2 {
+            state.foot_states[i].contact = true;
+            state.foot_states[i].prev_position = Some(Vector3::new(0.20, -0.14, -0.25));
+            state.foot_states[i].position = Vector3::new(0.21, -0.14, -0.25);
+        }
+        update_odometry(&mut state, 0.02, 0.65);
+        // delta_total = 0.01*2, contact_sum = 0.65*2 → avg = 0.01/0.65
+        assert!((state.x - 0.01 / 0.65).abs() < 1e-12, "x = {}", state.x);
+    }
+
+    #[test]
+    fn test_y_axis_inversion() {
+        // В C++ delta_y берётся с обратным знаком (delta_y = -(foot_y - prev_y))
+        let mut state = OdometryState::new(1);
+        state.foot_states[0].contact = true;
+        state.foot_states[0].prev_position = Some(Vector3::new(0.20, -0.14, -0.25));
+        // Движение ноги в +y (влево в теле) → тело должно сместиться в -y
+        state.foot_states[0].position = Vector3::new(0.20, -0.13, -0.25);
+        update_odometry(&mut state, 0.02, 0.65);
+        let body_dy = -(0.01) / 0.65;
+        assert!((state.y - body_dy).abs() < 1e-12, "y = {} expected {}", state.y, body_dy);
+    }
 }

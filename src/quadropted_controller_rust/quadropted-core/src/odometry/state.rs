@@ -84,7 +84,13 @@ impl OdometryState {
 
     /// Append a (dx, dy) sample to the sliding window, dropping the oldest
     /// sample when the window is full.
+    ///
+    /// Safe for `filter_window_size == 0`: samples are simply not accumulated
+    /// (avoids `remove(0)` on an empty queue panicking).
     pub fn append_delta(&mut self, dx: f64, dy: f64) {
+        if self.filter_window_size == 0 {
+            return;
+        }
         if self.delta_x_queue.len() == self.filter_window_size {
             self.sum_delta_x -= self.delta_x_queue.remove(0);
             self.sum_delta_y -= self.delta_y_queue.remove(0);
@@ -181,5 +187,52 @@ mod tests {
         assert_eq!(state.filter_window_size, 14);
         assert_eq!(state.x, 0.0);
         assert!(!state.is_stalled);
+    }
+
+    #[test]
+    fn test_window_sum_stays_consistent_under_eviction() {
+        // После вытеснения старого сэмпла сумма должна точно отражать
+        // оставшиеся элементы — регрессия на рассинхрон sum/queue.
+        let mut state = OdometryState::new(3);
+        for i in 0..10 {
+            state.append_delta(i as f64, -i as f64);
+        }
+        // В окне остались [7, 8, 9]
+        assert_eq!(state.delta_x_queue.len(), 3);
+        assert_eq!(state.average_delta(), ((7.0 + 8.0 + 9.0) / 3.0, (-7.0 - 8.0 - 9.0) / 3.0));
+        // sum должен быть согласован с queue
+        let manual_sum: f64 = state.delta_x_queue.iter().sum();
+        assert!((state.sum_delta_x - manual_sum).abs() < 1e-12, "sum out of sync");
+    }
+
+    #[test]
+    fn test_window_size_zero_is_safe() {
+        // filter_window_size = 0 → append не должен паниковать и не копить
+        let mut state = OdometryState::new(0);
+        state.append_delta(1.0, 1.0);
+        state.append_delta(2.0, 2.0);
+        assert_eq!(state.delta_x_queue.len(), 0);
+        assert_eq!(state.average_delta(), (0.0, 0.0));
+    }
+
+    #[test]
+    fn test_reset_preserves_thresholds() {
+        // reset() сбрасывает stall-счётчики, но НЕ должен сбрасывать настроенные
+        // пороги/окно (C++ reset не трогает stall_window/thresholds).
+        let mut state = OdometryState::new(4);
+        state.stall_window = 7;
+        state.stall_ang_vel_threshold = 0.03;
+        state.stall_exit_ang_vel_threshold = 0.09;
+        state.is_stalled = true;
+        state.stall_consecutive_count = 5;
+
+        state.reset();
+
+        assert!(!state.is_stalled);
+        assert_eq!(state.stall_consecutive_count, 0);
+        assert_eq!(state.stall_window, 7, "reset must not touch thresholds");
+        assert_eq!(state.stall_ang_vel_threshold, 0.03);
+        assert_eq!(state.stall_exit_ang_vel_threshold, 0.09);
+        assert_eq!(state.filter_window_size, 4);
     }
 }

@@ -11,6 +11,7 @@
 use geometry_msgs_rs::{Quaternion, TransformStamped};
 use nav_msgs_rs::Odometry;
 use quadropted_core::kinematics::forward::{compute_leg_fk_chain, leg_base_positions};
+use quadropted_core::math::quaternion::{euler_yaw, quat_from_yaw};
 use quadropted_core::odometry::state::OdometryState;
 use quadropted_core::odometry::update::{normalize_angle, update_odometry};
 use rclrs::{Context, CreateBasicExecutor, Publisher, SpinOptions};
@@ -39,13 +40,13 @@ impl OdomShared {
     }
 }
 
-fn quat_from_yaw(yaw: f64) -> Quaternion {
-    let half = yaw / 2.0;
+fn quat_from_yaw_msg(yaw: f64) -> Quaternion {
+    let q = quat_from_yaw(yaw);
     Quaternion {
-        x: 0.0,
-        y: 0.0,
-        z: half.sin(),
-        w: half.cos(),
+        x: q.i,
+        y: q.j,
+        z: q.k,
+        w: q.w,
     }
 }
 
@@ -132,12 +133,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "imu",
             move |msg: sensor_msgs_rs::Imu| {
                 let mut s = imu_state.lock().unwrap();
-                let (qx, qy, qz, qw) = (msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w);
+                let q = nalgebra::Quaternion::new(
+                    msg.orientation.w,
+                    msg.orientation.x,
+                    msg.orientation.y,
+                    msg.orientation.z,
+                );
                 // Euler yaw from quaternion (matches C++ odometry_node.cpp)
-                let siny_cosp = 2.0 * (qw * qz + qx * qy);
-                let cosy_cosp = 1.0 - 2.0 * (qy * qy + qz * qz);
-                let yaw = siny_cosp.atan2(cosy_cosp);
-                s.state.theta = normalize_angle(yaw);
+                s.state.theta = normalize_angle(euler_yaw(&q));
                 s.state.imu_angular_velocity = -msg.angular_velocity.z;
                 // Линейные ускорения (как в C++ dog_odom_callbacks.cpp)
                 s.state.imu_linear_acceleration_x = msg.linear_acceleration.x;
@@ -205,7 +208,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             odom.pose.pose.position.x = s.state.x;
             odom.pose.pose.position.y = s.state.y;
             odom.pose.pose.position.z = 0.0;
-            odom.pose.pose.orientation = quat_from_yaw(s.state.theta);
+            odom.pose.pose.orientation = quat_from_yaw_msg(s.state.theta);
 
             odom.twist.twist.linear.x = s.state.linear_velocity_x;
             odom.twist.twist.linear.y = s.state.linear_velocity_y;
@@ -261,7 +264,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ts.transform.translation.x = s.state.x;
                 ts.transform.translation.y = s.state.y;
                 ts.transform.translation.z = 0.0;
-                ts.transform.rotation = quat_from_yaw(s.state.theta);
+                ts.transform.rotation = quat_from_yaw_msg(s.state.theta);
                 seq[0] = ts;
                 tf_msg.transforms = seq;
                 tf_pub.publish(&tf_msg).ok();

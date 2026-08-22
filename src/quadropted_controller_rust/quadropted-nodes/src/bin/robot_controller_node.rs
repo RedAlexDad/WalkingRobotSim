@@ -254,12 +254,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _imu_sub = node.create_subscription("imu", move |msg: sensor_msgs_rs::Imu| {
         let mut s = imu_state.lock().unwrap();
         // Convert quaternion to euler angles
-        let w = msg.orientation.w;
-        let x = msg.orientation.x;
-        let y = msg.orientation.y;
-        let z = msg.orientation.z;
-        s.imu_roll = (2.0 * (w * x + y * z)).atan2(1.0 - 2.0 * (x * x + y * y));
-        s.imu_pitch = (2.0 * (w * y - z * x)).asin();
+        let q = nalgebra::Quaternion::new(
+            msg.orientation.w,
+            msg.orientation.x,
+            msg.orientation.y,
+            msg.orientation.z,
+        );
+        s.imu_roll = quadropted_core::math::quaternion::euler_roll(&q);
+        s.imu_pitch = quadropted_core::math::quaternion::euler_pitch(&q);
     })?;
     println!("✅ Subscription: imu");
 

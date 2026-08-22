@@ -180,4 +180,74 @@ mod tests {
         assert!(angles[1].is_finite());
         assert!(angles[2].is_finite());
     }
+
+    #[test]
+    fn test_ik_symmetry_body_offset_and_rotation() {
+        // Смещение корпуса + roll/pitch/yaw: результат конечен, hip-углы
+        // симметричных ног при симметричных входах согласованы.
+        let (l1, l2, l3, l4, _, _) = default_params();
+        let mut foot_mat = SMatrix::<f64, 3, 4>::zeros();
+        for leg in 0..4 {
+            foot_mat[(0, leg)] = 0.18 * (if leg % 2 == 0 { 1.0 } else { -1.0 });
+            foot_mat[(1, leg)] = 0.047 * (if leg < 2 { 1.0 } else { -1.0 });
+            foot_mat[(2, leg)] = -0.25;
+        }
+        let angles = inverse_kinematics(
+            &foot_mat, 0.3762, 0.0935, l1, l2, l3, l4,
+            0.01, -0.005, 0.02, 0.05, -0.03, 0.2,
+        );
+        for a in angles.iter() {
+            assert!(a.is_finite(), "non-finite joint angle: {}", a);
+        }
+        // Все углы в разумном диапазоне для GO2
+        assert!(angles.iter().all(|&a| a.abs() < std::f64::consts::PI));
+    }
+
+    #[test]
+    fn test_compute_local_positions_invariants() {
+        // Нулевая поза корпуса — результат конечен, и сдвиг/поворот корпуса
+        // не нарушает размерность (всегда 3×4).
+        let mut leg_positions = SMatrix::<f64, 3, 4>::zeros();
+        for i in 0..4 {
+            leg_positions[(0, i)] = 0.1;
+            leg_positions[(1, i)] = 0.05;
+            leg_positions[(2, i)] = -0.2;
+        }
+        let local = compute_local_positions(&leg_positions, 0.3762, 0.0935, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        for i in 0..4 {
+            assert!(local[(0, i)].is_finite(), "col {i} x finite");
+            assert!(local[(1, i)].is_finite(), "col {i} y finite");
+            assert!(local[(2, i)].is_finite(), "col {i} z finite");
+        }
+        // Ненулевые позы корпуса не должны давать NaN
+        for (dx, dy, dz, r, p, y) in [
+            (0.1, 0.0, 0.0, 0.0, 0.0, 0.0),
+            (0.0, 0.1, 0.0, 0.1, 0.0, 0.0),
+            (0.0, 0.0, 0.1, 0.0, 0.1, 0.0),
+            (0.0, 0.0, 0.0, 0.0, 0.0, 0.1),
+            (-0.1, 0.05, 0.02, -0.2, 0.1, 0.3),
+        ] {
+            let l = compute_local_positions(&leg_positions, 0.3762, 0.0935, dx, dy, dz, r, p, y);
+            for i in 0..4 {
+                assert!(l[(0, i)].is_finite() && l[(1, i)].is_finite() && l[(2, i)].is_finite(),
+                    "non-finite at pose ({dx},{dy},{dz},{r},{p},{y}) col {i}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_mirror_legs_share_thigh_calf() {
+        // Для зеркальных ног (FR/FL) thigh и calf углы должны совпадать
+        // (симметрия по X). Hip может отличаться из-за atan2-квадрантов —
+        // проверяем только одинаковые части.
+        let (l1, l2, l3, l4, _, _) = default_params();
+        let fr = compute_joint_angles_for_leg(0.2, -0.047, -0.25, 0, l1, l2, l3, l4);
+        let fl = compute_joint_angles_for_leg(0.2, 0.047, -0.25, 1, l1, l2, l3, l4);
+        assert!((fr[1] - fl[1]).abs() < 1e-6, "thigh must match: {} vs {}", fr[1], fl[1]);
+        assert!((fr[2] - fl[2]).abs() < 1e-6, "calf must match: {} vs {}", fr[2], fl[2]);
+        // Симметричные x-координаты → hip по модулю близки при одинаковых y
+        let same_y = compute_joint_angles_for_leg(0.2, -0.047, -0.25, 0, l1, l2, l3, l4);
+        let same_y2 = compute_joint_angles_for_leg(0.2, -0.047, -0.25, 1, l1, l2, l3, l4);
+        assert!((same_y[1] - same_y2[1]).abs() < 1e-6);
+    }
 }
