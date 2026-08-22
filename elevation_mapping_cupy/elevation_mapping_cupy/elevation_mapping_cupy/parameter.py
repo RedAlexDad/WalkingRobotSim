@@ -307,7 +307,14 @@ class Parameter(Serializable):
         Returns:
             list: A list of parameter types.
         """
-        return [v.__name__ for v in self.__annotations__.values()]
+        types = []
+        for v in self.__annotations__.values():
+            if isinstance(v, type):
+                types.append(v.__name__)
+            else:
+                # Аннотация может быть строкой (e.g. "float") — Python 3.14
+                types.append(str(v))
+        return types
 
     def set_value(self, name, value):
         """

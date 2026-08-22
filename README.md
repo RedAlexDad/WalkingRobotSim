@@ -201,6 +201,22 @@ make crawl
 make stand
 ```
 
+#### Контроллеры: Rust (по умолчанию) и C++
+Проект содержит две реализации контроллера:
+
+- **Rust** (`quadropted_controller_rust`) — основной контроллер, запускается по умолчанию (`make gazebo`). Включает Rust-версию Odometry Node (`/robot1/odom`, 50 Гц).
+- **C++** (`quadropted_controller_cpp`) — сохранён для сравнения (`make gazebo-cpp`).
+
+```bash
+# Rust контроллер (по умолчанию)
+make gazebo          # или: make gazebo-rust
+
+# C++ контроллер (для сравнения)
+make gazebo-cpp
+```
+
+Обе реализации используют одни и те же топики (`/robot1/robot_mode`, `/robot1/robot_velocity`, `/robot1/joint_group_controller/commands`), поэтому взаимозаменяемы.
+
 ### Управление движением
 
 ```bash
@@ -216,7 +232,7 @@ ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehavi
 - `up` — встать (REST), не двигаться
 - `sit` — сесть (STAND)
 
-[Сравнение реализации gait в Python и C++](reports/gait-switch-comparison.md)
+[Сравнение реализации gait в Python и C++](reports/controller/gait-switch-comparison.md)
 
 ---
 
@@ -237,9 +253,9 @@ ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehavi
 - Одометрия с O(1) скользящим средним
 - PID контроллер
 
-[Полный бенчмарк и отчёт](reports/benchmark-python-cpp.md)
-[Отчёт об оптимизации](reports/performance-optimization-report.md)
-[Результаты кросс-валидации](reports/python_vs-cpp-cross-validation.md)
+[Полный бенчмарк и отчёт](reports/benchmark/benchmark-python-cpp.md)
+[Отчёт об оптимизации](reports/benchmark/performance-optimization-report.md)
+[Результаты кросс-валидации](reports/benchmark/python_vs-cpp-cross-validation.md)
 
 ---
 
@@ -259,6 +275,40 @@ ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehavi
 make ci-lint       # Линтинг всех языков
 make ci-test-cpp   # C++ unit тесты
 ```
+
+### Что проверяет скрипт:
+- ✅ Наличие Docker и Docker Compose
+- ✅ Синтаксис YAML файлов
+- ✅ Структуру проекта
+- ✅ Сборку Docker образа
+- ✅ Запуск и здоровье контейнера
+- ✅ ROS 2 функциональность
+
+### Rust тесты
+Все автоматические тесты Rust (юнит + кросс-валидация + интеграционные):
+
+```bash
+# Все тесты Rust внутри контейнера
+make test-rust
+
+# Или напрямую:
+cd src/quadropted_controller_rust
+cargo test --workspace                       # юнит-тесты (все пакеты)
+cargo test -p quadropted-core                # тесты core (включая интеграционные)
+
+# Кросс-валидация Rust vs C++: запускает реальный C++-бинарник
+# (cpp_xval_harness) и сравнивает JSON с Rust-вычислениями.
+# 21 тест: математика < 1e-12, FK/контроллеры < 1e-9, IK < 2e-3 (fast_atan2),
+# CRAWL runtime = C++ step_crawl, Odometry < 1e-9.
+./scripts/test_cross_validation.sh
+
+# Покрытие кода (требование ≥ 90%, факт 97.34%):
+cargo tarpaulin -p quadropted-core --tests --out Html
+```
+
+Интеграционные тесты (headless, без GUI):
+- `test_crawl_no_saturation` — 30-секундная симуляция CRAWL (1800 тактов @ 60 Гц): ни один угол не выходит за URDF-пределы (hip ±1.0472, upper −1.5708..3.4907, lower −2.7227..−0.83776) более чем на 1% времени; Rust-путь бит-в-бит совпадает с C++ рантайм-путём.
+- `test_odometry_cross_validation` — тестовый маршрут 10 с: расхождение одометрии с C++-эталоном < 1e-9.
 
 ---
 
@@ -299,17 +349,18 @@ make ci-test-cpp   # C++ unit тесты
 | [navigation.md](docs/navigation.md) | Waypoint навигация, инструменты, форматы |
 | [yolo.md](docs/yolo.md) | YOLO object detection |
 | [ci-cd.md](docs/ci-cd.md) | CI/CD пайплайн, GitHub Actions |
+| [rust-migration-final-report.md](docs/rust-migration-final-report.md) | Финальный отчёт миграции контроллера на Rust (CRAWL fix, Odometry Node, тесты) |
 
 ### reports/ — отчёты и анализ
 
 | Файл | О чём |
 |------|-------|
-| [waypoint-executor-fix.md](reports/waypoint-executor-fix.md) | Разработка waypoint навигации, 9 итераций |
-| [gait-switch-comparison.md](reports/gait-switch-comparison.md) | Сравнение gait Python vs C++ |
-| [benchmark-python-cpp.md](reports/benchmark-python-cpp.md) | Бенчмарк 53.5x ускорение |
-| [performance-optimization-report.md](reports/performance-optimization-report.md) | Оптимизация производительности C++ |
-| [python_vs-cpp-cross-validation.md](reports/python_vs-cpp-cross-validation.md) | Кросс-валидация, 12/12 тестов |
-| [python-odometry-drift-plan.md](reports/python-odometry-drift-plan.md) | План устранения дрифта одометрии |
+| [waypoint-executor-fix.md](reports/waypoint/waypoint-executor-fix.md) | Разработка waypoint навигации, 9 итераций |
+| [gait-switch-comparison.md](reports/controller/gait-switch-comparison.md) | Сравнение gait Python vs C++ |
+| [benchmark-python-cpp.md](reports/benchmark/benchmark-python-cpp.md) | Бенчмарк 53.5x ускорение |
+| [performance-optimization-report.md](reports/benchmark/performance-optimization-report.md) | Оптимизация производительности C++ |
+| [python_vs-cpp-cross-validation.md](reports/benchmark/python_vs-cpp-cross-validation.md) | Кросс-валидация, 12/12 тестов |
+| [python-odometry-drift-plan.md](reports/odometry/python-odometry-drift-plan.md) | План устранения дрифта одометрии |
 
 ### Внутренние пакеты
 

@@ -159,28 +159,10 @@
             </inertial>
         </link>
 
-        <ros2_control name="${name}" type="system">
-            <hardware>
-                <plugin>gazebo_ros2_control/GazeboSystem</plugin>
-            </hardware>
-            <joint name="${name}_hip_joint">
-                <command_interface name="effort"/>
-                <state_interface name="position"/>
-                <state_interface name="velocity"/>
-            </joint>
-
-            <joint name="${name}_upper_leg_joint">
-                <command_interface name="effort"/>
-                <state_interface name="position"/>
-                <state_interface name="velocity"/>
-            </joint>
-
-            <joint name="${name}_lower_leg_joint">
-                <command_interface name="effort"/>
-                <state_interface name="position"/>
-                <state_interface name="velocity"/>
-            </joint>
-        </ros2_control>
+        <!-- ros2_control блок для каждой ноги УДАЛЁН — все 12 joint
+             объявлены в gazebo.xacro (${robot_name}_GazeboSystem).
+             Дублирование вызывало "Tried to insert StateInterface with
+             already existing key". -->
 
         <!-- <xacro:leg_transmission name="${name}"/> -->
 

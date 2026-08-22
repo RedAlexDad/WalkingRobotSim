@@ -23,6 +23,118 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     ccache \
     libeigen3-dev \
     ros-dev-tools \
+    ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
+    ros-${ROS_DISTRO}-rclcpp \
+    ros-${ROS_DISTRO}-rclpy \
+    ros-${ROS_DISTRO}-urdf \
+    ros-${ROS_DISTRO}-xacro \
+    ros-${ROS_DISTRO}-std-msgs \
+    ros-${ROS_DISTRO}-angles \
+    ros-${ROS_DISTRO}-tf2-ros \
+    ros-${ROS_DISTRO}-tf2 \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# ЭТАП 3: ROS пакеты - Control
+# ============================================================
+FROM ros-core AS ros-control
+
+ARG ROS_DISTRO=jazzy
+
+# Кэширование ROS control пакетов
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    # ROS Control
+    ros-${ROS_DISTRO}-ros2-control \
+    ros-${ROS_DISTRO}-gz-ros2-control \
+    ros-${ROS_DISTRO}-controller-manager \
+    ros-${ROS_DISTRO}-hardware-interface \
+    ros-${ROS_DISTRO}-pluginlib \
+    ros-${ROS_DISTRO}-joint-state-publisher \
+    ros-${ROS_DISTRO}-robot-state-publisher \
+    ros-${ROS_DISTRO}-ros2-controllers \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# ЭТАП 4: ROS пакеты - Simulation
+# ============================================================
+FROM ros-control AS ros-simulation
+
+ARG ROS_DISTRO=jazzy
+
+# Кэширование ROS simulation пакетов
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    # Gazebo и simulation
+    ros-${ROS_DISTRO}-ros-gz-image \
+    ros-${ROS_DISTRO}-ros-gz-bridge \
+    ros-${ROS_DISTRO}-ros-gz-sim \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# ЭТАП 5: ROS пакеты - Navigation
+# ============================================================
+FROM ros-simulation AS ros-navigation
+
+ARG ROS_DISTRO=jazzy
+
+# Кэширование ROS navigation пакетов
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    # Navigation
+    ros-${ROS_DISTRO}-slam-toolbox \
+    ros-${ROS_DISTRO}-navigation2 \
+    ros-${ROS_DISTRO}-nav2-bringup \
+    ros-${ROS_DISTRO}-nav2-simple-commander \
+    ros-${ROS_DISTRO}-robot-localization \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# ЭТАП 6: ROS пакеты - Vision и Sensors
+# ============================================================
+FROM ros-navigation AS ros-vision
+
+ARG ROS_DISTRO=jazzy
+
+# Кэширование ROS vision пакетов
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    # Vision и sensors
+    ros-${ROS_DISTRO}-camera-info-manager \
+    ros-${ROS_DISTRO}-image-proc \
+    ros-${ROS_DISTRO}-image-view \
+    ros-${ROS_DISTRO}-apriltag-ros \
+    ros-${ROS_DISTRO}-apriltag-msgs \
+    ros-${ROS_DISTRO}-geometry-msgs \
+    ros-${ROS_DISTRO}-topic-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# ЭТАП 7: ROS пакеты - Tools
+# ============================================================
+FROM ros-vision AS ros-tools
+
+ARG ROS_DISTRO=jazzy
+
+# Кэширование ROS tools пакетов
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    # Tools
+    ros-${ROS_DISTRO}-ros2launch \
+    ros-${ROS_DISTRO}-rqt-robot-steering \
+    ros-${ROS_DISTRO}-tf-transformations \
+    ros-${ROS_DISTRO}-teleop-twist-keyboard \
+    ros-${ROS_DISTRO}-opennav-docking \
+    # Тестирование и бенчмарки
+    ros-${ROS_DISTRO}-ament-cmake-gtest \
+    ros-${ROS_DISTRO}-ament-cmake-gmock \
+    ros-${ROS_DISTRO}-ament-cmake-pytest \
+    ros-${ROS_DISTRO}-test-msgs \
     python3-colcon-common-extensions \
     libbenchmark-dev \
     libbenchmark-tools \
@@ -52,6 +164,8 @@ COPY --from=package-xmls /tmp/src/ /root/ws/src/
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
+    # rclrs 0.7 (crates.io) линкуется с test_msgs__rosidl_* — нужен в этапе workspace
+    apt-get install -y --no-install-recommends ros-${ROS_DISTRO}-test-msgs && \
     rosdep update && \
     rosdep install --from-paths src --ignore-src --skip-keys "Eigen3 torch ultralytics" -y && \
     rm -rf /var/lib/apt/lists/*
@@ -64,6 +178,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pandas \
     PyYAML
 
+# Установка Rust toolchain (для quadropted_controller_rust)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Установка PyTorch CPU + YOLO (для quadropted_perception)
 ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
 RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed \
     torch --index-url ${TORCH_INDEX_URL} \

@@ -1,0 +1,10 @@
+[package]
+name = "std_msgs_rs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rosidl_runtime_rs = "0.6"
+
+[build-dependencies]
+rosidl_runtime_rs = "0.6"

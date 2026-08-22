@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "quadropted-core",
+    "quadropted-nodes",
+]
+resolver = "2"

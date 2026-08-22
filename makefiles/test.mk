@@ -1,12 +1,41 @@
 # makefiles/test.mk
 
-.PHONY: test test-build test-container test-clean check-deps check-structure test-yaml setup backup check-x11
-.PHONY: test-correctness test-benchmark benchmark benchmark-cpp
+.PHONY: test test-rust test-coverage test-build test-container test-clean check-deps check-structure test-yaml setup backup check-x11
+.PHONY: test-correctness test-benchmark benchmark benchmark-cpp test-sim
+
+## Покрытие кода Rust (tarpaulin, требование ≥ 90%)
+test-coverage:
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Измерение покрытия кода (tarpaulin)...${NC}\n"
+	@source /opt/ros/$(ROS_DISTRO)/setup.bash 2>/dev/null; \
+	source install/setup.bash 2>/dev/null || true; \
+	cd $(PROJECT_ROOT)/src/quadropted_controller_rust && \
+	cargo tarpaulin --package quadropted-core --tests --out Stdout 2>&1 | tail -30
+	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Покрытие измерено (цель 90%%)${NC}\n"
 
 ## Полный цикл тестирования
 test: check-deps check-structure test-yaml test-build test-container
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Все тесты пройдены успешно!${NC}\n"
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Теперь можно выполнять git push${NC}\n"
+
+## Все автоматические тесты Rust: юнит + кросс-валидация + интеграционные
+test-rust:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск всех Rust тестов (юнит + кросс-валидация + интеграционные)...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		cd /root/ws/src/quadropted_controller_rust && cargo test --workspace 2>&1 | tail -40"
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск скрипта кросс-валидации (на хосте, C++ харнесс + Rust)...${NC}\n"
+	@bash scripts/test_cross_validation.sh 2>&1 | tail -40
+	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Rust тесты завершены${NC}\n"
+
+## Интеграционные тесты против ЖИВОЙ симуляции (нужен запущенный make gazebo)
+test-sim:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск интеграционных тестов против живой симуляции...${NC}\n"
+	@printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Убедитесь, что симуляция запущена: make gazebo${NC}\n"
+	@bash scripts/test_sim_integration.sh
+	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Интеграционные тесты завершены${NC}\n"
 
 ## Только сборка образа для теста
 test-build: check-deps check-structure test-yaml

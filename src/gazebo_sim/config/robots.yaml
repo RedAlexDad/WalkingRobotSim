@@ -2,17 +2,17 @@ robots:
   - name: robot1
     x_pose: '0.0'
     y_pose: '0.0'
-    z_pose: '0.8'
+    z_pose: '0.6'
   # - name: robot2
   #   x_pose: '-2.0'
   #   y_pose: '0.0'
-  #   z_pose: '0.8'
+  #   z_pose: '0.6'
   # - name: robot3
   #   x_pose: '0.0'
   #   y_pose: '-2.0'
-  #   z_pose: '0.8'
+  #   z_pose: '0.6'
   # - name: robot4
   #   x_pose: '-2.0'
   #   y_pose: '-2.0'
-  #   z_pose: '0.8'
+  #   z_pose: '0.6'
   # add more robots if you need, but unable multi robots in cyclonedds config file

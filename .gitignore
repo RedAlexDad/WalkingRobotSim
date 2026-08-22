@@ -4,6 +4,7 @@ install/
 log/
 devel/
 bin/
+!src/quadropted_controller_rust/quadropted-nodes/src/bin/
 
 # Изолированная сборка
 build_isolated/
@@ -88,6 +89,27 @@ wheels/
 # Qwen
 .qwen/*
 
+# Git submodules (clone separately)
+
+# ════════════════════════════════════════════════════════════
+# Rust
+# ════════════════════════════════════════════════════════════
+
+# Build output
+**/target/
+**/Cargo.lock
+
+# Rust analyzer
+**/.rust-analyzer/
+
+# IDE
+**/.idea/
+**/.vscode/settings.json
+
+# External repos (clone separately)
+src/ros2_rust/
+src/rosidl_rust/
+
 # Coverage (pytest-cov)
 .coverage
 coverage/
@@ -105,3 +127,9 @@ compile_commands.json
 
 # Примеры НИРС (большие PDF, не часть кода)
 docs/NIRS/examples/.last_elevation_build_commit
+
+# Нативная colcon-сборка (не в Docker)
+colcon_ws/
+
+# Хеш последней сборки elevation
+.last_elevation_build_commit

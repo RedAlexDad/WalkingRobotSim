@@ -1,3 +1,40 @@
+# slam_toolbox — построение карты (SLAM), включается launch-аргументом slam:=True
+slam_toolbox:
+  ros__parameters:
+    use_sim_time: true
+    # Режим: mapping (построение карты онлайн) или localization
+    mode: mapping
+    base_frame: base_link
+    odom_frame: odom
+    map_frame: map
+    scan_topic: scan
+    map_update_rate: 5.0
+    max_laser_range: 20.0
+    minimum_time_interval: 0.5
+    transform_timeout: 0.2
+    tf_buffer_duration: 30.0
+    resolution: 0.05
+    max_range: 20.0
+    # Параметры синхронизации сканов
+    scan_queue_size: 10
+    loop_match_minimum_chain_size: 10
+    loop_match_maximum_variance_coarse: 3.0
+    loop_match_minimum_response_coarse: 0.35
+    loop_match_maximum_variance_fine: 1.0
+    loop_match_minimum_response_fine: 0.65
+    # Дерево поз
+    temporary_nodes_removal_duration: 5.0
+    minimum_travel_distance: 0.1
+    minimum_travel_heading: 0.2
+    # Рендер карты
+    render_trajectories: true
+    interpolation_mode: 0
+    # Сохранение карты
+    map_file_name: /root/ws/maps/rust_slam_map
+    map_start_pose: [0.0, 0.0, 0.0]
+    map_start_at_dock: true
+    debug_logging: false
+
 amcl:
   ros__parameters:
     use_sim_time: true

@@ -86,23 +86,23 @@ if GPU_AVAILABLE:
                 }
 
                 // filter point next to image plane
-                if ((u < 0) || (v < 0) || (u >= image_width) || (v >= image_height)){
+                if ((u < 0) || (v < 0) || (u >= image_width[0]) || (v >= image_height[0])){
                     return;
                 }
 
                 int y0_c = y0;
                 int x0_c = x0;
-                float total_dis = get_l2_distance(x0_c, y0_c, x1,y1);
+                float total_dis = get_l2_distance(x0_c, y0_c, x1[0],y1[0]);
                 float z0 = map[cell_idx];
-                float delta_z = z1-z0;
+                float delta_z = z1[0]-z0;
 
 
                 // bresenham algorithm to iterate over cells in line between camera center and current gridmap cell
                 // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
-                int dx = abs(x1-x0);
-                int sx = x0 < x1 ? 1 : -1;
-                int dy = -abs(y1 - y0);
-                int sy = y0 < y1 ? 1 : -1;
+                int dx = abs(x1[0]-x0);
+                int sx = x0 < x1[0] ? 1 : -1;
+                int dy = -abs(y1[0] - y0);
+                int sy = y0 < y1[0] ? 1 : -1;
                 int error = dx + dy;
 
                 bool is_valid = true;
@@ -110,7 +110,7 @@ if GPU_AVAILABLE:
                 // iterate over all cells along line
                 while (1){
                     // assumption we do not need to check the height for camera center cell
-                    if (x0 == x1 && y0 == y1){
+                    if (x0 == x1[0] && y0 == y1[0]){
                         break;
                     }
 
@@ -131,14 +131,14 @@ if GPU_AVAILABLE:
                     // computation of next gridcell index in line
                     int e2 = 2 * error;
                     if (e2 >= dy){
-                        if(x0 == x1){
+                        if(x0 == x1[0]){
                             break;
                         }
                         error = error + dy;
                         x0 = x0 + sx;
                     }
                     if (e2 <= dx){
-                        if (y0 == y1){
+                        if (y0 == y1[0]){
                             break;
                         }
                         error = error + dx;
@@ -174,10 +174,10 @@ if GPU_AVAILABLE:
                 int cell_idx = get_map_idx(i, 0);
                 if (valid_correspondence[cell_idx]){
                     int cell_idx_2 = get_map_idx(i, 1);
-                    int idx = int(uv_correspondence[cell_idx]) + int(uv_correspondence[cell_idx_2]) * image_width;
-                    new_sem_map[get_map_idx(i, map_idx)] = image_mono[idx];
+                    int idx = int(uv_correspondence[cell_idx]) + int(uv_correspondence[cell_idx_2]) * image_width[0];
+                    new_sem_map[get_map_idx(i, map_idx[0])] = image_mono[idx];
                 }else{
-                    new_sem_map[get_map_idx(i, map_idx)] = sem_map[get_map_idx(i, map_idx)];
+                    new_sem_map[get_map_idx(i, map_idx[0])] = sem_map[get_map_idx(i, map_idx[0])];
                 }
 
                 """).substitute(),
@@ -199,10 +199,12 @@ if GPU_AVAILABLE:
                 int cell_idx = get_map_idx(i, 0);
                 if (valid_correspondence[cell_idx]){
                     int cell_idx_2 = get_map_idx(i, 1);
-                    int idx = int(uv_correspondence[cell_idx]) + int(uv_correspondence[cell_idx_2]) * image_width;
-                    new_sem_map[get_map_idx(i, map_idx)] = sem_map[get_map_idx(i, map_idx)] * (1-${alpha}) +  ${alpha} * image_mono[idx];
+                    int idx = int(uv_correspondence[cell_idx]) + int(uv_correspondence[cell_idx_2]) * image_width[0];
+                    new_sem_map[get_map_idx(i, map_idx[0])] = sem_map[get_map_idx(i, map_idx[0])] * (1-${alpha}) +  ${alpha} * image_mono[idx];
                 }else{
-                    new_sem_map[get_map_idx(i, map_idx)] = sem_map[get_map_idx(i, map_idx)];
+                    new_sem_map[get_map_idx(i, 0)] = sem_map[get_map_idx(i, 0)];
+                    new_sem_map[get_map_idx(i, 1)] = sem_map[get_map_idx(i, 1)];
+                    new_sem_map[get_map_idx(i, 2)] = sem_map[get_map_idx(i, 2)];
                 }
 
                 """).substitute(alpha=alpha),
@@ -225,9 +227,9 @@ if GPU_AVAILABLE:
                 if (valid_correspondence[cell_idx]){
                     int cell_idx_2 = get_map_idx(i, 1);
 
-                    int idx_red = int(uv_correspondence[cell_idx]) + int(uv_correspondence[cell_idx_2]) * image_width;
-                    int idx_green = image_width * image_height + idx_red;
-                    int idx_blue = image_width * image_height * 2 + idx_red;
+                    int idx_red = int(uv_correspondence[cell_idx]) + int(uv_correspondence[cell_idx_2]) * image_width[0];
+                    int idx_green = image_width[0] * image_height[0] + idx_red;
+                    int idx_blue = image_width[0] * image_height[0] * 2 + idx_red;
 
                     unsigned int r = image_rgb[idx_red];
                     unsigned int g = image_rgb[idx_green];
@@ -235,9 +237,11 @@ if GPU_AVAILABLE:
 
                     unsigned int rgb = (r<<16) + (g << 8) + b;
                     float rgb_ = __uint_as_float(rgb);
-                    new_sem_map[get_map_idx(i, map_idx)] = rgb_;
+                    new_sem_map[get_map_idx(i, map_idx[0])] = rgb_;
                 }else{
-                    new_sem_map[get_map_idx(i, map_idx)] = sem_map[get_map_idx(i, map_idx)];
+                    new_sem_map[get_map_idx(i, 0)] = sem_map[get_map_idx(i, 0)];
+                    new_sem_map[get_map_idx(i, 1)] = sem_map[get_map_idx(i, 1)];
+                    new_sem_map[get_map_idx(i, 2)] = sem_map[get_map_idx(i, 2)];
                 }
                 """).substitute(),
             name="color_correspondences_to_map_kernel",

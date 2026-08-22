@@ -1,9 +1,41 @@
 # makefiles/simulation.mk
 
-.PHONY: gazebo gazebo-cpp teleop set-pose reset-pose kill-ros exec test-aliases save-logs
+.PHONY: gazebo gazebo-rust gazebo-cpp teleop set-pose reset-pose kill-ros exec test-aliases save-logs
 
-## Запуск Gazebo симуляции (C++ контроллер)
-gazebo: gazebo-cpp
+## Запуск Gazebo симуляции (Rust контроллер — по умолчанию)
+gazebo: gazebo-rust
+
+## Запуск Gazebo симуляции с Rust контроллером (контроллер + одометрия)
+## Опции: FPS=5 camera_fps, RVZ=false — без RViz (лёгкий режим)
+gazebo-rust:
+	$(require-container)
+	$(check-x11)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Gazebo симуляции с Rust контроллером...${NC}\n"
+	@docker exec -it $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 launch gazebo_sim launch.launch.py \
+			use_sim_time:=true gui:=true \
+			$(if $(FPS),camera_fps:=${FPS}) \
+			$(if $(RVZ),enable_rviz:=${RVZ}) \
+			$(if $(ELEVATION),use_elevation:=${ELEVATION})"
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
+	@$(MAKE) save-logs
+
+## Лёгкий режим: Gazebo (Rust) без RViz и с пониженным FPS камеры —
+## меньше нагрузка на CPU (полезно при тормозах ноутбука)
+gazebo-lite:
+	$(require-container)
+	$(check-x11)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Gazebo (Rust) в лёгком режиме: RViz выключен, камера 5 FPS...${NC}\n"
+	@docker exec -it $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		ros2 launch gazebo_sim launch.launch.py \
+			use_sim_time:=true gui:=true camera_fps:=5 enable_rviz:=false \
+			$(if $(ELEVATION),use_elevation:=${ELEVATION})"
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
+	@$(MAKE) save-logs
 
 ## Запуск Gazebo симуляции с C++ контроллером
 gazebo-cpp:

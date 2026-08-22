@@ -1,0 +1,9 @@
+[package]
+name = "sensor_msgs_rs"
+version = "0.1.0"
+edition = "2021"
+description = "Rust bindings for sensor_msgs (Imu)"
+
+[dependencies]
+rosidl_runtime_rs = "0.6"
+geometry_msgs_rs = { path = "../geometry_msgs_rs" }
