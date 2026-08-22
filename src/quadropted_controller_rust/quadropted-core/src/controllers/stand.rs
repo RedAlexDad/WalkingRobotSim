@@ -169,4 +169,67 @@ mod tests {
             body.body_local_position[0]
         );
     }
+
+    #[test]
+    fn test_stand_yaw_rate_accumulates_orientation() {
+        let stance = default_stance();
+        let controller = StandController::new(stance);
+        let mut body = BodyState {
+            body_local_position: [0.0; 3],
+            body_local_orientation: [0.0; 3],
+        };
+
+        // yaw_rate 0.4 → orientation[2] += 0.4 * 0.005 = 0.002
+        controller.run(&mut body, -0.25, &[0.0; 3], &[0.0, 0.0, 0.4]);
+        assert!(
+            (body.body_local_orientation[2] - 0.002).abs() < 1e-10,
+            "Expected 0.002, got {}",
+            body.body_local_orientation[2]
+        );
+    }
+
+    #[test]
+    fn test_stand_angular_velocity_clamped() {
+        let stance = default_stance();
+        let controller = StandController::new(stance);
+        let mut body = BodyState {
+            body_local_position: [0.0; 3],
+            body_local_orientation: [0.0; 3],
+        };
+
+        // yaw_rate 2.0 > max_angular (0.5) → clamped → 0.5 * 0.005 = 0.0025
+        controller.run(&mut body, -0.25, &[0.0; 3], &[0.0, 0.0, 2.0]);
+        assert!(
+            (body.body_local_orientation[2] - 0.0025).abs() < 1e-10,
+            "Expected 0.0025 (clamped), got {}",
+            body.body_local_orientation[2]
+        );
+    }
+
+    #[test]
+    fn test_stand_lerp_converges_to_zero() {
+        // Повторная остановка должна постепенно свести смещение к нулю
+        let stance = default_stance();
+        let controller = StandController::new(stance);
+        let mut body = BodyState {
+            body_local_position: [0.2, 0.1, 0.05],
+            body_local_orientation: [0.3, 0.2, 0.1],
+        };
+
+        for _ in 0..150 {
+            controller.run(&mut body, -0.25, &[0.0; 3], &[0.0; 3]);
+        }
+
+        // После 150 итераций (alpha=0.05) позиция ≈ 0.2 * 0.95^150 ≈ 0.0002
+        assert!(
+            body.body_local_position[0].abs() < 0.001,
+            "should converge to zero, got {}",
+            body.body_local_position[0]
+        );
+        assert!(
+            body.body_local_orientation[2].abs() < 0.001,
+            "orientation should converge, got {}",
+            body.body_local_orientation[2]
+        );
+    }
 }

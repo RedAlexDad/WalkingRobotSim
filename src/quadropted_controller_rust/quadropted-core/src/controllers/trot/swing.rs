@@ -159,4 +159,56 @@ mod tests {
         let td = controller.raibert_touchdown_location(0, &cmd_vel);
         assert!((result.x - td.x).abs() < 1e-12 && (result.y - td.y).abs() < 1e-12);
     }
+
+    #[test]
+    fn test_swing_height_is_symmetric() {
+        let controller = TrotSwingController::new(9, 0.02, 0.08, default_stance(), 11, 2);
+        // Симметрия: h(0.25) == h(0.75)
+        assert!((controller.swing_height(0.25) - controller.swing_height(0.75)).abs() < 1e-12);
+        // Линейный рост первой половины
+        assert!((controller.swing_height(0.25) - 0.04).abs() < 1e-10);
+        assert!((controller.swing_height(0.75) - 0.04).abs() < 1e-10);
+        // Отрицательная пропорция (защита) — не должны давать NaN
+        let h = controller.swing_height(-0.1);
+        assert!(h.is_finite());
+        let h2 = controller.swing_height(1.5);
+        assert!(h2.is_finite());
+    }
+
+    #[test]
+    fn test_raibert_with_yaw_rotates_touchdown() {
+        let stance = default_stance();
+        let controller = TrotSwingController::new(9, 0.02, 0.08, stance.clone(), 11, 2);
+
+        // Чистый yaw (без линейной скорости): touchdown должен повернуться вокруг Z
+        let cmd_yaw = Vector3::new(0.0, 0.0, 0.5);
+        let td = controller.raibert_touchdown_location(0, &cmd_yaw);
+
+        // theta = stance_ticks * dt * wz = 2*0.02*0.5 = 0.02 рад
+        // default_stance leg0 = (0.2, 0.1); после поворота на 0.02: y≈0.2*0.02=0.004
+        let stance_v: Vector3<f64> = stance.column(0).into();
+        assert!(
+            (td.y - stance_v.y).abs() > 1e-4,
+            "yaw should rotate touchdown y: {} vs {}",
+            td.y, stance_v.y
+        );
+        // Модуль остаётся ~равен (поворот сохраняет длину)
+        assert!((td.x * td.x + td.y * td.y).sqrt() - stance_v.norm() < 0.01);
+    }
+
+    #[test]
+    fn test_swing_next_location_interpolates_toward_touchdown() {
+        let controller = TrotSwingController::new(9, 0.02, 0.08, default_stance(), 11, 2);
+        let cmd_vel = Vector3::new(0.3, 0.0, 0.0);
+        // Начало swing (swing_prop=0): результат близок к текущей позиции
+        let start = controller.next_foot_location(0.0, 0, &default_stance(), &cmd_vel, -0.25);
+        let foot: Vector3<f64> = default_stance().column(0).into();
+        // На prop=0 нога поднимается на 0 (z=robot_height), x близко к текущей
+        assert!((start.x - foot.x).abs() < 0.05, "start x {} vs foot x {}", start.x, foot.x);
+        // z = swing_h(0) + robot_height = 0 + (-0.25) = -0.25
+        assert!((start.z - (-0.25)).abs() < 0.01, "start z {}", start.z);
+        // Ближе к концу swing (prop=0.8): нога должна продвинуться к touchdown
+        let mid = controller.next_foot_location(0.8, 0, &default_stance(), &cmd_vel, -0.25);
+        assert!(mid.x > start.x, "foot should advance: start {} mid {}", start.x, mid.x);
+    }
 }

@@ -175,4 +175,87 @@ mod tests {
         let trot = TrotGaitController::new(0.04, 0.18, 0.02, true, st);
         assert!(trot.use_imu());
     }
+
+    #[test]
+    fn test_trot_step_keeps_dimensions_and_finite() {
+        let st = default_stance();
+        let trot = TrotGaitController::new(0.04, 0.18, 0.02, false, st);
+        let cmd_vel = [0.1, 0.0, 0.0];
+        // Прогоняем полный цикл (phase_length=22 тика)
+        for tick in 0..44 {
+            let next = trot.step(tick, &st, &cmd_vel, -0.25);
+            assert_eq!(next.nrows(), 3);
+            assert_eq!(next.ncols(), 4);
+            for r in 0..3 {
+                for c in 0..4 {
+                    assert!(next[(r, c)].is_finite(), "non-finite at tick {tick} ({r},{c})");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_trot_step_zero_velocity_returns_near_stance() {
+        let st = default_stance();
+        let trot = TrotGaitController::new(0.04, 0.18, 0.02, false, st);
+        let cmd_vel = [0.0, 0.0, 0.0];
+        // С нулевой командой stance-нога остаётся на месте (z-компенсация малая)
+        let next = trot.step(1, &st, &cmd_vel, -0.25);
+        for leg in 0..4 {
+            assert!(
+                (next[(0, leg)] - st[(0, leg)]).abs() < 0.01,
+                "stance x drift leg {leg}: {} vs {}",
+                next[(0, leg)], st[(0, leg)]
+            );
+        }
+    }
+
+    #[test]
+    fn test_trot_step_swing_leg_lifts() {
+        let mut st = default_stance();
+        // Устанавливаем z = robot_height для всех ног (в стойке лапы на земле)
+        for col in 0..4 {
+            st[(2, col)] = -0.25;
+        }
+        let trot = TrotGaitController::new(0.04, 0.18, 0.02, false, st);
+        let cmd_vel = [0.0, 0.0, 0.0];
+        // Контактная матрица по столбцам: фаза 0 (tick 0-1) = [1,1,1,1] (двойная опора),
+        // фаза 1 (tick 2-10) = [1,0,0,1] → leg 1 (FL) и leg 2 (RR) в swing.
+        // Tick 3: subphase=1, swing_prop = 1/9 ≈ 0.111 → нога поднята
+        let next = trot.step(3, &st, &cmd_vel, -0.25);
+        // Swing-нога (leg 1) должна быть ВЫШЕ земли (z > robot_height)
+        assert!(
+            next[(2, 1)] > -0.25,
+            "swing leg 1 should lift above robot_height: {}",
+            next[(2, 1)]
+        );
+        // Stance-нога (leg 0) остаётся на уровне земли
+        assert!(
+            (next[(2, 0)] - (-0.25)).abs() < 0.01,
+            "stance leg should stay on ground: {}",
+            next[(2, 0)]
+        );
+    }
+
+    #[test]
+    fn test_trot_contacts_pattern() {
+        let st = default_stance();
+        let trot = TrotGaitController::new(0.04, 0.18, 0.02, false, st);
+        // Контактная матрица построена по столбцам (from_row_slice + column access):
+        // колонка 0 (tick 0-1) = [1,1,1,1] (двойная опора), колонка 1 (tick 2-10) = [1,0,0,1]
+        assert_eq!(trot.contacts(0), [1, 1, 1, 1]);
+        assert_eq!(trot.contacts(3), [1, 0, 0, 1]);
+    }
+
+    #[test]
+    fn test_trot_pid_reset_after_step() {
+        let st = default_stance();
+        let mut trot = TrotGaitController::new(0.04, 0.18, 0.02, true, st);
+        // PID начинает с last_time=-1 → первый run возвращает [0,0]
+        let out = trot.pid_controller().run(0.1, 0.0, 0.0);
+        assert_eq!(out, [0.0, 0.0]);
+        let out2 = trot.pid_controller().run(0.1, 0.0, 0.02);
+        // kp=0.15, error=-0.1 → P-член -0.015 (плюс I/D малые)
+        assert!(out2[0].abs() < 0.05, "PID out {}", out2[0]);
+    }
 }

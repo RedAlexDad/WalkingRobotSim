@@ -94,4 +94,52 @@ mod tests {
         // Z should move toward robot_height (-0.25)
         assert!(result.z > -0.5, "Z should increase: {}", result.z);
     }
+
+    #[test]
+    fn test_stance_position_delta_moves_backward_with_forward_cmd() {
+        // При команде вперёд (vx>0) нога в stance движется НАЗАД относительно тела
+        let controller = TrotStanceController::new(11, 2, 9, 0.02, 0.001);
+        let mut foot = SMatrix::<f64, 3, 4>::zeros();
+        for col in 0..4 {
+            foot[(0, col)] = 0.2;
+            foot[(2, col)] = -0.25;
+        }
+        let cmd_vel = Vector3::new(0.3, 0.0, 0.0);
+        let delta = controller.position_delta(0, &foot, &cmd_vel, -0.25);
+        // step_dist_x = 0.3 * (11/9) = 0.3667; velocity_x = -(0.3667/4)/(0.02*2) = -2.29
+        // delta_x = velocity_x * 0.02 = -0.0458
+        assert!(delta.x < 0.0, "delta_x should be negative, got {}", delta.x);
+        assert!((delta.x + 0.0458).abs() < 1e-3, "delta_x = {}", delta.x);
+    }
+
+    #[test]
+    fn test_stance_yaw_rotation_rotates_foot() {
+        // cmd_vel.z = yaw_rate → foot_location поворачивается вокруг Z
+        let controller = TrotStanceController::new(11, 2, 9, 0.02, 0.001);
+        let mut foot = SMatrix::<f64, 3, 4>::zeros();
+        // Нога строго по +X
+        foot[(0, 0)] = 0.2;
+        foot[(2, 0)] = -0.25;
+
+        let cmd_vel = Vector3::new(0.0, 0.0, 0.5); // yaw_rate 0.5
+        let result = controller.next_foot_location(0, &foot, &cmd_vel, -0.25);
+
+        // Поворот на -cmd_vel.z*dt = -0.01 рад: нога сдвигается по Y
+        // delta_pos.x = 0 (нет vx), поэтому y ≈ x*sin(-0.01) ≈ -0.002
+        assert!(result.y.abs() > 1e-4, "yaw should rotate foot y, got {}", result.y);
+        // x должен уменьшиться (поворот)
+        assert!((result.x - 0.2).abs() < 0.01, "x nearly unchanged: {}", result.x);
+    }
+
+    #[test]
+    fn test_stance_zero_velocity_z_stays() {
+        // При foot.z == robot_height z-компенсация = 0
+        let controller = TrotStanceController::new(11, 2, 9, 0.02, 0.001);
+        let mut foot = SMatrix::<f64, 3, 4>::zeros();
+        foot[(0, 0)] = 0.2;
+        foot[(2, 0)] = -0.25; // равно robot_height
+        let cmd_vel = Vector3::zeros();
+        let result = controller.next_foot_location(0, &foot, &cmd_vel, -0.25);
+        assert!((result.z - (-0.25)).abs() < 1e-10, "z should stay at robot_height: {}", result.z);
+    }
 }

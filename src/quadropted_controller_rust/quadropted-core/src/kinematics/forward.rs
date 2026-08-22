@@ -131,4 +131,52 @@ mod tests {
     fn test_leg_base_positions_panics_on_invalid() {
         leg_base_positions(4, 0.3762, 0.0935);
     }
+
+    #[test]
+    fn test_fk_bent_thigh_changes_z() {
+        // Согнутое колено (thigh>0) меняет Z стопы относительно выпрямленной ноги
+        let (bl, bw, l1, l2, l3, l4) = default_body();
+        let zero = forward_kinematics_all_legs(&[0.0; 12], bl, bw, l1, l2, l3, l4);
+
+        let mut angles = [0.0; 12];
+        angles[1] = 0.5; // thigh для ноги 0 (FR)
+        let result = forward_kinematics_all_legs(&angles, bl, bw, l1, l2, l3, l4);
+
+        // thigh меняет z (положительный угол здесь опускает стопу вниз)
+        assert!(
+            (result[0].z - zero[0].z).abs() > 0.01,
+            "bent thigh should change foot z: {} vs {}",
+            result[0].z, zero[0].z
+        );
+        assert!(result[0].z.is_finite());
+    }
+
+    #[test]
+    fn test_fk_symmetric_stance_is_mirrored() {
+        let (bl, bw, l1, l2, l3, l4) = default_body();
+        let angles = [0.0; 12];
+        let result = forward_kinematics_all_legs(&angles, bl, bw, l1, l2, l3, l4);
+        // FR и FL зеркальны по Y (база: FR=(+hl,-hw), FL=(+hl,+hw))
+        assert!((result[0].y + result[1].y).abs() < 1e-10, "FR y {} vs FL y {}", result[0].y, result[1].y);
+        // FR и RR зеркальны по Y тоже? Нет — FR y=-hw, RR y=-hw (обе слева по y).
+        // Проверим равенство y у ног одной стороны: FR и RR оба y=-hw
+        assert!((result[0].y - result[2].y).abs() < 1e-10, "FR y {} vs RR y {}", result[0].y, result[2].y);
+        // X-координаты FR/FL равны (обе спереди)
+        assert!((result[0].x - result[1].x).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_fk_hip_rotation_swings_foot() {
+        let (bl, bw, l1, l2, l3, l4) = default_body();
+        let mut angles = [0.0; 12];
+        // hip = 0.3 рад для ноги 0 → стопа сдвигается по Y
+        angles[0] = 0.3;
+        let result = forward_kinematics_all_legs(&angles, bl, bw, l1, l2, l3, l4);
+        let zero = forward_kinematics_all_legs(&[0.0; 12], bl, bw, l1, l2, l3, l4);
+        assert!(
+            (result[0].y - zero[0].y).abs() > 0.01,
+            "hip rotation should move foot y: {} vs {}",
+            result[0].y, zero[0].y
+        );
+    }
 }

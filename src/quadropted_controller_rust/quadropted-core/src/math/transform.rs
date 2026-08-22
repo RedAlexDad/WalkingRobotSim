@@ -68,4 +68,41 @@ mod tests {
         let product = m * inv;
         assert!((product - Matrix4::identity()).norm() < 1e-10);
     }
+
+    #[test]
+    fn test_homog_transform_inverse_with_rotation() {
+        // SE(3)-инверсия с не-identity поворотом: M * M^-1 = I
+        use crate::math::rotation::rotxyz;
+        let t = Vector3::new(0.5, -0.2, 0.1);
+        let r = rotxyz(0.3, -0.2, 0.7);
+        let m = homog_transform(&t, &r);
+        let inv = homog_transform_inverse(&m);
+        let product = m * inv;
+        assert!((product - Matrix4::identity()).norm() < 1e-10);
+    }
+
+    #[test]
+    fn test_homog_transform_inverse_translates_back() {
+        // Применение inv к точке должно вернуть её в исходную систему координат
+        use crate::math::rotation::rotxyz;
+        let t = Vector3::new(1.0, 2.0, 3.0);
+        let r = rotxyz(0.1, 0.2, 0.3);
+        let m = homog_transform(&t, &r);
+        let inv = homog_transform_inverse(&m);
+
+        // Точка в исходном пространстве
+        let p = Vector4::new(0.1, 0.2, 0.3, 1.0);
+        let transformed = m * p;
+        let roundtrip = inv * transformed;
+        assert!((roundtrip - p).norm() < 1e-10, "roundtrip must restore point");
+    }
+
+    #[test]
+    fn test_homog_transxyz_roundtrip() {
+        let m = homog_transxyz(1.0, -2.0, 0.5);
+        let inv = homog_transform_inverse(&m);
+        let p = Vector4::new(1.0, 1.0, 1.0, 1.0);
+        let back = inv * (m * p);
+        assert!((back - p).norm() < 1e-12);
+    }
 }

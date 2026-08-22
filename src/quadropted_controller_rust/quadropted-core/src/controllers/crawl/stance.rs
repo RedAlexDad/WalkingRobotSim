@@ -103,4 +103,72 @@ mod tests {
         // With sideways movement, Y should change
         assert!(result.y.abs() > 1e-10, "Y should change with sideways: {}", result.y);
     }
+
+    #[test]
+    fn test_crawl_stance_shift_factor_doubles_sideways_after_first_cycle() {
+        // first_cycle=true → shift_factor=1; first_cycle=false → shift_factor=2
+        // Боковое смещение должно удвоиться при повторном цикле (как C++ runtime:
+        // нода никогда не вызывает step(), поэтому first_cycle всегда true → factor=1)
+        let controller = CrawlStanceController::new(200, 27, 173, 0.02, 0.001, 0.02);
+        let mut foot = SMatrix::<f64, 3, 4>::zeros();
+        foot[(2, 0)] = -0.25;
+
+        let cmd_vel = Vector3::zeros();
+        let r_first = controller.next_foot_location(0, &foot, &cmd_vel, -0.25, true, true, true);
+        let r_second = controller.next_foot_location(0, &foot, &cmd_vel, -0.25, false, true, true);
+
+        // Оба отрицательны (движение влево: move_left=true)
+        assert!(r_first.y < 0.0, "first cycle move_left should be negative: {}", r_first.y);
+        // Второй цикл должен сместить сильнее по модулю (factor=2)
+        assert!(
+            r_second.y.abs() > r_first.y.abs(),
+            "second cycle should shift more: first={} second={}",
+            r_first.y, r_second.y
+        );
+    }
+
+    #[test]
+    fn test_crawl_stance_move_left_vs_right() {
+        let controller = CrawlStanceController::new(200, 27, 173, 0.02, 0.001, 0.02);
+        let mut foot = SMatrix::<f64, 3, 4>::zeros();
+        foot[(2, 0)] = -0.25;
+
+        let cmd_vel = Vector3::zeros();
+        let left = controller.next_foot_location(0, &foot, &cmd_vel, -0.25, true, true, true);
+        let right = controller.next_foot_location(0, &foot, &cmd_vel, -0.25, true, true, false);
+
+        // move_left → отрицательный y, move_right → положительный y
+        assert!(left.y < 0.0, "move_left: {}", left.y);
+        assert!(right.y > 0.0, "move_right: {}", right.y);
+        // По модулю равны
+        assert!((left.y.abs() - right.y.abs()).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_crawl_stance_z_tracking() {
+        let controller = CrawlStanceController::new(200, 27, 173, 0.02, 0.001, 0.02);
+        let mut foot = SMatrix::<f64, 3, 4>::zeros();
+        foot[(2, 0)] = -0.5; // ниже robot_height
+
+        let cmd_vel = Vector3::zeros();
+        let result = controller.next_foot_location(0, &foot, &cmd_vel, -0.25, true, false, false);
+
+        // z должен расти к robot_height (-0.25)
+        assert!(result.z > -0.5, "z should increase: {}", result.z);
+    }
+
+    #[test]
+    fn test_crawl_stance_forward_cmd_moves_foot_back() {
+        let controller = CrawlStanceController::new(200, 27, 173, 0.02, 0.001, 0.02);
+        let mut foot = SMatrix::<f64, 3, 4>::zeros();
+        foot[(0, 0)] = 0.2;
+        foot[(2, 0)] = -0.25;
+
+        let cmd_vel = Vector3::new(0.1, 0.0, 0.0);
+        let result = controller.next_foot_location(0, &foot, &cmd_vel, -0.25, true, false, false);
+
+        // step_dist_x = 0.1*(200/173)=0.1156; velocity_x=-(0.1156/3)/(0.02*27)=-0.0714
+        // delta_x = -0.00143 → нога чуть назад
+        assert!(result.x < 0.2, "foot should move back with forward cmd: {}", result.x);
+    }
 }

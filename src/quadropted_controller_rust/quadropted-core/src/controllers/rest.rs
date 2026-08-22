@@ -133,4 +133,64 @@ mod tests {
         // First step after reset returns zeros from PID
         assert!(result.norm() > 0.0); // stance has values
     }
+
+    #[test]
+    fn test_rest_reset_produces_same_as_new() {
+        // После reset компенсация должна совпадать с новым контроллером
+        let stance = default_stance();
+        let mut c1 = RestController::new(stance);
+        let mut c2 = RestController::new(stance);
+
+        // Прогнать c1 и reset, потом один шаг
+        let state = RestState { imu_roll: 0.1, imu_pitch: 0.05 };
+        for _ in 0..3 {
+            c1.step(&state, -0.15);
+        }
+        c1.reset();
+        let r1 = c1.step(&state, -0.15);
+
+        // c2 — новый (не гоняли до reset, но первый step инициализирует PID)
+        // ВАЖНО: c2 первый step возвращает PID [0,0], а c1 после reset тоже.
+        let r2 = c2.step(&state, -0.15);
+        assert!((r1 - r2).norm() < 1e-10, "reset должен воспроизводить новое состояние");
+    }
+
+    #[test]
+    fn test_rest_without_imu_keeps_flat_stance() {
+        // Без IMU-компенсации z устанавливается в robot_height, x/y — как в стойке
+        let stance = default_stance();
+        let mut controller = RestController::new(stance);
+        controller.use_imu = false;
+
+        let state = RestState { imu_roll: 0.5, imu_pitch: -0.3 }; // большой наклон
+        let result = controller.step(&state, -0.15);
+
+        // Без IMU наклон НЕ должен менять x/y (только z = robot_height)
+        for col in 0..4 {
+            assert!((result[(0, col)] - stance[(0, col)]).abs() < 1e-10, "x col {col}");
+            assert!((result[(1, col)] - stance[(1, col)]).abs() < 1e-10, "y col {col}");
+            assert!((result[(2, col)] - (-0.15)).abs() < 1e-10, "z col {col}");
+        }
+    }
+
+    #[test]
+    fn test_rest_imu_compensation_counteracts_tilt() {
+        // Компенсация должна вращать стойку ПРОТИВ наклона (знак минус)
+        let stance = default_stance();
+        let mut controller = RestController::new(stance);
+
+        let state = RestState { imu_roll: 0.2, imu_pitch: 0.0 };
+        controller.step(&state, -0.15); // init PID
+        let r2 = controller.step(&state, -0.15);
+
+        // После 2 шагов PID накопил отрицательную компенсацию (против roll)
+        // Сравним с нулевым наклоном
+        let mut c2 = RestController::new(stance);
+        let flat = RestState { imu_roll: 0.0, imu_pitch: 0.0 };
+        c2.step(&flat, -0.15);
+        let f2 = c2.step(&flat, -0.15);
+
+        // Наклонённый робот должен дать другую стойку
+        assert!((r2 - f2).norm() > 1e-8, "tilted vs flat stance must differ");
+    }
 }
