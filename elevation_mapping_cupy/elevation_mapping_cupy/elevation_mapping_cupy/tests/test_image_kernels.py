@@ -35,12 +35,12 @@ class TestImageKernels:
         z1 = xp.array([1.0], dtype=xp.float32)
 
         P = xp.array(
-            [500, 0, 0, 0, 0, 500, 0, 0, 0, 0, 1, 0], dtype=xp.float64
+            [500, 0, 0, 0, 0, 500, 0, 0, 0, 0, 1, 0], dtype=xp.float32
         )
         K = xp.array(
-            [500, 0, 320, 0, 500, 240, 0, 0, 1], dtype=xp.float64
+            [500, 0, 320, 0, 500, 240, 0, 0, 1], dtype=xp.float32
         )
-        D = xp.zeros(5, dtype=xp.float64)
+        D = xp.zeros(5, dtype=xp.float32)
         img_h = xp.array([480], dtype=xp.float32)
         img_w = xp.array([640], dtype=xp.float32)
         center = xp.array([0.0, 0.0, 0.0], dtype=xp.float32)
@@ -48,7 +48,7 @@ class TestImageKernels:
         uv = xp.zeros((2, w, h), dtype=xp.float32)
         valid = xp.zeros((1, w, h), dtype=xp.float32)
 
-        kernel(map_, x1, y1, z1, P, K, D, img_h, img_w, center, uv, valid)
+        kernel(map_, x1, y1, z1, P, K, D, img_h, img_w, center, uv, valid, size=w * h)
 
         assert uv.shape == (2, w, h)
         assert valid.shape == (1, w, h)
@@ -66,12 +66,12 @@ class TestImageKernels:
         y1 = xp.array([2.0], dtype=xp.float32)
         z1 = xp.array([1.0], dtype=xp.float32)
         P = xp.array(
-            [500, 0, 0, 0, 0, 500, 0, 0, 0, 0, 1, 0], dtype=xp.float64
+            [500, 0, 0, 0, 0, 500, 0, 0, 0, 0, 1, 0], dtype=xp.float32
         )
         K = xp.array(
-            [500, 0, 320, 0, 500, 240, 0, 0, 1], dtype=xp.float64
+            [500, 0, 320, 0, 500, 240, 0, 0, 1], dtype=xp.float32
         )
-        D = xp.array([0.1, -0.05, 0.001, 0.002, 0.01], dtype=xp.float64)
+        D = xp.array([0.1, -0.05, 0.001, 0.002, 0.01], dtype=xp.float32)
         img_h = xp.array([480], dtype=xp.float32)
         img_w = xp.array([640], dtype=xp.float32)
         center = xp.array([0.0, 0.0, 0.0], dtype=xp.float32)
@@ -79,7 +79,7 @@ class TestImageKernels:
         uv = xp.zeros((2, w, h), dtype=xp.float32)
         valid = xp.zeros((1, w, h), dtype=xp.float32)
 
-        kernel(map_, x1, y1, z1, P, K, D, img_h, img_w, center, uv, valid)
+        kernel(map_, x1, y1, z1, P, K, D, img_h, img_w, center, uv, valid, size=w * h)
         assert uv.shape == (2, w, h)
         assert valid.shape == (1, w, h)
 
@@ -113,6 +113,7 @@ class TestImageKernels:
             xp.array([img_h], dtype=xp.float32),
             xp.array([img_w], dtype=xp.float32),
             new_sem_map,
+            size=w * h,
         )
 
         assert new_sem_map.shape == (3, w, h)
@@ -147,6 +148,7 @@ class TestImageKernels:
             xp.array([img_h], dtype=xp.float32),
             xp.array([img_w], dtype=xp.float32),
             new_sem_map,
+            size=w * h,
         )
 
         expected = 1.0 * (1 - alpha) + 0.0 * alpha
@@ -175,6 +177,7 @@ class TestImageKernels:
             xp.array([8], dtype=xp.float32),
             xp.array([8], dtype=xp.float32),
             new_sem_map,
+            size=w * h,
         )
 
         assert xp.allclose(new_sem_map, sem_map)
@@ -211,6 +214,7 @@ class TestImageKernels:
             xp.array([img_h], dtype=xp.float32),
             xp.array([img_w], dtype=xp.float32),
             new_sem_map,
+            size=w * h,
         )
 
         assert new_sem_map.shape == (3, w, h)
@@ -232,6 +236,7 @@ class TestImageKernels:
             xp.array([8], dtype=xp.float32),
             xp.array([8], dtype=xp.float32),
             new_sem_map,
+            size=w * h,
         )
 
         assert xp.allclose(new_sem_map, sem_map)

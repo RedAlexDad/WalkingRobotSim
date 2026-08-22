@@ -127,3 +127,9 @@ compile_commands.json
 
 # Примеры НИРС (большие PDF, не часть кода)
 docs/NIRS/examples/.last_elevation_build_commit
+
+# Нативная colcon-сборка (не в Docker)
+colcon_ws/
+
+# Хеш последней сборки elevation
+.last_elevation_build_commit

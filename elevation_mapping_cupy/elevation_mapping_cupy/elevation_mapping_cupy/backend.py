@@ -11,6 +11,12 @@ scipy_ndimage = None
 def _detect_cuda():
     global GPU_AVAILABLE, cp, xp, scipy_ndimage
 
+    # Сброс на дефолт — _detect_cuda может вызываться повторно в тестах
+    GPU_AVAILABLE = False
+    cp = None
+    xp = np
+    scipy_ndimage = None
+
     cp_spec = importlib.util.find_spec("cupy")
     if cp_spec is None:
         import scipy.ndimage

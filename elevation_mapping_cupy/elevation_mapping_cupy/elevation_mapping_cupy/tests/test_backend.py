@@ -1,4 +1,5 @@
 import importlib
+import builtins
 
 import numpy as np
 import pytest
@@ -51,27 +52,56 @@ def test_get_stream_with_gpu():
 
 
 def test_detect_cuda_no_cupy(monkeypatch):
+    import sys
+
     orig_find_spec = importlib.util.find_spec
-    monkeypatch.setattr(importlib.util, "find_spec", lambda name: None if name == "cupy" else orig_find_spec(name))
+    cupy_keys = [k for k in sys.modules if k == "cupy" or k.startswith("cupy")]
+
+    def fake_find_spec(name, *args, **kwargs):
+        if name == "cupy":
+            return None
+        return orig_find_spec(name, *args, **kwargs)
+
+    monkeypatch.setattr(importlib.util, "find_spec", fake_find_spec)
+    # Убираем cupy* из sys.modules, чтобы find_spec(None) дал сбой
+    for k in cupy_keys:
+        sys.modules.pop(k, None)
     backend._detect_cuda()
     assert backend.GPU_AVAILABLE is False
     assert backend.cp is None
     assert backend.xp is np
+    # Восстановить: снять monkeypatch, переимпортировать cupy заново
+    monkeypatch.undo()
+    for k in cupy_keys:
+        sys.modules.pop(k, None)
     backend._detect_cuda()
+    assert backend.GPU_AVAILABLE is True
 
 
 def test_detect_cuda_cupy_import_error(monkeypatch):
     real_spec = importlib.util.find_spec("cupy")
     if real_spec is not None:
+        # Python 3.14: monkeypatch builtins.__import__ вызывает рекурсию,
+        # т.к. внутренние импорты тоже идут через заменённую функцию.
+        # Сохраняем оригинальный __import__ и перехватываем только "cupy".
+        import sys
+
+        orig_import = builtins.__import__
+        cupy_keys = [k for k in sys.modules if k == "cupy" or k.startswith("cupy")]
+        for k in cupy_keys:
+            sys.modules.pop(k, None)
 
         def failing_import(name, *args, **kwargs):
             if name == "cupy":
                 raise ImportError("Simulated import error")
-            return __import__(name, *args, **kwargs)
-
-        import builtins
+            return orig_import(name, *args, **kwargs)
 
         monkeypatch.setattr(builtins, "__import__", failing_import)
         backend._detect_cuda()
         assert backend.GPU_AVAILABLE is False
+        # Восстановить: снять monkeypatch, переимпортировать cupy заново
+        monkeypatch.undo()
+        for k in cupy_keys:
+            sys.modules.pop(k, None)
         backend._detect_cuda()
+        assert backend.GPU_AVAILABLE is True

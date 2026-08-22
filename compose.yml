@@ -106,6 +106,7 @@ services:
     build:
       context: ./elevation_mapping_cupy
       dockerfile: docker/Dockerfile.x64
+      network: host
     volumes: *el_volumes
     deploy:
       resources:
@@ -128,6 +129,7 @@ services:
     build:
       context: ./elevation_mapping_cupy
       dockerfile: docker/Dockerfile.cpu
+      network: host
     volumes: *el_volumes
     command: *el_command
 

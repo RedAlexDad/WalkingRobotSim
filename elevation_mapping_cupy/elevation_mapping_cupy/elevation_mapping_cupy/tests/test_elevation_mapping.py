@@ -13,7 +13,7 @@ _CONFIG_DIR = _TEST_DIR.parent.parent / "config" / "core"
 
 def encode_max(maxim, index):
     maxim, index = xp.asarray(maxim, dtype=xp.float32), xp.asarray(index, dtype=xp.uint32)
-    maxim = maxim.astype(xp.float16)
+    maxim = maxim.astype(xp.float32)
     maxim = maxim.view(xp.uint16)
     maxim = maxim.astype(xp.uint32)
     index = index.astype(xp.uint32)
@@ -57,7 +57,7 @@ class TestElevationMap:
     def test_input(self, elmap_ex):
         channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
         if "class_max" in elmap_ex.param.fusion_algorithms:
-            val = xp.random.rand(100000, len(channels)).astype(xp.float16)
+            val = xp.random.rand(100000, len(channels)).astype(xp.float32)
             ind = xp.random.randint(0, 2, size=(100000, len(channels))).astype(xp.float32)
             points = encode_max(val, ind)
         else:
@@ -125,7 +125,9 @@ class TestElevationMap:
     def test_get_center_position(self, elmap_ex):
         pos = np.zeros((1, 3), dtype=np.float64)
         elmap_ex.get_center_position(pos)
-        expected = np.asarray(elmap_ex.center)
+        # cupy 14: нельзя np.asarray(cupy_array) — нужен явный .get()
+        center_np = elmap_ex.center.get() if hasattr(elmap_ex.center, "get") else np.asarray(elmap_ex.center)
+        expected = np.asarray(center_np)
         assert np.allclose(pos[0], expected)
 
     def test_get_additive_mean_error(self, elmap_ex):
@@ -283,7 +285,7 @@ class TestElevationMap:
     def test_input_pointcloud_with_nan_rows(self, elmap_ex):
         channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
         if "class_max" in elmap_ex.param.fusion_algorithms:
-            val = xp.random.rand(100000, len(channels)).astype(xp.float16)
+            val = xp.random.rand(100000, len(channels)).astype(xp.float32)
             ind = xp.random.randint(0, 2, size=(100000, len(channels))).astype(xp.float32)
             points = encode_max(val, ind)
         else:
@@ -296,7 +298,7 @@ class TestElevationMap:
     def test_input_pointcloud_with_inf_values(self, elmap_ex):
         channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
         if "class_max" in elmap_ex.param.fusion_algorithms:
-            val = xp.random.rand(100000, len(channels)).astype(xp.float16)
+            val = xp.random.rand(100000, len(channels)).astype(xp.float32)
             ind = xp.random.randint(0, 2, size=(100000, len(channels))).astype(xp.float32)
             points = encode_max(val, ind)
         else:
@@ -310,7 +312,7 @@ class TestElevationMap:
     def test_input_pointcloud_all_nan(self, elmap_ex):
         channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
         if "class_max" in elmap_ex.param.fusion_algorithms:
-            val = xp.full((1000, len(channels)), xp.nan, dtype=xp.float16)
+            val = xp.full((1000, len(channels)), xp.nan, dtype=xp.float32)
             ind = xp.random.randint(0, 2, size=(1000, len(channels))).astype(xp.float32)
             points = encode_max(val, ind)
         else:
@@ -322,7 +324,7 @@ class TestElevationMap:
     def test_full_pipeline_input_to_publish(self, elmap_ex):
         channels = ["x", "y", "z"] + elmap_ex.param.additional_layers
         if "class_max" in elmap_ex.param.fusion_algorithms:
-            val = xp.random.rand(50000, len(channels)).astype(xp.float16)
+            val = xp.random.rand(50000, len(channels)).astype(xp.float32)
             ind = xp.random.randint(0, 2, size=(50000, len(channels))).astype(xp.float32)
             points = encode_max(val, ind)
         else:
@@ -341,7 +343,7 @@ class TestElevationMap:
         R = xp.eye(3, dtype=elmap_ex.param.data_type)
         for i in range(5):
             if "class_max" in elmap_ex.param.fusion_algorithms:
-                val = xp.random.rand(20000, len(channels)).astype(xp.float16)
+                val = xp.random.rand(20000, len(channels)).astype(xp.float32)
                 ind = xp.random.randint(0, 2, size=(20000, len(channels))).astype(xp.float32)
                 points = encode_max(val, ind)
             else:
@@ -358,7 +360,7 @@ class TestElevationMap:
                        [0, 0, 1]], dtype=elmap_ex.param.data_type)
         elmap_ex.move_to(pos, R)
         if "class_max" in elmap_ex.param.fusion_algorithms:
-            val = xp.random.rand(50000, len(channels)).astype(xp.float16)
+            val = xp.random.rand(50000, len(channels)).astype(xp.float32)
             ind = xp.random.randint(0, 2, size=(50000, len(channels))).astype(xp.float32)
             points = encode_max(val, ind)
         else:
@@ -371,7 +373,7 @@ class TestElevationMap:
         R = xp.eye(3, dtype=elmap_ex.param.data_type)
         for _ in range(3):
             if "class_max" in elmap_ex.param.fusion_algorithms:
-                val = xp.random.rand(20000, len(channels)).astype(xp.float16)
+                val = xp.random.rand(20000, len(channels)).astype(xp.float32)
                 ind = xp.random.randint(0, 2, size=(20000, len(channels))).astype(xp.float32)
                 points = encode_max(val, ind)
             else:
@@ -385,7 +387,7 @@ class TestElevationMap:
     def test_semantic_layers_persist_after_input(self, elmap_ex, add_lay):
         channels = ["x", "y", "z"] + add_lay
         if "class_max" in elmap_ex.param.fusion_algorithms:
-            val = xp.random.rand(50000, len(channels)).astype(xp.float16)
+            val = xp.random.rand(50000, len(channels)).astype(xp.float32)
             ind = xp.random.randint(0, 2, size=(50000, len(channels))).astype(xp.float32)
             points = encode_max(val, ind)
         else:
@@ -435,7 +437,7 @@ class TestElevationMap:
         R = xp.eye(3, dtype=elmap_ex.param.data_type)
         t = xp.zeros(3, dtype=elmap_ex.param.data_type)
         if "class_max" in elmap_ex.param.fusion_algorithms:
-            val = xp.random.rand(30000, len(channels)).astype(xp.float16)
+            val = xp.random.rand(30000, len(channels)).astype(xp.float32)
             ind = xp.random.randint(0, 2, size=(30000, len(channels))).astype(xp.float32)
             points = encode_max(val, ind)
         else:
