@@ -24,6 +24,7 @@
 12. [Проблема 10: SLAM-карта не сохранялась](#12-проблема-10-slam-карта-не-сохранялась)
 13. [Проблема 11: Зомби-процессы и двойные симуляции](#13-проблема-11-зомби-процессы-и-двойные-симуляции)
 14. [Проблема 12: Высота робота в RViz (z=0)](#14-проблема-12-высота-робота-в-rviz-z0)
+14b. [Проблема 13: Ложные FAIL в тесте (устаревший ros2 daemon)](#14b-проблема-13-ложные-fail-в-интеграционном-тесте-устаревший-ros2-daemon)
 15. [Сводная таблица проблем](#15-сводная-таблица-проблем)
 16. [Коммиты сессии](#16-коммиты-сессии)
 17. [Заключение](#17-заключение)
@@ -312,9 +313,35 @@ ros2 launch gazebo_sim launch.launch.py use_sim_time:=true gui:=true
 
 ---
 
-## 15. Сводная таблица проблем
+## 14b. Проблема 13: Ложные FAIL в интеграционном тесте (устаревший ros2 daemon)
 
-| № | Проблема | Причина | Решение | Статус |
+### Симптомы
+- Тест показал **9 FAIL / 6 WARN** при полностью рабочей симуляции
+- `ros2 topic echo --once` и обычный echo падали с traceback:
+  ```
+  xmlrpc.client.ResponseError: unknown tag 'rclpy.endpoint_info.TopicEndpointInfo'
+  ```
+  в `choose_qos()` → `get_publishers_info_by_topic()`
+- При этом `ros2 topic hz` работал (50 Гц), топики публиковались, подписки существовали
+- `ros2 param get` показывал `Parameter not set` для параметров, реально переданных через params-file
+
+### Причина
+Устаревший `ros2 daemon` (фоновый процесс discovery) кэшировал endpoint-info в формате, несовместимом с текущей версией rclpy. Команды CLI, требующие QoS-интроспекции (`topic echo`, `topic info -v`, `param get`), обращались к daemon по XMLRPC и падали на сериализации типа `TopicEndpointInfo`.
+
+### Решение
+```bash
+ros2 daemon stop   # daemon перезапустится автоматически при следующем вызове CLI
+```
+- В `scripts/test_sim_integration.sh` добавлен `ros2 daemon stop` один раз перед проверками
+- После рестарта: тест **42 ✅ | 0 ❌ | 1 ⚠️** (было 27/9/6)
+- Оставшийся WARN «карта не расширилась» — индикатор (робот прошёл < клетки), не ошибка
+
+### Вывод
+Перед любым тестом, использующим `ros2 topic echo/--once/param`, обязательно `ros2 daemon stop` — это устраняет ложные ошибки XMLRPC без перезапуска симуляции.
+
+---
+
+## 15. Сводная таблица проблем
 |---|----------|---------|---------|--------|
 | 1 | Docker registry/pypi таймаут | VPN PPPoE + IPv6 | `network: host`, `mirror.gcr.io`, MTU 1400 | ✅ |
 | 2 | nvidia-container-toolkit нет | пакет отсутствовал | apt установка + runtime configure | ✅ |
@@ -328,6 +355,7 @@ ros2 launch gazebo_sim launch.launch.py use_sim_time:=true gui:=true
 | 10 | SLAM-карта не сохраняется | нет /root/ws/maps | volume ./data/gazebo/maps | ✅ |
 | 11 | Зомби/двойные симуляции | накопление процессов | pkill + docker restart | ✅ |
 | 12 | Высота робота z=0 | 2D-одометрия | Draw Behind; полное — сложно | ⚠️ |
+| 13 | Ложные FAIL в тесте — устаревший `ros2 daemon` | daemon кэширует endpoint-info в несовместимом формате → `ros2 topic echo/--once` падает `unknown tag 'TopicEndpointInfo'` | `ros2 daemon stop` в начале теста | ✅ |
 
 ---
 
@@ -339,6 +367,8 @@ ros2 launch gazebo_sim launch.launch.py use_sim_time:=true gui:=true
 | `db7f9a0` | Модульные тесты core до 115, покрытие 97.40% |
 | `e93fe5f` | Нативный запуск elevation (Lyrical + Py3.14 + CUDA13), 473 теста |
 | `e64e716` | Фикс контроллера ros2_control, meshes rviz, SLAM maps |
+| `d3b4999` | Отчёт по диагностике проблем |
+| `(далее)` | Фикс ros2 daemon в тесте + правки отчёта |
 
 ---
 

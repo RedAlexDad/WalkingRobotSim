@@ -36,6 +36,13 @@ fail() { FAIL=$((FAIL+1)); echo -e "${RED}❌ $1${NC}"; }
 warn() { WARN=$((WARN+1)); echo -e "${YELLOW}⚠️  $1${NC}"; }
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 
+# Сбрасываем ROS 2 daemon: устаревший daemon кэширует endpoint-info в
+# несовместимом формате → `ros2 topic echo/--once` падает с
+# "unknown tag 'rclpy.endpoint_info.TopicEndpointInfo'" и даёт ложные FAIL.
+# Выполняем один раз перед проверками (не в каждом run(), чтобы не тормозить).
+docker exec "$CONTAINER" bash -c \
+    "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && ros2 daemon stop >/dev/null 2>&1" 2>&1 || true
+
 # Выполнить команду внутри контейнера с ROS-окружением
 run() {
     docker exec "$CONTAINER" bash -c \
