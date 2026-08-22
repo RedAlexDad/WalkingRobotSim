@@ -122,9 +122,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("✅ Subscription: foot_contact");
 
     // Subscription: IMU — yaw heading + angular velocity
+    // ВАЖНО: _imu_sub должен жить на уровне main (как остальные подписки).
+    // Если объявить его ВНУТРИ if-блока — он дропнется при выходе из блока,
+    // и rclrs уничтожит подписку сразу после создания (graph её не увидит).
+    let imu_sub;
     if has_imu_heading {
         let imu_state = shared.clone();
-        let _imu_sub = node.create_subscription(
+        imu_sub = node.create_subscription(
             "imu",
             move |msg: sensor_msgs_rs::Imu| {
                 let mut s = imu_state.lock().unwrap();
@@ -142,6 +146,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
         )?;
         println!("✅ Subscription: imu");
+    } else {
+        imu_sub = node.create_subscription("imu", |_msg: sensor_msgs_rs::Imu| {})?;
     }
 
     // Subscription: commanded velocity (fallback when no contact data)
