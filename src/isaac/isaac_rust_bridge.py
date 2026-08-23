@@ -111,13 +111,14 @@ FOOT_NAMES = ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
 class IsaacBridge:
     """Мост Rust-контроллер → Isaac Sim (ассет NVIDIA)."""
 
-    def __init__(self, ns: str = "/robot1", rate: int = 100):
+    def __init__(self, ns: str = "/robot1", rate: int = 100, calibrate: bool = False):
         import rclpy
         rclpy.init()
         self.node = rclpy.create_node(f"{ns.strip('/')}_isaac_rust_bridge", namespace=ns)
         self.ns = ns
         self.rate = rate
         self.qos = 10
+        self.calibrate = calibrate
 
         # --- Подписки ---
         from std_msgs.msg import Float64MultiArray
@@ -178,9 +179,39 @@ class IsaacBridge:
         if self.articulation is None or not self.ready:
             return
         try:
+            cmd = self.last_cmd.copy()
+            # Калибровка конвенции: команды контроллера (thigh≈+1.57=90°, calf=0)
+            # не совпадают с ассетом (thigh=0.67, calf=-1.3). Сдвигаем углы в
+            # командном порядке (FR,FL,RR,RL × hip,thigh,calf):
+            #   thigh' = thigh - 0.897  (1.567→0.67)
+            #   calf'  = calf  - 1.3    (0→-1.3)
+            if self.calibrate:
+                for i in (1, 4, 7, 10):  # thigh
+                    cmd[i] -= 0.897
+                for i in (2, 5, 8, 11):  # calf
+                    cmd[i] -= 1.3
+                log.debug(TAG, f"[calib] cmd после сдвига: {cmd.round(3)}")
             targets = np.zeros(12, dtype=np.float64)
-            targets[CMD_TO_DOF_REORDER] = self.last_cmd
+            targets[CMD_TO_DOF_REORDER] = cmd
             self.articulation.set_dof_position_targets(targets.reshape(1, -1))
+
+            # Диагностика: каждый 50-й вызов — применяемые targets в ДОF-порядке
+            # (FL,FR,RL,RR × hip/thigh/calf), в градусах и радианах
+            if not hasattr(self, "_apply_diag"):
+                self._apply_diag = 0
+            self._apply_diag += 1
+            if self._apply_diag % 50 == 0:
+                deg = np.degrees(targets)
+                log.info(
+                    TAG,
+                    "[APPLY] DOF-order (FL FR RL RR | hip thigh calf):\n"
+                    f"  rad hip: [{targets[0]:+.3f} {targets[1]:+.3f} {targets[2]:+.3f} {targets[3]:+.3f}]\n"
+                    f"  rad thg: [{targets[4]:+.3f} {targets[5]:+.3f} {targets[6]:+.3f} {targets[7]:+.3f}]\n"
+                    f"  rad clf: [{targets[8]:+.3f} {targets[9]:+.3f} {targets[10]:+.3f} {targets[11]:+.3f}]\n"
+                    f"  deg hip: [{deg[0]:+.1f} {deg[1]:+.1f} {deg[2]:+.1f} {deg[3]:+.1f}]\n"
+                    f"  deg thg: [{deg[4]:+.1f} {deg[5]:+.1f} {deg[6]:+.1f} {deg[7]:+.1f}]\n"
+                    f"  deg clf: [{deg[8]:+.1f} {deg[9]:+.1f} {deg[10]:+.1f} {deg[11]:+.1f}]",
+                )
         except Exception as e:
             log.warn(TAG, f"set_dof_position_targets failed: {e}")
 
@@ -226,21 +257,29 @@ class IsaacBridge:
             log.debug(TAG, "FACT " + fmt_joints(fact_cmd_order, CMD_JOINT_NAMES, tag="fact").split("\n", 1)[0])
             log.debug(TAG, f"[joint_err] max_abs={np.abs(err).max():.3f}  mean_abs={np.abs(err).mean():.3f}")
 
-            # Периодически (раз в ~2.5с) — hip-углы в DOF-порядке (FL,FR,RL,RR),
-            # чтобы видеть крен/равновесие
+            # Периодически (раз в ~2.5с) — полное состояние ног в DOF-порядке
+            # (FL,FR,RL,RR × hip/thigh/calf), факт и команда в градусах
             if not hasattr(self, "_hip_diag"):
                 self._hip_diag = 0
             self._hip_diag += 1
             if self._hip_diag % 100 == 0:
-                hip_dof = dof_pos[0:4]  # FL,FR,RL,RR hip
-                hip_cmd = np.zeros(12)
-                hip_cmd[CMD_TO_DOF_REORDER] = self.last_cmd
-                hip_cmd = hip_cmd[0:4]
+                cmd_dof = np.zeros(12)
+                cmd_dof[CMD_TO_DOF_REORDER] = self.last_cmd
+                hip_f = np.degrees(dof_pos[0:4])
+                thg_f = np.degrees(dof_pos[4:8])
+                clf_f = np.degrees(dof_pos[8:12])
+                hip_c = np.degrees(cmd_dof[0:4])
+                thg_c = np.degrees(cmd_dof[4:8])
+                clf_c = np.degrees(cmd_dof[8:12])
                 log.info(
                     TAG,
-                    f"[HIP] cmd=[{hip_cmd[0]:+.3f} {hip_cmd[1]:+.3f} {hip_cmd[2]:+.3f} {hip_cmd[3]:+.3f}] "
-                    f"fact=[{hip_dof[0]:+.3f} {hip_dof[1]:+.3f} {hip_dof[2]:+.3f} {hip_dof[3]:+.3f}] "
-                    f"(FL FR RL RR)",
+                    "[LEGS] (FL FR RL RR | hip thigh calf) deg:\n"
+                    f"  CMD hip [{hip_c[0]:+6.1f} {hip_c[1]:+6.1f} {hip_c[2]:+6.1f} {hip_c[3]:+6.1f}] "
+                    f"FACT [{hip_f[0]:+6.1f} {hip_f[1]:+6.1f} {hip_f[2]:+6.1f} {hip_f[3]:+6.1f}]\n"
+                    f"  CMD thg [{thg_c[0]:+6.1f} {thg_c[1]:+6.1f} {thg_c[2]:+6.1f} {thg_c[3]:+6.1f}] "
+                    f"FACT [{thg_f[0]:+6.1f} {thg_f[1]:+6.1f} {thg_f[2]:+6.1f} {thg_f[3]:+6.1f}]\n"
+                    f"  CMD clf [{clf_c[0]:+6.1f} {clf_c[1]:+6.1f} {clf_c[2]:+6.1f} {clf_c[3]:+6.1f}] "
+                    f"FACT [{clf_f[0]:+6.1f} {clf_f[1]:+6.1f} {clf_f[2]:+6.1f} {clf_f[3]:+6.1f}]",
                 )
 
             # Периодически — высоты стоп и тела, чтобы видеть «проседание»
@@ -372,6 +411,9 @@ def main() -> int:
     parser.add_argument("--debug", action="store_true", help="verbose debug output")
     parser.add_argument("--hold-stance", action="store_true",
                         help="держать STAND-позу [0,0.67,-1.3], не применять команды контроллера")
+    parser.add_argument("--calibrate", action="store_true",
+                        help="применить сдвиг углов контроллера в конвенцию ассета "
+                             "(thigh-=0.897, calf-=1.3) — экспериментально")
     args = parser.parse_args()
 
     setup_debug()
@@ -447,7 +489,7 @@ def main() -> int:
         return 1
     log.info(TAG, f"articulation found: {art_path}")
 
-    bridge = IsaacBridge(ns=args.ns, rate=args.sim_rate)
+    bridge = IsaacBridge(ns=args.ns, rate=args.sim_rate, calibrate=args.calibrate)
     articulation = Articulation(art_path)
     bridge.attach(articulation)
     log.info(TAG, f"dof_names={articulation.dof_names}")
