@@ -133,6 +133,8 @@ colcon_ws/
 
 # Артефакты импорта URDF в Isaac Sim (генерируются URDFImporter)
 src/go2_description/urdf/go2_description*/
+src/go2_description/urdf/go2_gazebo/
+src/go2_description/urdf/go2_gazebo_*
 
 # Хеш последней сборки elevation
 .last_elevation_build_commit

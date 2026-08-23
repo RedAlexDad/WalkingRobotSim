@@ -19,6 +19,16 @@ set -euo pipefail
 # Принудительно C-локаль: дробные числа через точку (иначе awk не сработает)
 export LC_ALL=C
 
+# Функция времени для лога: [ЧЧ:ММ:СС.ммм]
+ts() {
+    local ns
+    ns=$(date +%H:%M:%S.%N)
+    echo "${ns%??????}"   # обрезать до 3 знаков миллисекунд
+}
+log() {
+    echo "[$(ts)] [run_bridge] $*"
+}
+
 # Минимальная требуемая доступная RAM (ГБ). Можно переопределить --min-ram.
 MIN_RAM_GB=12
 for arg in "$@"; do
@@ -42,12 +52,12 @@ available_mem_gb() {
 }
 
 RAM_GB=$(available_mem_gb)
-echo "[run_bridge] доступно RAM: ${RAM_GB} GB (нужно >= ${MIN_RAM_GB} GB)"
+log "доступно RAM: ${RAM_GB} GB (нужно >= ${MIN_RAM_GB} GB)"
 if [ "${RAM_GB}" != "inf" ]; then
     if awk -v r="${RAM_GB}" -v m="${MIN_RAM_GB}" 'BEGIN { exit !(r < m) }'; then
-        echo "[run_bridge] ERROR: памяти недостаточно (${RAM_GB} GB < ${MIN_RAM_GB} GB)." >&2
-        echo "[run_bridge] Закройте GUI-приложения (браузер/telegram/zed) и" >&2
-        echo "[run_bridge] контейнеры (docker stop elevation_mapping walking_robot_sim)." >&2
+        log "ERROR: памяти недостаточно (${RAM_GB} GB < ${MIN_RAM_GB} GB)." >&2
+        log "Закройте GUI-приложения (браузер/telegram/zed) и" >&2
+        log "контейнеры (docker stop elevation_mapping walking_robot_sim)." >&2
         exit 1
     fi
 fi
@@ -59,7 +69,7 @@ BRIDGE="${SCRIPT_DIR}/isaac_bridge.py"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 if [ ! -d "${ISAAC_JAZZY}/rclpy" ]; then
-    echo "[run_bridge] ERROR: не найден rclpy Isaac Sim: ${ISAAC_JAZZY}/rclpy" >&2
+    log "ERROR: не найден rclpy Isaac Sim: ${ISAAC_JAZZY}/rclpy" >&2
     exit 1
 fi
 
@@ -74,5 +84,5 @@ export ROS_DOMAIN_ID="0"
 export CYCLONEDDS_URI="file://${HOME}/.cyclonedds.xml"
 export PYTHONUNBUFFERED="1"
 
-echo "[run_bridge] PYTHONPATH=${PYTHONPATH}"
+log "PYTHONPATH=${PYTHONPATH}"
 exec "${ISAAC_VENV}/bin/python" -u "${BRIDGE}" "$@"

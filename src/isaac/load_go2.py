@@ -25,16 +25,20 @@ TAG = "load_go2"
 
 # Корень проекта (для поиска URDF и meshes)
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-GO2_URDF = os.path.join(PROJECT_ROOT, "src", "go2_description", "urdf", "go2_description.urdf")
+# Используем xacro-URDF (как в Gazebo) — joint имена и лимиты совпадают
+# с ros_control.yaml: rf/lf/rh/lh × hip/upper_leg/lower_leg.
+# SolidWorks go2_description.urdf имеет ДРУГИЕ имена (FR_thigh_joint) и
+# лимит calf [-2.72,-0.84], из-за чего робот падал в Isaac.
+GO2_URDF = os.path.join(PROJECT_ROOT, "src", "go2_description", "urdf", "go2_gazebo.urdf")
 GO2_DESC = os.path.join(PROJECT_ROOT, "src", "go2_description")
 
 # 12 управляемых joint в порядке команд контроллера (совпадает с
-# robot_control.yaml): FR, FL, RR, RL × (hip, thigh, calf)
+# ros_control.yaml): rf=FR, lf=FL, rh=RR, lh=RL × (hip, upper_leg, lower_leg)
 JOINT_ORDER = [
-    "FR_hip_joint", "FR_thigh_joint", "FR_calf_joint",
-    "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint",
-    "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint",
-    "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint",
+    "rf_hip_joint", "rf_upper_leg_joint", "rf_lower_leg_joint",
+    "lf_hip_joint", "lf_upper_leg_joint", "lf_lower_leg_joint",
+    "rh_hip_joint", "rh_upper_leg_joint", "rh_lower_leg_joint",
+    "lh_hip_joint", "lh_upper_leg_joint", "lh_lower_leg_joint",
 ]
 
 

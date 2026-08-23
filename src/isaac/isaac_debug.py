@@ -19,6 +19,7 @@ isaac_debug.py — единая система отладки для скрип�
     print(freq.get("main_loop"))     # "12.3 Hz"
 """
 
+import math
 import os
 import sys
 import time
@@ -55,10 +56,18 @@ class _Logger:
         if "--debug" in sys.argv:
             self.set_level("debug")
 
+    def _timestamp(self) -> str:
+        """Время в формате ЧЧ:ММ:СС.ммм + наработка процесса (s)."""
+        now = time.time()
+        local = time.strftime("%H:%M:%S", time.localtime(now))
+        msec = int((now - int(now)) * 1000)
+        return f"{local}.{msec:03d}"
+
     def _emit(self, level: str, tag: str, msg: str) -> None:
         if self.LEVELS.get(level, 20) < self.level:
             return
-        line = f"[{tag}] {msg}"
+        ts = self._timestamp()
+        line = f"[{ts}] [{tag}] {msg}"
         if self._color_enabled:
             c = self._COLORS.get(level, "")
             line = f"{c}[{level.upper()}]{self._COLORS['reset']} {line}"
@@ -93,6 +102,43 @@ def warn(tag: str, msg: str) -> None:
 
 def error(tag: str, msg: str) -> None:
     log.error(tag, msg)
+
+
+def quat_to_rpy_deg(q) -> tuple[float, float, float]:
+    """Кватернион (w,x,y,z) -> (roll, pitch, yaw) в градусах."""
+    w, x, y, z = q[0], q[1], q[2], q[3]
+    # roll (вокруг X)
+    sinr = 2.0 * (w * x + y * z)
+    cosr = 1.0 - 2.0 * (x * x + y * y)
+    roll = math.atan2(sinr, cosr)
+    # pitch (вокруг Y)
+    sinp = 2.0 * (w * y - z * x)
+    pitch = math.asin(max(-1.0, min(1.0, sinp)))
+    # yaw (вокруг Z)
+    siny = 2.0 * (w * z + x * y)
+    cosy = 1.0 - 2.0 * (y * y + z * z)
+    yaw = math.atan2(siny, cosy)
+    return (math.degrees(roll), math.degrees(pitch), math.degrees(yaw))
+
+
+def fmt_pose(pos, quat, tag: str = "pose") -> str:
+    """Формат: [tag] pos=[x y z] rpy=[roll pitch yaw]° quat=[w x y z]"""
+    r, p, y = quat_to_rpy_deg(quat)
+    return (f"[{tag}] pos=[{pos[0]:+.3f} {pos[1]:+.3f} {pos[2]:+.3f}] "
+            f"rpy=[{r:+.1f} {p:+.1f} {y:+.1f}]° quat=[{quat[0]:+.3f} {quat[1]:+.3f} "
+            f"{quat[2]:+.3f} {quat[3]:+.3f}]")
+
+
+def fmt_joints(angles, names, tag: str = "joints") -> str:
+    """Формат: [tag] name=v name=v ... (по 6 на строку)"""
+    parts = []
+    for i, n in enumerate(names):
+        v = angles[i]
+        parts.append(f"{n}={v:+.3f}")
+    lines = []
+    for i in range(0, len(parts), 6):
+        lines.append(f"[{tag}] " + "  ".join(parts[i:i+6]))
+    return "\n".join(lines)
 
 
 class _Freq:
