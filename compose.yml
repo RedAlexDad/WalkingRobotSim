@@ -106,6 +106,10 @@ services:
       - ./data/gazebo/maps:/root/ws/maps
       - project_src:/root/ws/src/
     restart: unless-stopped
+    # Лимит памяти: симуляция (Gazebo + контроллер) не должна забирать всё RAM
+    mem_limit: 6g
+    memswap_limit: 8g
+    pids_limit: 512
 
   elevation_mapping:
     <<: *basic
@@ -121,6 +125,10 @@ services:
       dockerfile: docker/Dockerfile.x64
       network: host
     volumes: *el_volumes
+    # Лимит памяти: elevation (CuPy + GPU) не должна забирать всё RAM
+    mem_limit: 10g
+    memswap_limit: 12g
+    pids_limit: 256
     deploy:
       resources:
         reservations:
@@ -144,6 +152,9 @@ services:
       dockerfile: docker/Dockerfile.cpu
       network: host
     volumes: *el_volumes
+    mem_limit: 8g
+    memswap_limit: 10g
+    pids_limit: 256
     command: *el_command
 
 volumes:

@@ -9,9 +9,48 @@
 #
 # Использование:
 #   source ~/isaacsim-venv/bin/activate
-#   bash src/isaac/run_bridge.sh [--headless] [--ns /robot1]
+#   bash src/isaac/run_bridge.sh [--headless] [--ns /robot1] [--min-ram 12]
+#
+# Защита: проверяет доступную RAM (по умолчанию >= 12 GB) перед запуском
+# Isaac Sim — иначе тяжёлый процесс вызывает OOM и вешает всю систему.
 
 set -euo pipefail
+
+# Принудительно C-локаль: дробные числа через точку (иначе awk не сработает)
+export LC_ALL=C
+
+# Минимальная требуемая доступная RAM (ГБ). Можно переопределить --min-ram.
+MIN_RAM_GB=12
+for arg in "$@"; do
+    case "${arg}" in
+        --min-ram=*) MIN_RAM_GB="${arg#*=}" ;;
+    esac
+done
+
+# Функция проверки доступной памяти (Linux /proc/meminfo)
+available_mem_gb() {
+    local kb
+    if [ -r /proc/meminfo ]; then
+        kb=$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo)
+        if [ -n "${kb}" ]; then
+            awk -v k="${kb}" 'BEGIN { printf "%.1f", k / (1024*1024) }'
+            return 0
+        fi
+    fi
+    echo "inf"
+    return 0
+}
+
+RAM_GB=$(available_mem_gb)
+echo "[run_bridge] доступно RAM: ${RAM_GB} GB (нужно >= ${MIN_RAM_GB} GB)"
+if [ "${RAM_GB}" != "inf" ]; then
+    if awk -v r="${RAM_GB}" -v m="${MIN_RAM_GB}" 'BEGIN { exit !(r < m) }'; then
+        echo "[run_bridge] ERROR: памяти недостаточно (${RAM_GB} GB < ${MIN_RAM_GB} GB)." >&2
+        echo "[run_bridge] Закройте GUI-приложения (браузер/telegram/zed) и" >&2
+        echo "[run_bridge] контейнеры (docker stop elevation_mapping walking_robot_sim)." >&2
+        exit 1
+    fi
+fi
 
 ISAAC_VENV="${HOME}/isaacsim-venv"
 ISAAC_JAZZY="${ISAAC_VENV}/lib/python3.12/site-packages/isaacsim/exts/isaacsim.ros2.core/jazzy"
