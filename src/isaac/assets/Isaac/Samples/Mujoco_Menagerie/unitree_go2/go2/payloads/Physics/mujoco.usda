@@ -1,0 +1,246 @@
+#usda 1.0
+(
+    customLayerData = {
+        string creator = "MuJoCo USD Converter v0.2.0"
+    }
+    defaultPrim = "go2"
+    doc = """Generated from Composed Stage of root layer /tmp/tmply3yqgyt/go2.usdc
+
+
+Generated from Composed Stage of root layer /tmp/mjcf_import_go2_trnys728/usdex_go2/go2.usdc
+
+
+Generated from Composed Stage of root layer /tmp/mjcf_import_go2_trnys728/temp_go2/go2.usd
+
+
+Generated from Composed Stage of root layer /home/stevfeng/Desktop/Mujoco_Menagerie/usd_robots/unitree_go2/go2/payloads/base.usd
+"""
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    subLayers = [
+        @./physics.usda@
+    ]
+    upAxis = "Z"
+)
+
+over "go2"
+{
+    over "Geometry"
+    {
+        over "base"
+        {
+            over "Box" (
+                prepend apiSchemas = ["MjcCollisionAPI"]
+            )
+            {
+                uniform int mjc:condim = 1
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+            }
+
+            over "Cylinder" (
+                prepend apiSchemas = ["MjcCollisionAPI"]
+            )
+            {
+                uniform int mjc:condim = 1
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+            }
+
+            over "Sphere" (
+                prepend apiSchemas = ["MjcCollisionAPI"]
+            )
+            {
+                uniform int mjc:condim = 1
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+            }
+
+            over "imu" (
+                prepend apiSchemas = ["MjcSiteAPI"]
+            )
+            {
+            }
+
+            over "FL_hip"
+            {
+                over "Cylinder" (
+                    prepend apiSchemas = ["MjcCollisionAPI"]
+                )
+                {
+                    uniform int mjc:condim = 1
+                    uniform int mjc:group = 3
+                    uniform double mjc:margin = 0.001
+                }
+
+                over "FL_thigh"
+                {
+                    over "Box" (
+                        prepend apiSchemas = ["MjcCollisionAPI"]
+                    )
+                    {
+                        uniform int mjc:condim = 1
+                        uniform int mjc:group = 3
+                        uniform double mjc:margin = 0.001
+                    }
+
+                    over "FL_calf"
+                    {
+                        over "Cylinder" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:condim = 1
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "Cylinder_1" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:condim = 1
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "FL" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:condim = 6
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                            uniform int mjc:priority = 1
+                            uniform double[] mjc:solimp = [0.015, 1, 0.022, 0.5, 2]
+                        }
+
+                        over "FL_calf_joint" (
+                            delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:armature = 0.01
+                            uniform double mjc:damping = 2
+                            uniform double mjc:frictionloss = 0.2
+                        }
+
+                        over "calf_0"
+                        {
+                        }
+
+                        over "calf_1"
+                        {
+                        }
+
+                        over "foot"
+                        {
+                        }
+                    }
+
+                    over "FL_thigh_joint" (
+                        delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:armature = 0.01
+                        uniform double mjc:damping = 2
+                        uniform double mjc:frictionloss = 0.2
+                    }
+
+                    over "thigh_0"
+                    {
+                    }
+
+                    over "thigh_1"
+                    {
+                    }
+                }
+
+                over "FL_hip_joint" (
+                    delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:armature = 0.01
+                    uniform double mjc:damping = 2
+                    uniform double mjc:frictionloss = 0.2
+                }
+
+                over "hip_0"
+                {
+                }
+
+                over "hip_1"
+                {
+                }
+            }
+
+            over "FR_hip"
+            {
+                over "Cylinder" (
+                    prepend apiSchemas = ["MjcCollisionAPI"]
+                )
+                {
+                    uniform int mjc:condim = 1
+                    uniform int mjc:group = 3
+                    uniform double mjc:margin = 0.001
+                }
+
+                over "FR_thigh"
+                {
+                    over "Box" (
+                        prepend apiSchemas = ["MjcCollisionAPI"]
+                    )
+                    {
+                        uniform int mjc:condim = 1
+                        uniform int mjc:group = 3
+                        uniform double mjc:margin = 0.001
+                    }
+
+                    over "FR_calf"
+                    {
+                        over "Cylinder" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:condim = 1
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "Cylinder_1" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:condim = 1
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "FR" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:condim = 6
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                            uniform int mjc:priority = 1
+                            uniform double[] mjc:solimp = [0.015, 1, 0.022, 0.5, 2]
+                        }
+
+                        over "FR_calf_joint" (
+                            delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:armature = 0.01
+                            uniform double mjc:damping = 2
+                            uniform double mjc:frictionloss = 0.2
+                        }
+
+                        over "calf_mirror_0"
+                        {
+                        }
+
+                        over "calf_mirror

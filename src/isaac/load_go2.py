@@ -119,9 +119,16 @@ def main() -> int:
     config.ros_package_paths = [{"go2_description": GO2_DESC}]
     config.joint_target_type = "position"   # управление позициями суставов
     config.joint_drive_type = "force"
-    config.override_joint_stiffness = 40.0
-    config.override_joint_damping = 2.0
+    # Gains как в isaac_bridge (см. set_dof_gains): hip мягкие, upper/lower жёсткие
+    config.override_joint_stiffness = 100.0
+    config.override_joint_damping = 5.0
+    # Отключаем multi-physics конверсию (перезаписывает drive stiffness)
+    config.run_multi_physics_conversion = False
+    config.run_asset_transformer = False
 
+    log.debug(TAG, f"config: stiffness={config.override_joint_stiffness} "
+                   f"damping={config.override_joint_damping} "
+                   f"multi_physics={config.run_multi_physics_conversion}")
     log.debug(TAG, "импортируем URDF через URDFImporter...")
     importer = URDFImporter(config)
     usd_path = importer.import_urdf()

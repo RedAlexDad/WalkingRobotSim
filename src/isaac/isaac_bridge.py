@@ -253,6 +253,23 @@ class IsaacBridge:
             lv = np.array(lin_vel[0], dtype=np.float64)
             log.debug(TAG, fmt_pose(p, q, tag="pose"))
             log.debug(TAG, f"[vel] lin={lv.round(3)} ang={av.round(3)}")
+
+            # Детекция NaN — лог момента взрыва физики
+            nan_mask = np.isnan(p) | np.isnan(q) | np.isnan(lv) | np.isnan(av)
+            if nan_mask.any():
+                # Немедленно фиксируем всё, что привело к NaN
+                log.error(
+                    TAG,
+                    f"NaN DETECTED! mask={nan_mask.tolist()} "
+                    f"pos={p} quat={q} lin={lv} ang={av}",
+                )
+                try:
+                    dof = np.array(self.articulation.get_dof_positions()[0], dtype=np.float64)
+                    log.error(TAG, f"NaN: dof_pos={dof}")
+                except Exception:
+                    pass
+                log.error(TAG, f"NaN: last_cmd={self.last_cmd}")
+                self._nan_count = getattr(self, "_nan_count", 0) + 1
             self.publish_imu(q, av, np.zeros(3))
         except Exception as e:
             log.warn(TAG, f"publish_sensors IMU error: {e}")
@@ -347,6 +364,20 @@ class IsaacBridge:
             # позволяет роботу самостоятельно найти равновесие. Если
             # жёстко задавать hip=0 — робот кренится/лежит на боку.
             cmd[0:4] = 0.0
+
+            # Защита от NaN-команд: если команда содержит NaN/Inf — не применять
+            if not np.all(np.isfinite(cmd)):
+                log.error(TAG, f"CMD has NaN/Inf, пропускаю: cmd={cmd}")
+                return
+
+            # Диагностика: текущие DOF перед применением
+            try:
+                cur = np.array(self.articulation.get_dof_positions()[0], dtype=np.float64)
+                if not np.all(np.isfinite(cur)):
+                    log.error(TAG, f"DOF already NaN перед командой! cur={cur} cmd={cmd}")
+            except Exception:
+                pass
+
             self.articulation.set_dof_position_targets(cmd.reshape(1, -1))
         except Exception as e:
             log.warn(TAG, f"set_dof_position_targets failed: {e}")
@@ -409,14 +440,18 @@ class IsaacBridge:
         Без этого поток умирает и узел перестаёт обрабатывать топики.
         """
         import rclpy
+        self._spin_ok = True
         while rclpy.ok():
             try:
                 rclpy.spin_once(self.node, timeout_sec=0.01)
+                self._spin_iters = getattr(self, "_spin_iters", 0) + 1
             except rclpy.executors.ExternalShutdownException:
                 continue
             except Exception as e:
-                log.warn(TAG, f"spin_once error: {e}")
+                log.error(TAG, f"spin_once error: {e} — поток rclpy УМИРАЕТ")
+                self._spin_ok = False
                 break
+        log.error(TAG, "spin_ros завершился (rclpy не ok или поток умер)")
 
     def run(self):
         """Запустить фоновый поток rclpy."""
@@ -636,6 +671,9 @@ def main() -> int:
     # ВАЖНО: в URDF нога при hip=0 направлена ВБОК (origin upper_leg по Y).
     # Чтобы опустить ногу вниз, hip должен быть ±π/2 (как в реальном Go2 —
     # hip-суставы отведены наружу). Правая нога -π/2, левая +π/2.
+    # Задать начальную позу суставов ПОСЛЕ play — тензоры валидны.
+    # STAND: hip=0 (свободные, балансируют), upper=1.196 (колени согнуты),
+    # lower=0. Без этого робот спавнится с нулевыми углами («звезда»).
     try:
         stand_pose = np.array([
             0.0, 1.196, 0.0,    # rf_hip (правая), upper, lower
@@ -644,7 +682,7 @@ def main() -> int:
             0.0, 1.196, 0.0,    # lh_hip (задняя левая)
         ], dtype=np.float64)
         articulation.set_dof_positions(stand_pose.reshape(1, -1))
-        log.info(TAG, f"initial joint pose set (STAND hip=±1.57): {stand_pose.round(2)}")
+        log.info(TAG, f"initial joint pose set (STAND): {stand_pose.round(2)}")
     except Exception as e:
         log.warn(TAG, f"set_dof_positions (initial) failed: {e}")
 
@@ -684,12 +722,14 @@ def main() -> int:
             if it % 100 == 0:
                 # Поза робота в RPY
                 pose_line = "?"
+                is_nan = False
                 try:
                     pp, oo = articulation.get_world_poses(indices=[0])
                     qq = np.array(oo[0], dtype=np.float64)
                     ppp = np.array(pp[0], dtype=np.float64)
+                    is_nan = bool(np.isnan(ppp).any() or np.isnan(qq).any())
                     r, p, y = quat_to_rpy_deg(qq)
-                    pose_line = f"pos=({ppp[0]:+.2f},{ppp[1]:+.2f},{ppp[2]:+.2f}) rpy=({r:+.1f}°,{p:+.1f}°,{y:+.1f}°)"
+                    pose_line = f"pos=({ppp[0]:+.2f},{ppp[1]:+.2f},{ppp[2]:+.2f}) rpy=({r:+.1f}°,{p:+.1f}°,{y:+.1f}°)" + (" <-- NAN!" if is_nan else "")
                 except Exception:
                     pass
                 # Ошибки следования суставов
@@ -699,12 +739,18 @@ def main() -> int:
                     fact = dp[DOF_TO_CMD_REORDER]
                     err = bridge.last_cmd - fact
                     err_line = f"joint_err max={np.abs(err).max():.3f}"
+                    if not np.all(np.isfinite(err)):
+                        err_line += " <-- NAN!"
                 except Exception:
                     pass
+                nan_count = getattr(bridge, "_nan_count", 0)
+                spin_ok = getattr(bridge, "_spin_ok", True)
+                spin_iters = getattr(bridge, "_spin_iters", 0)
                 log.info(
                     TAG,
                     f"[REPORT] {freq.report('loop')} | {pose_line} | {err_line} | "
-                    f"cmd={bridge.cmd_count} js={bridge.js_count} | "
+                    f"cmd={bridge.cmd_count} js={bridge.js_count} | nan={nan_count} | "
+                    f"spin={'OK' if spin_ok else 'DEAD'} ({spin_iters}) | "
                     f"imu_subs={bridge.imu_pub.get_subscription_count()} "
                     f"js_subs={bridge.js_pub.get_subscription_count()} | "
                     f"contacts={[1 if c else 0 for c in bridge.contacts]}",

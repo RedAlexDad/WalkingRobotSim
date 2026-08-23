@@ -72,9 +72,31 @@ if [ ! -d "${ISAAC_JAZZY}/rclpy" ]; then
     log "ERROR: не найден rclpy Isaac Sim: ${ISAAC_JAZZY}/rclpy" >&2
     exit 1
 fi
+log "rclpy Isaac: OK (${ISAAC_JAZZY}/rclpy)"
 
 # Собранные типы quadropted_msgs (py3.12) — для foot_contact
 QUADROPTED_MSGS_PY="${PROJECT_ROOT}/install/quadropted_msgs/lib/python3.12/site-packages"
+if [ -d "${QUADROPTED_MSGS_PY}/quadropted_msgs" ]; then
+    log "quadropted_msgs: OK (${QUADROPTED_MSGS_PY})"
+else
+    log "WARN: quadropted_msgs не найден — foot_contact будет отключён"
+fi
+
+# Проверка cyclonedds.xml
+if [ -f "${HOME}/.cyclonedds.xml" ]; then
+    log "cyclonedds.xml: OK"
+else
+    log "WARN: ~/.cyclonedds.xml не найден — DDS может не работать"
+fi
+
+# Проверка URDF для Isaac
+GO2_URDF="${PROJECT_ROOT}/src/go2_description/urdf/go2_gazebo.urdf"
+if [ -f "${GO2_URDF}" ]; then
+    log "URDF: OK (${GO2_URDF})"
+else
+    log "ERROR: URDF не найден: ${GO2_URDF}" >&2
+    exit 1
+fi
 
 export PYTHONPATH="${ISAAC_JAZZY}/rclpy:${QUADROPTED_MSGS_PY}"
 export AMENT_PREFIX_PATH="${ISAAC_JAZZY}:${PROJECT_ROOT}/install/quadropted_msgs"
@@ -85,4 +107,6 @@ export CYCLONEDDS_URI="file://${HOME}/.cyclonedds.xml"
 export PYTHONUNBUFFERED="1"
 
 log "PYTHONPATH=${PYTHONPATH}"
+log "RMW=${RMW_IMPLEMENTATION} ROS_DOMAIN_ID=${ROS_DOMAIN_ID}"
+log "запуск: ${ISAAC_VENV}/bin/python -u ${BRIDGE} $*"
 exec "${ISAAC_VENV}/bin/python" -u "${BRIDGE}" "$@"
