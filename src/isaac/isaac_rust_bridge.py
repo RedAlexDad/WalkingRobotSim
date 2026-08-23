@@ -370,6 +370,8 @@ def main() -> int:
     parser.add_argument("--ns", default="/robot1", help="ROS namespace")
     parser.add_argument("--min-ram", type=float, default=12.0, help="минимальная RAM (ГБ)")
     parser.add_argument("--debug", action="store_true", help="verbose debug output")
+    parser.add_argument("--hold-stance", action="store_true",
+                        help="держать STAND-позу [0,0.67,-1.3], не применять команды контроллера")
     args = parser.parse_args()
 
     setup_debug()
@@ -498,19 +500,20 @@ def main() -> int:
     for _ in range(5):
         sim_app.update()
 
-    # Начальная поза суставов (default stance из physx_env.yaml) — иначе
-    # робот спавнится с нулевыми углами («звезда») и падает до прихода
-    # команд от Rust-контроллера. DOF-порядок ассета NVIDIA:
-    # hip×4 (FL,FR,RL,RR), thigh×4, calf×4. Значения из env.yaml:
-    # hip L=+0.1 R=-0.1, front thigh=0.8, rear thigh=1.0, calf=-1.5.
+    # Начальная поза суставов — правильная стойка Go2 из готового решения
+    # CLeARoboticsLab/go2_isaac_ros2: STANDING_JOINT_ANGLES = [hip, thigh,
+    # calf] = [0.0, 0.67, -1.3] × 4 (порядок ног не важен — все одинаковые).
+    # Ранее использовалась поза из env.yaml политики (hip=±0.1, thigh=0.8,
+    # calf=-1.5) и поза контроллера (thigh=1.57, calf=0) — робот «сидел»
+    # (Z≈0.08). Правильная стойка — thigh=0.67, calf=-1.3.
     try:
         default_dof = np.array([
-            0.1, -0.1, 0.1, -0.1,     # FL,FR,RL,RR hip
-            0.8, 0.8, 1.0, 1.0,       # FL,FR,RL,RR thigh
-            -1.5, -1.5, -1.5, -1.5,   # FL,FR,RL,RR calf
+            0.0, 0.0, 0.0, 0.0,       # FL,FR,RL,RR hip
+            0.67, 0.67, 0.67, 0.67,   # FL,FR,RL,RR thigh
+            -1.3, -1.3, -1.3, -1.3,   # FL,FR,RL,RR calf
         ], dtype=np.float64)
         articulation.set_dof_positions(default_dof.reshape(1, -1))
-        log.info(TAG, f"default stance set: {default_dof.round(2)}")
+        log.info(TAG, f"default stance set (go2_isaac_ros2 STANDING): {default_dof.round(2)}")
     except Exception as e:
         log.warn(TAG, f"set_dof_positions (default stance) failed: {e}")
 
@@ -525,7 +528,21 @@ def main() -> int:
             sim_app.update()
             it += 1
             freq.tick("loop")
-            bridge.apply_pending_command()
+            if args.hold_stance:
+                # Калибровка: держим правильную STAND-позу, игнорируя команды
+                # контроллера (проверка, что поза [0,0.67,-1.3] поднимает робота)
+                try:
+                    stance = np.array([
+                        0.0, 0.0, 0.0, 0.0,
+                        0.67, 0.67, 0.67, 0.67,
+                        -1.3, -1.3, -1.3, -1.3,
+                    ], dtype=np.float64)
+                    articulation.set_dof_position_targets(stance.reshape(1, -1))
+                except Exception as e:
+                    if it % 100 == 0:
+                        log.warn(TAG, f"hold_stance error: {e}")
+            else:
+                bridge.apply_pending_command()
             try:
                 pos = articulation.get_dof_positions()[0]
                 bridge.publish_joint_states(np.array(pos, dtype=np.float64))
