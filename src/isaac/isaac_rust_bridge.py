@@ -523,13 +523,14 @@ def main() -> int:
     bridge.run()
     log.info(TAG, "bridge running. Ctrl+C to stop.")
 
-    # Робот над полом (как в go2_policy: 0.5 м)
+    # Робот над полом. В TROT ноги сгибаются и робот проседает (Z≈0.26),
+    # частично утопая в пол — поднимаем выше, чтобы стопы были над полом.
     try:
         articulation.set_world_poses(
-            positions=np.array([[0.0, 0.0, 0.5]]),
+            positions=np.array([[0.0, 0.0, 0.6]]),
             orientations=np.array([[1.0, 0.0, 0.0, 0.0]]),
         )
-        log.info(TAG, "robot positioned at z=0.5")
+        log.info(TAG, "robot positioned at z=0.6")
     except Exception as e:
         log.warn(TAG, f"set_world_poses failed: {e}")
 

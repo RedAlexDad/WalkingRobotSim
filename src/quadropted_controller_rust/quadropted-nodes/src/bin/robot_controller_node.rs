@@ -338,6 +338,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if s.ticks % 120 == 0 {
             println!("[Rust DEBUG] Tick #{} ({:.1}s) {:?} mode, vx={:.3}",
                 s.ticks, s.ticks as f64 / 60.0, s.behavior_state, s.cmd_linear[0]);
+            // Диагностика: foot_locations (сырые позиции стоп, 3x4)
+            let fl = &s.foot_locations;
+            println!("[Rust FOOT] x=[{:.3} {:.3} {:.3} {:.3}] y=[{:.3} {:.3} {:.3} {:.3}] z=[{:.3} {:.3} {:.3} {:.3}]",
+                fl[(0,0)], fl[(0,1)], fl[(0,2)], fl[(0,3)],
+                fl[(1,0)], fl[(1,1)], fl[(1,2)], fl[(1,3)],
+                fl[(2,0)], fl[(2,1)], fl[(2,2)], fl[(2,3)]);
+            println!("[Rust ANGL] hip=[{:.3} {:.3} {:.3} {:.3}] thg=[{:.3} {:.3} {:.3} {:.3}] clf=[{:.3} {:.3} {:.3} {:.3}]",
+                angles[0], angles[3], angles[6], angles[9],
+                angles[1], angles[4], angles[7], angles[10],
+                angles[2], angles[5], angles[8], angles[11]);
         }
 
         let mut msg = Float64MultiArray::default();
