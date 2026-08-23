@@ -9,7 +9,7 @@
 | `2026-07-18_rust-isaac-integration.md` | **Rust + Isaac Sim** — интеграция rclrs-контроллера с Isaac Sim через Python bridge |
 | `2026-08-22_docker-microservices-v2.md` | **План декомпозиции монолита на микросервисы (v2)** — gazebo-sim + wrs-core + wrs-nav2 + wrs-rviz, Isaac Sim нативно |
 | `2026-08-22_simulation-issues-report.md` | **Отчёт о развёртывании и проблемах симуляции** — Часть A (деплой) + Часть B (5 проблем по цепочке Симптом→Гипотезы→Причина→Решение) |
-| `2026-08-23_isaac-sim-integration-report.md` | **Отчёт о развёртывании и проблемах Isaac Sim** — Часть A (мост Rust↔Isaac) + Часть B (6 проблем: память, rclpy-конфликт, импорт URDF, World API) |
+| `2026-08-23_isaac-sim-integration-report.md` | **Отчёт о развёртывании и проблемах Isaac Sim** — Часть A (мост Rust↔Isaac, полный цикл) + Часть B (11 проблем: память, rclpy-конфликт, коллизия, QoS, setDriveTarget, foot_contact) |
 | `checklist-install.md` | Пошаговый чек-лист установки Isaac Sim |
 | `quick-reference.md` | Быстрый справочник команд и параметров |
 
