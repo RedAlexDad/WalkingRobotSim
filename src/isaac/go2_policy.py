@@ -155,6 +155,7 @@ def main() -> int:
         env_config_path=ENV_CONFIG_PATH,
     )
     log.info(TAG, f"Go2 created: num_dofs={go2.robot.num_dofs}")
+    log.info(TAG, f"dof_names={go2.robot.dof_names}")
 
     # --- Управление: клавиатура + stdin ---
     command = [0.0, 0.0, 0.0]  # vx, vy, wz
