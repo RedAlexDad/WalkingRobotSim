@@ -200,10 +200,21 @@ class IsaacBridge:
         self.fc_pub.publish(msg)
 
     def spin_ros(self):
-        """Вращать rclpy в фоновом потоке."""
+        """Вращать rclpy в фоновом потоке.
+
+        ExternalShutdownException бросается, когда контекст rclpy
+        завершается извне — ловим и продолжаем, пока rclpy.ok().
+        Без этого поток умирает и узел перестаёт обрабатывать топики.
+        """
         import rclpy
         while rclpy.ok():
-            rclpy.spin_once(self.node, timeout_sec=0.01)
+            try:
+                rclpy.spin_once(self.node, timeout_sec=0.01)
+            except rclpy.executors.ExternalShutdownException:
+                continue
+            except Exception as e:
+                self.node.get_logger().warn(f"spin_once error: {e}")
+                break
 
     def run(self):
         """Запустить фоновый поток rclpy."""

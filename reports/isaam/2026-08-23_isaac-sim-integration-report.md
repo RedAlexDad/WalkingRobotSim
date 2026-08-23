@@ -26,6 +26,7 @@
 11. [Проблема: Stage пуст после импорта URDF](#11-проблема-stage-пуст-после-импорта-urdf)
 12. [Проблема: Устаревший World API в Isaac Sim 6.0](#12-проблема-устаревший-world-api-в-isaac-sim-60)
 13. [Проблема: quadropted_msgs не импортируется в rclpy Isaac](#13-проблема-quadropted_msgs-не-импортируется-в-rclpy-isaac)
+14. [Проблема: Нативный Rust-контроллер не работает под Lyrical (EXIT=132)](#14-проблема-нативный-rust-контроллер-не-работает-под-lyrical-exit132)
 
 ---
 
@@ -134,6 +135,7 @@
 | [11](#11-проблема-stage-пуст-после-импорта-urdf) | Stage пуст после импорта URDF | import_urdf не открывает stage в контексте надёжно | ctx.open_stage + sim.update() | [x] |
 | [12](#12-проблема-устаревший-world-api-в-isaac-sim-60) | World.is_physics_handle_valid не существует | Isaac 6.0 перешёл на SimulationManager | Ground plane через USD API | [x] |
 | [13](#13-проблема-quadropted_msgs-не-импортируется-в-rclpy-isaac) | quadropted_msgs не найден | Не был в PYTHONPATH моста | Добавить install/quadropted_msgs (py3.12) | [x] |
+| [14](#14-проблема-нативный-rust-контроллер-не-работает-под-lyrical-exit132) | Нативный контроллер падает (EXIT=132) | Собран под Jazzy, несовместим с Lyrical ABI | Запуск в контейнере Jazzy | [x] |
 
 ### A.5. Итоговая архитектура
 
@@ -157,7 +159,8 @@ graph TB
 | Isaac Sim 6.0.1.0 | Хост, venv | ✅ |
 | URDF Go2 → articulation | Stage, `/go2_description/Geometry/base` | ✅ |
 | isaac_bridge.py (rclpy Jazzy) | Процесс Isaac | ✅ |
-| Rust-контроллер | Нативный/контейнер | ⏳ (следующий шаг) |
+| Rust-контроллер | Контейнер `walking_robot_sim` (Jazzy) | ✅ |
+| Ходьба Go2 (TROT) | Isaac Sim | ✅ |
 
 #### A.5.2. Параметры
 
@@ -170,6 +173,8 @@ graph TB
 | ROS_DOMAIN_ID | 0 |
 | namespace | /robot1 |
 | rclpy | встроенный Jazzy (py3.12) |
+| commands частота | 61.6 Гц |
+| joint_states частота | 59 Гц |
 
 #### A.5.3. Сравнение «было / стало»
 
@@ -179,14 +184,37 @@ graph TB
 | Импорт URDF | — | работает, articulation найден |
 | rclpy мост | не было | подписки/публикации работают |
 | foot_contact | — | тип импортируется |
+| Движение Go2 | не было | **ходит в TROT (vx=0.300)** |
+
+#### A.5.4. Подтверждённая ходьба (TROT)
+
+Интеграция проверена сквозным сценарием:
+
+1. Запущен `run_bridge.sh` (Isaac Sim headless + мост) — узел `/robot1/robot1_isaac_bridge`.
+2. Запущен Rust-контроллер в контейнере `walking_robot_sim` (Jazzy) — узел `/robot1/robot_controller_rust`.
+3. Контроллер публикует команды **61.6 Гц**, мост применяет их к articulation.
+4. Отправлена команда `robot_mode: TROT`, `robot_velocity: vx=0.300`.
+5. Контроллер переключился `REST -> TROT`, в логе `Tick ... TROT mode, vx=0.300`.
+6. Команды суставов непрерывно меняются (IK ходьбы), фактические углы в Isaac следуют за ними.
+
+Проверка значений (REST поза):
+
+| Joint | Команда | Факт (Isaac) |
+|---|---|---|
+| FR_hip | 0.0 | -0.00002 |
+| FR_thigh | 0.861 | 0.861 |
+| FR_calf | -1.88 | -1.047 (физика доезжает) |
+
+При TROT команды и факты меняются каждые несколько секунд — цикл ходьбы активен.
 
 ### A.6. Дальнейшие шаги
 
 #### Краткосрочно
 
-- [ ] Запустить bridge + Rust-контроллер вместе, проверить движение Go2
+- [x] Запустить bridge + Rust-контроллер вместе, проверить движение Go2
 - [ ] Подключить odometry (joint_states → одометрия)
 - [ ] Проверить foot_contact из физики Isaac
+- [ ] IMU-публикация из позы робота
 
 #### Среднесрочно
 
@@ -234,6 +262,7 @@ graph TB
 | [11](#11-проблема-stage-пуст-после-импорта-urdf) | Stage пуст после импорта URDF | ❌ A: импорт не сработал; ✅ B: stage не открыт в контексте | import_urdf генерирует .usda, но не открывает его в текущем контексте | ctx.open_stage(usd_path) + sim.update() | Traverse + HasAPI | 🟡 |
 | [12](#12-проблема-устаревший-world-api-в-isaac-sim-60) | World.is_physics_handle_valid не существует | ✅ A: API устарел; ❌ B: опечатка | Isaac 6.0 перешёл на SimulationManager; World устарел | Ground plane через USD API (UsdGeom) | grep API | 🟢 |
 | [13](#13-проблема-quadropted_msgs-не-импортируется-в-rclpy-isaac) | quadropted_msgs не найден в rclpy | ✅ A: не в PYTHONPATH; ❌ B: битая сборка | Пакет собран (py3.12), но не был в PYTHONPATH моста | Добавить install/quadropted_msgs в run_bridge.sh | изолированный импорт | 🟢 |
+| [14](#14-проблема-нативный-rust-контроллер-не-работает-под-lyrical-exit132) | Нативный Rust-контроллер падает (EXIT=132) | ✅ A: не хватает либ; ❌ B: ABI Jazzy/Lyrical | Бинарник собран под Jazzy (rclrs 0.7), несовместим с Lyrical (SIGILL) | Запуск в контейнере Jazzy | ldd, timeout, EXIT=132 | 🔴 |
 
 ---
 
@@ -544,16 +573,80 @@ env PYTHONPATH="<jazzy>/rclpy:<install>/quadropted_msgs/lib/python3.12/site-pack
 
 ---
 
+## 14. Проблема: Нативный Rust-контроллер не работает под Lyrical (EXIT=132)
+
+### 14.1. Симптом
+
+При запуске `robot_controller_node` нативно на хосте (Lyrical, py3.14) процесс умирает сразу после создания publishers:
+
+```
+✅ Publisher: joint_group_controller/commands
+✅ Publisher: foot_contact
+bash: 660950 Недопустимая инструкция (образ памяти сброшен на диск)
+EXIT=132
+```
+
+### 14.2. Гипотезы
+
+- ❌ **Гипотеза A:** не хватает `libquadropted_msgs*.so` в LD_LIBRARY_PATH. **Опровергнута** — после добавления либ процесс всё равно падает.
+- ✅ **Гипотеза B:** бинарник собран под Jazzy (rclrs 0.7), несовместим с Lyrical (rclrs другой ABI). **Принята** — EXIT=132 (SIGILL) указывает на несовместимость инструкций/ABI.
+
+### 14.3. Причина
+
+Бинарники Rust-контроллера собраны 22-08 (от root, в контейнере) под **Jazzy** и линкуются с rclrs 0.7 Jazzy. Нативный хост имеет **Lyrical** с другой версией rcl/rclrs — при запуске происходит нарушение ABI (недопустимая инструкция, SIGILL).
+
+### 14.4. Диагностика
+
+```
+ldd robot_controller_node | grep quadropted
+# libquadropted_msgs__rosidl_generator_c.so => not found  (до добавления путей)
+
+# После добавления LD_LIBRARY_PATH:
+# всё ещё падает с EXIT=132
+
+timeout 15 ./robot_controller_node ... 2>&1
+# Недопустимая инструкция, EXIT=132
+```
+
+### 14.5. Решение
+
+Запускать Rust-контроллер **в контейнере `walking_robot_sim` (Jazzy)**, где он собран и линкуется корректно. Нативный Lyrical-запуск отложен (нужна пересборка под Lyrical).
+
+```
+docker start walking_robot_sim
+docker exec -d walking_robot_sim bash -c "source /opt/ros/jazzy/setup.bash && \
+  source /root/ws/install/setup.bash && \
+  /root/ws/install/quadropted_controller_rust/lib/quadropted_controller_rust/robot_controller_node \
+  --ros-args -r __node:=robot_controller_rust -r __ns:=/robot1 \
+  -p use_sim_time:=False -r imu:=/robot1/imu"
+```
+
+### 14.6. Исправление в скриптах/конфигах
+
+Документировано: контроллер запускается в контейнере Jazzy, мост — нативно (Jazzy rclpy). Оба CycloneDDS домен 0.
+
+### 14.7. Результат
+
+| Метрика | До | После |
+|---|---|---|
+| Запуск контроллера нативно (Lyrical) | EXIT=132 | не используется |
+| Запуск контроллера в контейнере (Jazzy) | — | работает (61.6 Гц) |
+| Ходьба Go2 в Isaac | — | TROT vx=0.300 ✅ |
+
+**Связь с развёртыванием (Часть A):** встречена при подключении Rust-контроллера (этап [A.5.4 «Подтверждённая ходьба (TROT)»](#a54-подтверждённая-ходьба-trot)).
+
+---
+
 ## Итоговая статистика
 
 | Метрика | Значение |
 |---|---|
-| Всего проблем | 6 |
-| Из них решено | 6 |
+| Всего проблем | 7 |
+| Из них решено | 7 |
 | 🟢 (<1ч) | 4 |
 | 🟡 (1-4ч) | 2 |
-| 🔴 (>4ч) | 0 |
-| Ключевые выводы | Isaac Sim нативно требует управления памятью (останавливать контейнеры). Встроенный rclpy Jazzy (py3.12) конфликтует с хост-Lyrical (py3.14) — решается обёрткой окружения. Импорт URDF требует явного открытия stage. Мост работает: подписки/публикации активны, articulation привязан. |
+| 🔴 (>4ч) | 1 |
+| Ключевые выводы | Isaac Sim нативно требует управления памятью (останавливать контейнеры). Встроенный rclpy Jazzy (py3.12) конфликтует с хост-Lyrical (py3.14) — решается обёрткой окружения. Импорт URDF требует явного открытия stage. Rust-контроллер работает в контейнере (Jazzy), нативный Lyrical-запуск невозможен без пересборки (EXIT=132). **Результат: Go2 ходит в Isaac Sim (TROT, vx=0.300).** |
 
 ---
 
