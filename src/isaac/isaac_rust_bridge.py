@@ -191,6 +191,11 @@ class IsaacBridge:
                 for i in (2, 5, 8, 11):  # calf
                     cmd[i] -= 1.3
                 log.debug(TAG, f"[calib] cmd после сдвига: {cmd.round(3)}")
+            # Ограничение hip: контроллер в TROT генерирует hip до ±1.5 (больше
+            # предела ассета ±1.047), что заваливает робота. Ограничиваем ±0.3
+            # (в командном порядке индексы hip: 0,3,6,9).
+            for i in (0, 3, 6, 9):
+                cmd[i] = np.clip(cmd[i], -0.15, 0.15)
             targets = np.zeros(12, dtype=np.float64)
             targets[CMD_TO_DOF_REORDER] = cmd
             self.articulation.set_dof_position_targets(targets.reshape(1, -1))

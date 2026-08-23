@@ -35,9 +35,19 @@ struct SharedState {
     cmd_angular: [f64; 3],
     imu_roll: f64,
     imu_pitch: f64,
+    imu_yaw: f64,
     mode_msg_count: u64,
     vel_msg_count: u64,
     startup_grace: i32,
+}
+
+/// Печать yaw-коррекции (раз в ~2с) — диагностика стабилизации курса
+fn log_once_yaw(_foot: &nalgebra::SMatrix<f64, 3, 4>, yaw: f64, correction: f64) {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    static LOGGED: AtomicBool = AtomicBool::new(false);
+    if !LOGGED.swap(true, Ordering::Relaxed) {
+        println!("[Rust YAW] imu_yaw={:.3} correction={:.3}", yaw, correction);
+    }
 }
 
 impl SharedState {
@@ -55,7 +65,7 @@ impl SharedState {
         default_stance[(0, 2)] = -dx_back; default_stance[(1, 2)] = -dy;
         default_stance[(0, 3)] = -dx_back; default_stance[(1, 3)] = dy;
 
-        let trot_gait = TrotGaitController::new(0.04, 0.18, 0.02, false, default_stance.clone());
+        let trot_gait = TrotGaitController::new(0.04, 0.18, 0.02, true, default_stance.clone());
         let crawl_gait = CrawlGaitController::new(0.55, 0.45, 0.02, default_stance.clone());
         let rest_ctrl = RestController::new(default_stance.clone());
         let stand_ctrl = StandController::new(default_stance.clone());
@@ -84,6 +94,7 @@ impl SharedState {
             cmd_angular: [0.0, 0.0, 0.0],
             imu_roll: 0.0,
             imu_pitch: 0.0,
+            imu_yaw: 0.0,
             mode_msg_count: 0,
             vel_msg_count: 0,
             startup_grace: 120, // 2 сек @ 60 Гц (как C++ startup_grace_)
@@ -124,6 +135,8 @@ impl SharedState {
                         let comp = self.trot_gait.pid_controller().run(self.imu_roll, self.imu_pitch, now_sec);
                         let rot = quadropted_core::math::rotation::rotxyz(-comp[0], -comp[1], 0.0);
                         new_foot = rot * new_foot;
+                        // Yaw-стабилизация отключена: вызывает крен (roll), т.к.
+                        // поворот стоп вокруг Z при наклоне робота нестабилен.
                     }
                     new_foot
                 }
@@ -156,6 +169,13 @@ impl SharedState {
             bp[0], bp[1], bp[2], bo[0], bo[1], bo[2],
         );
         let angles = compute_all_joint_angles(&local, 0.0, 0.0955, 0.213, 0.213);
+
+        if self.ticks % 120 == 0 {
+            println!("[Rust LOCL] x=[{:.3} {:.3} {:.3} {:.3}] y=[{:.3} {:.3} {:.3} {:.3}] z=[{:.3} {:.3} {:.3} {:.3}]",
+                local[(0,0)], local[(0,1)], local[(0,2)], local[(0,3)],
+                local[(1,0)], local[(1,1)], local[(1,2)], local[(1,3)],
+                local[(2,0)], local[(2,1)], local[(2,2)], local[(2,3)]);
+        }
 
         angles
     }
@@ -262,6 +282,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
         s.imu_roll = quadropted_core::math::quaternion::euler_roll(&q);
         s.imu_pitch = quadropted_core::math::quaternion::euler_pitch(&q);
+        s.imu_yaw = quadropted_core::math::quaternion::euler_yaw(&q);
     })?;
     println!("✅ Subscription: imu");
 
@@ -348,6 +369,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 angles[0], angles[3], angles[6], angles[9],
                 angles[1], angles[4], angles[7], angles[10],
                 angles[2], angles[5], angles[8], angles[11]);
+            if s.behavior_state == BehaviorState::TROT {
+                let c = s.trot_gait.contacts(s.ticks);
+                println!("[Rust CONT] t={} contacts=[{} {} {} {}] (FR FL RR RL)",
+                    s.ticks, c[0], c[1], c[2], c[3]);
+            }
         }
 
         let mut msg = Float64MultiArray::default();
