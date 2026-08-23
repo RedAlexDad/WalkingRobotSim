@@ -2,7 +2,7 @@
 
 **Дата:** 2026-08-23
 **Ветка:** `feat/isaam-research`
-**Версия:** 7.0
+**Версия:** 8.0
 
 ---
 
@@ -183,7 +183,9 @@ graph LR
 - [ ] Перенести наш Rust-контроллер (математический TROT) на ассет NVIDIA, используя эталонные PD из `physx_env.yaml`
 - [ ] Сравнить поведение: политика NVIDIA vs математический контроллер на одном ассете
 - [ ] Подключить управление командами скорости от нашего контроллера к `go2_policy.py`
-- [x] **Идея (сохранена для будущего): интеграция с IsaacLab.** Найден готовый репозиторий [CLeARoboticsLab/go2_isaac_ros2](https://github.com/CLeARoboticsLab/go2_isaac_ros2) — low-level управление Go2 в Isaac Sim через ROS2 (топики `/lowcmd`, `/lowstate`), построен на IsaacLab. Эталонные параметры: `JOINT_NAMES = [FR,FL,RR,RL] × hip/thigh/calf` (совпадает с нашим командным порядком), `STANDING_JOINT_ANGLES = [0.0, 0.67, -1.3] × 4`, `PRONE_JOINT_ANGLES = [±0.35/0.5, 1.36, -2.65] × 4`, `JOINT_STIFFNESS = 75.0`, `JOINT_DAMPING = 0.5`. Три уровня возможной интеграции: (1) перенять конвенцию углов в наш мост; (2) IsaacLab как среда + наш мост (заменить их `Go2SubNode` на наш, Rust → `/joint_group_controller/commands`); (3) Rust как единственный контроллер (headless), IsaacLab = симулятор + сенсоры. IsaacLab требует отдельной установки (пакет + isaaclab_assets + unitree_ros2 SDK).
+- [ ] **Интеграция с IsaacLab (в работе).** Клонирован [CLeARoboticsLab/go2_isaac_ros2](https://github.com/CLeARoboticsLab/go2_isaac_ros2) и `unitreerobotics/unitree_ros2`. Установлен **IsaacLab 3.0** (release/3.0.0) в `~/isaacsim-venv` (совместим с Isaac Sim 6.0, python 3.12) — пакеты isaaclab, isaaclab_assets (с `UNITREE_GO2_CFG`), isaaclab_tasks импортируются. go2_isaac_ros2/env.py адаптирован под IsaacLab 3.0: `import mdp` → `isaaclab_tasks.core.locomotion.mdp`, `mdp.imu_orientation` → `mdp.root_quat_w` (нет в 3.0), ground plane → локальный `default_environment.usd`.
+  - **Блокер:** IsaacLab 3.0 default `usd_path` для ground указывает на S3 `Isaac/6.1` (недоступен из нашей сети). `terrain_type="plane"` игнорирует переопределённый `usd_path` — нужно разобраться, как TerrainImporterCfg выбирает ground в 3.0.
+  - **После блокера:** запуск env + наш rclpy (Jazzy) + тест ходьбы.
 
 ### A.7. Приложения
 
