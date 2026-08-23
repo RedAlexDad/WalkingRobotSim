@@ -181,6 +181,7 @@ graph LR
 - [ ] Перенести наш Rust-контроллер (математический TROT) на ассет NVIDIA, используя эталонные PD из `physx_env.yaml`
 - [ ] Сравнить поведение: политика NVIDIA vs математический контроллер на одном ассете
 - [ ] Подключить управление командами скорости от нашего контроллера к `go2_policy.py`
+- [x] **Идея (сохранена для будущего): интеграция с IsaacLab.** Найден готовый репозиторий [CLeARoboticsLab/go2_isaac_ros2](https://github.com/CLeARoboticsLab/go2_isaac_ros2) — low-level управление Go2 в Isaac Sim через ROS2 (топики `/lowcmd`, `/lowstate`), построен на IsaacLab. Эталонные параметры: `JOINT_NAMES = [FR,FL,RR,RL] × hip/thigh/calf` (совпадает с нашим командным порядком), `STANDING_JOINT_ANGLES = [0.0, 0.67, -1.3] × 4`, `PRONE_JOINT_ANGLES = [±0.35/0.5, 1.36, -2.65] × 4`, `JOINT_STIFFNESS = 75.0`, `JOINT_DAMPING = 0.5`. Три уровня возможной интеграции: (1) перенять конвенцию углов в наш мост; (2) IsaacLab как среда + наш мост (заменить их `Go2SubNode` на наш, Rust → `/joint_group_controller/commands`); (3) Rust как единственный контроллер (headless), IsaacLab = симулятор + сенсоры. IsaacLab требует отдельной установки (пакет + isaaclab_assets + unitree_ros2 SDK).
 
 ### A.7. Приложения
 
@@ -676,7 +677,12 @@ FACT FR_thigh_joint=+1.574  FR_calf_joint=+0.005 ...   # суставы след
 
 ### 26.5. Решение
 
-В следующей итерации: проверить конвенцию знаков calf/thigh ассета NVIDIA (возможно, инверсия calf), подбор robot_height, и изучить готовое решение [CLeARoboticsLab/go2_isaac_ros2](https://github.com/CLeARoboticsLab/go2_isaac_ros2).
+Калибровка конвенции углов в нашем Rust-контроллере по эталону [CLeARoboticsLab/go2_isaac_ros2](https://github.com/CLeARoboticsLab/go2_isaac_ros2):
+- STAND-поза: `hip=0, thigh=0.67, calf=-1.3` (наш контроллер шлёт `thigh=1.57, calf=0` — несовместимая конвенция).
+- PRONE (лёжа): `hip=±0.35/0.5, thigh=1.36, calf=-2.65`.
+- Проверить знак calf: в ассете calf отрицательный = сгиб назад.
+
+Идея интеграции с IsaacLab сохранена в [A.6 «Дальнейшие шаги»](#a6-дальнейшие-шаги).
 
 ### 26.6. Исправление в скриптах/конфигах
 
