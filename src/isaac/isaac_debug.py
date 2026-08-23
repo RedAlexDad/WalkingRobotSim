@@ -165,6 +165,9 @@ class _Freq:
     def get(self, tag: str = "default") -> float:
         return self._last_rate.get(tag, 0.0)
 
+    def rate(self, tag: str = "default") -> float:
+        return self.get(tag)
+
     def report(self, tag: str = "default") -> str:
         return f"{self.get(tag):.1f} Hz"
 

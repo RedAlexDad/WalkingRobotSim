@@ -99,8 +99,10 @@ CMD_TO_DOF_REORDER = np.array([
     2, 6, 10,    # RL
 ], dtype=np.int64)
 
-DOF_TO_CMD_REORDER = np.zeros(12, dtype=np.int64)
-DOF_TO_CMD_REORDER[CMD_TO_DOF_REORDER] = np.arange(12)
+# Для чтения ФАКТА в командном порядке: fact_cmd[i] = dof_pos[CMD_TO_DOF_REORDER[i]].
+# Это ПРЯМОЕ применение CMD_TO_DOF_REORDER (не инверсия): dof_pos[dof] — значение
+# сустава, индекс CMD_TO_DOF_REORDER[i] указывает DOF команды i.
+DOF_TO_CMD_REORDER = CMD_TO_DOF_REORDER
 
 # Имена лап [FR, FL, RR, RL] — порядок как в RobotFootContact.msg
 FOOT_NAMES = ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
@@ -167,12 +169,18 @@ class IsaacBridge:
         self.cmd_count += 1
 
     def apply_pending_command(self):
-        """Применить последнюю команду к articulation (из основного цикла)."""
+        """Применить последнюю команду к articulation (из основного цикла).
+
+        Ремаппинг: CMD_TO_DOF_REORDER[i] = dof-индекс для команды i.
+        Правильная операция: targets[dof] = cmd[источник], т.е.
+        targets[CMD_TO_DOF_REORDER] = self.last_cmd.
+        """
         if self.articulation is None or not self.ready:
             return
         try:
-            cmd = self.last_cmd[CMD_TO_DOF_REORDER].copy()
-            self.articulation.set_dof_position_targets(cmd.reshape(1, -1))
+            targets = np.zeros(12, dtype=np.float64)
+            targets[CMD_TO_DOF_REORDER] = self.last_cmd
+            self.articulation.set_dof_position_targets(targets.reshape(1, -1))
         except Exception as e:
             log.warn(TAG, f"set_dof_position_targets failed: {e}")
 
@@ -217,6 +225,54 @@ class IsaacBridge:
             log.debug(TAG, "CMD  " + fmt_joints(self.last_cmd, CMD_JOINT_NAMES, tag="cmd").split("\n", 1)[0])
             log.debug(TAG, "FACT " + fmt_joints(fact_cmd_order, CMD_JOINT_NAMES, tag="fact").split("\n", 1)[0])
             log.debug(TAG, f"[joint_err] max_abs={np.abs(err).max():.3f}  mean_abs={np.abs(err).mean():.3f}")
+
+            # Периодически (раз в ~2.5с) — hip-углы в DOF-порядке (FL,FR,RL,RR),
+            # чтобы видеть крен/равновесие
+            if not hasattr(self, "_hip_diag"):
+                self._hip_diag = 0
+            self._hip_diag += 1
+            if self._hip_diag % 100 == 0:
+                hip_dof = dof_pos[0:4]  # FL,FR,RL,RR hip
+                hip_cmd = np.zeros(12)
+                hip_cmd[CMD_TO_DOF_REORDER] = self.last_cmd
+                hip_cmd = hip_cmd[0:4]
+                log.info(
+                    TAG,
+                    f"[HIP] cmd=[{hip_cmd[0]:+.3f} {hip_cmd[1]:+.3f} {hip_cmd[2]:+.3f} {hip_cmd[3]:+.3f}] "
+                    f"fact=[{hip_dof[0]:+.3f} {hip_dof[1]:+.3f} {hip_dof[2]:+.3f} {hip_dof[3]:+.3f}] "
+                    f"(FL FR RL RR)",
+                )
+
+            # Периодически — высоты стоп и тела, чтобы видеть «проседание»
+            if not hasattr(self, "_foot_diag"):
+                self._foot_diag = 0
+            self._foot_diag += 1
+            if not hasattr(self, "_links_logged"):
+                log.info(TAG, f"link_names={list(self.articulation.link_names)}")
+                self._links_logged = True
+            if self._foot_diag % 100 == 0:
+                try:
+                    link_names = list(self.articulation.link_names)
+                    foot_idx = {}
+                    for leg in ["FL", "FR", "RL", "RR"]:
+                        for ln in link_names:
+                            if ln.endswith(f"{leg}_foot"):
+                                foot_idx[leg] = self.articulation.get_link_indices([ln])
+                                break
+                    heights = {}
+                    for leg, idx in foot_idx.items():
+                        fp, _ = self.articulation.get_world_poses(indices=idx)
+                        heights[leg] = float(np.array(fp[0])[2])
+                    log.info(
+                        TAG,
+                        f"[FEET] z={heights.get('FL', float('nan')):+.3f} "
+                        f"{heights.get('FR', float('nan')):+.3f} "
+                        f"{heights.get('RL', float('nan')):+.3f} "
+                        f"{heights.get('RR', float('nan')):+.3f} (FL FR RL RR) | "
+                        f"body_z={p[2]:+.3f}",
+                    )
+                except Exception as e:
+                    log.debug(TAG, f"foot diag skipped: {e}")
         except Exception as e:
             log.debug(TAG, f"joint diag skipped: {e}")
 
@@ -344,16 +400,18 @@ def main() -> int:
         log.error(TAG, f"отсутствует ground: {GROUND_USD}")
         sim_app.close()
         return 1
+    t0 = time.time()
     stage_utils.add_reference_to_stage(usd_path=GROUND_USD, path="/World")
     for _ in range(10):
         sim_app.update()
-    log.info(TAG, "ground plane added")
+    log.info(TAG, f"ground plane added ({time.time()-t0:.1f}s)")
 
     # Робот Go2 из ассета NVIDIA (variant Physics=physx!)
     if not os.path.exists(GO2_USD.replace("file://", "")):
         log.error(TAG, f"отсутствует ассет: {GO2_USD}")
         sim_app.close()
         return 1
+    t0 = time.time()
     stage_utils.add_reference_to_stage(
         usd_path=GO2_USD,
         path="/World/Go2",
@@ -361,21 +419,28 @@ def main() -> int:
     )
     for _ in range(20):
         sim_app.update()
-    log.info(TAG, "Go2 reference loaded")
+    log.info(TAG, f"Go2 reference loaded ({time.time()-t0:.1f}s)")
+
+    # Диагностика: примы под /World/Go2 (сколько, есть ли articulation)
+    stage = omni.usd.get_context().get_stage()
+    from pxr import Usd
+    go2_root = stage.GetPrimAtPath("/World/Go2")
+    prims_under = sum(1 for _ in Usd.PrimRange(go2_root)) if go2_root.IsValid() else 0
+    log.info(TAG, f"prims under /World/Go2: {prims_under} (root valid={go2_root.IsValid()})")
 
     # Найти articulation root
     from isaacsim.core.experimental.utils.prim import find_matching_prim_paths
     from pxr import UsdPhysics
 
-    stage = omni.usd.get_context().get_stage()
     art_path = None
-    from pxr import Usd
-    for prim in Usd.PrimRange(stage.GetPrimAtPath("/World/Go2")):
-        if prim.HasAPI(UsdPhysics.ArticulationRootAPI):
-            art_path = str(prim.GetPath())
-            break
+    if go2_root.IsValid():
+        for prim in Usd.PrimRange(go2_root):
+            if prim.HasAPI(UsdPhysics.ArticulationRootAPI):
+                art_path = str(prim.GetPath())
+                break
     if art_path is None:
         log.error(TAG, "no ArticulationRoot found under /World/Go2")
+        log.error(TAG, f"prims under /World/Go2: {prims_under}, root valid={go2_root.IsValid()}")
         sim_app.close()
         return 1
     log.info(TAG, f"articulation found: {art_path}")
@@ -385,16 +450,29 @@ def main() -> int:
     bridge.attach(articulation)
     log.info(TAG, f"dof_names={articulation.dof_names}")
 
-    # PD-параметры: жёсткие (как position controller в Gazebo), чтобы суставы
-    # точно следовали командам Rust-контроллера. Политика NVIDIA использует
-    # stiffness=25, но она шлёт плавные углы; наш математический контроллер
-    # шлёт резкие TROT-команды — при 25 Nm/rad суставы не успевают (FACT≠CMD)
-    # и робот падает. Возвращаем 100/5 (как в стабильном isaac_bridge).
+    # Расширить лимиты суставов: команды контроллера (STAND calf=0, TROT
+    # от -2.6 до 0) выходят за пределы ассета NVIDIA (MJCF: calf [-2.72,
+    # -0.84], hip [-1.047, 1.047]). В Gazebo ros2_control применял команды
+    # мягко, игнорируя жёсткие лимиты — здесь разрешаем широкий диапазон.
+    try:
+        lower_limits = np.full(12, -100.0)
+        upper_limits = np.full(12, 100.0)
+        articulation.set_dof_limits(lower_limits, upper_limits)
+        log.info(TAG, "joint limits расширены до [-100, 100]")
+    except Exception as e:
+        log.warn(TAG, f"set_dof_limits failed: {e}")
+
+    # PD-параметры. Политика NVIDIA использует stiffness=25/0.5 и успешно
+    # держит робота на этом ассете. Наш контроллер шлёт резкие команды,
+    # поэтому upper/lower делаем жёсткими (100), hip — 25 (как политика,
+    # не 2: при stiffness=2 hip не держит вес и робот проседает до Z=0.08).
     try:
         stiffness = np.full(12, 100.0)
         damping = np.full(12, 5.0)
+        stiffness[0:4] = 25.0   # hip (DOF 0..3: FL,FR,RL,RR)
+        damping[0:4] = 0.5
         articulation.set_dof_gains(stiffness, damping)
-        log.info(TAG, "gains: stiffness=100, damping=5 (жёсткое следование командам)")
+        log.info(TAG, "gains: hip_k=25 (как политика NVIDIA), upper/lower_k=100")
     except Exception as e:
         log.warn(TAG, f"set_dof_gains failed: {e}")
 
@@ -438,6 +516,8 @@ def main() -> int:
 
     bridge.ready = True
     log.debug(TAG, "bridge ready, entering main loop")
+    last_cmd = 0
+    last_it = 0
 
     try:
         it = 0
@@ -461,13 +541,32 @@ def main() -> int:
                     ppp = np.array(pp[0], dtype=np.float64)
                     r, p, y = quat_to_rpy_deg(qq)
                     pose_line = f"pos=({ppp[0]:+.2f},{ppp[1]:+.2f},{ppp[2]:+.2f}) rpy=({r:+.1f}°,{p:+.1f}°,{y:+.1f}°)"
+                except Exception as e:
+                    pose_line = f"? ({e})"
+                # Скорость поступления команд за последние 100 итераций
+                dc = bridge.cmd_count - last_cmd
+                cmd_rate = dc * freq.rate("loop") / 100.0
+                last_cmd = bridge.cmd_count
+                # Ошибки следования суставов
+                err_line = "?"
+                try:
+                    dp = np.array(articulation.get_dof_positions()[0], dtype=np.float64)
+                    fact = dp[DOF_TO_CMD_REORDER]
+                    err = bridge.last_cmd - fact
+                    err_line = f"joint_err max={np.abs(err).max():.3f} mean={np.abs(err).mean():.3f}"
                 except Exception:
                     pass
+                # Сжатая команда (в командном порядке): первые 6 + последние 6
+                c = bridge.last_cmd
+                cmd_line = (f"[{c[0]:+.2f} {c[1]:+.2f} {c[2]:+.2f} | "
+                            f"{c[3]:+.2f} {c[4]:+.2f} {c[5]:+.2f} | "
+                            f"{c[6]:+.2f} {c[7]:+.2f} {c[8]:+.2f} | "
+                            f"{c[9]:+.2f} {c[10]:+.2f} {c[11]:+.2f}]")
                 log.info(
                     TAG,
-                    f"[REPORT] {freq.report('loop')} | {pose_line} | "
-                    f"cmd={bridge.cmd_count} js={bridge.js_count} | "
-                    f"spin={'OK' if bridge._spin_ok else 'DEAD'}",
+                    f"[REPORT] {freq.report('loop')} | {pose_line} | {err_line} | "
+                    f"cmd={bridge.cmd_count} (+{dc} @{cmd_rate:.0f}/s) js={bridge.js_count} | "
+                    f"spin={'OK' if bridge._spin_ok else 'DEAD'} | CMD {cmd_line}",
                 )
     except KeyboardInterrupt:
         pass
