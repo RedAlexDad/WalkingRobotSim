@@ -2,7 +2,7 @@
 
 **Дата:** 2026-08-23
 **Ветка:** `feat/isaam-research`
-**Версия:** 9.0
+**Версия:** 10.0
 
 ---
 
@@ -183,12 +183,16 @@ graph LR
 - [ ] Перенести наш Rust-контроллер (математический TROT) на ассет NVIDIA, используя эталонные PD из `physx_env.yaml`
 - [ ] Сравнить поведение: политика NVIDIA vs математический контроллер на одном ассете
 - [ ] Подключить управление командами скорости от нашего контроллера к `go2_policy.py`
-- [ ] **Интеграция с IsaacLab (в работе, большой прогресс).** Клонированы [CLeARoboticsLab/go2_isaac_ros2](https://github.com/CLeARoboticsLab/go2_isaac_ros2) и `unitreerobotics/unitree_ros2`. Установлен **IsaacLab 3.0** (release/3.0.0) в `~/isaacsim-venv` (совместим с Isaac Sim 6.0, python 3.12) — пакеты isaaclab, isaaclab_assets (`UNITREE_GO2_CFG`), isaaclab_tasks импортируются.
+- [x] **Интеграция с IsaacLab (РЕЗУЛЬТАТ: робот ходит!).** Клонированы [CLeARoboticsLab/go2_isaac_ros2](https://github.com/CLeARoboticsLab/go2_isaac_ros2) и `unitreerobotics/unitree_ros2`. Установлен **IsaacLab 3.0** (release/3.0.0) в `~/isaacsim-venv` (совместим с Isaac Sim 6.0, python 3.12) — пакеты isaaclab, isaaclab_assets (`UNITREE_GO2_CFG`), isaaclab_tasks импортируются.
   - **Адаптация под локальные ассеты** (S3 6.1 недоступен): `ISAACSIM_ASSET_ROOT=~/isaac_assets`, ground plane → локальный `default_environment.usd`, робот → локальный IsaacLab `go2.usd` (скачан с S3 6.0). env.py: `import mdp` → `isaaclab_tasks.core.locomotion.mdp`, `imu_orientation` → `root_quat_w`.
-  - **unitree_go типы**: собраны через colcon в контейнере (после установки `ros-jazzy-rosidl-generator-dds-idl` через apt; DNS контейнера починен на хост-резолверы). Но собранные типы **несовместимы с rclpy Isaac** (type_support null, rosidl 4.6.9 vs 4.6.7) → **адаптировано на наш формат**: Go2SubNode подписан на `/joint_group_controller/commands` (Float64MultiArray от Rust-контроллера), unitree_go не нужен.
-  - **Запуск работает**: env создаётся, reset OK, робот Go2 стабилен (не падает), цикл идёт (700+ steps). `run_isaaclab.sh` — обёртка запуска (headless/GUI).
-  - **Блокеры:** (1) sim_time застревает (~0.14-0.26) — физика не шагает через timeline в headless; (2) робот стартует в PRONE (лёжа), Z≈0.076 — нужно поднять в стойку.
-  - **Следующий шаг:** разобрать physics stepping + поставить робота в STAND, затем тест ходьбы.
+  - **unitree_go типы**: собраны через colcon в контейнере (после установки `ros-jazzy-rosidl-generator-dds-idl` через apt; DNS контейнера починен на хост-резолверы 195.19.32.2). Но собранные типы **несовместимы с rclpy Isaac** (type_support null, rosidl 4.6.9 vs 4.6.7) → **адаптировано на наш формат**: Go2SubNode подписан на `/robot1/joint_group_controller/commands` (Float64MultiArray от Rust-контроллера), unitree_go не нужен.
+  - **Ключевые решения для ходьбы:**
+    - Стартовая поза STANDING (не PRONE) — робот встаёт (Z≈0.33)
+    - `clamp hip ±0.3` — TrotGait шлёт hip ±1.5 (заваливал робота), ограничение решило
+    - `setsid` для запуска — иначе система шлёт SIGTERM фоновому процессу через ~1 сек симуляции, робот успевал пройти лишь ~1.4м
+    - Устойчивый цикл + `timeline.play()` (физика через env.step, timeline для отчёта времени)
+  - **Результат: робот ходит 18400+ шагов, прошёл >4м, высота стабильна (Z≈0.18-0.21), не падает.** Процесс жив (main.py работает). Связка: Rust-контроллер (контейнер) → `/robot1/joint_group_controller/commands` → go2_isaac_ros2 → робот.
+  - **`run_isaaclab.sh`** — обёртка запуска: локальные ассеты, rclpy Isaac (Jazzy), unitree_go-типы, LD_LIBRARY_PATH, AMENT_PREFIX_PATH.
 
 ### A.7. Приложения
 
@@ -880,7 +884,7 @@ pos=(+1.99,-0.64,+0.15) rpy=(-69.6°,+0.0°,+174.4°)   # идёт по X, но 
 | 🟢 (<1ч) | 3 |
 | 🟡 (1-4ч) | 5 |
 | 🔴 (>4ч) | 2 |
-| Ключевые выводы | Готовое решение NVIDIA (ассет Mujoco_Menagerie + RL-политика) работает «из коробки», если ассеты скачаны локально и задан asset_root. Multi-physics ассет требует выбора variant Physics. Команды политике передаются torch.Tensor на cuda. При подключении Rust-контроллера к ассету NVIDIA: собственный SingleThreadedExecutor решает смерть контекста rclpy (guard_condition невалиден); ремаппинг DOF требует правильной индексации (`targets[CMD_TO_DOF_REORDER] = cmd`, а не `cmd[CMD_TO_DOF_REORDER]`). **Результат: Go2 стабильно стоит под политикой NVIDIA (cb2a68d) и под математическим Rust-контроллером (e6e74f6); калибровка позы (thigh-0.897, calf-1.3) поднимает робота на Z=0.36 (29e1cfa); робот ХОДИТ по X в TROT на ассете NVIDIA (253d22b), но падает из-за hip-амплитуд TrotGait (±1.5, тюнен под Gazebo). Решение: переход на IsaacLab (go2_isaac_ros2), где ходьба готовая, наш Rust может публиковать /lowcmd (проблема 28).** |
+| Ключевые выводы | Готовое решение NVIDIA (ассет Mujoco_Menagerie + RL-политика) работает «из коробки», если ассеты скачаны локально и задан asset_root. Multi-physics ассет требует выбора variant Physics. Команды политике передаются torch.Tensor на cuda. При подключении Rust-контроллера к ассету NVIDIA: собственный SingleThreadedExecutor решает смерть контекста rclpy (guard_condition невалиден); ремаппинг DOF требует правильной индексации (`targets[CMD_TO_DOF_REORDER] = cmd`, а не `cmd[CMD_TO_DOF_REORDER]`). **ФИНАЛЬНЫЙ РЕЗУЛЬТАТ: Go2 ходит под математическим Rust-контроллером в IsaacLab (Isaac Sim 6.0) — 18400+ шагов, >4м, стабильно. Ключ: IsaacLab 3.0 + go2_isaac_ros2 адаптированный на наш формат (Float64MultiArray), clamp hip ±0.3 (TrotGait шлёт ±1.5), STANDING старт, setsid (иначе SIGTERM убивает через ~1 сек симуляции). Связка: Rust-контроллер (контейнер) → /robot1/joint_group_controller/commands → go2_isaac_ros2 → робот.** |
 
 ---
 
