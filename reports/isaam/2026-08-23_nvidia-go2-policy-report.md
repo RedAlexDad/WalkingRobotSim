@@ -2,7 +2,7 @@
 
 **Дата:** 2026-08-23
 **Ветка:** `feat/isaam-research`
-**Версия:** 8.0
+**Версия:** 9.0
 
 ---
 
@@ -183,9 +183,12 @@ graph LR
 - [ ] Перенести наш Rust-контроллер (математический TROT) на ассет NVIDIA, используя эталонные PD из `physx_env.yaml`
 - [ ] Сравнить поведение: политика NVIDIA vs математический контроллер на одном ассете
 - [ ] Подключить управление командами скорости от нашего контроллера к `go2_policy.py`
-- [ ] **Интеграция с IsaacLab (в работе).** Клонирован [CLeARoboticsLab/go2_isaac_ros2](https://github.com/CLeARoboticsLab/go2_isaac_ros2) и `unitreerobotics/unitree_ros2`. Установлен **IsaacLab 3.0** (release/3.0.0) в `~/isaacsim-venv` (совместим с Isaac Sim 6.0, python 3.12) — пакеты isaaclab, isaaclab_assets (с `UNITREE_GO2_CFG`), isaaclab_tasks импортируются. go2_isaac_ros2/env.py адаптирован под IsaacLab 3.0: `import mdp` → `isaaclab_tasks.core.locomotion.mdp`, `mdp.imu_orientation` → `mdp.root_quat_w` (нет в 3.0), ground plane → локальный `default_environment.usd`.
-  - **Блокер:** IsaacLab 3.0 default `usd_path` для ground указывает на S3 `Isaac/6.1` (недоступен из нашей сети). `terrain_type="plane"` игнорирует переопределённый `usd_path` — нужно разобраться, как TerrainImporterCfg выбирает ground в 3.0.
-  - **После блокера:** запуск env + наш rclpy (Jazzy) + тест ходьбы.
+- [ ] **Интеграция с IsaacLab (в работе, большой прогресс).** Клонированы [CLeARoboticsLab/go2_isaac_ros2](https://github.com/CLeARoboticsLab/go2_isaac_ros2) и `unitreerobotics/unitree_ros2`. Установлен **IsaacLab 3.0** (release/3.0.0) в `~/isaacsim-venv` (совместим с Isaac Sim 6.0, python 3.12) — пакеты isaaclab, isaaclab_assets (`UNITREE_GO2_CFG`), isaaclab_tasks импортируются.
+  - **Адаптация под локальные ассеты** (S3 6.1 недоступен): `ISAACSIM_ASSET_ROOT=~/isaac_assets`, ground plane → локальный `default_environment.usd`, робот → локальный IsaacLab `go2.usd` (скачан с S3 6.0). env.py: `import mdp` → `isaaclab_tasks.core.locomotion.mdp`, `imu_orientation` → `root_quat_w`.
+  - **unitree_go типы**: собраны через colcon в контейнере (после установки `ros-jazzy-rosidl-generator-dds-idl` через apt; DNS контейнера починен на хост-резолверы). Но собранные типы **несовместимы с rclpy Isaac** (type_support null, rosidl 4.6.9 vs 4.6.7) → **адаптировано на наш формат**: Go2SubNode подписан на `/joint_group_controller/commands` (Float64MultiArray от Rust-контроллера), unitree_go не нужен.
+  - **Запуск работает**: env создаётся, reset OK, робот Go2 стабилен (не падает), цикл идёт (700+ steps). `run_isaaclab.sh` — обёртка запуска (headless/GUI).
+  - **Блокеры:** (1) sim_time застревает (~0.14-0.26) — физика не шагает через timeline в headless; (2) робот стартует в PRONE (лёжа), Z≈0.076 — нужно поднять в стойку.
+  - **Следующий шаг:** разобрать physics stepping + поставить робота в STAND, затем тест ходьбы.
 
 ### A.7. Приложения
 
