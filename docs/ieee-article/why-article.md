@@ -467,6 +467,66 @@ Isaac Sim и IsaacLab — фактический стандарт индустр
 - документирует инженерные проблемы интеграции, которые обычно остаются
   «за кадром» научных статей.
 
+### 8.3. Проверка аналогов (поиск выполнен 2026-09-02)
+
+Перед выбором темы был выполнен поиск аналогов в arXiv и Crossref
+(IEEE и др.). Ниже — реальные результаты и вывод.
+
+#### 8.3.1. Поиск в arXiv
+
+Запросы (и их результаты):
+
+- `quadruped + Isaac Sim` → найдены в основном **RL-работы**:
+  «Isaac Sim-to-Real: RL-based Locomotion for Quadrupeds»,
+  «Isaac Gym: High Performance GPU-Based Physics Simulation For Robot
+  Learning» и др.
+- `quadruped + inverse kinematics` → работы про кинематические датасеты
+  (Kine2Go), мягкие роботы, но **не** про сравнение с RL.
+- `"Unitree Go2"` → всего 2 работы: «Kine2Go» (кинематический датасет)
+  и «Autonomous Navigation for Library Service Robot». Прямого аналога
+  нет.
+- `ROS2 + Isaac Sim + quadruped` → 0 результатов.
+- `"Isaac Lab" + Go2` → работы про RL для лестниц/пожарных, не сравнение.
+
+#### 8.3.2. Поиск в Crossref (IEEE, журналы)
+
+Запрос «quadruped locomotion RL vs model-based isaac» дал ближайшие
+работы:
+
+- **«Benchmarking Model Predictive Control and Reinforcement
+  Learning-Based Control for Legged Robot Locomotion in MuJoCo
+  Simulation»** — самое близкое по идее (сравнение двух парадигм), но:
+  используется **MPC** (не классический IK/TROT) и среда **MuJoCo**
+  (не Isaac Sim).
+- **«Hybrid Control of Advanced Quadruped Locomotion: Integrating Model
+  Predictive Control with Deep RL»** — гибрид MPC+RL, другой класс.
+- Прочие результаты — чисто RL (stair climbing, fault-tolerant,
+  hierarchical RL и т.д.).
+
+#### 8.3.3. Вывод по аналогам
+
+**Точного аналога (1-в-1) не обнаружено.** Наиболее близкая работа
+(MPC vs RL в MuJoCo) отличается от нашей по двум ключевым осям:
+
+1. Тип «классического» контроллера: MPC vs наш детерминированный
+   IK/TROT-контроллер на Rust.
+2. Среда: MuJoCo vs Isaac Sim + IsaacLab.
+
+Наше сочетание — **классический IK-контроллер на Rust + сравнение с
+официальной RL-политикой NVIDIA в Isaac Sim через низкоуровневый интерфейс
+суставов** — в найденной литературе не покрыто. Это даёт обоснование для
+заявки на новизну и требует аккуратного Related Work со ссылками на
+ближайшие работы и явным указанием отличий.
+
+#### 8.3.4. Как использовать в статье
+
+- В разделе Related Work перечислить ближайшие работы (MPC vs RL в
+  MuJoCo, RL в Isaac Sim, гибриды MPC+RL, кинематические датасеты Go2).
+- После обзора дать абзац «Positioning»: чем наша работа отличается
+  (две оси отличий: контроллер и среда).
+- Указать, что математический контроллер проще MPC и потому прозрачнее
+  для инженерной практики.
+
 ---
 
 ## 9. Методология и экспериментальная база
