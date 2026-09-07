@@ -1,8 +1,8 @@
 # Отчёт о развёртывании и эксплуатационных проблемах симуляции
 
-**Дата:** 2026-08-22
+**Дата:** 2026-08-22 (обновлено 2026-09-07)
 **Ветка:** `feat/isaam-research`
-**Версия:** 1.0
+**Версия:** 1.1
 
 ---
 
@@ -25,12 +25,15 @@
 10. [Проблема: RViz не отображает модель робота (meshes не резолвятся)](#10-проблема-rviz-не-отображает-модель-робота-meshes-не-резолвятся)
 11. [Проблема: SLAM-карта не сохраняется между запусками](#11-проблема-slam-карта-не-сохраняется-между-запусками)
 12. [Проблема: Зомби-процессы и двойные симуляции](#12-проблема-зомби-процессы-и-двойные-симуляции)
+13. [Проблема: DNS Docker не резолвит crates.io — падение сборки](#13-проблема-dns-docker-не-резолвит-cratesio-падение-сборки)
+14. [Проблема: Gazebo GUI падает с Segmentation fault на NVIDIA GPU без драйвера](#14-проблема-gazebo-gui-падает-с-segmentation-fault-на-nvidia-gpu-без-драйвера)
+15. [Проблема: EAGAIN при старте — нехватка памяти и потоков (6g/512)](#15-проблема-eagain-при-старте-нехватка-памяти-и-потоков-6g512)
 
 ---
 
 ## Часть A. Развёртывание симуляции
 
-> **Связь с Частью B.** В ходе развёртывания встречались проблемы. Здесь (Часть A) они описаны кратко, а детальные разборы — в [Части B](#part-b): каждая проблема по цепочке «Симптом → Гипотезы → Причина → Диагностика → Решение → Результат». Нумерация проблем сквозная: 8–12.
+> **Связь с Частью B.** В ходе развёртывания встречались проблемы. Здесь (Часть A) они описаны кратко, а детальные разборы — в [Части B](#part-b): каждая проблема по цепочке «Симптом → Гипотезы → Причина → Диагностика → Решение → Результат». Нумерация проблем сквозная: 8–15.
 
 ### A.1. Введение
 
@@ -113,9 +116,23 @@
 
 **Результат:** тест 42 ✅ / 0 ❌ / 1 ⚠️.
 
+#### A.3.5. Пересборка и запуск GUI (обновление 2026-09-07)
+
+**Действие:** повторная сборка образа `make build` и запуск `make gazebo` после продолжительного перерыва в работе стенда.
+
+**Ошибка 1 (сборка):** `cargo build` падает на этапе скачивания зависимостей — `transfer too slow`, сборка `std_msgs_rs` падает. Причина — недоступный DNS Docker (подробно — [Проблема 13](#13-проблема-dns-docker-не-резолвит-cratesio-падение-сборки) в Части B).
+
+**Решение 1:** в `/etc/docker/daemon.json` DNS `8.8.8.8/1.1.1.1` заменены на рабочие DNS хоста (`195.19.32.2/195.19.33.199`), Docker перезапущен. Сборка успешна.
+
+**Ошибка 2 (запуск):** симуляция стартует, робот создаётся, но через несколько секунд всё падает каскадом: gazebo GUI — Segmentation fault в OGRE, rviz2/контроллер — `Resource temporarily unavailable` (EAGAIN). Причины — проброс NVIDIA GPU без драйвера (подробно — [Проблема 14](#14-проблема-gazebo-gui-падает-с-segmentation-fault-на-nvidia-gpu-без-драйвера)) и низкие лимиты памяти/потоков (подробно — [Проблема 15](#15-проблема-eagain-при-старте-нехватка-памяти-и-потоков-6g512)).
+
+**Решение 2:** `privileged` убран, в контейнер пробрасывается только встроенный AMD GPU; лимиты подняты до 12g/8192. Окно Gazebo GUI работает на AMD.
+
+**Результат:** окно Gazebo GUI открывается, робот в TROT, RViz работает.
+
 ### A.4. Проблемы и решения
 
-Полное описание каждой проблемы — в Части B (сквозная нумерация 8–12). Сводная таблица:
+Полное описание каждой проблемы — в Части B (сквозная нумерация 8–15). Сводная таблица:
 
 | № | Проблема | Причина | Решение | Статус |
 |---|----------|---------|---------|:------:|
@@ -124,6 +141,9 @@
 | [10](#10-проблема-rviz-не-отображает-модель-робота-meshes-не-резолвятся) | RViz не отображает робота | Неверный Description Topic + не резолвятся meshes | RViz-конфиги + mount + symlink | [x] |
 | [11](#11-проблема-slam-карта-не-сохраняется-между-запусками) | SLAM-карта не сохраняется | Нет `/root/ws/maps` в volume | Volume `./data/gazebo/maps` | [x] |
 | [12](#12-проблема-зомби-процессы-и-двойные-симуляции) | Зомби-процессы, двойные симуляции | Накопление при повторных запусках | pkill + docker restart | [x] |
+| [13](#13-проблема-dns-docker-не-резолвит-cratesio-падение-сборки) | `make build` падает: cargo не скачивает crates.io | DNS Docker (8.8.8.8/1.1.1.1) недоступен из сети | Рабочие DNS хоста в daemon.json | [x] |
+| [14](#14-проблема-gazebo-gui-падает-с-segmentation-fault-на-nvidia-gpu-без-драйвера) | Gazebo GUI: Segmentation fault, `driver (null)` | Контейнер видит NVIDIA без драйвера; Qt RHI выбирает его | Проброс только AMD GPU в контейнер | [x] |
+| [15](#15-проблема-eagain-при-старте-нехватка-памяти-и-потоков-6g512) | EAGAIN: rviz2/контроллер не создают потоки | `mem_limit 6g`, `pids_limit 512` | 12g / 8192 в compose.yml | [x] |
 
 ### A.5. Итоговая архитектура
 
@@ -170,6 +190,9 @@ graph TB
 | odom | не публиковался | 50 Гц |
 | Зомби-процессы | есть | 0 |
 | SLAM-карта | не сохранялась | сохраняется |
+| Сборка образа | падала (DNS) | успешна |
+| Окно Gazebo GUI | Segmentation fault | работает на AMD |
+| mem_limit / pids_limit | 6g / 512 | 12g / 8192 |
 
 ### A.6. Дальнейшие шаги
 
@@ -227,6 +250,9 @@ graph TB
 | [10](#10-проблема-rviz-не-отображает-модель-робота-meshes-не-резолвятся) | RViz: модель робота не отображается, ошибки meshes | ✅ B,C: topic + резолв; ❌ A: копирование | Description Topic `/robot_description` вместо `/robot1/robot_description`; `package://go2_description` не резолвится | RViz-конфиги переведены на `/robot1/robot_description`; mount + symlink + AMENT_PREFIX_PATH | Правка .rviz; compose volumes | 🟢 |
 | [11](#11-проблема-slam-карта-не-сохраняется-между-запусками) | SLAM-карта не сохраняется | ✅ B: нет каталога; ❌ A: битая карта | `/root/ws/maps` не существует и не в volume | Volume `./data/gazebo/maps:/root/ws/maps` + создан каталог | Правка compose.yml | 🟢 |
 | [12](#12-проблема-зомби-процессы-и-двойные-симуляции) | Зомби-процессы и дублированные симуляции | ✅ B: повторный launch; ❌ C: утечка PID | Повторные запуски без очистки → 2 gz sim, 2 slam_toolbox, 2 ekf и т.д. | `pkill -9` + `docker restart` + один launch | `ps aux`; `docker restart` | 🟢 |
+| [13](#13-проблема-dns-docker-не-резолвит-cratesio-падение-сборки) | `make build` падает: cargo не скачивает crates.io | ✅ A: DNS; ❌ B: код/сеть | `/etc/docker/daemon.json` жёстко задаёт DNS 8.8.8.8/1.1.1.1, недоступные из сети → `Could not resolve host` внутри BuildKit | Рабочие DNS хоста (195.19.32.2/195.19.33.199) в daemon.json + restart docker | `getent hosts` в/вне контейнера; curl crates.io | 🟢 |
+| [14](#14-проблема-gazebo-gui-падает-с-segmentation-fault-на-nvidia-gpu-без-драйвера) | Gazebo GUI: Segmentation fault, `driver (null)` | ✅ A: NVIDIA без драйвера; ❌ B,C: software-рендер/pids | Qt RHI/OGRE выбирает NVIDIA RTX (есть в /dev/dri), но драйвера нет в образе → не может создать GLXContext | `privileged` убран; проброс только AMD GPU (card2/renderD129); GUI на radeonsi | Тест-контейнер только с AMD; gz sim GUI | 🔴 |
+| [15](#15-проблема-eagain-при-старте-нехватка-памяти-и-потоков-6g512) | EAGAIN: rviz2/контроллер не создают потоки | ✅ A: память; ✅ B: pids; ❌ C: код | `mem_limit 6g`, `pids_limit 512` в compose.yml — Gazebo+Nav2+RViz при старте исчерпывают ресурсы → `pthread_create` EAGAIN | Лимиты 12g / 8192 (compose.yml + docker update) | cgroup pids/memory; ulimit | 🟡 |
 
 ---
 
@@ -532,16 +558,218 @@ ros2 launch gazebo_sim launch.launch.py use_sim_time:=true gui:=true
 
 ---
 
+## 13. Проблема: DNS Docker не резолвит crates.io — падение сборки
+
+### 13.1. Симптом
+
+`make build` (многоэтапная сборка Docker-образа) падает на этапе сборки workspace:
+
+```
+[workspace 3/3] ccache colcon build ...
+CMake Error at CMakeLists.txt:17 (message):
+  cargo build failed: 101
+transfer too slow: failed to transfer more than 10 bytes in 30s (transferred 0 bytes)
+Failed   <<< std_msgs_rs [2min 12s, exited with code 1]
+```
+
+Cargo не может скачать зависимость `rosidl_runtime_rs` из crates.io.
+
+### 13.2. Гипотезы
+
+- ✅ **Гипотеза A:** DNS внутри Docker недоступен для crates.io. **Принята** — подтвердилась как причина в [N.3](#133-причина).
+- ❌ **Гипотеза B:** проблема в коде Rust-пакета или версии зависимости. **Опровергнута:** `Cargo.toml` корректен; ошибка чисто сетевая (0 байт за 30 с).
+- ❌ **Гипотеза C:** crates.io недоступен из сети в принципе. **Опровергнута:** с хоста `curl https://index.crates.io/config.json` отвечает за ~0.3 с.
+
+### 13.3. Причина
+
+В `/etc/docker/daemon.json` жёстко прописаны DNS-серверы `8.8.8.8` и `1.1.1.1`. Из сети (РФ) эти серверы недоступны/заблокированы, поэтому внутри Docker BuildKit домены `index.crates.io`, `static.crates.io`, `registry.npmjs.org` не резолвятся (`Could not resolve host`). Хост при этом использует рабочие DNS провайдера (`195.19.32.2`, `195.19.33.199`) через systemd-resolved.
+
+### 13.4. Диагностика
+
+Проверка резолва с хоста (работает) и из контейнера (падает):
+
+```
+# хост
+curl -sS -o /dev/null -w '%{http_code}' https://index.crates.io/config.json   # → 200
+# контейнер (debian: с дефолтным DNS docker)
+docker run --rm osrf/ros:jazzy-desktop getent hosts index.crates.io
+# → Could not resolve host: index.crates.io
+# тест с рабочим DNS
+docker run --rm --dns 195.19.32.2 osrf/ros:jazzy-desktop \
+  getent hosts index.crates.io   # → RESOLVE_OK
+```
+
+Проверка системных DNS:
+
+```
+cat /etc/docker/daemon.json | grep -A5 '"dns"'   # → 8.8.8.8, 1.1.1.1
+cat /run/systemd/resolve/resolv.conf             # → 195.19.32.2 195.19.33.199
+```
+
+### 13.5. Решение
+
+В `/etc/docker/daemon.json` DNS заменены на рабочие DNS хоста, Docker перезапущен:
+
+```
+{
+  "dns": ["195.19.32.2", "195.19.33.199"]
+}
+sudo systemctl restart docker
+```
+
+Примечание: `sed` по многострочному JSON не сработал — правка выполнена через `python3 -c` с парсингом JSON.
+
+### 13.6. Исправление в скриптах/конфигах
+
+- `/etc/docker/daemon.json` — DNS заменены на `195.19.32.2`, `195.19.33.199` (вне git-репозитория, системный файл).
+- Локально зафиксировано: при переустановке/смене сети Docker проверять доступность DNS.
+
+### 13.7. Результат
+
+| Метрика | До | После |
+|---------|----|-------|
+| Резолв crates.io из контейнера | `Could not resolve host` | OK (~0.2 с) |
+| Сборка `make build` | падает на `std_msgs_rs` | успешна (~2.5 мин) |
+
+**Связь с развёртыванием (Часть A):** проблема встречена на этапе [A.3.5 «Пересборка и запуск GUI»](#a35-пересборка-и-запуск-gui-обновление-2026-09-07).
+
+---
+
+## 14. Проблема: Gazebo GUI падает с Segmentation fault на NVIDIA GPU без драйвера
+
+### 14.1. Симптом
+
+После успешной сборки `make gazebo`: Gazebo стартует, мир загружается, робот создаётся, но через несколько секунд всё падает каскадом. Ключевые строки:
+
+```
+[gazebo-1] libEGL warning: pci id for fd 67: 10de:2c05, driver (null)
+[gazebo-1] Unable to create a suitable GLXContext in GLXContext
+[gazebo-1] Failed to create dummy render window ... Segmentation fault
+[rviz2]     Could not load display config: Resource temporarily unavailable
+[rviz2]     QThread::start: Thread creation error (Resource temporarily unavailable)
+[robot_controller_node] panicked ... failed to spawn thread: Os { code: 11, kind: WouldBlock }
+```
+
+Контейнер `walking_robot_sim` был `privileged: true`, поэтому видел в `/dev/dri` обе видеокарты: NVIDIA RTX 5070 Ti (eGPU) и встроенную AMD.
+
+### 14.2. Гипотезы
+
+- ✅ **Гипотеза A:** Qt RHI/OGRE выбирает NVIDIA GPU (первый аппаратный), но в образе нет её драйвера → не может создать GLXContext. **Принята** — подтвердилась как причина в [N.3](#143-причина).
+- ❌ **Гипотеза B:** поможет software-рендер (`LIBGL_ALWAYS_SOFTWARE=1`, `GALLIUM_DRIVER=llvmpipe`, `QSG_RHI_BACKEND=software`). **Опровергнута:** Mesa пишет `Not allowed to force software rendering when API explicitly selects a hardware device` — Qt явно запрашивает hardware, software не форсируется.
+- ❌ **Гипотеза C:** нехватка pids/памяти (см. Проблему 15). **Опровергнута для GUI:** поднятие лимитов до 8192/12g не убрало segfault в OGRE — причина именно в выборе GPU.
+
+### 14.3. Причина
+
+В образе (на базе `osrf/ros:jazzy-desktop`) установлен только Mesa (`radeonsi`, `swrast`), но нет NVIDIA-драйвера (`libnvidia-gl`). При `privileged: true` контейнер видит NVIDIA RTX в `/dev/dri`. Qt6 RHI/OGRE (gz-gui, MinimalScene, сенсорный рендер) выбирают первый аппаратный GPU — NVIDIA — и при создании GLXContext получают `driver (null)` → OGRE падает с Segmentation fault. RViz рендерится иначе и работает, а вот gz-gui — нет.
+
+### 14.4. Диагностика
+
+Сравнение работы gazebo GUI в двух конфигурациях:
+
+```
+# A) privileged: видит NVIDIA + AMD → GUI падает (Segmentation fault)
+docker inspect walking_robot_sim --format '{{.HostConfig.Privileged}}'  # → true
+
+# B) только AMD (карта 6f:00.0 = card2/renderD129) → GUI работает
+docker run --rm --device /dev/dri/card2 --device /dev/dri/renderD129 \
+  --group-add video -e DISPLAY=:0 ... gz sim -r -v4 cafe.world
+# → "Qt using OpenGL", "Create main window", "Received world", 0 падений
+```
+
+Вывод: gazebo GUI работает на встроенной AMD (radeonsi присутствует в образе) — и это не зависит от наличия eGPU.
+
+### 14.5. Решение
+
+У контейнера `simulator` убран `privileged`, пробрасывается только встроенный AMD GPU. X11-сокет смонтирован явно (volumes в `simulator` переопределяют якорь `x-basic`).
+
+### 14.6. Исправление в скриптах/конфигах
+
+- `compose.yml` (сервис `simulator`): `privileged: false`, добавлены `devices: /dev/dri/card2, /dev/dri/renderD129`, `group_add: ["44"]`, явные volumes X11 (`/tmp/.X11-unix`, `.Xauthority`).
+- `src/gazebo_sim/launch/launch.launch.py`: аргумент `gz_server_only` по умолчанию `false` (GUI). Headless доступен как `gz_server_only:=true` (фолбэк).
+- В `A.5.1` обновлён статус gazebo GUI.
+
+### 14.7. Результат
+
+| Метрика | До | После |
+|---------|----|-------|
+| `driver (null)` для NVIDIA | есть | нет (NVIDIA не пробрасывается) |
+| Окно Gazebo GUI | Segmentation fault | создаётся, мир загружается |
+| Робот / контроллер | каскадное падение | TROT, `controller active` |
+| Зависимость от eGPU | GUI падает без драйвера | работает на встроенной AMD всегда |
+
+**Связь с развёртыванием (Часть A):** проблема встречена на этапе [A.3.5 «Пересборка и запуск GUI»](#a35-пересборка-и-запуск-gui-обновление-2026-09-07).
+
+---
+
+## 15. Проблема: EAGAIN при старте — нехватка памяти и потоков (6g/512)
+
+### 15.1. Симптом
+
+При запуске полного стека (Gazebo + ~15 нод Nav2 + SLAM + RViz + сенсоры) процессы падают с ошибкой создания потока:
+
+```
+[rviz2]     QThread::start: Thread creation error (Resource temporarily unavailable)
+[robot_controller_node] panicked at .../thread/functions.rs:
+  failed to spawn thread: Os { code: 11, kind: WouldBlock, message: "Resource temporarily unavailable" }
+```
+
+Ошибка появляется не сразу, а в момент пиковой нагрузки при инициализации всех узлов.
+
+### 15.2. Гипотезы
+
+- ✅ **Гипотеза A:** нехватка памяти (cgroup). **Принята** — подтвердилась как часть причины: при `mem_limit 6g` стек потока не выделяется.
+- ✅ **Гипотеза B:** мал лимит потоков (`pids_limit 512`). **Принята** — тоже ограничивала (cgroup `pids.max=512`), но одного её подъёма было недостаточно.
+- ❌ **Гипотеза C:** ошибка в Rust-коде контроллера (не там создаются потоки). **Опровергнута:** паникует и rviz2 (C++/Qt), и контроллер (Rust) — системный ресурс, не код.
+
+### 15.3. Причина
+
+В `compose.yml` для сервиса `simulator` стояли лимиты `mem_limit: 6g`, `memswap_limit: 8g`, `pids_limit: 512`. Полный стек при старте создаёт сотни потоков и потребляет память: gazebo (рендер, физика, сенсоры) + rviz2 + ~15 нод Nav2 + SLAM + мосты. При исчерпании cgroup-лимита `pthread_create` возвращает `EAGAIN` (`WouldBlock`) — процесс не может создать поток и падает.
+
+### 15.4. Диагностика
+
+```
+# лимиты контейнера
+docker inspect walking_robot_sim --format 'Memory={{.HostConfig.Memory}} Pids={{.HostConfig.PidsLimit}}'
+# → Memory=6442450944 (6g), Pids=512
+
+# cgroup
+docker exec walking_robot_sim cat /sys/fs/cgroup/pids.max      # → 512
+docker exec walking_robot_sim cat /sys/fs/cgroup/pids.current  # → растёт при старте
+```
+
+Подъём только pids до 8192 (`docker update --pids-limit 8192`) не решил проблему — EAGAIN остался, значит дело и в памяти.
+
+### 15.5. Решение
+
+Лимиты подняты: `mem_limit: 12g`, `memswap_limit: 16g`, `pids_limit: 8192`. Применено и в `compose.yml`, и к живому контейнеру через `docker update`.
+
+### 15.6. Исправление в скриптах/конфигах
+
+- `compose.yml` (сервис `simulator`): `mem_limit: 12g`, `memswap_limit: 16g`, `pids_limit: 8192` + поясняющие комментарии.
+
+### 15.7. Результат
+
+| Метрика | До | После |
+|---------|----|-------|
+| `mem_limit` | 6g | 12g |
+| `pids_limit` | 512 | 8192 |
+| EAGAIN у rviz2/контроллера | есть | отсутствует |
+| Запуск полного стека | каскадное падение | стабильно (робот TROT) |
+
+**Связь с развёртыванием (Часть A):** проблема встречена на этапе [A.3.5 «Пересборка и запуск GUI»](#a35-пересборка-и-запуск-gui-обновление-2026-09-07).
+
+---
+
 ## Итоговая статистика
 
 | Метрика | Значение |
 |---------|----------|
-| Всего проблем | 5 |
-| Из них решено | 5 |
-| 🟢 (<1ч) | 4 |
+| Всего проблем | 8 |
+| Из них решено | 8 |
+| 🟢 (<1ч) | 6 |
 | 🟡 (1-4ч) | 1 |
-| 🔴 (>4ч) | 0 |
-| Ключевые выводы | Все проблемы — конфигурационные/процедурные, не архитектурные. Контроллер (проблема 8) и daemon (проблема 9) — самые дорогие по времени из-за каскадного проявления. Каждая проблема связана с этапом развёртывания из Части A (см. A.3). |
+| 🔴 (>4ч) | 1 |
+| Ключевые выводы | Все проблемы — конфигурационные/процедурные, не архитектурные. Контроллер (проблема 8) и daemon (проблема 9) — самые дорогие по времени из-за каскадного проявления. Обновление 2026-09-07 добавило три проблемы: DNS Docker (13), GPU/окно Gazebo (14, самая сложная 🔴) и лимиты памяти/потоков (15). Каждая проблема связана с этапом развёртывания из Части A (см. A.3). |
 
 ---
 
