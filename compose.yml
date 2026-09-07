@@ -106,10 +106,13 @@ services:
       - ./data/gazebo/maps:/root/ws/maps
       - project_src:/root/ws/src/
     restart: unless-stopped
-    # Лимит памяти: симуляция (Gazebo + контроллер) не должна забирать всё RAM
-    mem_limit: 6g
-    memswap_limit: 8g
-    pids_limit: 512
+    # Лимит памяти: симуляция (Gazebo + Nav2 + RViz) при старте создаёт много
+    # потоков и может упираться в 6g → pthread_create возвращает EAGAIN
+    # ("Resource temporarily unavailable"), процессы падают. 12g достаточно.
+    mem_limit: 12g
+    memswap_limit: 16g
+    # pids 512 мало для Gazebo + ~15 нод Nav2 + RViz + сенсоры (потоки).
+    pids_limit: 8192
 
   elevation_mapping:
     <<: *basic

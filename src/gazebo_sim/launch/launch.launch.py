@@ -9,7 +9,9 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription, RegisterEventHandler
+from launch.actions import (DeclareLaunchArgument, ExecuteProcess,
+                            IncludeLaunchDescription, OpaqueFunction,
+                            RegisterEventHandler)
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -37,13 +39,28 @@ def generate_launch_description():
     ld.add_action(SetParameter(name='use_sim_time', value=use_sim_time))
 
     world_file = os.path.join(pkg_path, 'world', 'cafe.world')
-    gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(
-            get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')),
-        launch_arguments={'gz_args': ['-r -v4 ', world_file], 'on_exit_shutdown': 'true'}.items()
-    )
-    ld.add_action(gazebo)
+    # NOTE: флаг -s (server-only) запускает Gazebo без GUI-окна. GUI-режим
+    # падает на машинах с Wayland/Xwayland, когда в контейнере нет доступа
+    # к GPU (Qt RHI/OGRE требует аппаратный GLXContext NVIDIA, драйвера нет).
+    # Визуализация обеспечивается RViz (enable_rviz). Для GUI-режима нужен
+    # проброс NVIDIA GPU в контейнер (runtime: nvidia + --gpus all).
+    gz_server_only = LaunchConfiguration('gz_server_only', default='true')
+    ld.add_action(DeclareLaunchArgument('gz_server_only', default_value='true',
+                                        description='Запускать Gazebo без GUI (-s). '
+                                                    'false — GUI-режим (требует GPU в контейнере)'))
 
+    def _start_gazebo(context, *args, **kwargs):
+        mode = LaunchConfiguration('gz_server_only').perform(context)
+        flag = '-s ' if mode == 'true' else ''
+        return [
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(os.path.join(
+                    get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')),
+                launch_arguments={'gz_args': ['-r -v4 ', flag, world_file],
+                                  'on_exit_shutdown': 'true'}.items())
+        ]
+
+    ld.add_action(OpaqueFunction(function=_start_gazebo))
     pause = ExecuteProcess(cmd=['sleep', '6'], output='screen')
     ld.add_action(pause)
 
