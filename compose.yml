@@ -81,6 +81,19 @@ services:
     <<: *basic
     image: walking_robot_sim:latest
     container_name: walking_robot_sim
+    # privileged=false + проброс только встроенного AMD GPU (не NVIDIA):
+    # gazebo GUI (Qt RHI/OGRE) выбирает первый аппаратный GPU из /dev/dri.
+    # Если контейнер видит NVIDIA RTX без её драйвера в образе — OGRE падает
+    # с "driver (null)" / Segmentation fault. На встроенной AMD (radeonsi,
+    # есть в образе) окно gazebo работает стабильно и независимо от eGPU.
+    # AMD = card2/renderD129 на этой машине (pci 6f:00.0). Если номера иные —
+    # см. ls -la /dev/dri/by-path/ и поправьте пути.
+    privileged: false
+    devices:
+      - /dev/dri/card2:/dev/dri/card2
+      - /dev/dri/renderD129:/dev/dri/renderD129
+    group_add:
+      - "44"
     command: bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && tail -f /dev/null"
     environment:
       <<: [*env_gui, *env_ros]
@@ -100,6 +113,7 @@ services:
       # packages.ros.org (Connection failed), host-сеть — может.
       network: host
     volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
       - ./logs/gazebo:/root/ws/logs
       - ./data/gazebo:/root/ws/data

@@ -39,15 +39,16 @@ def generate_launch_description():
     ld.add_action(SetParameter(name='use_sim_time', value=use_sim_time))
 
     world_file = os.path.join(pkg_path, 'world', 'cafe.world')
-    # NOTE: флаг -s (server-only) запускает Gazebo без GUI-окна. GUI-режим
-    # падает на машинах с Wayland/Xwayland, когда в контейнере нет доступа
-    # к GPU (Qt RHI/OGRE требует аппаратный GLXContext NVIDIA, драйвера нет).
-    # Визуализация обеспечивается RViz (enable_rviz). Для GUI-режима нужен
-    # проброс NVIDIA GPU в контейнер (runtime: nvidia + --gpus all).
-    gz_server_only = LaunchConfiguration('gz_server_only', default='true')
-    ld.add_action(DeclareLaunchArgument('gz_server_only', default_value='true',
-                                        description='Запускать Gazebo без GUI (-s). '
-                                                    'false — GUI-режим (требует GPU в контейнере)'))
+    # NOTE: окно Gazebo GUI работает, когда контейнер видит встроенный AMD GPU
+    # (radeonsi в образе). Если контейнер видит NVIDIA RTX без драйвера —
+    # Qt RHI/OGRE падает (driver null, Segmentation fault). Поэтому GPU в
+    # контейнер пробрасывается только AMD (см. compose.yml, devices).
+    # gz_server_only=true запускает Gazebo без GUI (headless) — фолбэк,
+    # если отображение недоступно.
+    gz_server_only = LaunchConfiguration('gz_server_only', default='false')
+    ld.add_action(DeclareLaunchArgument('gz_server_only', default_value='false',
+                                        description='Запускать Gazebo без GUI (-s, headless). '
+                                                    'false (по умолчанию) — GUI-режим на встроенном AMD GPU'))
 
     def _start_gazebo(context, *args, **kwargs):
         mode = LaunchConfiguration('gz_server_only').perform(context)
