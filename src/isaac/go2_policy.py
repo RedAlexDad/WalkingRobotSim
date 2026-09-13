@@ -26,6 +26,10 @@ import numpy as np
 # --- Логирование через isaac_debug (как в isaac_bridge) ---
 from isaac_debug import log, setup_debug
 
+# --- Телеметрия в CSV (общий модуль с IK-путём) ---
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from telemetry import TelemetryLogger, default_telemetry_path
+
 TAG = "go2_policy"
 
 # Локальный корень ассетов: сначала в проекте (src/isaac/assets/Isaac),
@@ -223,6 +227,16 @@ def main() -> int:
     physics_ready = False
     timestep = 0
 
+    # Телеметрия в CSV (тот же формат, что у IK-пути).
+    tel = None
+    if os.environ.get("GO2_TELEMETRY", "1") != "0":
+        tag = os.environ.get("GO2_TELEMETRY_TAG") or "rl"
+        path = os.environ.get("GO2_TELEMETRY_CSV") or default_telemetry_path(tag)
+        try:
+            tel = TelemetryLogger(path)
+        except Exception as e:
+            log.warn(TAG, f"telemetry init failed: {e}")
+
     def on_physics_step(dt, context):
         nonlocal physics_ready, timestep
         if not running[0]:
@@ -233,6 +247,30 @@ def main() -> int:
             import torch
             cmd_t = torch.tensor(cmd, dtype=torch.float32, device="cuda")
             go2.forward(dt, cmd_t)
+            timestep += 1
+            if tel is not None:
+                try:
+                    import warp as wp
+                    pos, quat = go2.robot.get_world_poses()
+                    lin, ang = go2.robot.get_velocities()
+                    pos = wp.to_torch(pos); quat = wp.to_torch(quat)
+                    lin = wp.to_torch(lin); ang = wp.to_torch(ang)
+                    jp = wp.to_torch(go2.robot.get_dof_positions())
+                    jv = wp.to_torch(go2.robot.get_dof_velocities())
+                    obs = {"obs": {
+                        "world_pos": pos[0],
+                        "world_quat": quat[0],
+                        "world_lin_vel": lin[0],
+                        "world_ang_vel": ang[0],
+                        "joint_pos": jp[0],
+                        "joint_vel": jv[0],
+                    }}
+                    # для RL cmd0..2 — команда скорости (vx,vy,wz)
+                    cmd12 = list(cmd) + [0.0] * 9
+                    tel.log(obs, timestep * 0.005, timestep, cmd=cmd12)
+                except Exception as e:
+                    if timestep % 200 == 0:
+                        log.warn(TAG, f"telemetry log error: {e}")
         else:
             physics_ready = True
             go2.initialize()
@@ -264,6 +302,8 @@ def main() -> int:
 
     SimulationManager.deregister_callback(cb_id)
     timeline.stop()
+    if tel is not None:
+        tel.close()
     sim_app.close()
     log.info(TAG, "done")
     return 0
