@@ -194,6 +194,19 @@ def run_sim():
     env = IsaacSimGo2EnvWrapper(env)
     log("run_sim", f"env created: control dt={env.dt}")
 
+    # индексы стоп (для логирования их мировых позиций) — best-effort
+    foot_ids = None
+    try:
+        _robot = env._env.scene.articulations['robot']
+        _names = list(_robot.data.body_names)
+        _fid = [i for i, n in enumerate(_names) if 'foot' in n.lower()]
+        log("run_sim", f"body_names={_names}")
+        if len(_fid) == 4:
+            foot_ids = _fid
+        log("run_sim", f"foot_ids={foot_ids}")
+    except Exception as e:
+        log("run_sim", f"foot_ids error: {e}")
+
     obs, _ = env.reset()
     log("run_sim", "reset OK")
 
@@ -216,6 +229,12 @@ def run_sim():
     report_every = int(os.environ.get("GO2_REPORT_EVERY", "50"))
     push_dur = float(os.environ.get("GO2_PUSH_DUR", "0.2") or 0.2)
     dt = env.dt
+    # параметры для оценки момента и команды скорости
+    joint_kp = float(os.environ.get("GO2_KP", "75") or 75)
+    joint_kd = float(os.environ.get("GO2_KD", "0.5") or 0.5)
+    _vc = (os.environ.get("GO2_VEL_CMD", "") or "").split()
+    vel_cmd = [float(v) for v in _vc] if len(_vc) == 3 else None
+    mode = os.environ.get("GO2_MODE", "ik")
     push_node = None
     if os.environ.get("GO2_PUSH", "1") != "0":
         push_node = PushSubNode(dt, push_dur)
@@ -260,7 +279,14 @@ def run_sim():
                 cmd = env.action
                 if tel is not None:
                     try:
-                        tel.log(obs, sim_time, it, cmd=cmd)
+                        foot_pos = None
+                        if foot_ids is not None:
+                            try:
+                                foot_pos = env._env.scene.articulations['robot'].data.body_pos_w[0][foot_ids]
+                            except Exception:
+                                foot_pos = None
+                        tel.log(obs, sim_time, it, cmd=cmd, vel_cmd=vel_cmd,
+                                mode=mode, kp=joint_kp, kd=joint_kd, foot_pos=foot_pos)
                     except Exception as e:
                         log("tel", f"log error: {e}")
 

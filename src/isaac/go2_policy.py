@@ -281,7 +281,8 @@ def main() -> int:
                         cmd12 = [float(v) for v in wp.to_torch(tgt).reshape(-1).tolist()]
                     except Exception:
                         cmd12 = list(cmd) + [0.0] * 9
-                    tel.log(obs, timestep * 0.005, timestep, cmd=cmd12)
+                    tel.log(obs, timestep * 0.005, timestep, cmd=cmd12,
+                            vel_cmd=cmd, mode="rl", kp=25.0, kd=0.5)
                 except Exception as e:
                     if timestep % 200 == 0:
                         log.warn(TAG, f"telemetry log error: {e}")
