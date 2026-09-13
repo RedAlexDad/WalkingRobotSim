@@ -1,0 +1,65 @@
+{
+  "telemetry_ik_signfix_20260913-141415.csv": {
+    "rows": 22235,
+    "duration_s": 111.17,
+    "distance_x_m": 5.658,
+    "path_length_m": 8.555,
+    "mean_speed_mps": 0.077,
+    "forward_speed_mps": 0.0509,
+    "z_mean_m": 0.2436,
+    "z_std_m": 0.0162,
+    "max_roll_deg": 31.86,
+    "max_pitch_deg": 35.16,
+    "drift_y_m": 3.1214,
+    "t_steady_s": 0.0,
+    "energy_j": 3241.72,
+    "cot": 2.575,
+    "params": {
+      "mass_kg": 15.0,
+      "kp": 75.0,
+      "kd": 0.5
+    }
+  },
+  "telemetry_ik_yaw_20260913-141733.csv": {
+    "rows": 20547,
+    "duration_s": 102.73,
+    "distance_x_m": 4.842,
+    "path_length_m": 7.108,
+    "mean_speed_mps": 0.0692,
+    "forward_speed_mps": 0.0471,
+    "z_mean_m": 0.2459,
+    "z_std_m": 0.0156,
+    "max_roll_deg": 35.09,
+    "max_pitch_deg": 35.16,
+    "drift_y_m": 2.0894,
+    "t_steady_s": 0.0,
+    "energy_j": 2592.85,
+    "cot": 2.479,
+    "params": {
+      "mass_kg": 15.0,
+      "kp": 75.0,
+      "kd": 0.5
+    }
+  },
+  "telemetry_ik_sym_20260913-142509.csv": {
+    "rows": 16897,
+    "duration_s": 84.48,
+    "distance_x_m": 4.766,
+    "path_length_m": 6.464,
+    "mean_speed_mps": 0.0765,
+    "forward_speed_mps": 0.0564,
+    "z_mean_m": 0.2457,
+    "z_std_m": 0.017,
+    "max_roll_deg": 33.36,
+    "max_pitch_deg": 35.63,
+    "drift_y_m": 1.5576,
+    "t_steady_s": 0.0,
+    "energy_j": 2378.71,
+    "cot": 2.501,
+    "params": {
+      "mass_kg": 15.0,
+      "kp": 75.0,
+      "kd": 0.5
+    }
+  }
+}
