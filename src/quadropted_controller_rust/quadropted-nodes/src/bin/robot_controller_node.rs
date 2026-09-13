@@ -130,7 +130,7 @@ impl SharedState {
                 let yaw_err = quadropted_core::math::quaternion::normalize_angle(
                     self.imu_yaw - self.desired_yaw,
                 );
-                gait_cmd[2] += -0.5 * yaw_err;
+                gait_cmd[2] += 0.5 * yaw_err;
                 // C++ step_trot: при нулевой скорости — плавное возвращение к default_stance
                 let has_command =
                     gait_cmd[0].abs() > 1e-4 || gait_cmd[1].abs() > 1e-4 || gait_cmd[2].abs() > 1e-4;
