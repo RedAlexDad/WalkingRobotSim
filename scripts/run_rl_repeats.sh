@@ -19,7 +19,7 @@ for i in $(seq 1 "$N"); do
     rm -rf "$KIT/cache/DerivedDataCache/app_instance_lock0" 2>/dev/null
     rm -f "$KIT/cache/DerivedDataCache"/*.lock "$KIT/cache/ov/"*.lock 2>/dev/null
     cat /tmp/rl_cmd.txt | GO2_TELEMETRY_TAG=rl_r$i timeout 90 \
-      "$PY" -u "$REPO/src/isaac/go2_policy.py" --headless --duration "$RUN_SEC" \
+      "$PY" -u "$REPO/src/isaac/go2_policy.py" --headless --min-ram 9 --duration "$RUN_SEC" \
       > "/tmp/rl_r$i.log" 2>&1
     rc=$?
     if grep -aq "policy initialized" "/tmp/rl_r$i.log" 2>/dev/null; then
