@@ -191,11 +191,14 @@ impl SharedState {
             Some(r) => r * self.foot_locations,
             None => self.foot_locations,
         };
-        // Крен-компенсация: дифференциальная длина ног (по стороне Y), без hip.
+        // Крен-компенсация: точная z-составляющая поворота стоп по крену
+        // (y*sin(a)+z*cos(a)), БЕЗ y-сдвига → hip не уводится в насыщение.
         if roll_z != 0.0 {
+            let a = roll_z;
             for leg in 0..4 {
-                let side = if feet_for_ik[(1, leg)] >= 0.0 { 1.0 } else { -1.0 };
-                feet_for_ik[(2, leg)] += roll_z * side;
+                let y = feet_for_ik[(1, leg)];
+                let z = feet_for_ik[(2, leg)];
+                feet_for_ik[(2, leg)] = y * a.sin() + z * a.cos();
             }
         }
         // C++ передаёт body_local_position/orientation (высота тела из change_controller)
