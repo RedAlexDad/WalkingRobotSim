@@ -29,12 +29,17 @@ impl TrotStanceController {
     pub fn position_delta(&self, leg_index: usize, state_foot: &SMatrix<f64, 3, 4>, cmd_vel: &Vector3<f64>, robot_height: f64) -> Vector3<f64> {
         let z = state_foot[(2, leg_index)]; // FIX: use leg_index, not 0
 
-        let step_dist_x = cmd_vel.x * (self.phase_length as f64 / self.swing_ticks as f64);
-        let step_dist_y = cmd_vel.y * (self.phase_length as f64 / self.swing_ticks as f64);
-
+        // Физически корректная скорость стопы в stance: стопа, зафиксированная
+        // в мире, в системе тела движется со скоростью -cmd_vel.
+        //
+        // Прежняя формула -(step_dist/4)/(dt*stance_ticks) делила на длину
+        // ОДНОЙ stance-фазы, тогда как в трот-расписании нога стоит на земле
+        // 3 фазы подряд (27 тиков при stance_ticks=9). Стопа уезжала назад
+        // втрое дальше, чем возвращал swing, IK уходил в насыщение (calf=0),
+        // робот падал. Исправление проверено численной моделью походки.
         let velocity = Vector3::new(
-            -(step_dist_x / 4.0) / (self.time_step * self.stance_ticks as f64),
-            -(step_dist_y / 4.0) / (self.time_step * self.stance_ticks as f64),
+            -cmd_vel.x,
+            -cmd_vel.y,
             (1.0 / self.z_error_constant) * (robot_height - z),
         );
 
@@ -106,10 +111,9 @@ mod tests {
         }
         let cmd_vel = Vector3::new(0.3, 0.0, 0.0);
         let delta = controller.position_delta(0, &foot, &cmd_vel, -0.25);
-        // step_dist_x = 0.3 * (11/9) = 0.3667; velocity_x = -(0.3667/4)/(0.02*2) = -2.29
-        // delta_x = velocity_x * 0.02 = -0.0458
+        // Физически корректно: delta_x = -cmd_vel.x * time_step = -0.3 * 0.02 = -0.006
         assert!(delta.x < 0.0, "delta_x should be negative, got {}", delta.x);
-        assert!((delta.x + 0.0458).abs() < 1e-3, "delta_x = {}", delta.x);
+        assert!((delta.x + 0.006).abs() < 1e-9, "delta_x = {}", delta.x);
     }
 
     #[test]
