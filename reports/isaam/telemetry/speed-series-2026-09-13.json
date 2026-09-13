@@ -1,0 +1,63 @@
+{
+  "commanded_vx": {},
+  "rl": {
+    "0.1": {
+      "dist_m": 0.395,
+      "speed_mps": 0.026,
+      "z_std_m": 0.042,
+      "max_roll_deg": 2.6,
+      "drift_y_m": 0.09
+    },
+    "0.2": {
+      "dist_m": 1.736,
+      "speed_mps": 0.116,
+      "z_std_m": 0.042,
+      "max_roll_deg": 3.6,
+      "drift_y_m": 0.206
+    },
+    "0.3": {
+      "dist_m": 3.337,
+      "speed_mps": 0.222,
+      "z_std_m": 0.04,
+      "max_roll_deg": 2.3,
+      "drift_y_m": 0.367
+    },
+    "0.4": {
+      "dist_m": 5.157,
+      "speed_mps": 0.344,
+      "z_std_m": 0.039,
+      "max_roll_deg": 3.0,
+      "drift_y_m": 0.798
+    }
+  },
+  "ik": {
+    "0.1": {
+      "dist_m": 0.013,
+      "speed_mps": 0.001,
+      "z_std_m": 0.097,
+      "max_roll_deg": 69.0,
+      "drift_y_m": 0.283
+    },
+    "0.2": {
+      "dist_m": 0.335,
+      "speed_mps": 0.024,
+      "z_std_m": 0.029,
+      "max_roll_deg": 47.4,
+      "drift_y_m": 0.228
+    },
+    "0.3": {
+      "dist_m": 2.11,
+      "speed_mps": 0.141,
+      "z_std_m": 0.028,
+      "max_roll_deg": 25.4,
+      "drift_y_m": 0.765
+    },
+    "0.4": {
+      "dist_m": 1.047,
+      "speed_mps": 0.066,
+      "z_std_m": 0.027,
+      "max_roll_deg": 30.5,
+      "drift_y_m": 0.598
+    }
+  }
+}
