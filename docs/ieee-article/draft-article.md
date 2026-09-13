@@ -36,10 +36,10 @@ controller at a commanded speed of 0.3 m/s, show that both paradigms walk
 at comparable speed (model-based 0.215 m/s, RL 0.231 m/s). The RL policy
 is markedly more stable (max roll 2.3 deg vs 27.8 deg, lateral drift 0.37 m
 vs 1.09 m), whereas the model-based controller holds body height more
-tightly (std 0.025 m vs 0.040 m) and is fully deterministic, runs without
-GPU training, and requires no learned weights. The model-based controller
-is therefore a transparent baseline and a reliable fallback for learned
-policies.
+tightly (std 0.025 m vs 0.040 m), achieves a comparable cost of transport
+(2.83 vs 2.84), and is fully deterministic, runs without GPU training, and
+requires no learned weights. The model-based controller is therefore a
+transparent baseline and a reliable fallback for learned policies.
 
 **Index Terms** — quadruped robot, Isaac Sim, inverse kinematics, TROT gait,
 reinforcement learning, locomotion control, ROS2.
@@ -227,7 +227,7 @@ graph LR
 | Max \|roll\| (град) | 2.3 ± 0.0 | 27.8 ± 3.7 |
 | Max \|pitch\| (град) | 4.1 ± 0.0 | 35.6 ± 0.0 * |
 | Падений | нет | нет |
-| CoT | TBD | TBD |
+| CoT (Cost of Transport) | 2.84 | 2.83 ± 0.41 |
 
 \* стартовый выброс IK при падении со спавн-высоты; установившийся
 тангаж ~2°. RL полностью детерминирован (std = 0 по всем метрикам).

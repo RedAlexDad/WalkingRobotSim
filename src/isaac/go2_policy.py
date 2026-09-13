@@ -275,8 +275,12 @@ def main() -> int:
                         "joint_pos": jp[0],
                         "joint_vel": jv[0],
                     }}
-                    # для RL cmd0..2 — команда скорости (vx,vy,wz)
-                    cmd12 = list(cmd) + [0.0] * 9
+                    # cmd0..11 — целевые углы суставов политики (для CoT)
+                    try:
+                        tgt = go2.default_pos + go2._current_action * go2._action_scale
+                        cmd12 = [float(v) for v in wp.to_torch(tgt).reshape(-1).tolist()]
+                    except Exception:
+                        cmd12 = list(cmd) + [0.0] * 9
                     tel.log(obs, timestep * 0.005, timestep, cmd=cmd12)
                 except Exception as e:
                     if timestep % 200 == 0:
