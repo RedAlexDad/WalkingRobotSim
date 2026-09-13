@@ -74,7 +74,14 @@ export ROS_DOMAIN_ID="0"
 export CYCLONEDDS_URI="file://${HOME}/.cyclonedds.xml"
 export PYTHONUNBUFFERED="1"
 
+# Телеметрия (см. src/isaac/run_sim_telemetry.py).
+# GO2_TELEMETRY_TAG=ik|rl — метка в имени CSV; GO2_TELEMETRY=0 — отключить.
+export GO2_TELEMETRY="${GO2_TELEMETRY:-1}"
+export GO2_TELEMETRY_TAG="${GO2_TELEMETRY_TAG:-}"
+mkdir -p "${PROJECT_ROOT}/logs/isaac"
+
 log "ISAACSIM_ASSET_ROOT=${ISAACSIM_ASSET_ROOT}"
 log "PYTHONPATH=${PYTHONPATH}"
-log "запуск go2_isaac_ros2 (main.py) $*"
-exec "${ISAAC_VENV}/bin/python" -u "${GO2_ISAAC}/go2_isaac_ros2/main.py" "$@"
+log "телеметрия: GO2_TELEMETRY=${GO2_TELEMETRY} TAG='${GO2_TELEMETRY_TAG}'"
+log "запуск run_sim_telemetry.py $*"
+exec "${ISAAC_VENV}/bin/python" -u "${PROJECT_ROOT}/src/isaac/run_sim_telemetry.py" "$@"

@@ -53,6 +53,10 @@ Scopus, под эгидой IEEE Siberia). Папка содержит обос�
 
 ## Связанные документы вне папки
 
+- `src/isaac/telemetry.py` — логгер телеметрии IsaacLab в CSV.
+- `src/isaac/run_sim_telemetry.py` — лаунчер IsaacLab с записью телеметрии.
+- `src/isaac/analyze_telemetry.py` — метрики и графики из CSV.
+- `src/isaac/run_isaaclab.sh` — запуск среды (теперь с телеметрией).
 - `scripts/fetch_arxiv_refs.py` — загрузчик arXiv-референсов.
 - Отчёты в `reports/isaam/` — фактура по проекту (робот ходит,
   18 400+ шагов, стабильная высота).
