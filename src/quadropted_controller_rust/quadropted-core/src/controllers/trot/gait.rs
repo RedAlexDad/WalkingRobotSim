@@ -60,7 +60,9 @@ impl TrotGaitController {
             0.02,  // z_error_constant
         );
 
-        let pid_ = PIDController::new(0.15, 0.02, 0.002);
+        // kp≈1.0 — компенсация поворота стоп на полный угол наклона тела
+        // (стопы остаются горизонтальны в мире); kd — демпфирование.
+        let pid_ = PIDController::new(1.0, 0.0, 0.05);
 
         Self { gait, use_imu, swing_, stance_, pid_ }
     }
@@ -255,7 +257,7 @@ mod tests {
         let out = trot.pid_controller().run(0.1, 0.0, 0.0);
         assert_eq!(out, [0.0, 0.0]);
         let out2 = trot.pid_controller().run(0.1, 0.0, 0.02);
-        // kp=0.15, error=-0.1 → P-член -0.015 (плюс I/D малые)
-        assert!(out2[0].abs() < 0.05, "PID out {}", out2[0]);
+        // error=-0.1: P=-0.1, D=(-0.1-0)/0.02*kd=-5*0.05=-0.25 → суммарно ≈ -0.35
+        assert!(out2[0] < -0.1, "PID out {}", out2[0]);
     }
 }

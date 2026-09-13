@@ -65,6 +65,9 @@ impl SharedState {
         default_stance[(0, 2)] = -dx_back; default_stance[(1, 2)] = -dy;
         default_stance[(0, 3)] = -dx_back; default_stance[(1, 3)] = dy;
 
+        // IMU-компенсация применяется ТОЛЬКО к позициям для IK (ниже), а не к
+        // self.foot_locations. Иначе повёрнутые стопы становятся входом stance
+        // следующего тика и наклон накапливается (hip → clamp → закрутка).
         let trot_gait = TrotGaitController::new(0.04, 0.18, 0.02, true, default_stance.clone());
         let crawl_gait = CrawlGaitController::new(0.55, 0.45, 0.02, default_stance.clone());
         let rest_ctrl = RestController::new(default_stance.clone());
@@ -104,6 +107,9 @@ impl SharedState {
     fn step(&mut self, robot_height: f64) -> [f64; 12] {
         self.ticks += 1;
 
+        // Поворот IMU-компенсации, применяется только к IK (не к состоянию походки)
+        let mut imu_rot: Option<nalgebra::Matrix3<f64>> = None;
+
         // State machine: select controller based on behavior_state
         self.foot_locations = match self.behavior_state {
             BehaviorState::REST => {
@@ -120,21 +126,24 @@ impl SharedState {
                     let alpha = 0.1;
                     self.foot_locations * (1.0 - alpha) + result * alpha
                 } else {
-                    let mut new_foot = self.trot_gait.step(
+                    let new_foot = self.trot_gait.step(
                         self.ticks,
                         &self.foot_locations,
                         &gait_cmd,
                         robot_height,
                     );
-                    // IMU compensation (как в C++ step_trot)
+                    // IMU-компенсация: считаем поворот, но НЕ применяем к
+                    // self.foot_locations (иначе накапливается). Применим к IK.
                     if self.trot_gait.use_imu() {
                         let now_sec = std::time::SystemTime::now()
                             .duration_since(std::time::UNIX_EPOCH)
                             .map(|d| d.as_secs_f64())
                             .unwrap_or(0.0);
                         let comp = self.trot_gait.pid_controller().run(self.imu_roll, self.imu_pitch, now_sec);
-                        let rot = quadropted_core::math::rotation::rotxyz(-comp[0], -comp[1], 0.0);
-                        new_foot = rot * new_foot;
+                        // comp = kp*(0 - θ) = -kp*θ. Желаемый поворот стоп в
+                        // системе тела — R(-θ), т.е. R(comp). Прежний R(-comp)
+                        // давал R(+kp*θ) — усиление наклона вместо компенсации.
+                        imu_rot = Some(quadropted_core::math::rotation::rotxyz(comp[0], comp[1], 0.0));
                         // Yaw-стабилизация отключена: вызывает крен (roll), т.к.
                         // поворот стоп вокруг Z при наклоне робота нестабилен.
                     }
@@ -161,11 +170,17 @@ impl SharedState {
         };
 
         // IK: foot positions → joint angles
+        // IMU-компенсация применяется к КОПИИ стоп (не к состоянию походки),
+        // чтобы поворот не накапливался в stance.
+        let feet_for_ik = match imu_rot {
+            Some(r) => r * self.foot_locations,
+            None => self.foot_locations,
+        };
         // C++ передаёт body_local_position/orientation (высота тела из change_controller)
         let bp = &self.body_state.body_local_position;
         let bo = &self.body_state.body_local_orientation;
         let local = compute_local_positions(
-            &self.foot_locations, 0.3762, 0.0935,
+            &feet_for_ik, 0.3762, 0.0935,
             bp[0], bp[1], bp[2], bo[0], bo[1], bo[2],
         );
         let angles = compute_all_joint_angles(&local, 0.0, 0.0955, 0.213, 0.213);
