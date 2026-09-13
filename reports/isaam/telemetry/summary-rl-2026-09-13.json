@@ -1,0 +1,23 @@
+{
+  "telemetry_rl_20260913-164038.csv": {
+    "rows": 3002,
+    "duration_s": 15.005,
+    "distance_x_m": 3.337,
+    "path_length_m": 3.473,
+    "mean_speed_mps": 0.2315,
+    "forward_speed_mps": 0.2224,
+    "z_mean_m": 0.1593,
+    "z_std_m": 0.0405,
+    "max_roll_deg": 2.33,
+    "max_pitch_deg": 4.12,
+    "drift_y_m": 0.3675,
+    "t_steady_s": 0.215,
+    "energy_j": 4435.49,
+    "cot": 8.678,
+    "params": {
+      "mass_kg": 15.0,
+      "kp": 75.0,
+      "kd": 0.5
+    }
+  }
+}
