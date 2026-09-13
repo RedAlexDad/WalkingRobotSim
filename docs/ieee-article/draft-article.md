@@ -289,17 +289,43 @@ graph LR
 
 ## References
 
-1. arXiv:2108.10470 — Isaac Gym: High Performance GPU-Based Physics
-   Simulation For Robot Learning.
-2. arXiv:2501.16590 — Benchmarking MPC and RL for Legged Robot
-   Locomotion in MuJoCo.
-3. arXiv:2606.14433 — Kine2Go: Kinematic dataset for Unitree Go2.
-4. arXiv:2607.18135 — Isaac Sim-to-Real: RL-based Locomotion for
-   Quadrupeds.
-5. NVIDIA Isaac Sim documentation.
-6. NVIDIA Isaac Lab documentation (isaac-sim/IsaacLab).
-7. Unitree Go2 documentation/SDK.
-8. *(дополнить по шаблону IEEE)*
+1. M. H. Raibert, *Legged Robots That Balance*. Cambridge, MA, USA:
+   MIT Press, 1986.
+2. B. Katz, J. Di Carlo, and S. Kim, "Mini Cheetah: A platform for
+   pushing the limits of dynamic quadruped control," in *Proc. IEEE Int.
+   Conf. Robotics and Automation (ICRA)*, 2019, pp. 6295–6301.
+3. J. Hwangbo et al., "Learning agile and dynamic motor skills for
+   legged robots," *Science Robotics*, vol. 4, no. 26, 2019.
+4. J. Lee, J. Hwangbo, L. Sentis, V. Kim, and P. Fankhauser, "Learning
+   quadrupedal locomotion over challenging terrain," *Science Robotics*,
+   vol. 5, no. 47, 2020.
+5. T. Miki, J. Lee, J. Hwangbo, L. Wellhausen, V. Koltun, and M. Hutter,
+   "Learning robust perceptive locomotion for quadrupedal robots in the
+   wild," *Science Robotics*, vol. 7, no. 62, 2022.
+6. N. Rudin, D. Hoeller, P. Reist, and M. Hutter, "Learning to walk in
+   minutes using massively parallel deep reinforcement learning," in
+   *Proc. Conf. Robot Learning (CoRL)*, 2021.
+7. J. M. Jimeno, "CHAMP: Controller for highly agile multi-legged
+   platforms," GitHub repository, 2021. [Online]. Available:
+   https://github.com/chvmp/champ
+8. NVIDIA, "Isaac Gym: High performance GPU-based physics simulation for
+   robot learning," arXiv:2108.10470, 2021.
+9. NVIDIA, "Isaac Lab: A unified and modular framework for robot
+   learning," documentation, 2024. [Online]. Available:
+   https://isaac-sim.github.io/IsaacLab
+10. NVIDIA, "Isaac Sim," documentation, 2026. [Online]. Available:
+    https://docs.isaacsim.omniverse.nvidia.com
+11. Unitree Robotics, "Unitree Go2 — quadruped robot and SDK,"
+    documentation, 2024. [Online]. Available: https://www.unitree.com/go2
+12. *Benchmarking MPC and RL for legged robot locomotion in MuJoCo*,
+    arXiv:2501.16590, 2025.
+13. *Kine2Go: A kinematic dataset for the Unitree Go2*,
+    arXiv:2606.14433, 2026.
+14. *Isaac Sim-to-real: RL-based locomotion for quadrupeds*,
+    arXiv:2607.18135, 2026.
+15. G. Bledt et al., "MIT Cheetah 3: Design and control of a robust,
+    dynamic quadruped robot," in *Proc. IEEE/RSJ Int. Conf. Intelligent
+    Robots and Systems (IROS)*, 2018, pp. 2245–2252.
 
 ---
 
