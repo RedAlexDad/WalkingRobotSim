@@ -176,6 +176,10 @@ def run_sim():
     tel = _make_logger()
 
     report_every = int(os.environ.get("GO2_REPORT_EVERY", "50"))
+    push_time = float(os.environ.get("GO2_PUSH_TIME", "0") or 0)
+    push_force = float(os.environ.get("GO2_PUSH_FORCE", "0") or 0)
+    push_dur = float(os.environ.get("GO2_PUSH_DUR", "0.1") or 0.1)
+    push_logged = False
     dt = env.dt
     it = 0
     last_cmd = None
@@ -188,6 +192,19 @@ def run_sim():
                 if not timeline.is_playing():
                     timeline.play()
                 start_time = time.time()
+                # внешний боковой толчок (окно длительностью push_dur)
+                if push_force != 0.0 and push_time <= (it + 1) * dt < push_time + push_dur:
+                    try:
+                        robot = env._env.scene.articulations['robot']
+                        import torch
+                        f = torch.zeros((1, robot.num_bodies, 3), device=robot.device)
+                        f[0, 0, 1] = push_force
+                        robot.set_external_force_and_torque(f, torch.zeros_like(f), body_ids=[0])
+                        if not push_logged:
+                            log("SIM", f"PUSH force={push_force}N (y) at t={(it+1)*dt:.2f}")
+                            push_logged = True
+                    except Exception as e:
+                        log("SIM", f"push error: {e}")
                 obs, _ = env.step()
                 it += 1
                 sim_time = it * dt  # надёжное время: шаг * dt (timeline врёт)
