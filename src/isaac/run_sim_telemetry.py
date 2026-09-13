@@ -34,6 +34,7 @@ import math
 import os
 import signal
 import sys
+import threading
 import time
 
 # rclpy Isaac Sim (Jazzy) — добавляем после AppLauncher, чтобы не мешать старту
@@ -54,6 +55,7 @@ from isaaclab.envs import ManagerBasedEnv
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
+from std_msgs.msg import Float64
 from go2_isaac_ros2.ros import Go2PubNode
 from go2_cmd_sub import Go2CmdSubNode
 
@@ -116,6 +118,42 @@ class ImuBridge(Node):
         self.last = (qw, qx, qy, qz, wx, wy, wz)
 
 
+class PushSubNode(Node):
+    """Боковой толчок по топику /robot1/push (std_msgs/Float64, Н, ось Y).
+
+    При получении сообщения применяет силу к базе в течение dur секунд
+    (dur/dt шагов) — можно подать в любой момент (например, после TROT).
+    """
+
+    def __init__(self, dt: float, dur: float):
+        super().__init__("go2_push_sub")
+        self.dt = dt
+        self.dur = dur
+        self.force = 0.0
+        self.pending_steps = 0
+        self.logged = False
+        self.sub = self.create_subscription(Float64, "/robot1/push", self._cb, 1)
+        self.thread = threading.Thread(target=self._spin, daemon=True)
+        self.thread.start()
+
+    def _spin(self):
+        from rclpy.executors import SingleThreadedExecutor
+        ex = SingleThreadedExecutor()
+        ex.add_node(self)
+        try:
+            while rclpy.ok():
+                ex.spin_once(timeout_sec=0.01)
+        except Exception:
+            pass
+        finally:
+            ex.shutdown()
+
+    def _cb(self, msg: Float64):
+        self.force = float(msg.data)
+        self.pending_steps = max(1, int(self.dur / self.dt))
+        self.logged = False
+
+
 def _has_nan(values) -> bool:
     for v in values:
         if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
@@ -176,11 +214,12 @@ def run_sim():
     tel = _make_logger()
 
     report_every = int(os.environ.get("GO2_REPORT_EVERY", "50"))
-    push_time = float(os.environ.get("GO2_PUSH_TIME", "0") or 0)
-    push_force = float(os.environ.get("GO2_PUSH_FORCE", "0") or 0)
-    push_dur = float(os.environ.get("GO2_PUSH_DUR", "0.1") or 0.1)
-    push_logged = False
+    push_dur = float(os.environ.get("GO2_PUSH_DUR", "0.2") or 0.2)
     dt = env.dt
+    push_node = None
+    if os.environ.get("GO2_PUSH", "1") != "0":
+        push_node = PushSubNode(dt, push_dur)
+        log("run_sim", "Push: /robot1/push (std_msgs/Float64, Н, ось Y)")
     it = 0
     last_cmd = None
     nan_reported = 0
@@ -192,17 +231,19 @@ def run_sim():
                 if not timeline.is_playing():
                     timeline.play()
                 start_time = time.time()
-                # внешний боковой толчок (окно длительностью push_dur)
-                if push_force != 0.0 and push_time <= (it + 1) * dt < push_time + push_dur:
+                # внешний боковой толчок (по топику /robot1/push)
+                if push_node is not None and push_node.pending_steps > 0:
                     try:
                         robot = env._env.scene.articulations['robot']
                         import torch
                         f = torch.zeros((1, robot.num_bodies, 3), device=robot.device)
-                        f[0, 0, 1] = push_force
+                        f[0, 0, 1] = push_node.force
                         robot.set_external_force_and_torque(f, torch.zeros_like(f), body_ids=[0])
-                        if not push_logged:
-                            log("SIM", f"PUSH force={push_force}N (y) at t={(it+1)*dt:.2f}")
-                            push_logged = True
+                        if not push_node.logged:
+                            log("SIM", f"PUSH force={push_node.force}N (y), "
+                                       f"{push_node.pending_steps} шагов")
+                            push_node.logged = True
+                        push_node.pending_steps -= 1
                     except Exception as e:
                         log("SIM", f"push error: {e}")
                 obs, _ = env.step()
