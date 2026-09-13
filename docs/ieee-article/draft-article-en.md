@@ -326,6 +326,16 @@ Only the differential leg-length compensation reduced the roll
 substantially. This is itself a result about the limit of a simple
 proportional attitude stabilizer.
 
+### 5.6. Reproducibility
+
+The telemetry logger, the analysis script, the launch wrapper, and the
+repeat-run scripts are part of the project repository, together with the
+measured metrics (JSON) and a decimated copy of the telemetry. The
+simulator version, asset, physics parameters, and control gains are stated
+in Sections 5.1 and 4.1. The model-based controller source, the environment
+adapter, and the ROS 2 interface are versioned, so the comparison can be
+reproduced from the reported commits.
+
 ## 6. Discussion
 
 The two paradigms trade off differently. The learned policy is markedly
@@ -379,6 +389,37 @@ of the difference may be attributable to these rather than to the control
 paradigm; the qualitative conclusions (roll, drift, determinism) do not
 depend on this. The model-based controller's operating range is narrow. The
 RL policy is a ready-made NVIDIA model and was not trained by us.
+
+### 6.2. Scientific propositions
+
+The results are summarized as four propositions.
+
+**P1 (time-base coupling).** A model-based locomotion controller that runs
+its control loop on wall-clock time is unpredictably coupled to the
+simulator's real-time performance: at different frame rates the number of
+physics steps per control command changes, and the resulting gait changes
+with it. Running the controller on simulation time removes this coupling
+and makes the behavior deterministic.
+
+**P2 (limit of a proportional attitude stabilizer).** Compensating body
+roll by rotating the feet necessarily actuates the hip joints and can
+create a positive feedback loop; increasing the gain, relaxing the hip
+limit, or inverting the sign does not remove it. Compensating the roll
+through a differential leg length, which does not actuate the hip, reduces
+the roll substantially (from 50° to about 8°) but does not eliminate it;
+full elimination requires a capture-point foot placement.
+
+**P3 (stability versus determinism).** For a quadruped on flat terrain, a
+pre-trained RL policy is markedly more stable and tracks a wider velocity
+range than a hand-tuned IK/TROT controller, whereas the model-based
+controller is fully deterministic, requires no GPU or training, and holds
+the body height more tightly. The two are complementary rather than
+substitutable.
+
+**P4 (comparable energy).** Despite the stability gap, the model-based and
+learned controllers achieve a comparable cost of transport (2.83 vs 2.84)
+at the same commanded speed, so energy efficiency alone does not
+discriminate between the paradigms in this setting.
 
 **Practical recommendations.** For tasks on flat ground at a fixed speed,
 where transparency, reproducibility, and independence from a GPU matter,
