@@ -272,3 +272,25 @@ ros2 topic pub -1 /robot1/push std_msgs/msg/Float64 '{data: 60.0}'
 
 Полный план с приоритетами и статусами выполнения —
 `docs/ieee-article/improvement-plan.md` (§0 — таблица статусов).
+
+## 16. Схема телеметрии (125 колонок)
+
+`src/isaac/telemetry.py` пишет максимально полный CSV (единый для IK и
+RL). Колонки:
+
+| Группа | Колонки |
+|---|---|
+| Время | `step`, `sim_time`, `wall_utc` |
+| Позиция/ориентация | `x,y,z`, `qw,qx,qy,qz`, `roll,pitch,yaw` |
+| Скорости | `vx,vy,vz` (мир), `vx_b,vy_b,vz_b` (тело), `wx,wy,wz` |
+| Ускорения/гравитация | `ax,ay,az` (IMU, тело), `gx,gy,gz` (гравитация в теле) |
+| Команда/режим | `vel_cmd_x/y/z`, `mode` |
+| Флаги | `fallen`, `hip_sat`, `nan_flag` |
+| Стопы | `foot_x/y/z0..3` (мир), `contact0..3` |
+| Суставы | `q0..11`, `dq0..11` |
+| Динамика | `tau0..11` (оценка момента), `p0..11` (мощность), `power_w`, `energy_j` |
+| Ошибки/команды | `err0..11` (`cmd−q`), `cmd0..11` |
+
+Стопы берутся из articulation по телам `*_foot` (`foot_ids=[15..18]`).
+`tau_i = kp·(cmd_i−q_i) − kd·dq_i`; `energy_j` — накопленная энергия.
+`kp/kd` задаются через `GO2_KP/GO2_KD` (IK: 75/0.5, RL: 25/0.5).
