@@ -31,13 +31,15 @@ distributed with NVIDIA Isaac Sim, and a classical model-based controller
 that implements a TROT gait generator with analytic inverse kinematics (IK)
 in Rust. Both controllers drive the robot through the same low-level
 joint-position interface, emulating the robot's native low-level mode.
-Experiments in Isaac Sim 6.0 with IsaacLab 3.0 show that the model-based
-controller produces stable straight-line locomotion (mean height ⚠️0.19 m,
-standard deviation ⚠️0.02 m) over ⚠️18 400 simulation steps, while the RL
-policy yields comparable forward speed with ⚠️12% lower energy cost. The
-model-based controller is deterministic, runs without GPU, and recovers
-predictably after disturbances, making it a transparent baseline and a
-reliable fallback for learned policies.
+Experiments in Isaac Sim 6.0 with IsaacLab 3.0, with three runs per
+controller at a commanded speed of 0.3 m/s, show that both paradigms walk
+at comparable speed (model-based 0.215 m/s, RL 0.231 m/s). The RL policy
+is markedly more stable (max roll 2.3 deg vs 27.8 deg, lateral drift 0.37 m
+vs 1.09 m), whereas the model-based controller holds body height more
+tightly (std 0.025 m vs 0.040 m) and is fully deterministic, runs without
+GPU training, and requires no learned weights. The model-based controller
+is therefore a transparent baseline and a reliable fallback for learned
+policies.
 
 **Index Terms** — quadruped robot, Isaac Sim, inverse kinematics, TROT gait,
 reinforcement learning, locomotion control, ROS2.
@@ -213,19 +215,22 @@ graph LR
 
 ### 5.3. ⚠️ РЕЗУЛЬТАТЫ (ЗАГЛУШКИ — заменить реальными из логов)
 
-#### Таблица 1. Сравнение походки «вперёд» (vx ⚠️0.3 м/с)
+#### Таблица 1. Сравнение походки «вперёд» (vx = 0.3 м/с, mean ± std, n = 3)
 
-| Метрика | RL-политика | IK/TROT (наш) |
+| Метрика | RL-политика (NVIDIA) | IK/TROT (наш) |
 |---|---|---|
-| Средняя высота Z (м) | ⚠️0.21 | ⚠️0.19 |
-| Std(Z) (м) | ⚠️0.015 | ⚠️0.02 |
-| Средняя скорость (м/с) | ⚠️0.27 | ⚠️0.28 |
-| Пройдено за 10 с (м) | ⚠️2.6 | ⚠️2.7 |
-| Дрейф по Y за 10 с (м) | ⚠️0.1 | ⚠️0.25 |
-| Max \|roll\| (град) | ⚠️4 | ⚠️6 |
-| Max \|pitch\| (град) | ⚠️5 | ⚠️7 |
-| Шагов до сбоя | ⚠️> 20 000 | ⚠️> 18 400 |
-| CoT | ⚠️1.5 | ⚠️1.9 |
+| Средняя высота Z (м) | 0.159 ± 0.000 | 0.235 ± 0.001 |
+| Std(Z) (м) | 0.040 ± 0.000 | 0.025 ± 0.001 |
+| Средняя скорость (м/с) | 0.231 ± 0.000 | 0.215 ± 0.012 |
+| Пройдено (м) | 3.34 ± 0.00 (15 с) | 2.75 ± 0.12 (19.3 с) |
+| Дрейф по Y (м) | 0.37 ± 0.00 | 1.09 ± 0.16 |
+| Max \|roll\| (град) | 2.3 ± 0.0 | 27.8 ± 3.7 |
+| Max \|pitch\| (град) | 4.1 ± 0.0 | 35.6 ± 0.0 * |
+| Падений | нет | нет |
+| CoT | TBD | TBD |
+
+\* стартовый выброс IK при падении со спавн-высоты; установившийся
+тангаж ~2°. RL полностью детерминирован (std = 0 по всем метрикам).
 
 #### Таблица 2. Поведение при возмущении ⚠️(заглушка)
 
