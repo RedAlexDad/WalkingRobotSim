@@ -137,7 +137,8 @@ def _snapshot(o: dict, cmd=None, foot_pos=None) -> list:
             if hasattr(t, "reshape"):
                 parts.append(t.reshape(-1)[:n].float())
             else:
-                parts.append(_flat(list(t), n))
+                p = _flat(list(t), n)
+                parts.append(p.to(dev) if dev is not None else p)
         except Exception:
             parts.append(torch.full((n,), nan, device=dev) if dev is not None else torch.full((n,), nan))
     for t, n in ((cmd, 12), (foot_pos, 12)):
@@ -145,7 +146,8 @@ def _snapshot(o: dict, cmd=None, foot_pos=None) -> list:
             if hasattr(t, "reshape"):
                 parts.append(t.reshape(-1)[:n].float())
             else:
-                parts.append(_flat(list(t), n))
+                p = _flat(list(t), n)
+                parts.append(p.to(dev) if dev is not None else p)
         except Exception:
             parts.append(torch.full((n,), nan, device=dev) if dev is not None else torch.full((n,), nan))
     try:
