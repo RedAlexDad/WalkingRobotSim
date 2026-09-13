@@ -313,6 +313,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     })?;
     println!("✅ Subscription: imu");
 
+    // Subscription: sim_time (std_msgs/Float64) — шаг по сим-времени.
+    // Если топика нет, контроллер падает на wall-clock 60 Гц (fallback).
+    let sim_time_state = Arc::new(Mutex::new(-1.0f64));
+    let st_state = sim_time_state.clone();
+    let _simtime_sub = node.create_subscription("sim_time", move |msg: std_msgs_rs::Float64MultiArray| {
+        if let Ok(mut t) = st_state.lock() {
+            if let Some(v) = msg.data.iter().next() {
+                *t = *v;
+            }
+        }
+    })?;
+    println!("✅ Subscription: sim_time");
+
     // Service: robot_behavior_command (sit/up/walk) — как C++ behavior_srv_
     let srv_state = state.clone();
     let _behavior_srv = node.create_service::<quadropted_msgs_rs::RobotBehaviorCommand, _>(
@@ -364,11 +377,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     println!("✅ Service: robot_behavior_command");
 
-    // 60Hz control loop
+    // Control loop: шаг по сим-времени (1/60 с), fallback — wall-clock 16 мс
     let ctrl_state = state.clone();
     let ctrl_pub = joint_pub.clone();
-    std::thread::spawn(move || loop {
-        let mut s = ctrl_state.lock().unwrap();
+    let ctrl_sim_time = sim_time_state.clone();
+    std::thread::spawn(move || {
+        let mut last_sim_t = -1.0f64;
+        loop {
+            let st = *ctrl_sim_time.lock().unwrap();
+            if st > 0.0 {
+                while *ctrl_sim_time.lock().unwrap() - last_sim_t < 1.0 / 60.0 {
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+                last_sim_t = *ctrl_sim_time.lock().unwrap();
+            } else {
+                std::thread::sleep(Duration::from_millis(16));
+            }
+            let mut s = ctrl_state.lock().unwrap();
 
         // Startup grace period: ждём пока робот приземлится (как C++ startup_grace_)
         if s.startup_grace > 0 {
@@ -377,7 +402,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("[Rust] Startup grace period complete, controller active");
             }
             drop(s);
-            std::thread::sleep(Duration::from_millis(16));
             continue;
         }
 
@@ -430,7 +454,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         contact_pub.publish(&contact_msg).ok();
 
         drop(s);
-        std::thread::sleep(Duration::from_millis(16)); // 60Hz
+        }
     });
 
     println!("✅ 60Hz control loop with State Machine");

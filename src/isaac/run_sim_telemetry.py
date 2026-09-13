@@ -55,7 +55,7 @@ from isaaclab.envs import ManagerBasedEnv
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, Float64MultiArray
 from go2_isaac_ros2.ros import Go2PubNode
 from go2_cmd_sub import Go2CmdSubNode
 
@@ -154,6 +154,24 @@ class PushSubNode(Node):
         self.logged = False
 
 
+class SimTimePub(Node):
+    """Публикует сим-время на /robot1/sim_time (std_msgs/Float64).
+
+    Позволяет Rust-контроллеру шагать по сим-времени, а не по wall-clock,
+    что убирает зависимость результатов от fps/загрузки CPU.
+    """
+
+    def __init__(self, topic: str = "/robot1/sim_time"):
+        super().__init__("go2_sim_time_pub")
+        self.pub = self.create_publisher(Float64MultiArray, topic, 10)
+        self.topic = topic
+
+    def publish_t(self, t: float) -> None:
+        m = Float64MultiArray()
+        m.data = [float(t)]
+        self.pub.publish(m)
+
+
 def _has_nan(values) -> bool:
     for v in values:
         if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
@@ -224,6 +242,9 @@ def run_sim():
     else:
         log("run_sim", "IMU bridge ОТКЛЮЧЁН (GO2_IMU=0)")
 
+    sim_time_pub = SimTimePub()
+    log("run_sim", "SimTime: /robot1/sim_time (std_msgs/Float64)")
+
     tel = _make_logger()
 
     report_every = int(os.environ.get("GO2_REPORT_EVERY", "50"))
@@ -269,6 +290,7 @@ def run_sim():
                 it += 1
                 sim_time = it * dt  # надёжное время: шаг * dt (timeline врёт)
                 go2_pub_node.publish(obs, sim_time)
+                sim_time_pub.publish_t(sim_time)
 
                 if imu_bridge is not None:
                     try:
