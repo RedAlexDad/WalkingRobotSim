@@ -14,7 +14,7 @@ for i in $(seq 1 "$N"); do
   timeout 20 docker exec -d "$CT" bash -lc "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && exec ros2 run quadropted_controller_rust robot_controller_node --ros-args -r __ns:=/robot1 > /tmp/ctrl.log 2>&1"
   sleep 3
   cd "$REPO"
-  GO2_TELEMETRY_TAG=ik_r$i nohup setsid bash src/isaac/run_isaaclab.sh --headless > /tmp/ik_r$i.log 2>&1 < /dev/null &
+  GO2_TELEMETRY_TAG=ik_r$i GO2_VEL_CMD="0.3 0 0" nohup setsid bash src/isaac/run_isaaclab.sh --headless > /tmp/ik_r$i.log 2>&1 < /dev/null &
   # ждём готовности среды (появление REPORT)
   for _ in $(seq 1 60); do
     sleep 2
