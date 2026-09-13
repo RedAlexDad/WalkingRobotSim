@@ -288,6 +288,44 @@ reaches 47–69° and the robot falls.
 | 0.3 | 0.222 / 2.3° / 0.37 m | 0.141 / 25° / 0.77 m |
 | 0.4 | 0.344 / 3.0° / 0.80 m | 0.066 / 31° / 0.60 m |
 
+### 5.4. Additional metrics
+
+Two further metrics were derived from the recorded telemetry. The **body
+jerk** (root-mean-square of the derivative of the body-frame acceleration)
+quantifies the smoothness of the motion; for the model-based controller it
+is high (about 370, 580, and 620 m/s³ on the three axes), reflecting the
+impulsive nature of the stance/swing transitions. The **energy
+distribution across joint groups** shows that the model-based controller
+spends about 8% of its mechanical energy in the hip joints, 37% in the
+thigh joints, and 55% in the calf joints; the calf joints dominate, which
+is consistent with their role in supporting and propelling the body.
+
+### 5.5. Failure taxonomy
+
+Table 3 summarizes the failure modes identified during integration. Each
+was diagnosed from telemetry and confirmed by a targeted experiment; the
+last column states whether it was resolved.
+
+**Table 3. Failure modes of the model-based controller.**
+
+| Defect | Symptom | Root cause | Resolution | Fixed |
+|---|---|---|---|---|
+| Stance foot drift | IK saturation (`calf=0`), fall | wrong stance velocity divisor | `velocity = -cmd_vel` | yes |
+| IMU accumulation | growing tilt | compensation fed back into gait state | apply to IK copy only | yes |
+| Inverted IMU sign | flip over 180° | `R(-comp)` instead of `R(comp)` | correct sign, `kp=1.0` | yes |
+| Inverted yaw sign | yaw spin over ±180° | `-0.5·yaw_err` | `+0.5·yaw_err` | yes |
+| Wall-clock PID | fps-dependent behavior | wall-clock `dt` under sim-time stepping | simulation-time PID | yes |
+| Roll via hip | hip saturated at −0.30 | positive feedback through the hip | differential leg length | partial |
+| Forward-motion loss | pure lateral motion | wrong gait `time_step` | restore `time_step=0.02` | yes |
+
+**Negative results.** Several plausible remedies did not help and are
+reported for completeness: increasing the attitude gain (`kp=1.0→2.0`),
+relaxing the hip limit (`0.3→0.6`), inverting the roll-compensation sign,
+and a symmetric stance/swing trot (`0.18/0.18`) all degraded stability.
+Only the differential leg-length compensation reduced the roll
+substantially. This is itself a result about the limit of a simple
+proportional attitude stabilizer.
+
 ## 6. Discussion
 
 The two paradigms trade off differently. The learned policy is markedly
@@ -315,6 +353,25 @@ stability, and only a differential leg-length compensation (which avoids
 the hip) reduced the roll substantially. Full elimination requires a
 capture-point or turning controller that plans foot placement with respect
 to the body velocity and yaw error.
+
+### 6.1. Why the proportional stabilizer saturates: a linear view
+
+The coupling that causes the residual roll can be understood from a
+linearized argument. Let the body roll be φ and let the attitude loop
+command a foot rotation `a = -kp·φ`. For a foot at lateral offset `y₀` and
+height `z₀ ≈ -0.25 m`, the rotation changes the foot position by
+`Δy ≈ -z₀·a` and `Δz ≈ y₀·a`. The lateral change `Δy` is realized by the
+hip joint through the inverse kinematics; the hip angle therefore responds
+proportionally to the roll, `Δq_hip ≈ c·φ`. If the sign of this coupling is
+such that the hip displacement reinforces the roll rather than opposing it,
+the loop has positive feedback: `φ̇ = α·φ`, an unstable mode whose growth
+is limited only by the hip clamp. Rotating the feet is thus the wrong
+channel for roll stabilization, because it necessarily actuates the hip;
+compensating the roll through the leg length (`Δz`), which does not
+actuate the hip, removes the positive feedback and reduced the roll from
+50° to about 8°. Eliminating it entirely requires placing the feet outside
+the center of mass — a capture-point condition `y_foot = y_cm + v_y/ω`
+with `ω = √(g/h)` — which the simple proportional loop does not satisfy.
 
 **Limitations.** The study is simulation-only; sim-to-real was not
 verified. The two controllers use different assets and PD gains, so part
