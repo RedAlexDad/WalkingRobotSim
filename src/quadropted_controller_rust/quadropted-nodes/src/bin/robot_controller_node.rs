@@ -36,6 +36,7 @@ struct SharedState {
     imu_roll: f64,
     imu_pitch: f64,
     imu_yaw: f64,
+    desired_yaw: f64,
     mode_msg_count: u64,
     vel_msg_count: u64,
     startup_grace: i32,
@@ -98,6 +99,7 @@ impl SharedState {
             imu_roll: 0.0,
             imu_pitch: 0.0,
             imu_yaw: 0.0,
+            desired_yaw: 0.0,
             mode_msg_count: 0,
             vel_msg_count: 0,
             startup_grace: 120, // 2 сек @ 60 Гц (как C++ startup_grace_)
@@ -116,7 +118,13 @@ impl SharedState {
                 self.rest_ctrl.step(&self.rest_state, robot_height)
             }
             BehaviorState::TROT => {
-                let gait_cmd = [self.cmd_linear[0], self.cmd_linear[1], self.cmd_angular[2]];
+                let mut gait_cmd = [self.cmd_linear[0], self.cmd_linear[1], self.cmd_angular[2]];
+                // yaw-стабилизация: P-регулятор удерживает курс, зафиксированный
+                // при входе в TROT (устраняет медленный уход по дуге).
+                let yaw_err = quadropted_core::math::quaternion::normalize_angle(
+                    self.imu_yaw - self.desired_yaw,
+                );
+                gait_cmd[2] += -0.5 * yaw_err;
                 // C++ step_trot: при нулевой скорости — плавное возвращение к default_stance
                 let has_command =
                     gait_cmd[0].abs() > 1e-4 || gait_cmd[1].abs() > 1e-4 || gait_cmd[2].abs() > 1e-4;
@@ -247,6 +255,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .unwrap_or(0.0),
                         );
                         s.body_state.body_local_position[2] = 0.0;
+                        // запоминаем курс на момент входа в TROT
+                        s.desired_yaw = s.imu_yaw;
                     }
                     BehaviorState::REST => {
                         // C++: body_local_position[2] = -0.15 (лечь на землю)
