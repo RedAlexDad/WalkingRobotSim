@@ -256,6 +256,9 @@ def run_sim():
     _vc = (os.environ.get("GO2_VEL_CMD", "") or "").split()
     vel_cmd = [float(v) for v in _vc] if len(_vc) == 3 else None
     mode = os.environ.get("GO2_MODE", "ik")
+    # Целевой fps (wall) для свипа: 0 = без ограничения (только dt)
+    target_fps = float(os.environ.get("GO2_TARGET_FPS", "0") or 0)
+    target_dt = (1.0 / target_fps) if target_fps > 0 else dt
     push_node = None
     if os.environ.get("GO2_PUSH", "1") != "0":
         push_node = PushSubNode(dt, push_dur)
@@ -346,7 +349,7 @@ def run_sim():
                         f"(n={imu_bridge.count if imu_bridge else 0})",
                     )
 
-                sleep_time = dt - (time.time() - start_time)
+                sleep_time = target_dt - (time.time() - start_time)
                 if sleep_time > 0:
                     time.sleep(sleep_time)
             except KeyboardInterrupt:
