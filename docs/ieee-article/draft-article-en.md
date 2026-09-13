@@ -78,6 +78,24 @@ The contributions of this paper are:
 5. a reproducible finding that the model-based controller was coupled to
    real time, whereas the learned policy was not.
 
+### 1.1. Problem statement and research questions
+
+Given a single quadruped (Unitree Go2), a single simulator (Isaac Sim /
+IsaacLab), and a single low-level joint-position interface, we address the
+following questions:
+
+- **RQ1.** How do a pre-trained RL policy and a hand-tuned IK/TROT
+  controller compare in speed, body-height stability, roll, lateral drift,
+  and cost of transport on flat terrain?
+- **RQ2.** What is the operating range of each controller in commanded
+  speed?
+- **RQ3.** Is the model-based controller's behavior reproducible, or is it
+  coupled to the simulator's real-time performance?
+- **RQ4.** What are the practical integration defects that must be
+  addressed to run a model-based controller through a modern
+  GPU-accelerated simulator, and what is the limit of a simple
+  proportional attitude stabilizer?
+
 ## 2. Related Work
 
 **RL for quadrupeds in Isaac.** Isaac Gym provides GPU-accelerated physics
