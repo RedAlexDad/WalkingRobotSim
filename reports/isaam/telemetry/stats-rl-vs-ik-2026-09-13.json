@@ -1,0 +1,72 @@
+{
+  "rl": {
+    "duration_s": {
+      "mean": 15.005,
+      "std": 0.0
+    },
+    "dist_m": {
+      "mean": 3.337,
+      "std": 0.0
+    },
+    "speed_mps": {
+      "mean": 0.231,
+      "std": 0.0
+    },
+    "z_mean_m": {
+      "mean": 0.159,
+      "std": 0.0
+    },
+    "z_std_m": {
+      "mean": 0.04,
+      "std": 0.0
+    },
+    "max_roll_deg": {
+      "mean": 2.326,
+      "std": 0.0
+    },
+    "max_pitch_deg": {
+      "mean": 4.123,
+      "std": 0.0
+    },
+    "drift_y_m": {
+      "mean": 0.367,
+      "std": 0.0
+    },
+    "n_runs": 3
+  },
+  "ik": {
+    "duration_s": {
+      "mean": 19.283,
+      "std": 2.066
+    },
+    "dist_m": {
+      "mean": 2.751,
+      "std": 0.124
+    },
+    "speed_mps": {
+      "mean": 0.215,
+      "std": 0.012
+    },
+    "z_mean_m": {
+      "mean": 0.235,
+      "std": 0.001
+    },
+    "z_std_m": {
+      "mean": 0.025,
+      "std": 0.001
+    },
+    "max_roll_deg": {
+      "mean": 27.806,
+      "std": 3.701
+    },
+    "max_pitch_deg": {
+      "mean": 35.626,
+      "std": 0.0
+    },
+    "drift_y_m": {
+      "mean": 1.09,
+      "std": 0.16
+    },
+    "n_runs": 3
+  }
+}
