@@ -207,6 +207,34 @@ rotating the feet created a positive feedback loop through the hip joints
 (fig. 1a). The roll is now compensated by a differential leg length, which
 does not actuate the hip; the roll dropped from 50° to about 8° (fig. 1b).
 
+### 4.6. Telemetry and reproducibility
+
+A unified telemetry system records 125 quantities per physics step in CSV
+format: the body position and orientation (quaternion and Euler angles),
+linear and angular velocities in the world and body frames, accelerations
+and the gravity direction in the body frame, commanded velocities and the
+controller mode, world positions and contacts of the four feet, angles and
+velocities of the twelve joints, an estimate of the joint torques,
+instantaneous powers and accumulated energy, joint tracking errors, and
+flags for falls, hip saturation, and NaNs. The same format is used for both
+the model-based and the learned controller, ensuring a fair comparison. The
+joint torque is estimated as `τ_i = kp·(cmd_i − q_i) − kd·q̇_i`, where
+`cmd_i` is the target angle, `q_i` the measured angle, and `q̇_i` the joint
+velocity; the gains `kp` and `kd` are set separately for each controller.
+Energy is the integral of the sum of joint powers, and the cost of
+transport is `E / (m·g·d)`.
+
+To remove the influence of performance on the results, the model-based
+controller was switched to a simulation-time step: the environment
+publishes the current simulation time on a dedicated topic, and the
+controller advances only when the simulation time has increased by the
+control period. This makes the behavior deterministic and independent of
+the frame rate and CPU load. In addition, the telemetry writing was moved
+to a background thread so that it does not block the simulation loop, and
+the GPU-to-CPU transfer is performed in a single batch per step. All
+experiments were performed with a single asset version, fixed physics
+parameters, and an identical launch protocol, ensuring reproducibility.
+
 ## 5. Experiments and Results
 
 ### 5.1. Setup
@@ -294,6 +322,27 @@ of the difference may be attributable to these rather than to the control
 paradigm; the qualitative conclusions (roll, drift, determinism) do not
 depend on this. The model-based controller's operating range is narrow. The
 RL policy is a ready-made NVIDIA model and was not trained by us.
+
+**Practical recommendations.** For tasks on flat ground at a fixed speed,
+where transparency, reproducibility, and independence from a GPU matter,
+the model-based controller is sufficient and serves as a convenient
+baseline. For irregular terrain, variable speeds, and robustness to
+disturbances, the learned policy is preferable. The most promising option
+is a hybrid scheme: the learned policy as the primary mode and the
+deterministic model-based controller as a fallback, switched automatically
+based on roll, current, or loss of contact. Such a scheme combines the
+flexibility of learning with the guaranteed predictability of the
+model-based approach.
+
+**Future work.** First, implement a capture-point balancer and a turning
+controller that plans foot placement with respect to the body's lateral
+velocity and the yaw error, to eliminate the residual roll and drift of the
+model-based controller. Second, equalize the comparison conditions by
+running both controllers on a single asset with identical PD gains. Third,
+conduct a series of disturbance experiments (lateral push, slippery
+surface) and measure the recovery time of both modes. Fourth, transfer the
+result to a real robot (sim-to-real) and verify whether the identified
+patterns persist in the presence of sensor noise and control delays.
 
 ## 7. Conclusion
 
