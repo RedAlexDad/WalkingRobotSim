@@ -111,7 +111,7 @@ impl SharedState {
         }
     }
 
-    fn step(&mut self, robot_height: f64) -> [f64; 12] {
+    fn step(&mut self, robot_height: f64, sim_t: f64) -> [f64; 12] {
         self.ticks += 1;
 
         // Поворот IMU-компенсации, применяется только к IK (не к состоянию походки)
@@ -148,11 +148,9 @@ impl SharedState {
                     // IMU-компенсация: считаем поворот, но НЕ применяем к
                     // self.foot_locations (иначе накапливается). Применим к IK.
                     if self.trot_gait.use_imu() {
-                        let now_sec = std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .map(|d| d.as_secs_f64())
-                            .unwrap_or(0.0);
-                        let comp = self.trot_gait.pid_controller().run(self.imu_roll, self.imu_pitch, now_sec);
+                        // PID по СИМ-времени (не wall-clock): контроллер шагает
+                        // по сим-времени, dt PID должен быть сим-временем.
+                        let comp = self.trot_gait.pid_controller().run(self.imu_roll, self.imu_pitch, sim_t);
                         // comp = kp*(0 - θ) = -kp*θ. Желаемый поворот стоп в
                         // системе тела — R(-θ), т.е. R(comp). Прежний R(-comp)
                         // давал R(+kp*θ) — усиление наклона вместо компенсации.
@@ -253,12 +251,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     BehaviorState::TROT => {
                         // C++: trot_gait_->pid_controller().reset(this->now().seconds())
-                        s.trot_gait.pid_controller().reset(
-                            std::time::SystemTime::now()
-                                .duration_since(std::time::UNIX_EPOCH)
-                                .map(|d| d.as_secs_f64())
-                                .unwrap_or(0.0),
-                        );
+                        s.trot_gait.pid_controller().reset(-1.0);
                         s.body_state.body_local_position[2] = 0.0;
                         // запоминаем курс на момент входа в TROT
                         s.desired_yaw = s.imu_yaw;
@@ -361,12 +354,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // C++: rest_event + trot_event → REST затем TROT
                     s.behavior_state = BehaviorState::TROT;
                     s.ticks = 0;
-                    s.trot_gait.pid_controller().reset(
-                        std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .map(|d| d.as_secs_f64())
-                            .unwrap_or(0.0),
-                    );
+                    s.trot_gait.pid_controller().reset(-1.0);
                     resp.success = true;
                     resp.message = "Robot started walking.".into();
                 }
@@ -408,7 +396,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             continue;
         }
 
-        let angles = s.step(-0.25);
+        let angles = s.step(-0.25, st.max(0.0));
 
         if s.ticks % 120 == 0 {
             println!("[Rust DEBUG] Tick #{} ({:.1}s) {:?} mode, vx={:.3}",
