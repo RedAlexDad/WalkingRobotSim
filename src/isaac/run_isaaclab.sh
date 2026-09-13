@@ -80,6 +80,8 @@ export PYTHONUNBUFFERED="1"
 # GO2_TELEMETRY_TAG=ik|rl — метка в имени CSV; GO2_TELEMETRY=0 — отключить.
 export GO2_TELEMETRY="${GO2_TELEMETRY:-1}"
 export GO2_TELEMETRY_TAG="${GO2_TELEMETRY_TAG:-}"
+# Предел hip (рад): слишком малый обрезает IMU-компенсацию крена.
+export GO2_HIP_CLAMP="${GO2_HIP_CLAMP:-0.3}"
 mkdir -p "${PROJECT_ROOT}/logs/isaac"
 
 log "ISAACSIM_ASSET_ROOT=${ISAACSIM_ASSET_ROOT}"

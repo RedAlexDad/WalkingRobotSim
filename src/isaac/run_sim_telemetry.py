@@ -54,7 +54,8 @@ from isaaclab.envs import ManagerBasedEnv
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
-from go2_isaac_ros2.ros import Go2PubNode, Go2SubNode
+from go2_isaac_ros2.ros import Go2PubNode
+from go2_cmd_sub import Go2CmdSubNode
 
 from telemetry import TelemetryLogger, default_telemetry_path, quat_to_rpy
 
@@ -160,7 +161,7 @@ def run_sim():
     rclpy.init()
     log("run_sim", "rclpy.init OK")
     go2_pub_node = Go2PubNode()
-    go2_sub_node = Go2SubNode(env)
+    go2_sub_node = Go2CmdSubNode(env)
     go2_sub_node.start()
     log("run_sim", "ROS-узлы созданы: pub(/clock) + sub(joint commands), spin запущен")
 
