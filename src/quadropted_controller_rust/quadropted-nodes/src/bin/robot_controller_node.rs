@@ -116,6 +116,7 @@ impl SharedState {
 
         // Поворот IMU-компенсации, применяется только к IK (не к состоянию походки)
         let mut imu_rot: Option<nalgebra::Matrix3<f64>> = None;
+        let mut roll_z: f64 = 0.0;
 
         // State machine: select controller based on behavior_state
         self.foot_locations = match self.behavior_state {
@@ -154,7 +155,10 @@ impl SharedState {
                         // comp = kp*(0 - θ) = -kp*θ. Желаемый поворот стоп в
                         // системе тела — R(-θ), т.е. R(comp). Прежний R(-comp)
                         // давал R(+kp*θ) — усиление наклона вместо компенсации.
-                        imu_rot = Some(quadropted_core::math::rotation::rotxyz(comp[0], comp[1], 0.0));
+                        // Тангаж — поворотом стоп; крен — дифференциальной
+                        // длиной ног (roll_z), чтобы НЕ уводить hip в насыщение.
+                        imu_rot = Some(quadropted_core::math::rotation::rotxyz(0.0, comp[1], 0.0));
+                        roll_z = comp[0];
                         // Yaw-стабилизация отключена: вызывает крен (roll), т.к.
                         // поворот стоп вокруг Z при наклоне робота нестабилен.
                     }
@@ -183,10 +187,17 @@ impl SharedState {
         // IK: foot positions → joint angles
         // IMU-компенсация применяется к КОПИИ стоп (не к состоянию походки),
         // чтобы поворот не накапливался в stance.
-        let feet_for_ik = match imu_rot {
+        let mut feet_for_ik = match imu_rot {
             Some(r) => r * self.foot_locations,
             None => self.foot_locations,
         };
+        // Крен-компенсация: дифференциальная длина ног (по стороне Y), без hip.
+        if roll_z != 0.0 {
+            for leg in 0..4 {
+                let side = if feet_for_ik[(1, leg)] >= 0.0 { 1.0 } else { -1.0 };
+                feet_for_ik[(2, leg)] += roll_z * side;
+            }
+        }
         // C++ передаёт body_local_position/orientation (высота тела из change_controller)
         let bp = &self.body_state.body_local_position;
         let bo = &self.body_state.body_local_orientation;
