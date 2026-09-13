@@ -67,7 +67,9 @@ export ISAACSIM_ASSET_ROOT="${HOME}/isaac_assets"
 # .so скопированы на хост). rclpy Isaac (Jazzy) добавляется в sys.path
 # в run_sim.py (чтобы не мешать AppLauncher).
 export PYTHONPATH="${GO2_ISAAC}"
-export LD_LIBRARY_PATH="${HOME}/isaacsim-venv/lib/python3.12/site-packages/unitree_go_lib:${LD_LIBRARY_PATH:-}"
+# ${ISAAC_JAZZY}/lib нужен, чтобы rclpy Isaac Sim подгружал type support
+# для sensor_msgs/geometry_msgs (иначе UnsupportedTypeSupport).
+export LD_LIBRARY_PATH="${ISAAC_JAZZY}/lib:${HOME}/isaacsim-venv/lib/python3.12/site-packages/unitree_go_lib:${LD_LIBRARY_PATH:-}"
 export AMENT_PREFIX_PATH="${ISAAC_JAZZY}/rclpy:${HOME}/isaacsim-venv/ament_install/unitree_go:${AMENT_PREFIX_PATH:-}"
 export RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
 export ROS_DOMAIN_ID="0"
