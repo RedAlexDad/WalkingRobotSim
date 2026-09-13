@@ -110,6 +110,9 @@ P-регулятор курса `gait_cmd[2] += -0.5·(imu_yaw − desired_yaw)`
 ## 6. Артефакты
 
 - Метрики (JSON): `reports/isaam/telemetry/summary-trot-debug-2026-09-13.json`.
+- Компактная телеметрия победного прогона (прорежена ×10, gzip):
+  `reports/isaam/telemetry/telemetry_ik_sym_2026-09-13_decimated.csv.gz`
+  (1691 строка; полный CSV — 16 897 строк).
 - Сырые CSV телеметрии: `logs/isaac/telemetry_ik_*.csv` (каталог `logs/`
   в `.gitignore`, в репозиторий не попадает).
 - Инструменты: `src/isaac/telemetry.py`,
