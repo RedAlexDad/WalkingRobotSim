@@ -95,6 +95,66 @@ def quat_to_rpy(qw: float, qx: float, qy: float, qz: float) -> tuple[float, floa
     return roll, pitch, yaw
 
 
+_OBS_SPECS = [
+    ("world_pos", 3), ("world_quat", 4), ("world_lin_vel", 3),
+    ("world_ang_vel", 3), ("imu_body_lin_acc", 3),
+    ("joint_pos", 12), ("joint_vel", 12),
+]
+
+
+def _snapshot(o: dict, cmd=None, foot_pos=None) -> list:
+    """Один батч-перевод GPU→CPU всех величин (одна синхронизация).
+
+    Возвращает плоский список: obs(40) + cmd(12) + foot_pos(12).
+    """
+    try:
+        import torch
+    except Exception:
+        return None
+    dev = None
+    for k, _ in _OBS_SPECS:
+        t = o.get(k)
+        if t is not None:
+            try:
+                dev = t.device
+                break
+            except Exception:
+                pass
+    parts = []
+    nan = float("nan")
+    def _flat(vals, n):
+        out = []
+        for row in vals:
+            if isinstance(row, (list, tuple)):
+                out.extend(float(v) for v in row)
+            else:
+                out.append(float(row))
+        return torch.tensor(out[:n], dtype=torch.float32)
+
+    for k, n in _OBS_SPECS:
+        t = o.get(k)
+        try:
+            if hasattr(t, "reshape"):
+                parts.append(t.reshape(-1)[:n].float())
+            else:
+                parts.append(_flat(list(t), n))
+        except Exception:
+            parts.append(torch.full((n,), nan, device=dev) if dev is not None else torch.full((n,), nan))
+    for t, n in ((cmd, 12), (foot_pos, 12)):
+        try:
+            if hasattr(t, "reshape"):
+                parts.append(t.reshape(-1)[:n].float())
+            else:
+                parts.append(_flat(list(t), n))
+        except Exception:
+            parts.append(torch.full((n,), nan, device=dev) if dev is not None else torch.full((n,), nan))
+    try:
+        flat = torch.cat(parts)
+        return flat.cpu().tolist()
+    except Exception:
+        return None
+
+
 def _tensor_row(t, n: int) -> list[float]:
     """Первые n элементов тензора/списка → список float (NaN при ошибке)."""
     if t is None:
@@ -130,7 +190,7 @@ def _safe(x, default=float("nan")):
 class TelemetryLogger:
     """Пишет CSV с полной телеметрией корпуса, стоп и суставов."""
 
-    def __init__(self, path: str, flush_every: int = 50):
+    def __init__(self, path: str, flush_every: int = 200):
         self.path = os.path.abspath(os.path.expanduser(path))
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
         self._fh = open(self.path, "w", newline="", encoding="utf-8")
@@ -147,20 +207,22 @@ class TelemetryLogger:
             vel_cmd=None, mode: str = "", kp: float = None, kd: float = None,
             foot_pos=None) -> None:
         o = obs["obs"] if "obs" in obs else obs
-
-        x, y, z = _tensor_row(o.get("world_pos"), 3)
-        qw, qx, qy, qz = _tensor_row(o.get("world_quat"), 4)
-        vx, vy, vz = _tensor_row(o.get("world_lin_vel"), 3)
-        wx, wy, wz = _tensor_row(o.get("world_ang_vel"), 3)
-        ax, ay, az = _tensor_row(o.get("imu_body_lin_acc"), 3)
+        snap = _snapshot(o, cmd=cmd, foot_pos=foot_pos)
+        if snap is None:
+            return
+        x, y, z = snap[0:3]
+        qw, qx, qy, qz = snap[3:7]
+        vx, vy, vz = snap[7:10]
+        wx, wy, wz = snap[10:13]
+        ax, ay, az = snap[13:16]
+        q = snap[16:28]
+        dq = snap[28:40]
+        c = snap[40:52]
+        fp = snap[52:64]
         roll, pitch, yaw = quat_to_rpy(qw, qx, qy, qz)
 
         vbx, vby, vbz = _rot_body(qw, qx, qy, qz, vx, vy, vz)
         gx, gy, gz = _rot_body(qw, qx, qy, qz, 0.0, 0.0, -1.0)
-
-        q = _tensor_row(o.get("joint_pos"), 12)
-        dq = _tensor_row(o.get("joint_vel"), 12)
-        c = _tensor_row(cmd, 12)
         vc = _tensor_row(vel_cmd, 3) if vel_cmd is not None else [float("nan")] * 3
 
         # моменты, мощности, ошибки
@@ -175,26 +237,11 @@ class TelemetryLogger:
         self._last_t = float(sim_time_sec)
         err = [c[i] - q[i] for i in range(12)]
 
-        # позиции стоп (4×3) и контакты
-        fp = [float("nan")] * 12
+        # контакты по высоте стопы (fp из snapshot)
         contacts = [float("nan")] * 4
-        if foot_pos is not None:
-            try:
-                if hasattr(foot_pos, "reshape"):
-                    vals = [float(v) for v in foot_pos.reshape(-1).tolist()]
-                else:
-                    vals = []
-                    for r in foot_pos:
-                        if isinstance(r, (list, tuple)):
-                            vals.extend(float(v) for v in r)
-                        else:
-                            vals.append(float(r))
-                fp = [_safe(v) for v in vals[:12]]
-                for i in range(4):
-                    fz = fp[i * 3 + 2]
-                    contacts[i] = 1.0 if (not math.isnan(fz) and fz < 0.06) else 0.0
-            except Exception:
-                pass
+        for i in range(4):
+            fz = fp[i * 3 + 2]
+            contacts[i] = 1.0 if (not math.isnan(fz) and fz < 0.06) else 0.0
 
         # флаги
         nan_flag = 1 if any(math.isnan(v) for v in (x, y, z) + (qw, qx, qy, qz) + tuple(q)) else 0
