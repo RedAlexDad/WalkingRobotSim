@@ -56,7 +56,9 @@ impl SharedState {
         let body_length = 0.3762;
         let body_width = 0.0935;
         let l2 = 0.0955;
-        let dx_front = body_length * 0.5 + 0.02;
+        // Симметричная стойка (без смещения переда вперёд) — убирает постоянный
+        // момент крена/курса от асимметрии front/back в диагональном троте.
+        let dx_front = body_length * 0.5;
         let dx_back = body_length * 0.5;
         let dy = body_width * 0.5 + l2;
 
