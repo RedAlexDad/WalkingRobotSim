@@ -37,6 +37,7 @@ from __future__ import annotations
 import csv
 import math
 import os
+import threading
 import time
 from typing import Optional
 
@@ -203,7 +204,26 @@ class TelemetryLogger:
         self._t0 = time.time()
         self._energy = 0.0
         self._last_t = None
+        # запись в фоновом потоке — не блокирует цикл симуляции
+        import queue as _queue
+        self._q = _queue.Queue(maxsize=20000)
+        self._thread = threading.Thread(target=self._writer_loop, daemon=True)
+        self._thread.start()
         print(f"[telemetry] пишу CSV: {self.path}", flush=True)
+
+    def _writer_loop(self):
+        n = 0
+        while True:
+            row = self._q.get()
+            if row is None:
+                break
+            try:
+                self._writer.writerow(row)
+                n += 1
+                if n % self._flush_every == 0:
+                    self._fh.flush()
+            except Exception:
+                pass
 
     def log(self, obs: dict, sim_time_sec: float, step: int, cmd=None,
             vel_cmd=None, mode: str = "", kp: float = None, kd: float = None,
@@ -265,13 +285,16 @@ class TelemetryLogger:
             + fp + contacts
             + q + dq + tau + p + [power, round(self._energy, 4)] + err + c
         )
-        self._writer.writerow(row)
+        try:
+            self._q.put_nowait(row)
+        except Exception:
+            pass
         self._rows += 1
-        if self._rows % self._flush_every == 0:
-            self._fh.flush()
 
     def close(self) -> None:
         try:
+            self._q.put(None)
+            self._thread.join(timeout=10)
             self._fh.flush()
             self._fh.close()
         except Exception:
