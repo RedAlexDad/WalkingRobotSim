@@ -63,7 +63,8 @@ _T0 = time.time()
 
 
 def _ts() -> str:
-    return time.strftime("%H:%M:%S") + f".{int((time.time() % 1) * 1000):03d}"
+    t = time.time()
+    return time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(t)) + f".{int((t % 1) * 1000):03d}Z"
 
 
 def log(tag: str, msg: str) -> None:

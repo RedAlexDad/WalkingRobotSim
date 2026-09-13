@@ -49,7 +49,15 @@ def main() -> int:
     parser.add_argument("--ns", default="/robot1", help="ROS namespace (зарезервировано)")
     parser.add_argument("--min-ram", type=float, default=12.0, help="минимальная RAM (ГБ)")
     parser.add_argument("--debug", action="store_true", help="verbose debug output")
+    parser.add_argument("--duration", type=float, default=0.0,
+                        help="остановиться через N секунд симуляции (0 = без ограничения)")
     args = parser.parse_args()
+
+    import time as _time
+    _t0 = _time.time()
+
+    def phase(msg):
+        log.info(TAG, f"[phase +{_time.time() - _t0:5.1f}s] {msg}")
 
     setup_debug()
     if args.debug or os.environ.get("ISAAC_DEBUG") == "1":
@@ -70,6 +78,7 @@ def main() -> int:
         }
     )
     log.info(TAG, f"Isaac Sim started (headless={args.headless})")
+    phase("SimulationApp готов")
 
     import omni
     import omni.appwindow
@@ -159,6 +168,7 @@ def main() -> int:
         env_config_path=ENV_CONFIG_PATH,
     )
     log.info(TAG, f"Go2 created: num_dofs={go2.robot.num_dofs}")
+    phase("робот и политика созданы")
     log.info(TAG, f"dof_names={go2.robot.dof_names}")
 
     # --- Управление: клавиатура + stdin ---
@@ -283,6 +293,7 @@ def main() -> int:
     timeline = omni.timeline.get_timeline_interface()
     timeline.play()
     log.info(TAG, "simulation started")
+    phase("симуляция запущена")
 
     # --- Цикл: обновление + периодический отчёт позы ---
     it = 0
@@ -290,6 +301,10 @@ def main() -> int:
         while sim_app.is_running() and running[0]:
             sim_app.update()
             it += 1
+            if args.duration > 0 and timestep * 0.005 >= args.duration:
+                log.info(TAG, f"duration {args.duration}s достигнут (t={timestep*0.005:.1f}s), остановка")
+                running[0] = False
+                break
             if it % 200 == 0 and not args.headless:
                 try:
                     pos, ori = go2.robot.get_world_poses()

@@ -33,7 +33,7 @@ JOINT_NAMES = [
 ]
 
 _BASE_COLS = [
-    "step", "sim_time",
+    "step", "sim_time", "wall_utc",
     "x", "y", "z",
     "qw", "qx", "qy", "qz",
     "vx", "vy", "vz",
@@ -44,6 +44,12 @@ _JOINT_COLS = [f"q{i}" for i in range(12)]
 _JOINT_VEL_COLS = [f"dq{i}" for i in range(12)]
 _CMD_COLS = [f"cmd{i}" for i in range(12)]
 HEADER = _BASE_COLS + _JOINT_COLS + _JOINT_VEL_COLS + _CMD_COLS
+
+
+def utc_iso() -> str:
+    """Текущее время в ISO 8601 UTC (например, 2026-09-13T13:39:27.123Z)."""
+    t = time.time()
+    return time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(t)) + f".{int((t % 1) * 1000):03d}Z"
 
 
 def quat_to_rpy(qw: float, qx: float, qy: float, qz: float) -> tuple[float, float, float]:
@@ -113,7 +119,7 @@ class TelemetryLogger:
         c = _tensor_row(cmd, 12)
 
         row = (
-            [int(step), float(sim_time_sec),
+            [int(step), float(sim_time_sec), utc_iso(),
              x, y, z,
              qw, qx, qy, qz,
              vx, vy, vz,
