@@ -74,7 +74,7 @@ impl SharedState {
         // time_step походки = период управления (1/60 с): контроллер теперь
         // шагает по сим-времени ровно 60 Гц. Ранее 0.02 (50 Гц) не совпадало
         // с фактическим периодом и делало поведение зависимым от fps.
-        let trot_gait = TrotGaitController::new(0.04, 0.18, 1.0 / 60.0, true, default_stance.clone());
+        let trot_gait = TrotGaitController::new(0.04, 0.18, 0.02, true, default_stance.clone());
         let crawl_gait = CrawlGaitController::new(0.55, 0.45, 0.02, default_stance.clone());
         let rest_ctrl = RestController::new(default_stance.clone());
         let stand_ctrl = StandController::new(default_stance.clone());
