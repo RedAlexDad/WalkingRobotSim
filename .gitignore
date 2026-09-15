@@ -138,3 +138,7 @@ src/go2_description/urdf/go2_gazebo_*
 
 # Хеш последней сборки elevation
 .last_elevation_build_commit
+
+# Блокировки офисных документов
+*.lock
+.~lock.*#
