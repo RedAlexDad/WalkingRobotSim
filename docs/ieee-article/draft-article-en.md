@@ -294,6 +294,14 @@ response. All metrics are averaged over the three runs of each controller.
 
 ### Results
 
+Table 1 summarizes the forward-walking comparison at the commanded speed
+of 0.3 m/s. Both controllers walk at a comparable speed and a comparable
+cost of transport, but they differ markedly in stability: the learned
+policy keeps a small roll and a small lateral drift, whereas the
+model-based controller has a larger roll and drift. In return, the
+model-based controller holds the body height more tightly and is fully
+deterministic.
+
 **Table 1. Forward walking (vx = 0.3 m/s, mean ± std, n = 3).**
 
 | Metric | RL policy (NVIDIA) | IK/TROT (ours) |
@@ -315,6 +323,10 @@ zero). The trajectories of the two controllers are compared in Fig. 3.
 ![Trajectory in the horizontal plane.](figures/bw/fig_trajectory.png)
 
 **Fig. 3.** Trajectory in the horizontal plane: model-based IK/TROT (solid) and RL policy (dashed).
+
+The operating range of both controllers is reported in Table 2, which
+lists the achieved speed, the maximum roll, and the lateral drift for four
+commanded speeds.
 
 **Table 2. Operating range (speed / roll / drift).**
 
@@ -344,6 +356,9 @@ calf joints dominate, consistent with their role in supporting and
 propelling the body.
 
 ### Failure Taxonomy and Negative Results
+
+Table 3 collects the failure modes that were identified during
+integration, together with their symptoms, root causes, and resolutions.
 
 **Table 3. Failure modes of the model-based controller.**
 
