@@ -142,6 +142,37 @@ positions and a PD law; the model-based controller uses stiffness 75 and
 damping 0.5, while the NVIDIA policy uses stiffness 25 and damping 0.5, as
 specified by its environment configuration.
 
+### Mathematical Formulation
+
+The metrics and control relations used in this work are summarized below.
+
+Stance foot velocity:
+ v_st = -step_dist / (4 dt tau_st) (1)
+where step_dist is the commanded stride distance, dt is the control time
+step, and tau_st is the stance duration of the leg.
+
+Joint torque estimate:
+ tau_i = k_p (q_i_cmd - q_i) - k_d q_i_dot (2)
+where q_i_cmd is the commanded joint angle, q_i is the measured angle,
+q_i_dot is the joint velocity, and k_p and k_d are the stiffness and
+damping gains of the actuator.
+
+Cost of transport:
+ CoT = E / (m g d) (3)
+where E is the mechanical energy, m is the robot mass, g is the
+gravitational acceleration, and d is the distance travelled.
+
+Capture point:
+ y_foot = y_cm + v_y / omega,  omega = sqrt(g / h) (4)
+where y_foot is the required foot placement, y_cm is the center-of-mass
+position, v_y is the lateral velocity, g is the gravitational acceleration,
+and h is the center-of-mass height.
+
+Positive-feedback mode of the roll loop:
+ phi_dot = alpha phi (5)
+where phi is the body roll and alpha is the growth rate of the unstable
+mode caused by the hip coupling.
+
 ### Model-Based IK/TROT Controller
 
 The controller is a finite-state machine with REST, STAND, and TROT
@@ -180,8 +211,8 @@ contacts):
    $-\frac{\mathrm{step\_dist}}{4\,dt\,\tau_{\mathrm{st}}}$, where `stance_ticks` is the length
    of one stance phase, whereas the leg is on the ground for several phases
    in a row. The foot drifted backwards (up to −1.2 m) and the IK saturated
-   (`calf = 0`). It was replaced by the physically correct
-   `velocity = -cmd_vel`.
+   (`calf = 0`). It was replaced by the physically correct velocity,
+   Eq. (1) with v_st = -cmd_vel.
 2. **IMU compensation accumulation.** The compensation was applied
    incrementally to the gait state, so the tilt accumulated. It is now
    applied only to the copy used for IK.
@@ -212,9 +243,8 @@ velocities and the controller mode, world positions and contacts of the
 four feet, angles and velocities of the twelve joints, an estimate of the
 joint torques, instantaneous powers and accumulated energy, joint tracking
 errors, and flags for falls, hip saturation, and NaNs. The same format is
-used for both controllers. The joint torque is estimated as
-$\tau_i = k_p\,(q_i^{\mathrm{cmd}} - q_i) - k_d\,\dot{q}_i$; energy is the integral of the sum of
-joint powers, and the cost of transport is $E / (m\,g\,d)$. To remove the
+used for both controllers. The joint torque is estimated by Eq. (2); the energy is the integral of the
+sum of joint powers, and the cost of transport is given by Eq. (3). To remove the
 influence of performance, the model-based controller steps on simulation
 time, published by the environment on a dedicated topic, which makes its
 behavior deterministic and independent of the frame rate.
@@ -345,7 +375,7 @@ coupling reinforces the roll, the loop has positive feedback
 ($\dot{\varphi} = \alpha\,\varphi$) limited only by the hip clamp. Compensating the roll through
 the leg length removes the feedback and reduced the roll from 50° to about
 8°. Full elimination requires placing the feet outside the center of mass —
-a capture-point condition $y_{\mathrm{foot}} = y_{\mathrm{cm}} + v_y/\omega$ with $\omega = \sqrt{g/h}$ —
+a capture-point condition, Eq. (4) —
 which the simple proportional loop does not satisfy.
 
 The results are summarized as four propositions. **P1 (time-base
