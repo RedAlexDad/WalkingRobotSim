@@ -406,30 +406,31 @@ the leg length removes the feedback and reduced the roll from 50° to about
 a capture-point condition, Eq. (4) —
 which the simple proportional loop does not satisfy.
 
-The results are summarized as four propositions. **P1 (time-base
-coupling):** a model-based controller that runs on wall-clock time is
-unpredictably coupled to the simulator's real-time performance, whereas a
-simulation-time loop is deterministic. **P2 (limit of a proportional
-attitude stabilizer):** compensating roll by rotating the feet actuates
-the hip and can create positive feedback; a differential leg length reduces
-but does not eliminate it. **P3 (stability versus determinism):** the RL
-policy is more stable and tracks a wider velocity range, while the
-model-based controller is deterministic, training-free, and holds height
-better; the two are complementary. **P4 (comparable energy):** despite the
-stability gap, the two achieve a comparable cost of transport (2.83 vs
-2.84).
+These findings can be summarized in a few concise statements. First, the
+behavior of a model-based controller that runs its loop on wall-clock time
+is unpredictably coupled to the real-time performance of the simulator,
+whereas a loop driven by simulation time is deterministic. Second,
+compensating the roll by rotating the feet actuates the hip and can create
+positive feedback; a differential leg length reduces but does not eliminate
+it. Third, the learned policy is more stable and tracks a wider velocity
+range, while the model-based controller is deterministic, training-free,
+and holds the height better, so the two are complementary rather than
+substitutable. Fourth, despite the stability gap, both achieve a comparable
+cost of transport (2.83 vs 2.84), so energy efficiency alone does not
+discriminate between the paradigms.
 
-**Limitations.** The study is simulation-only; sim-to-real was not
-verified. The two controllers use different assets and PD gains, so part
-of the difference may be attributable to these rather than to the control
-paradigm. The model-based controller's operating range is narrow. The RL
-policy is a ready-made NVIDIA model and was not trained by us.
-
-**Future work.** Implement a capture-point balancer and a turning
-controller to eliminate the residual roll and drift; equalize the
-comparison conditions by running both controllers on a single asset with
-identical PD gains; conduct disturbance experiments (lateral push,
-slippery surface); and transfer the result to a real robot.
+These conclusions hold within the scope of the present study, which is
+limited to simulation; sim-to-real was not verified. The two controllers
+also use different assets and PD gains, so part of the difference may be
+attributable to these rather than to the control paradigm, and the
+operating range of the model-based controller is narrow. The RL policy is
+a ready-made NVIDIA model and was not trained by us. Building on these
+results, the natural next steps are to implement a capture-point balancer
+and a turning controller that eliminate the residual roll and drift, to
+equalize the comparison conditions by running both controllers on a single
+asset with identical PD gains, to conduct disturbance experiments such as a
+lateral push or a slippery surface, and to transfer the result to a real
+robot.
 
 ## Acknowledgment
 
