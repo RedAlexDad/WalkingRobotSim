@@ -11,7 +11,7 @@ papinav@student.bmstu.ru
 
 Quadruped robots are increasingly used in inspection, logistics, and
 search-and-rescue, and their development relies heavily on physics
-simulation. We compare two fundamentally different locomotion-control
+simulation. We compare two different locomotion-control
 paradigms for the Unitree Go2 quadruped: a pre-trained
 reinforcement-learning (RL) policy distributed with NVIDIA Isaac Sim [8],
 and a classical model-based controller that implements a TROT gait
