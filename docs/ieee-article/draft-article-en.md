@@ -188,6 +188,8 @@ the feet created a positive feedback loop through the hip joints. The roll
 is now compensated by a differential leg length, which does not actuate the
 hip; the roll dropped from 50° to about 8° (Fig. 2).
 
+![Fig. 2. Body roll over time before (solid) and after (dashed) the differential leg-length fix.](figures/bw/fig_roll.png)
+
 ### Telemetry and Reproducibility
 
 A unified telemetry system records 125 quantities per physics step in CSV
@@ -241,6 +243,8 @@ of body height, maximum roll and pitch, lateral drift, cost of transport
 about 2°. The RL policy is deterministic across runs (standard deviation
 zero). The trajectories of the two controllers are compared in Fig. 1.
 
+![Fig. 1. Trajectory in the horizontal plane: model-based IK/TROT (solid) and RL policy (dashed).](figures/bw/fig_trajectory.png)
+
 **Table 2. Operating range (speed / roll / drift).**
 
 | vx (m/s) | RL policy | IK/TROT |
@@ -253,6 +257,8 @@ zero). The trajectories of the two controllers are compared in Fig. 1.
 The RL policy tracks the commanded velocity over the whole range with a
 small roll, whereas the model-based controller is stable only near
 0.3 m/s. The speed tracking of both controllers is shown in Fig. 3.
+
+![Fig. 3. Achieved speed versus commanded speed for the RL policy (circles) and the IK/TROT controller (squares); the dotted line is the ideal.](figures/bw/fig_speed.png)
 
 ### Additional Metrics
 
