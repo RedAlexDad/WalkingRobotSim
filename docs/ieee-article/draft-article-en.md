@@ -148,14 +148,14 @@ The metrics and control relations used in this work are summarized below.
 
 Stance foot velocity:
 
-$$v_{\mathrm{st}} = -\frac{\mathrm{step\_dist}}{4\,dt\,\tau_{\mathrm{st}}} \tag{1}$$
+$$v_{\mathrm{st}} = -\frac{\mathrm{step_{dist}}}{4 dt \tau_{\mathrm{st}}} \tag{1}$$
 
-where $\mathrm{step\_dist}$ is the commanded stride distance, $dt$ is the
+where $\mathrm{step_{dist}}$ is the commanded stride distance, $dt$ is the
 control time step, and $\tau_{\mathrm{st}}$ is the stance duration.
 
 Joint torque estimate:
 
-$$\tau_i = k_p\,(q_i^{\mathrm{cmd}} - q_i) - k_d\,\dot{q}_i \tag{2}$$
+$$\tau_i = k_p (q_i^{\mathrm{cmd}} - q_i) - k_d \dot{q}_i \tag{2}$$
 
 where $q_i^{\mathrm{cmd}}$ is the commanded joint angle, $q_i$ is the
 measured angle, $\dot{q}_i$ is the joint velocity, and $k_p$ and $k_d$ are
@@ -163,23 +163,25 @@ the stiffness and damping gains.
 
 Cost of transport:
 
-$$\mathrm{CoT} = \frac{E}{m\,g\,d} \tag{3}$$
+$$\mathrm{CoT} = \frac{E}{m g d} \tag{3}$$
 
 where $E$ is the mechanical energy, $m$ is the robot mass, $g$ is the
 gravitational acceleration, and $d$ is the distance travelled.
 
 Capture point:
 
-$$y_{\mathrm{foot}} = y_{\mathrm{cm}} + \frac{v_y}{\omega},
-\qquad \omega = \sqrt{\frac{g}{h}} \tag{4}$$
+$$y_{\mathrm{foot}} = y_{\mathrm{cm}} + \frac{v_y}{\omega} \tag{4}$$
+
+$$\omega = \sqrt{\frac{g}{h}} \tag{5}$$
 
 where $y_{\mathrm{foot}}$ is the required foot placement, $y_{\mathrm{cm}}$
-is the center-of-mass position, $v_y$ is the lateral velocity, $g$ is the
-gravitational acceleration, and $h$ is the center-of-mass height.
+is the center-of-mass position, $v_y$ is the lateral velocity, $\omega$ is
+the natural frequency, $g$ is the gravitational acceleration, and $h$ is
+the center-of-mass height.
 
 Positive-feedback mode of the roll loop:
 
-$$\dot{\varphi} = \alpha\,\varphi \tag{5}$$
+$$\dot{\varphi} = \alpha \varphi \tag{6}$$
 
 where $\varphi$ is the body roll and $\alpha$ is the growth rate of the
 unstable mode caused by the hip coupling.
@@ -383,7 +385,7 @@ defect but a reproducible limit of a simple proportional attitude
 stabilizer. A linearized view explains why: compensating the roll by
 rotating the feet necessarily actuates the hip, and if the sign of this
 coupling reinforces the roll, the loop has positive feedback,
-Eq. (5), limited only by the hip clamp. Compensating the roll through
+Eq. (6), limited only by the hip clamp. Compensating the roll through
 the leg length removes the feedback and reduced the roll from 50° to about
 8°. Full elimination requires placing the feet outside the center of mass —
 a capture-point condition, Eq. (4) —
