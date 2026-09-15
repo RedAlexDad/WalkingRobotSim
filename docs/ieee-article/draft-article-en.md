@@ -371,8 +371,8 @@ The residual roll of the model-based controller is not an implementation
 defect but a reproducible limit of a simple proportional attitude
 stabilizer. A linearized view explains why: compensating the roll by
 rotating the feet necessarily actuates the hip, and if the sign of this
-coupling reinforces the roll, the loop has positive feedback
-($\dot{\varphi} = \alpha\,\varphi$) limited only by the hip clamp. Compensating the roll through
+coupling reinforces the roll, the loop has positive feedback,
+Eq. (5), limited only by the hip clamp. Compensating the roll through
 the leg length removes the feedback and reduced the roll from 50° to about
 8°. Full elimination requires placing the feet outside the center of mass —
 a capture-point condition, Eq. (4) —
