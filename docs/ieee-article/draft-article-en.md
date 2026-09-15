@@ -147,31 +147,42 @@ specified by its environment configuration.
 The metrics and control relations used in this work are summarized below.
 
 Stance foot velocity:
- v_st = -step_dist / (4 dt tau_st) (1)
-where step_dist is the commanded stride distance, dt is the control time
-step, and tau_st is the stance duration of the leg.
+
+$$v_{\mathrm{st}} = -\frac{\mathrm{step\_dist}}{4\,dt\,\tau_{\mathrm{st}}} \tag{1}$$
+
+where $\mathrm{step\_dist}$ is the commanded stride distance, $dt$ is the
+control time step, and $\tau_{\mathrm{st}}$ is the stance duration.
 
 Joint torque estimate:
- tau_i = k_p (q_i_cmd - q_i) - k_d q_i_dot (2)
-where q_i_cmd is the commanded joint angle, q_i is the measured angle,
-q_i_dot is the joint velocity, and k_p and k_d are the stiffness and
-damping gains of the actuator.
+
+$$\tau_i = k_p\,(q_i^{\mathrm{cmd}} - q_i) - k_d\,\dot{q}_i \tag{2}$$
+
+where $q_i^{\mathrm{cmd}}$ is the commanded joint angle, $q_i$ is the
+measured angle, $\dot{q}_i$ is the joint velocity, and $k_p$ and $k_d$ are
+the stiffness and damping gains.
 
 Cost of transport:
- CoT = E / (m g d) (3)
-where E is the mechanical energy, m is the robot mass, g is the
-gravitational acceleration, and d is the distance travelled.
+
+$$\mathrm{CoT} = \frac{E}{m\,g\,d} \tag{3}$$
+
+where $E$ is the mechanical energy, $m$ is the robot mass, $g$ is the
+gravitational acceleration, and $d$ is the distance travelled.
 
 Capture point:
- y_foot = y_cm + v_y / omega,  omega = sqrt(g / h) (4)
-where y_foot is the required foot placement, y_cm is the center-of-mass
-position, v_y is the lateral velocity, g is the gravitational acceleration,
-and h is the center-of-mass height.
+
+$$y_{\mathrm{foot}} = y_{\mathrm{cm}} + \frac{v_y}{\omega},
+\qquad \omega = \sqrt{\frac{g}{h}} \tag{4}$$
+
+where $y_{\mathrm{foot}}$ is the required foot placement, $y_{\mathrm{cm}}$
+is the center-of-mass position, $v_y$ is the lateral velocity, $g$ is the
+gravitational acceleration, and $h$ is the center-of-mass height.
 
 Positive-feedback mode of the roll loop:
- phi_dot = alpha phi (5)
-where phi is the body roll and alpha is the growth rate of the unstable
-mode caused by the hip coupling.
+
+$$\dot{\varphi} = \alpha\,\varphi \tag{5}$$
+
+where $\varphi$ is the body roll and $\alpha$ is the growth rate of the
+unstable mode caused by the hip coupling.
 
 ### Model-Based IK/TROT Controller
 
