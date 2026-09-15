@@ -13,12 +13,12 @@ Quadruped robots are increasingly used in inspection, logistics, and
 search-and-rescue, and their development relies heavily on physics
 simulation. We compare two different locomotion-control
 paradigms for the Unitree Go2 quadruped: a pre-trained
-reinforcement-learning (RL) policy distributed with NVIDIA Isaac Sim [8],
+reinforcement-learning (RL) policy distributed with NVIDIA Isaac Sim,
 and a classical model-based controller that implements a TROT gait
 generator with analytic inverse kinematics (IK), written in Rust and
 integrated through ROS 2. Both controllers drive the robot through the same
 low-level joint-position interface, emulating the robot's native
-low-level mode. Experiments in Isaac Sim 6.0 with IsaacLab 3.0 [9], with
+low-level mode. Experiments in Isaac Sim 6.0 with IsaacLab 3.0, with
 three runs per controller at a commanded speed of 0.3 m/s, show that both
 paradigms walk at comparable speed (model-based 0.215 m/s, RL 0.231 m/s)
 and comparable cost of transport (2.83 vs 2.84). The RL policy is markedly
@@ -42,19 +42,19 @@ reinforcement learning, locomotion control (key words)
 Legged robots are attractive where wheeled platforms are ineffective:
 inspection of unstructured environments, search and rescue, logistics, and
 operation on rough terrain. Among commercially available quadrupeds, the
-Unitree Go2 [11] is widely used in research because of its open low-level
+Unitree Go2 [1] is widely used in research because of its open low-level
 control interface, its SDK, and the availability of simulation assets.
 Developing and validating locomotion controllers requires physics
-simulation; NVIDIA Isaac Sim and IsaacLab [9], [10] have become a de-facto
+simulation; NVIDIA Isaac Sim and IsaacLab [2], [3] have become a de-facto
 standard for GPU-accelerated training and testing of legged robots.
 
 Two fundamentally different paradigms are used to control walking. The
 first is **learned policies**: a neural network maps observations to joint
-commands [3]–[5]. Such policies are flexible and can handle complex
+commands [4]–[7]. Such policies are flexible and can handle complex
 terrain, but they require GPU training, behave as a black box, generalize
 poorly outside the training distribution, and do not always recover after a
 fall. The second is **model-based control**: deterministic algorithms that
-combine a gait generator with inverse kinematics [1], [2], [7], often with
+combine a gait generator with inverse kinematics [8]–[11], often with
 an inertial attitude-compensation loop. Model-based controllers are
 transparent and can run on a CPU, but they are less adaptive to unexpected
 disturbances.
@@ -66,8 +66,8 @@ Go1. Our work differs in three ways: the model-based controller is an
 analytic IK/TROT controller (not MPC), the environment is Isaac Sim /
 IsaacLab (not MuJoCo), and the robot is the Unitree Go2 with the official
 NVIDIA RL policy. Other work trains RL policies for the Go1 with domain
-randomization and transfers them to hardware [14]; the comparison there is
-against the built-in controller. Kine2Go [13] provides a kinematic dataset
+randomization and transfers them to hardware [13]; the comparison there is
+against the built-in controller. Kine2Go [14] provides a kinematic dataset
 for the Go2 and confirms the popularity of the platform, but does not
 compare against a model-based controller.
 
@@ -138,7 +138,7 @@ states. The TROT generator drives two diagonal pairs in antiphase (FR–RL
 and FL–RR) with stance and swing phases and a double-support phase. Foot
 trajectories are generated in the body frame: during stance the foot is
 fixed in the world and therefore moves backwards in the body frame at the
-commanded velocity; during swing a Raibert-style heuristic [1] places the
+commanded velocity; during swing a Raibert-style heuristic [8] places the
 foot at the neutral point shifted by the velocity. The foot positions are
 converted to joint angles by an analytic inverse-kinematics solution using
 the Go2 link lengths (thigh and calf 0.213 m).
@@ -152,7 +152,7 @@ yaw-stabilization term keeps the heading fixed.
 ### Learned RL Policy
 
 The RL baseline is the pre-trained NVIDIA policy distributed with Isaac
-Sim [8]. Its observation is a 48-dimensional vector (base linear and
+Sim [15]. Its observation is a 48-dimensional vector (base linear and
 angular velocity in the body frame, gravity direction, commanded
 velocities, joint position error from the default, joint velocities, and
 the previous action). The policy outputs twelve actions at a decimated
@@ -344,18 +344,18 @@ Moscow State Technical University for supporting this work.
 
 ## References
 
-[1] M. H. Raibert, *Legged Robots That Balance*. Cambridge, MA, USA: MIT Press, 1986.
-[2] B. Katz, J. Di Carlo, and S. Kim, "Mini Cheetah: A platform for pushing the limits of dynamic quadruped control," in *Proc. IEEE Int. Conf. Robotics and Automation (ICRA)*, 2019, pp. 6295–6301.
-[3] J. Hwangbo et al., "Learning agile and dynamic motor skills for legged robots," *Science Robotics*, vol. 4, no. 26, 2019.
-[4] J. Lee, J. Hwangbo, L. Sentis, V. Kim, and P. Fankhauser, "Learning quadrupedal locomotion over challenging terrain," *Science Robotics*, vol. 5, no. 47, 2020.
-[5] T. Miki et al., "Learning robust perceptive locomotion for quadrupedal robots in the wild," *Science Robotics*, vol. 7, no. 62, 2022.
-[6] N. Rudin, D. Hoeller, P. Reist, and M. Hutter, "Learning to walk in minutes using massively parallel deep reinforcement learning," in *Proc. Conf. Robot Learning (CoRL)*, 2021.
-[7] J. M. Jimeno, "CHAMP: Controller for highly agile multi-legged platforms," GitHub repository, 2021.
-[8] NVIDIA, "Isaac Gym: High performance GPU-based physics simulation for robot learning," arXiv:2108.10470, 2021.
-[9] NVIDIA, "Isaac Lab: A unified and modular framework for robot learning," documentation, 2024.
-[10] NVIDIA, "Isaac Sim," documentation, 2026.
-[11] Unitree Robotics, "Unitree Go2 — quadruped robot and SDK," documentation, 2024.
+[1] Unitree Robotics, "Unitree Go2 — quadruped robot and SDK," documentation, 2024.
+[2] NVIDIA, "Isaac Lab: A unified and modular framework for robot learning," documentation, 2024.
+[3] NVIDIA, "Isaac Sim," documentation, 2026.
+[4] J. Hwangbo et al., "Learning agile and dynamic motor skills for legged robots," *Science Robotics*, vol. 4, no. 26, 2019.
+[5] J. Lee, J. Hwangbo, L. Sentis, V. Kim, and P. Fankhauser, "Learning quadrupedal locomotion over challenging terrain," *Science Robotics*, vol. 5, no. 47, 2020.
+[6] T. Miki et al., "Learning robust perceptive locomotion for quadrupedal robots in the wild," *Science Robotics*, vol. 7, no. 62, 2022.
+[7] N. Rudin, D. Hoeller, P. Reist, and M. Hutter, "Learning to walk in minutes using massively parallel deep reinforcement learning," in *Proc. Conf. Robot Learning (CoRL)*, 2021.
+[8] M. H. Raibert, *Legged Robots That Balance*. Cambridge, MA, USA: MIT Press, 1986.
+[9] B. Katz, J. Di Carlo, and S. Kim, "Mini Cheetah: A platform for pushing the limits of dynamic quadruped control," in *Proc. IEEE Int. Conf. Robotics and Automation (ICRA)*, 2019, pp. 6295–6301.
+[10] J. M. Jimeno, "CHAMP: Controller for highly agile multi-legged platforms," GitHub repository, 2021.
+[11] G. Bledt et al., "MIT Cheetah 3: Design and control of a robust, dynamic quadruped robot," in *Proc. IEEE/RSJ Int. Conf. Intelligent Robots and Systems (IROS)*, 2018, pp. 2245–2252.
 [12] *Benchmarking MPC and RL for legged robot locomotion in MuJoCo*, arXiv:2501.16590, 2025.
-[13] *Kine2Go: A kinematic dataset for the Unitree Go2*, arXiv:2606.14433, 2026.
-[14] *Isaac Sim-to-real: RL-based locomotion for quadrupeds*, arXiv:2607.18135, 2026.
-[15] G. Bledt et al., "MIT Cheetah 3: Design and control of a robust, dynamic quadruped robot," in *Proc. IEEE/RSJ Int. Conf. Intelligent Robots and Systems (IROS)*, 2018, pp. 2245–2252.
+[13] *Isaac Sim-to-real: RL-based locomotion for quadrupeds*, arXiv:2607.18135, 2026.
+[14] *Kine2Go: A kinematic dataset for the Unitree Go2*, arXiv:2606.14433, 2026.
+[15] NVIDIA, "Isaac Gym: High performance GPU-based physics simulation for robot learning," arXiv:2108.10470, 2021.
