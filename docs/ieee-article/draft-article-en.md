@@ -115,7 +115,9 @@ graph LR
     SIM --> GO2["Unitree Go2"]
 ```
 
-![Fig. 1. System architecture.](figures/bw/fig_architecture.png)
+![System architecture.](figures/bw/fig_architecture.png)
+
+**Fig. 1.** System architecture.
 
 The controller publishes twelve joint-position targets as a
 `std_msgs/Float64MultiArray`. IsaacLab applies them through position
@@ -190,7 +192,9 @@ the feet created a positive feedback loop through the hip joints. The roll
 is now compensated by a differential leg length, which does not actuate the
 hip; the roll dropped from 50° to about 8° (Fig. 2).
 
-![Fig. 2. Body roll over time before (solid) and after (dashed) the differential leg-length fix.](figures/bw/fig_roll.png)
+![Body roll over time.](figures/bw/fig_roll.png)
+
+**Fig. 2.** Body roll over time before (solid) and after (dashed) the differential leg-length fix.
 
 ### Telemetry and Reproducibility
 
@@ -245,7 +249,9 @@ of body height, maximum roll and pitch, lateral drift, cost of transport
 about 2°. The RL policy is deterministic across runs (standard deviation
 zero). The trajectories of the two controllers are compared in Fig. 3.
 
-![Fig. 3. Trajectory in the horizontal plane: model-based IK/TROT (solid) and RL policy (dashed).](figures/bw/fig_trajectory.png)
+![Trajectory in the horizontal plane.](figures/bw/fig_trajectory.png)
+
+**Fig. 3.** Trajectory in the horizontal plane: model-based IK/TROT (solid) and RL policy (dashed).
 
 **Table 2. Operating range (speed / roll / drift).**
 
@@ -260,7 +266,9 @@ The RL policy tracks the commanded velocity over the whole range with a
 small roll, whereas the model-based controller is stable only near
 0.3 m/s. The speed tracking of both controllers is shown in Fig. 4.
 
-![Fig. 4. Achieved speed versus commanded speed for the RL policy (circles) and the IK/TROT controller (squares); the dotted line is the ideal.](figures/bw/fig_speed.png)
+![Achieved versus commanded speed.](figures/bw/fig_speed.png)
+
+**Fig. 4.** Achieved speed versus commanded speed for the RL policy (circles) and the IK/TROT controller (squares); the dotted line is the ideal.
 
 ### Additional Metrics
 
@@ -344,19 +352,6 @@ controller to eliminate the residual roll and drift; equalize the
 comparison conditions by running both controllers on a single asset with
 identical PD gains; conduct disturbance experiments (lateral push,
 slippery surface); and transfer the result to a real robot.
-
-## Figure Captions
-
-Fig. 1. System architecture.
-
-Fig. 2. Body roll over time before (solid) and after (dashed) the
-differential leg-length fix.
-
-Fig. 3. Trajectory in the horizontal plane: model-based IK/TROT (solid)
-and RL policy (dashed).
-
-Fig. 4. Achieved speed versus commanded speed for the RL policy (circles)
-and the IK/TROT controller (squares); the dotted line is the ideal.
 
 ## Acknowledgment
 
