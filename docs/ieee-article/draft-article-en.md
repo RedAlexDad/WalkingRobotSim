@@ -30,8 +30,7 @@ model-based controller holds body height more tightly (standard deviation
 and no learned weights. We also report five concrete integration defects
 found and fixed in the model-based controller, and show that it was
 unpredictably coupled to real time, while the RL policy is not. The
-model-based controller is therefore a transparent baseline and a reliable
-fallback.
+model-based controller is a transparent baseline and a reliable fallback.
 
 **Keywords** — quadruped robot, Isaac Sim, inverse kinematics, TROT gait,
 reinforcement learning, locomotion control (key words)
