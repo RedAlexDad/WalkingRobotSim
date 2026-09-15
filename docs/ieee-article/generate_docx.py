@@ -3,7 +3,8 @@
 
 Читает `draft-article-en.md`, создаёт `PIERE2026_Papin_generated.docx`:
 заголовок/авторы/аннотация — в одну колонку, тело — в две колонки,
-Times New Roman, таблицы, рисунки, подписи.
+Times New Roman, таблицы, рисунки, подписи. Абзацы собираются из
+непрерывных строк (по пустой строке).
 
 Зависимости: python-docx (pip install python-docx).
 
@@ -32,7 +33,6 @@ ALIGN = {
 
 
 def set_cols(section, num):
-    """Число колонок в секции."""
     cols = section._sectPr.xpath("./w:cols")
     if cols:
         cols[0].set(qn("w:num"), str(num))
@@ -51,6 +51,18 @@ def add(doc, text, size=10, bold=False, italic=False, align="just", sb=0, sa=0):
     return p
 
 
+def flush(doc, buf, first_body_ref):
+    """Записать накопленный абзац."""
+    if not buf:
+        return
+    text = " ".join(buf)
+    text = re.sub(r"!\[.*?\]\(.*?\)", "", text)
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    if text.strip():
+        add(doc, text.strip())
+    buf.clear()
+
+
 def main():
     lines = open(SRC, encoding="utf-8").read().splitlines()
     doc = Document()
@@ -65,16 +77,15 @@ def main():
     st.paragraph_format.space_after = Pt(0)
     st.paragraph_format.line_spacing = 1.0
 
-    i = 0
+    buf = []
     body_started = False
+    i = 0
     while i < len(lines):
         line = lines[i].strip()
-        if not line:
-            i += 1
-            continue
 
-        # Таблица
+        # Таблица — сначала сбросить абзац
         if line.startswith("|"):
+            flush(doc, buf, None)
             rows = []
             while i < len(lines) and lines[i].strip().startswith("|"):
                 cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
@@ -96,16 +107,22 @@ def main():
         # Рисунок
         m = re.match(r"!\[.*?\]\((.+?)\)", line)
         if m:
+            flush(doc, buf, None)
+            path = m.group(1)
+            if not os.path.isabs(path):
+                path = os.path.join(HERE, path)
             try:
-                doc.add_picture(m.group(1), width=Cm(7.5))
-            except Exception:
-                add(doc, f"[image: {m.group(1)}]")
+                doc.add_picture(path, width=Cm(7.5))
+            except Exception as e:
+                add(doc, f"[image: {m.group(1)}] ({e})")
             i += 1
             continue
 
         if line.startswith("# "):
+            flush(doc, buf, None)
             add(doc, line[2:], size=24, align="center", sa=6)
         elif line.startswith("## "):
+            flush(doc, buf, None)
             if not body_started:
                 new = doc.add_section(WD_SECTION.CONTINUOUS)
                 set_cols(new, 2)
@@ -113,19 +130,19 @@ def main():
                 body_started = True
             add(doc, line[3:], size=10, bold=True, align="center", sb=6, sa=2)
         elif line.startswith("### "):
+            flush(doc, buf, None)
             add(doc, line[4:], size=10, italic=True, align="left", sb=4, sa=1)
         elif line.startswith("**Fig."):
+            flush(doc, buf, None)
             add(doc, re.sub(r"\*\*", "", line), size=8, align="center")
-        elif line.startswith("**") and line.endswith("**"):
-            add(doc, re.sub(r"\*\*", "", line), size=10, bold=True, align="left")
         elif line.startswith("---"):
-            pass
+            flush(doc, buf, None)
+        elif not line:
+            flush(doc, buf, None)
         else:
-            txt = re.sub(r"!\[.*?\]\(.*?\)", "", line)
-            txt = re.sub(r"\*\*(.+?)\*\*", r"\1", txt)
-            if txt.strip():
-                add(doc, txt)
+            buf.append(line)
         i += 1
+    flush(doc, buf, None)
 
     doc.save(OUT)
     print(f"saved: {OUT}")
