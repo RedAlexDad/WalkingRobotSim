@@ -102,6 +102,13 @@ following questions:
 
 ## Theory
 
+This section presents the theory behind the implemented system. It first
+describes the overall architecture and the two controllers, then summarizes
+the practical integration problems and the telemetry used for the
+evaluation. The emphasis is on the model-based controller, which is the
+subject of this work, and on the points where it differs from the learned
+policy.
+
 ### System Architecture
 
 The system consists of a Rust controller running in a container, a ROS 2
@@ -170,7 +177,7 @@ Five concrete defects were found and fixed, each confirmed by telemetry
 contacts):
 
 1. **Stance foot drift.** The stance foot velocity was computed as
-   `-(step_dist/4)/(dt·stance_ticks)`, where `stance_ticks` is the length
+   $-\frac{\mathrm{step\_dist}}{4\,dt\,\tau_{\mathrm{st}}}$, where `stance_ticks` is the length
    of one stance phase, whereas the leg is on the ground for several phases
    in a row. The foot drifted backwards (up to −1.2 m) and the IK saturated
    (`calf = 0`). It was replaced by the physically correct
@@ -206,13 +213,20 @@ four feet, angles and velocities of the twelve joints, an estimate of the
 joint torques, instantaneous powers and accumulated energy, joint tracking
 errors, and flags for falls, hip saturation, and NaNs. The same format is
 used for both controllers. The joint torque is estimated as
-`τ_i = kp·(cmd_i − q_i) − kd·q̇_i`; energy is the integral of the sum of
-joint powers, and the cost of transport is `E / (m·g·d)`. To remove the
+$\tau_i = k_p\,(q_i^{\mathrm{cmd}} - q_i) - k_d\,\dot{q}_i$; energy is the integral of the sum of
+joint powers, and the cost of transport is $E / (m\,g\,d)$. To remove the
 influence of performance, the model-based controller steps on simulation
 time, published by the environment on a dedicated topic, which makes its
 behavior deterministic and independent of the frame rate.
 
 ## Experimental Results
+
+This section reports the experimental comparison of the two controllers.
+We first describe the setup and the metrics, then present the results of
+forward walking, the operating range in commanded speed, additional
+metrics, and the failure taxonomy with the negative results. All numbers
+are reported as the mean and standard deviation over three runs unless
+stated otherwise.
 
 ### Setup
 
@@ -225,9 +239,15 @@ the physics rate.
 
 ### Metrics
 
-We report the distance travelled, mean speed, mean and standard deviation
-of body height, maximum roll and pitch, lateral drift, cost of transport
-(CoT), and the time to reach a steady gait.
+To compare the two controllers objectively we use a set of kinematic and
+energetic metrics computed from the recorded telemetry. The distance
+travelled and the mean speed characterize the locomotion performance; the
+mean and standard deviation of the body height quantify how steadily the
+robot holds its posture; the maximum roll and pitch quantify the body
+attitude; the lateral drift quantifies how well the controller keeps a
+straight line; the cost of transport (CoT) quantifies the energy
+efficiency; and the time to reach a steady gait quantifies the transient
+response. All metrics are averaged over the three runs of each controller.
 
 ### Results
 
@@ -322,10 +342,10 @@ defect but a reproducible limit of a simple proportional attitude
 stabilizer. A linearized view explains why: compensating the roll by
 rotating the feet necessarily actuates the hip, and if the sign of this
 coupling reinforces the roll, the loop has positive feedback
-(`φ̇ = α·φ`) limited only by the hip clamp. Compensating the roll through
+($\dot{\varphi} = \alpha\,\varphi$) limited only by the hip clamp. Compensating the roll through
 the leg length removes the feedback and reduced the roll from 50° to about
 8°. Full elimination requires placing the feet outside the center of mass —
-a capture-point condition `y_foot = y_cm + v_y/ω` with `ω = √(g/h)` —
+a capture-point condition $y_{\mathrm{foot}} = y_{\mathrm{cm}} + v_y/\omega$ with $\omega = \sqrt{g/h}$ —
 which the simple proportional loop does not satisfy.
 
 The results are summarized as four propositions. **P1 (time-base
