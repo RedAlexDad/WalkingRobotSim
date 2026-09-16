@@ -1,19 +1,14 @@
 # Черновик статьи (IEEE, PIERE 2026) — НЕ ФИНАЛЬНЫЙ
 
-**Статус:** ЧЕРНОВИК-ЗАГОТОВКА. Все числа и результаты — **ПРОИЗВОЛЬНЫЕ
-ЗАГЛУШКИ (placeholders)**, помечены знаком ⚠️. Реальные значения нужно
-подставить из логов эксперимента (см. `why-article.md`, разделы 11 и 26)
-перед отправкой. Структура и формулировки — рабочие.
+**Статус:** ЧЕРНОВИК-ЗАГОТОВКА. Все числа и результаты — **ПРОИЗВОЛЬНЫЕ ЗАГЛУШКИ (placeholders)**, помечены знаком ⚠️. Реальные значения нужно подставить из логов эксперимента (см. `why-article.md`, разделы 11 и 26) перед отправкой. Структура и формулировки — рабочие.
 
-**Дата черновика:** 2026-09-02
-**Файл-обоснование:** `docs/ieee-article/why-article.md`
+**Дата черновика:** 2026-09-02 **Файл-обоснование:** `docs/ieee-article/why-article.md`
 
 ---
 
 # Comparing a Learned Policy and a Model-Based IK/TROT Controller for Quadruped Locomotion in Isaac Sim
 
-*(Сравнение обученной политики и модельного IK/TROT-контроллера для
-походки четвероногого робота в Isaac Sim)*
+*(Сравнение обученной политики и модельного IK/TROT-контроллера для походки четвероногого робота в Isaac Sim)*
 
 **Authors:** TBD *(заполнить: студент(ы) + руководитель)*
 
@@ -23,64 +18,25 @@
 
 ## Abstract
 
-Quadruped robots are increasingly used in inspection, logistics, and search
-operations, and modern development relies heavily on physics simulation.
-We compare two fundamentally different locomotion-control paradigms for the
-Unitree Go2 quadruped: a pre-trained reinforcement-learning (RL) policy
-distributed with NVIDIA Isaac Sim, and a classical model-based controller
-that implements a TROT gait generator with analytic inverse kinematics (IK)
-in Rust. Both controllers drive the robot through the same low-level
-joint-position interface, emulating the robot's native low-level mode.
-Experiments in Isaac Sim 6.0 with IsaacLab 3.0, with three runs per
-controller at a commanded speed of 0.3 m/s, show that both paradigms walk
-at comparable speed (model-based 0.215 m/s, RL 0.231 m/s). The RL policy
-is markedly more stable (max roll 2.3 deg vs 27.8 deg, lateral drift 0.37 m
-vs 1.09 m), whereas the model-based controller holds body height more
-tightly (std 0.025 m vs 0.040 m), achieves a comparable cost of transport
-(2.83 vs 2.84), and is fully deterministic, runs without GPU training, and
-requires no learned weights. The model-based controller is therefore a
-transparent baseline and a reliable fallback for learned policies.
+Quadruped robots are increasingly used in inspection, logistics, and search operations, and modern development relies heavily on physics simulation. We compare two fundamentally different locomotion-control paradigms for the Unitree Go2 quadruped: a pre-trained reinforcement-learning (RL) policy distributed with NVIDIA Isaac Sim, and a classical model-based controller that implements a TROT gait generator with analytic inverse kinematics (IK) in Rust. Both controllers drive the robot through the same low-level joint-position interface, emulating the robot's native low-level mode. Experiments in Isaac Sim 6.0 with IsaacLab 3.0, with three runs per controller at a commanded speed of 0.3 m/s, show that both paradigms walk at comparable speed (model-based 0.215 m/s, RL 0.231 m/s). The RL policy is markedly more stable (max roll 2.3 deg vs 27.8 deg, lateral drift 0.37 m vs 1.09 m), whereas the model-based controller holds body height more tightly (std 0.025 m vs 0.040 m), achieves a comparable cost of transport (2.83 vs 2.84), and is fully deterministic, runs without GPU training, and requires no learned weights. The model-based controller is therefore a transparent baseline and a reliable fallback for learned policies.
 
-**Index Terms** — quadruped robot, Isaac Sim, inverse kinematics, TROT gait,
-reinforcement learning, locomotion control, ROS2.
+**Index Terms** — quadruped robot, Isaac Sim, inverse kinematics, TROT gait, reinforcement learning, locomotion control, ROS2.
 
 ---
 
 ## 1. Introduction
 
-Четвероногие роботы применяются там, где колёсные неэффективны:
-инспекция, поиск и спасение, логистика. Среди доступных платформ Unitree
-Go2 широко используется в исследованиях (Kine2Go, arXiv:2606.14433).
-Разработка алгоритмов требует симуляции; NVIDIA Isaac Sim/IsaacLab стали
-фактическим стандартом для GPU-ускоренного обучения и тестирования
-(Isaac Gym, arXiv:2108.10470).
+Четвероногие роботы применяются там, где колёсные неэффективны: инспекция, поиск и спасение, логистика. Среди доступных платформ Unitree Go2 широко используется в исследованиях (Kine2Go, arXiv:2606.14433). Разработка алгоритмов требует симуляции; NVIDIA Isaac Sim/IsaacLab стали фактическим стандартом для GPU-ускоренного обучения и тестирования (Isaac Gym, arXiv:2108.10470).
 
 Для управления походкой применяются две принципиально разные парадигмы:
 
-1. **Обученные политики (RL)** — нейросеть выдаёт команды суставов по
-   наблюдениям; гибкая, но требует GPU-обучения, «чёрный ящик», плохо
-   обобщается и не всегда восстанавливается после падения
-   (arXiv:2501.16590).
-2. **Модельные контроллеры** — детерминированные алгоритмы (генератор
-   походки + обратная кинематика). Прозрачны, работают без GPU, но менее
-   адаптивны.
+1. **Обученные политики (RL)** — нейросеть выдаёт команды суставов по наблюдениям; гибкая, но требует GPU-обучения, «чёрный ящик», плохо обобщается и не всегда восстанавливается после падения (arXiv:2501.16590). 2. **Модельные контроллеры** — детерминированные алгоритмы (генератор походки + обратная кинематика). Прозрачны, работают без GPU, но менее адаптивны.
 
-Несмотря на важность выбора, прямое сравнение этих парадигм в одной среде
-на одном роботе остаётся редким. Ближайшая работа сравнивает MPC и RL в
-MuJoCo на Go1 (arXiv:2501.16590); наша работа отличается типом модельного
-контроллера (IK/TROT, не MPC), средой (Isaac Sim/IsaacLab) и роботом
-(Go2) с официальной политикой NVIDIA.
+Несмотря на важность выбора, прямое сравнение этих парадигм в одной среде на одном роботе остаётся редким. Ближайшая работа сравнивает MPC и RL в MuJoCo на Go1 (arXiv:2501.16590); наша работа отличается типом модельного контроллера (IK/TROT, не MPC), средой (Isaac Sim/IsaacLab) и роботом (Go2) с официальной политикой NVIDIA.
 
 **Вклад работы:**
 
-- реализация модельного IK/TROT-контроллера на Rust и его интеграция с
-  Isaac Sim через IsaacLab и ROS2;
-- прямое сравнение с официальной RL-политикой NVIDIA на одном ассете и
-  через один низкоуровневый интерфейс суставов;
-- практические паттерны интеграции (ремаппинг суставов, калибровка
-  конвенции углов, ограничение амплитуд);
-- количественная оценка: устойчивость, высота корпуса, скорость,
-  энергозатраты, дрейф.
+- реализация модельного IK/TROT-контроллера на Rust и его интеграция с Isaac Sim через IsaacLab и ROS2; - прямое сравнение с официальной RL-политикой NVIDIA на одном ассете и через один низкоуровневый интерфейс суставов; - практические паттерны интеграции (ремаппинг суставов, калибровка конвенции углов, ограничение амплитуд); - количественная оценка: устойчивость, высота корпуса, скорость, энергозатраты, дрейф.
 
 ---
 
@@ -88,55 +44,29 @@ MuJoCo на Go1 (arXiv:2501.16590); наша работа отличается �
 
 ### 2.1. RL для четвероногих роботов в Isaac Sim / IsaacLab
 
-Isaac Gym (arXiv:2108.10470) обеспечивает GPU-ускоренное обучение:
-физика и обучение сети на GPU, десятки тысяч сред, ускорение обучения на
-⚠️100–1000× против CPU-симуляторов. На этом стеке обучены политики для
-Ant, ANYmal, Humanoid и др.; для Go2 доступна готовая политика NVIDIA,
-используемая в нашей работе как RL-базлайн.
+Isaac Gym (arXiv:2108.10470) обеспечивает GPU-ускоренное обучение: физика и обучение сети на GPU, десятки тысяч сред, ускорение обучения на ⚠️100–1000× против CPU-симуляторов. На этом стеке обучены политики для Ant, ANYmal, Humanoid и др.; для Go2 доступна готовая политика NVIDIA, используемая в нашей работе как RL-базлайн.
 
 ### 2.2. Сравнение RL и модельного управления
 
-arXiv:2501.16590 сравнивает MPC и RL на Unitree Go1 в MuJoCo. Результаты:
-RL даёт более короткое время восстановления (⚠️0.25–0.33 с) и меньший CoT
-(⚠️на 1.23), но хуже обобщается и не восстанавливается после падения;
-MPC распределяет усилия по суставам и восстанавливается. Работа оставляет
-открытым вопрос сравнения RL с **аналитическим** IK/TROT-контроллером в
-**Isaac Sim** — предмет нашей статьи.
+arXiv:2501.16590 сравнивает MPC и RL на Unitree Go1 в MuJoCo. Результаты: RL даёт более короткое время восстановления (⚠️0.25–0.33 с) и меньший CoT (⚠️на 1.23), но хуже обобщается и не восстанавливается после падения; MPC распределяет усилия по суставам и восстанавливается. Работа оставляет открытым вопрос сравнения RL с **аналитическим** IK/TROT-контроллером в **Isaac Sim** — предмет нашей статьи.
 
-arXiv:2607.18135 обучает RL-политику Go1 в Isaac Sim/IsaacLab с domain
-randomization и переносит на реального робота (sim-to-real). Сравнение
-проводится со встроенным контроллером Go1; мы сравниваем с официальной
-политикой NVIDIA на Go2.
+arXiv:2607.18135 обучает RL-политику Go1 в Isaac Sim/IsaacLab с domain randomization и переносит на реального робота (sim-to-real). Сравнение проводится со встроенным контроллером Go1; мы сравниваем с официальной политикой NVIDIA на Go2.
 
 ### 2.3. Данные и платформа Go2
 
-Kine2Go (arXiv:2606.14433) — датасет кинематики Go2 (800 траекторий,
-40 RL-политик, движок Genesis) для обучения. Подтверждает популярность
-Go2, но не даёт сравнения с модельным контроллером.
+Kine2Go (arXiv:2606.14433) — датасет кинематики Go2 (800 траекторий, 40 RL-политик, движок Genesis) для обучения. Подтверждает популярность Go2, но не даёт сравнения с модельным контроллером.
 
 ### 2.4. Наша отстройка (positioning)
 
 В отличие от перечисленных работ, мы:
 
-- используем **детерминированный IK/TROT-контроллер на Rust** (не MPC,
-  не встроенный контроллер);
-- сравниваем его с **официальной RL-политикой NVIDIA для Go2**;
-- делаем это **в одной среде** (Isaac Sim 6.0 / IsaacLab 3.0) и **на одном
-  ассете**, через одинаковый низкоуровневый интерфейс суставов.
+- используем **детерминированный IK/TROT-контроллер на Rust** (не MPC, не встроенный контроллер); - сравниваем его с **официальной RL-политикой NVIDIA для Go2**; - делаем это **в одной среде** (Isaac Sim 6.0 / IsaacLab 3.0) и **на одном ассете**, через одинаковый низкоуровневый интерфейс суставов.
 
 ---
 
 ## 3. System Architecture
 
-```mermaid
-graph LR
-    RC["Rust-контроллер<br/>(контейнер, ROS2)"]
-    ROS["ROS2 Jazzy<br/>/robot1/joint_group_controller/commands"]
-    IS["IsaacLab 3.0<br/>ManagerBasedEnv"]
-    SIM["Isaac Sim 6.0<br/>PhysX (GPU)"]
-    GO2["Unitree Go2"]
-    RC --> ROS --> IS --> SIM --> GO2
-```
+```mermaid graph LR RC["Rust-контроллер<br/>(контейнер, ROS2)"] ROS["ROS2 Jazzy<br/>/robot1/joint_group_controller/commands"] IS["IsaacLab 3.0<br/>ManagerBasedEnv"] SIM["Isaac Sim 6.0<br/>PhysX (GPU)"] GO2["Unitree Go2"] RC --> ROS --> IS --> SIM --> GO2 ```
 
 **Компоненты:**
 
@@ -154,109 +84,47 @@ graph LR
 
 ### 4.1. Робот и актуация
 
-- Робот: Unitree Go2, 12 приводных суставов.
-- Порядок суставов: FR, FL, RR, RL × (hip, thigh, calf).
-- Интерфейс управления: целевые позиции суставов + ПД-регулятор
-  (stiffness ⚠️75.0, damping ⚠️0.5) — эмуляция низкоуровневого режима
-  реального робота.
-- Ассет и физические параметры одинаковы для обоих контроллеров.
+- Робот: Unitree Go2, 12 приводных суставов. - Порядок суставов: FR, FL, RR, RL × (hip, thigh, calf). - Интерфейс управления: целевые позиции суставов + ПД-регулятор (stiffness ⚠️75.0, damping ⚠️0.5) — эмуляция низкоуровневого режима реального робота. - Ассет и физические параметры одинаковы для обоих контроллеров.
 
 ### 4.2. Модельный IK/TROT-контроллер (наша реализация, Rust)
 
-- Конечный автомат: REST / STAND / TROT.
-- Генератор походки TROT: диагональные пары (FR–RL, FL–RR), фазы
-  stance/swing.
-- Обратная кинематика: из целевых позиций стоп в углы суставов
-  (аналитические формулы).
-- Компенсация крена/тангажа по IMU (ПИД).
-- Частота управления: ⚠️60 Гц.
-- Параметры стойки: hip ⚠️0, thigh ⚠️0.67, calf ⚠️-1.3 (рад).
-- Ограничение амплитуд hip: ⚠️±0.3 рад (для устойчивости).
+- Конечный автомат: REST / STAND / TROT. - Генератор походки TROT: диагональные пары (FR–RL, FL–RR), фазы stance/swing. - Обратная кинематика: из целевых позиций стоп в углы суставов (аналитические формулы). - Компенсация крена/тангажа по IMU (ПИД). - Частота управления: ⚠️60 Гц. - Параметры стойки: hip ⚠️0, thigh ⚠️0.67, calf ⚠️-1.3 (рад). - Ограничение амплитуд hip: ⚠️±0.3 рад (для устойчивости).
 
 ### 4.3. Обученная RL-политика (NVIDIA)
 
-- Готовая политика NVIDIA (physx_policy.pt), обучена в Isaac Lab.
-- Наблюдения ⚠️48-мерные (скорости, гравитация, команды, суставы).
-- Управление целевыми позициями суставов через тот же интерфейс.
+- Готовая политика NVIDIA (physx_policy.pt), обучена в Isaac Lab. - Наблюдения ⚠️48-мерные (скорости, гравитация, команды, суставы). - Управление целевыми позициями суставов через тот же интерфейс.
 
 ### 4.4. Интеграция и калибровка (практические паттерны)
 
-- Ремаппинг порядка суставов контроллер → ассет.
-- Калибровка конвенции углов (эталонная стойка STANDING_JOINT_ANGLES).
-- Ограничение амплитуд суставов для устойчивости.
-- Запуск долгоживущего процесса (setsid), устойчивый spin rclpy.
+- Ремаппинг порядка суставов контроллер → ассет. - Калибровка конвенции углов (эталонная стойка STANDING_JOINT_ANGLES). - Ограничение амплитуд суставов для устойчивости. - Запуск долгоживущего процесса (setsid), устойчивый spin rclpy.
 
 ### 4.5. Практические проблемы и их решения (вклад работы)
 
-При интеграции модельного контроллера выявлены и устранены пять
-конкретных дефектов, каждый подтверждён телеметрией (125 колонок: поза,
-углы, скорости, моменты, позиции/контакты стоп). Это самостоятельная
-инженерная ценность работы.
+При интеграции модельного контроллера выявлены и устранены пять конкретных дефектов, каждый подтверждён телеметрией (125 колонок: поза, углы, скорости, моменты, позиции/контакты стоп). Это самостоятельная инженерная ценность работы.
 
-```mermaid
-graph TB
-    subgraph BUGS["Найденные дефекты"]
-        B1["1. Дрейф стопы в stance<br/>(делитель stance_ticks)"]
-        B2["2. Накопление IMU-комп."]
-        B3["3. Инверсия знака IMU-комп."]
-        B4["4. Инверсия знака yaw"]
-        B5["5. PID по wall-clock при сим-времени"]
-    end
-    subgraph EFF["Симптом → устранено"]
-        B1 --> E1["calf=0, IK насыщался → ходьба"]
-        B2 --> E2["наклон накапливался → стабильно"]
-        B3 --> E3["переворот 180° → крен ~8°"]
-        B4 --> E4["закрутка yaw → курс держится"]
-        B5 --> E5["PID рассинхрон → корректно"]
-    end
-```
+```mermaid graph TB subgraph BUGS["Найденные дефекты"] B1["1. Дрейф стопы в stance<br/>(делитель stance_ticks)"] B2["2. Накопление IMU-комп."] B3["3. Инверсия знака IMU-комп."] B4["4. Инверсия знака yaw"] B5["5. PID по wall-clock при сим-времени"] end subgraph EFF["Симптом → устранено"] B1 --> E1["calf=0, IK насыщался → ходьба"] B2 --> E2["наклон накапливался → стабильно"] B3 --> E3["переворот 180° → крен ~8°"] B4 --> E4["закрутка yaw → курс держится"] B5 --> E5["PID рассинхрон → корректно"] end ```
 
 **1. Дрейф стопы в stance.** Скорость стопы считалась как
-`-(step_dist/4)/(dt·stance_ticks)`, где `stance_ticks` — длина одной
-stance-фазы, тогда как нога стоит на земле несколько фаз подряд. Стопа
-уезжала назад, IK уходил в насыщение (`calf=0`). Заменено на физически
-корректную `velocity = -cmd_vel` (стопа фиксирована в мире).
+`-(step_dist/4)/(dt·stance_ticks)`, где `stance_ticks` — длина одной stance-фазы, тогда как нога стоит на земле несколько фаз подряд. Стопа уезжала назад, IK уходил в насыщение (`calf=0`). Заменено на физически корректную `velocity = -cmd_vel` (стопа фиксирована в мире).
 
-**2–3. IMU-компенсация.** Применялась инкрементально к состоянию походки
-(накапливался наклон) и с инвертированным знаком (`R(-comp)` вместо
-`R(comp)` — усиливала наклон). Исправлено: применяется только к копии
-для IK, знак верный, `kp=1.0`.
+**2–3. IMU-компенсация.** Применялась инкрементально к состоянию походки (накапливался наклон) и с инвертированным знаком (`R(-comp)` вместо `R(comp)` — усиливала наклон). Исправлено: применяется только к копии для IK, знак верный, `kp=1.0`.
 
 **4. Инверсия знака yaw-стабилизации.** `-0.5·yaw_err` не гасил, а
-**раскручивал** курс (yaw гулял ±180°). После `+0.5·yaw_err` курс
-держится.
+**раскручивал** курс (yaw гулял ±180°). После `+0.5·yaw_err` курс держится.
 
 **5. PID по wall-clock.** Контроллер переведён на шаг по сим-времени
-(`/robot1/sim_time`), но PID использовал wall-clock `dt` — рассинхрон
-I/D-членов. Исправлено на сим-время.
+(`/robot1/sim_time`), но PID использовал wall-clock `dt` — рассинхрон I/D-членов. Исправлено на сим-время.
 
 **6. Крен через hip (архитектурный дефект).** IMU-компенсация крена как
-поворот стоп через IK давала команду hip — **положительная обратная
-связь**, hip упирался в предел:
+поворот стоп через IK давала команду hip — **положительная обратная связь**, hip упирался в предел:
 
-```mermaid
-graph LR
-    R["крен θ"] --> C["IMU-комп: поворот стоп"]
-    C --> H["IK → hip"]
-    H --> S["hip = −0.30 (clamp)"]
-    S --> R2["крен растёт"]
-    R2 --> R
-```
+```mermaid graph LR R["крен θ"] --> C["IMU-комп: поворот стоп"] C --> H["IK → hip"] H --> S["hip = −0.30 (clamp)"] S --> R2["крен растёт"] R2 --> R ```
 
-Решение: компенсировать крен **дифференциальной длиной ног**
-(`z' = y·sin(a) + z·cos(a)`, без y-сдвига), не трогая hip. Крен снизился
-с 50° до ~8°.
+Решение: компенсировать крен **дифференциальной длиной ног** (`z' = y·sin(a) + z·cos(a)`, без y-сдвига), не трогая hip. Крен снизился с 50° до ~8°.
 
-**Рисунок (диагностика и результат):**
-`reports/isaam/figures/ik_roll_fix_2026-09-13.png` — (a) до фикса все
-четыре hip упираются в −0.30; (b) после фикса крен ~8–11°.
+**Рисунок (диагностика и результат):** `reports/isaam/figures/ik_roll_fix_2026-09-13.png` — (a) до фикса все четыре hip упираются в −0.30; (b) после фикса крен ~8–11°.
 
-**Вывод (для Discussion):** модельный контроллер был **непредсказуемо
-привязан к реальному времени** (wall-clock 60 Гц): при разной частоте
-кадров симуляции его поведение менялось. Обученная RL-политика
-пошаговая и такой зависимости не имеет. Остаточная маргинальность
-модельного контроллера (разброс прогонов) — воспроизводимый предел
-простого P-стабилизатора, требующий capture-point/turning-контроллера.
+**Вывод (для Discussion):** модельный контроллер был **непредсказуемо привязан к реальному времени** (wall-clock 60 Гц): при разной частоте кадров симуляции его поведение менялось. Обученная RL-политика пошаговая и такой зависимости не имеет. Остаточная маргинальность модельного контроллера (разброс прогонов) — воспроизводимый предел простого P-стабилизатора, требующий capture-point/turning-контроллера.
 
 ---
 
@@ -277,13 +145,7 @@ graph LR
 
 ### 5.2. Метрики
 
-- высота корпуса Z (средняя, std);
-- пройденное расстояние за время;
-- средняя скорость;
-- дрейф по Y (отклонение от прямой);
-- энергозатраты (Cost of Transport, CoT);
-- время до устойчивой походки;
-- число шагов до падения/сбоя.
+- высота корпуса Z (средняя, std); - пройденное расстояние за время; - средняя скорость; - дрейф по Y (отклонение от прямой); - энергозатраты (Cost of Transport, CoT); - время до устойчивой походки; - число шагов до падения/сбоя.
 
 ### 5.3. ⚠️ РЕЗУЛЬТАТЫ (ЗАГЛУШКИ — заменить реальными из логов)
 
@@ -314,11 +176,7 @@ graph LR
 
 ### 5.4. Обсуждение (интерпретация заглушек)
 
-- RL даёт более «экономное» и плавное движение (ниже CoT, меньше дрейф),
-  но зависит от GPU и обучения.
-- IK/TROT устойчив, детерминирован, восстанавливается после падения,
-  работает без GPU — пригоден как fallback.
-- Гипотеза гибрида: политика как основная походка + IK/TROT как резерв.
+- RL даёт более «экономное» и плавное движение (ниже CoT, меньше дрейф), но зависит от GPU и обучения. - IK/TROT устойчив, детерминирован, восстанавливается после падения, работает без GPU — пригоден как fallback. - Гипотеза гибрида: политика как основная походка + IK/TROT как резерв.
 
 ---
 
@@ -326,106 +184,32 @@ graph LR
 
 ### 6.1. Практический выбор
 
-- Для детерминированных задач (прямая ходьба, ровная поверхность) IK/TROT
-  достаточен и не требует GPU.
-- RL оправдан при адаптации к нерегулярной среде.
-- Схема «политика + детерминированный fallback» сочетает гибкость и
-  гарантированную стабильность.
+- Для детерминированных задач (прямая ходьба, ровная поверхность) IK/TROT достаточен и не требует GPU. - RL оправдан при адаптации к нерегулярной среде. - Схема «политика + детерминированный fallback» сочетает гибкость и гарантированную стабильность.
 
 ### 6.2. Ограничения
 
-- Работа выполнена только в симуляции; sim-to-real не проверен.
-- Основная серия — плоская поверхность, без внешних возмущений.
-- **Разные условия для двух режимов:** IK/TROT работает на ассете
-  IsaacLab (`go2.usd`) с stiffness 75, RL — на ассете
-  Mujoco_Menagerie (`go2.usda`) с stiffness 25. Различия в метриках
-  могут частично объясняться ассетом/гейнами, а не парадигмой; выводы
-  качественные (крен, дрейф, детерминизм) от этого не зависят.
-- **Узкая рабочая область IK:** модельный контроллер устойчив лишь
-  около 0.3 м/с (при 0.1, 0.2 и 0.4 м/с крен 47–69° и падение);
-  RL отслеживает весь диапазон 0.1–0.4 м/с.
-- RL-политика — готовая (NVIDIA), мы её не обучали.
-- Остаточный крен IK ~28° (проблема 28) — см. ниже.
+- Работа выполнена только в симуляции; sim-to-real не проверен. - Основная серия — плоская поверхность, без внешних возмущений. - **Разные условия для двух режимов:** IK/TROT работает на ассете IsaacLab (`go2.usd`) с stiffness 75, RL — на ассете Mujoco_Menagerie (`go2.usda`) с stiffness 25. Различия в метриках могут частично объясняться ассетом/гейнами, а не парадигмой; выводы качественные (крен, дрейф, детерминизм) от этого не зависят. - **Узкая рабочая область IK:** модельный контроллер устойчив лишь около 0.3 м/с (при 0.1, 0.2 и 0.4 м/с крен 47–69° и падение); RL отслеживает весь диапазон 0.1–0.4 м/с. - RL-политика — готовая (NVIDIA), мы её не обучали. - Остаточный крен IK ~28° (проблема 28) — см. ниже.
 
 ### 6.3. Future Work
 
-- Sim-to-real на реальном Go2.
-- Другие походки и повороты.
-- Гибридная архитектура «политика + fallback» с автоматическим
-  переключением.
+- Sim-to-real на реальном Go2. - Другие походки и повороты. - Гибридная архитектура «политика + fallback» с автоматическим переключением.
 
 ---
 
 ## 7. Conclusion
 
-Мы реализовали и сравнили модельный IK/TROT-контроллер (Rust, ROS2) с
-обученной RL-политикой NVIDIA для Unitree Go2 в Isaac Sim на едином
-низкоуровневом интерфейсе суставов. При сопоставимой скорости
-(0.215 против 0.231 м/с) и сопоставимом CoT (2.83 против 2.84)
-обученная политика устойчивее (крен 2.3° против 27.8°, дрейф 0.37
-против 1.09 м) и работает во всём диапазоне 0.1–0.4 м/с, тогда как
-модельный контроллер устойчив лишь около 0.3 м/с.
+Мы реализовали и сравнили модельный IK/TROT-контроллер (Rust, ROS2) с обученной RL-политикой NVIDIA для Unitree Go2 в Isaac Sim на едином низкоуровневом интерфейсе суставов. При сопоставимой скорости (0.215 против 0.231 м/с) и сопоставимом CoT (2.83 против 2.84) обученная политика устойчивее (крен 2.3° против 27.8°, дрейф 0.37 против 1.09 м) и работает во всём диапазоне 0.1–0.4 м/с, тогда как модельный контроллер устойчив лишь около 0.3 м/с.
 
-Ключевой вывод: **остаточный крен модельного контроллера — не дефект
-реализации, а воспроизводимый предел простого пропорционального
-стабилизатора ориентации.** Мы показали экспериментально, что
-увеличение коэффициента (kp 1.0→2.0), расширение предела hip
-(0.3→0.6) и инверсия знака компенсации крена **ухудшают** устойчивость;
-лишь симметричная стойка и стабилизация курса снижают дрейф. Это
-превращает «недостаток» в результат о границе применимости модельного
-подхода и указывает путь к улучшению (capture-point / дифференциальная
-длина ног). Модельный контроллер остаётся прозрачным, детерминированным
-и не требующим GPU-обучения эталоном и резервным режимом для гибридных
-схем «политика + fallback».
+Ключевой вывод: **остаточный крен модельного контроллера — не дефект реализации, а воспроизводимый предел простого пропорционального стабилизатора ориентации.** Мы показали экспериментально, что увеличение коэффициента (kp 1.0→2.0), расширение предела hip (0.3→0.6) и инверсия знака компенсации крена **ухудшают** устойчивость; лишь симметричная стойка и стабилизация курса снижают дрейф. Это превращает «недостаток» в результат о границе применимости модельного подхода и указывает путь к улучшению (capture-point / дифференциальная длина ног). Модельный контроллер остаётся прозрачным, детерминированным и не требующим GPU-обучения эталоном и резервным режимом для гибридных схем «политика + fallback».
 
 ---
 
 ## References
 
-1. M. H. Raibert, *Legged Robots That Balance*. Cambridge, MA, USA:
-   MIT Press, 1986.
-2. B. Katz, J. Di Carlo, and S. Kim, "Mini Cheetah: A platform for
-   pushing the limits of dynamic quadruped control," in *Proc. IEEE Int.
-   Conf. Robotics and Automation (ICRA)*, 2019, pp. 6295–6301.
-3. J. Hwangbo et al., "Learning agile and dynamic motor skills for
-   legged robots," *Science Robotics*, vol. 4, no. 26, 2019.
-4. J. Lee, J. Hwangbo, L. Sentis, V. Kim, and P. Fankhauser, "Learning
-   quadrupedal locomotion over challenging terrain," *Science Robotics*,
-   vol. 5, no. 47, 2020.
-5. T. Miki, J. Lee, J. Hwangbo, L. Wellhausen, V. Koltun, and M. Hutter,
-   "Learning robust perceptive locomotion for quadrupedal robots in the
-   wild," *Science Robotics*, vol. 7, no. 62, 2022.
-6. N. Rudin, D. Hoeller, P. Reist, and M. Hutter, "Learning to walk in
-   minutes using massively parallel deep reinforcement learning," in
-   *Proc. Conf. Robot Learning (CoRL)*, 2021.
-7. J. M. Jimeno, "CHAMP: Controller for highly agile multi-legged
-   platforms," GitHub repository, 2021. [Online]. Available:
-   https://github.com/chvmp/champ
-8. NVIDIA, "Isaac Gym: High performance GPU-based physics simulation for
-   robot learning," arXiv:2108.10470, 2021.
-9. NVIDIA, "Isaac Lab: A unified and modular framework for robot
-   learning," documentation, 2024. [Online]. Available:
-   https://isaac-sim.github.io/IsaacLab
-10. NVIDIA, "Isaac Sim," documentation, 2026. [Online]. Available:
-    https://docs.isaacsim.omniverse.nvidia.com
-11. Unitree Robotics, "Unitree Go2 — quadruped robot and SDK,"
-    documentation, 2024. [Online]. Available: https://www.unitree.com/go2
-12. *Benchmarking MPC and RL for legged robot locomotion in MuJoCo*,
-    arXiv:2501.16590, 2025.
-13. *Kine2Go: A kinematic dataset for the Unitree Go2*,
-    arXiv:2606.14433, 2026.
-14. *Isaac Sim-to-real: RL-based locomotion for quadrupeds*,
-    arXiv:2607.18135, 2026.
-15. G. Bledt et al., "MIT Cheetah 3: Design and control of a robust,
-    dynamic quadruped robot," in *Proc. IEEE/RSJ Int. Conf. Intelligent
-    Robots and Systems (IROS)*, 2018, pp. 2245–2252.
+1. M. H. Raibert, *Legged Robots That Balance*. Cambridge, MA, USA: MIT Press, 1986. 2. B. Katz, J. Di Carlo, and S. Kim, "Mini Cheetah: A platform for pushing the limits of dynamic quadruped control," in *Proc. IEEE Int. Conf. Robotics and Automation (ICRA)*, 2019, pp. 6295–6301. 3. J. Hwangbo et al., "Learning agile and dynamic motor skills for legged robots," *Science Robotics*, vol. 4, no. 26, 2019. 4. J. Lee, J. Hwangbo, L. Sentis, V. Kim, and P. Fankhauser, "Learning quadrupedal locomotion over challenging terrain," *Science Robotics*, vol. 5, no. 47, 2020. 5. T. Miki, J. Lee, J. Hwangbo, L. Wellhausen, V. Koltun, and M. Hutter, "Learning robust perceptive locomotion for quadrupedal robots in the wild," *Science Robotics*, vol. 7, no. 62, 2022. 6. N. Rudin, D. Hoeller, P. Reist, and M. Hutter, "Learning to walk in minutes using massively parallel deep reinforcement learning," in *Proc. Conf. Robot Learning (CoRL)*, 2021. 7. J. M. Jimeno, "CHAMP: Controller for highly agile multi-legged platforms," GitHub repository, 2021. [Online]. Available: https://github.com/chvmp/champ 8. NVIDIA, "Isaac Gym: High performance GPU-based physics simulation for robot learning," arXiv:2108.10470, 2021. 9. NVIDIA, "Isaac Lab: A unified and modular framework for robot learning," documentation, 2024. [Online]. Available: https://isaac-sim.github.io/IsaacLab 10. NVIDIA, "Isaac Sim," documentation, 2026. [Online]. Available: https://docs.isaacsim.omniverse.nvidia.com 11. Unitree Robotics, "Unitree Go2 — quadruped robot and SDK," documentation, 2024. [Online]. Available: https://www.unitree.com/go2 12. *Benchmarking MPC and RL for legged robot locomotion in MuJoCo*, arXiv:2501.16590, 2025. 13. *Kine2Go: A kinematic dataset for the Unitree Go2*, arXiv:2606.14433, 2026. 14. *Isaac Sim-to-real: RL-based locomotion for quadrupeds*, arXiv:2607.18135, 2026. 15. G. Bledt et al., "MIT Cheetah 3: Design and control of a robust, dynamic quadruped robot," in *Proc. IEEE/RSJ Int. Conf. Intelligent Robots and Systems (IROS)*, 2018, pp. 2245–2252.
 
 ---
 
 ## Примечание к черновику
 
-- Все значения, помеченные ⚠️, являются произвольными заглушками и должны
-  быть заменены реальными измерениями из логов эксперимента.
-- Имена авторов, аффилиация, точный объём и оформление — по шаблону IEEE
-  из личного кабинета PIERE 2026.
-- Перед отправкой прогнать проверку шаблона и англоязычную вычитку.
+- Все значения, помеченные ⚠️, являются произвольными заглушками и должны быть заменены реальными измерениями из логов эксперимента. - Имена авторов, аффилиация, точный объём и оформление — по шаблону IEEE из личного кабинета PIERE 2026. - Перед отправкой прогнать проверку шаблона и англоязычную вычитку.
