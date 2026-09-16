@@ -1,6 +1,9 @@
 # Comparing a Learned Policy and a Model-Based IK/TROT Controller for Quadruped Locomotion in Isaac Sim
 
-**A. V. Papin** Bauman Moscow State Technical University Moscow, Russia papinav@student.bmstu.ru
+**A. V. Papin**
+Bauman Moscow State Technical University
+Moscow, Russia
+papinav@student.bmstu.ru
 
 ---
 
@@ -26,7 +29,10 @@ The contributions of this paper are: (1) the implementation of a model-based IK/
 
 Given a single quadruped (Unitree Go2), a single simulator (Isaac Sim / IsaacLab), and a single low-level joint-position interface, we address the following questions:
 
-- **RQ1.** How do a pre-trained RL policy and a hand-tuned IK/TROT controller compare in speed, body-height stability, roll, lateral drift, and cost of transport on flat terrain? - **RQ2.** What is the operating range of each controller in commanded speed? - **RQ3.** Is the model-based controller's behavior reproducible, or is it coupled to the simulator's real-time performance? - **RQ4.** What are the practical integration defects that must be addressed to run a model-based controller through a modern GPU-accelerated simulator, and what is the limit of a simple proportional attitude stabilizer?
+- **RQ1.** How do a pre-trained RL policy and a hand-tuned IK/TROT controller compare in speed, body-height stability, roll, lateral drift, and cost of transport on flat terrain?
+- **RQ2.** What is the operating range of each controller in commanded speed?
+- **RQ3.** Is the model-based controller's behavior reproducible, or is it coupled to the simulator's real-time performance?
+- **RQ4.** What are the practical integration defects that must be addressed to run a model-based controller through a modern GPU-accelerated simulator, and what is the limit of a simple proportional attitude stabilizer?
 
 ## Theory
 
@@ -98,7 +104,11 @@ The RL baseline is the pre-trained NVIDIA policy distributed with Isaac Sim [15]
 
 Five concrete defects were found and fixed, each confirmed by telemetry (125 columns: pose, angles, velocities, torques, foot positions and contacts):
 
-1. **Stance foot drift.** The stance foot velocity was computed as $-\frac{\mathrm{step\_dist}}{4\,dt\,\tau_{\mathrm{st}}}$, where `stance_ticks` is the length of one stance phase, whereas the leg is on the ground for several phases in a row. The foot drifted backwards (up to −1.2 m) and the IK saturated (`calf = 0`). It was replaced by the physically correct velocity, Eq. (1) with v_st = -cmd_vel. 2. **IMU compensation accumulation.** The compensation was applied incrementally to the gait state, so the tilt accumulated. It is now applied only to the copy used for IK. 3. **Inverted IMU sign.** The compensation used `R(-comp)` instead of `R(comp)`, amplifying the tilt. After correction, roll dropped from a full flip (180°) to about 8°. 4. **Inverted yaw sign.** The yaw stabilization used `-0.5·yaw_err`, which spun the robot up. With `+0.5·yaw_err` the heading is maintained. 5. **Wall-clock PID.** After switching the controller to a simulation-time step, the PID still used wall-clock `dt`, causing a mismatch in the integral and derivative terms.
+1. **Stance foot drift.** The stance foot velocity was computed as $-\frac{\mathrm{step\_dist}}{4\,dt\,\tau_{\mathrm{st}}}$, where `stance_ticks` is the length of one stance phase, whereas the leg is on the ground for several phases in a row. The foot drifted backwards (up to −1.2 m) and the IK saturated (`calf = 0`). It was replaced by the physically correct velocity, Eq. (1) with v_st = -cmd_vel.
+2. **IMU compensation accumulation.** The compensation was applied incrementally to the gait state, so the tilt accumulated. It is now applied only to the copy used for IK.
+3. **Inverted IMU sign.** The compensation used `R(-comp)` instead of `R(comp)`, amplifying the tilt. After correction, roll dropped from a full flip (180°) to about 8°.
+4. **Inverted yaw sign.** The yaw stabilization used `-0.5·yaw_err`, which spun the robot up. With `+0.5·yaw_err` the heading is maintained.
+5. **Wall-clock PID.** After switching the controller to a simulation-time step, the PID still used wall-clock `dt`, causing a mismatch in the integral and derivative terms.
 
 A structural defect was also identified: compensating the roll by rotating the feet created a positive feedback loop through the hip joints. The roll is now compensated by a differential leg length, which does not actuate the hip; the roll dropped from 50° to about 8° (Fig. 2).
 
