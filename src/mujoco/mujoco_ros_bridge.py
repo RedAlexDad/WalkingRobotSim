@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import math
 import threading
 import time
@@ -104,10 +105,9 @@ def main() -> None:
     rclpy.init()
     node = Bridge()
     def _spin() -> None:
-        try:
+        # Ctrl+C завершает spin() исключением — глушим штатно.
+        with contextlib.suppress(Exception):
             rclpy.spin(node)
-        except Exception:  # noqa: BLE001 — тихий выход при Ctrl+C
-            pass
 
     spin = threading.Thread(target=_spin, daemon=True)
     spin.start()
