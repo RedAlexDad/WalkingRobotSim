@@ -338,10 +338,17 @@ def run_sim():
                     qa = _row(o.get("joint_pos"), 12)
                     err = [abs(c[i] - qa[i]) for i in range(12)]
                     fps = it / max(1e-6, (time.time() - t_wall0))
+                    # GROUND TRUTH корпуса (независимо от одометрии контроллера)
+                    gt_s = ""
+                    try:
+                        bp = env._env.scene.articulations['robot'].data.body_pos_w[0]
+                        gt_s = f" GT=({float(bp[0][0]):+.3f},{float(bp[0][1]):+.3f},{float(bp[0][2]):+.3f})"
+                    except Exception:
+                        gt_s = ""
                     log(
                         "SIM",
                         f"REPORT step={it} t={sim_time:.2f} "
-                        f"pos=({pos[0]:+.3f},{pos[1]:+.3f},{pos[2]:+.3f}) "
+                        f"pos=({pos[0]:+.3f},{pos[1]:+.3f},{pos[2]:+.3f}){gt_s} "
                         f"rpy=({math.degrees(roll):+.1f},{math.degrees(pitch):+.1f},"
                         f"{math.degrees(yaw):+.1f})° "
                         f"joint_err max={max(err):.3f} mean={sum(err)/12:.3f} "
