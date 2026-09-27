@@ -30,13 +30,11 @@ fetch_arxiv_refs.py — продвинутый загрузчик arXiv-рефе
 
 import argparse
 import html
-import json
 import os
 import random
 import re
 import sys
 import time
-import urllib.parse
 from html.parser import HTMLParser
 
 try:
@@ -157,10 +155,10 @@ def strip_arxiv_chrome(html_text: str) -> str:
     """
     # 1) Полностью удалить <form ...> ... </form>
     html_text = re.sub(r"<form\b[^>]*>.*?</form>", "", html_text,
-                       flags=re.S | re.I)
+                       flags=re.DOTALL | re.IGNORECASE)
     # 2) Полностью удалить <footer ...> ... </footer> (без вложенных footer)
     html_text = re.sub(r"<footer\b[^>]*>.*?</footer>", "", html_text,
-                       flags=re.S | re.I)
+                       flags=re.DOTALL | re.IGNORECASE)
     # 3) Полностью удалить служебные header/nav/aside, помеченные классами arXiv
     #    (осторожно: не трогаем заголовки статьи h1..h6 — это не header-тег).
     for tag in ("header", "nav", "aside"):
@@ -170,7 +168,7 @@ def strip_arxiv_chrome(html_text: str) -> str:
             rf"html-header|modal-header|modal-footer|ds-site-footer|nonprofit)[^\"]*\"[^>]*>"
             rf".*?</{tag}>"
         )
-        html_text = re.sub(pat, "", html_text, flags=re.S | re.I)
+        html_text = re.sub(pat, "", html_text, flags=re.DOTALL | re.IGNORECASE)
     # 4) Блоки, помеченные служебными классами в div/section
     for tag in ("div", "section"):
         pat = (
@@ -178,15 +176,15 @@ def strip_arxiv_chrome(html_text: str) -> str:
             rf"ds-site-footer|html-header-logo|html-header-nav|nonprofit|ds-announcement)[^\"]*\"[^>]*>"
             rf".*?</{tag}>"
         )
-        html_text = re.sub(pat, "", html_text, flags=re.S | re.I)
+        html_text = re.sub(pat, "", html_text, flags=re.DOTALL | re.IGNORECASE)
     # 4b) Баннер объявлений arXiv по id/роли (не всегда имеет класс ds-announcement)
     html_text = re.sub(
         r"<(?:div|aside|section)\b[^>]*id=\"announcement-banner\"[^>]*>.*?</(?:div|aside|section)>",
-        "", html_text, flags=re.S | re.I,
+        "", html_text, flags=re.DOTALL | re.IGNORECASE,
     )
     # 5) Остаточный мелкий мусор
     html_text = re.sub(r"<header class=\"modal-header\">.*?</header>", "",
-                       html_text, flags=re.S | re.I)
+                       html_text, flags=re.DOTALL | re.IGNORECASE)
     return html_text
 
 
@@ -297,9 +295,7 @@ class HtmlToMarkdown(HTMLParser):
             self._skip_depth = max(0, self._skip_depth - 1)
             self._skip_on_close.discard(tag)
             return
-        if tag in self._HEADING:
-            self._emit_block()
-        elif tag in ("p", "div", "section", "article", "blockquote"):
+        if tag in self._HEADING or tag in ("p", "div", "section", "article", "blockquote"):
             self._emit_block()
         elif tag in ("ul", "ol"):
             if self._lists:
@@ -363,7 +359,7 @@ def parse_abs_meta(html: str) -> dict:
             "links": {"abs": "", "html": ""}}
 
     # Title: <title>[arXiv:...] Title</title> или <h1 class="title mathjax">
-    m = re.search(r"<title>(.*?)</title>", html, re.S | re.I)
+    m = re.search(r"<title>(.*?)</title>", html, re.DOTALL | re.IGNORECASE)
     if m:
         meta["title"] = _clean(m.group(1))
 
@@ -372,15 +368,15 @@ def parse_abs_meta(html: str) -> dict:
         r'<blockquote[^>]*class="abstract[^"]*"[^>]*>(.*?)</blockquote>',
         r'<div[^>]*class="abstract[^"]*"[^>]*>(.*?)</div>',
     ):
-        m = re.search(pat, html, re.S | re.I)
+        m = re.search(pat, html, re.DOTALL | re.IGNORECASE)
         if m:
             meta["abstract"] = _clean(m.group(1))
             break
-    meta["abstract"] = re.sub(r"^Abstract[:\s]*", "", meta["abstract"], flags=re.I)
+    meta["abstract"] = re.sub(r"^Abstract[:\s]*", "", meta["abstract"], flags=re.IGNORECASE)
 
     # Authors
     authors = []
-    for m in re.finditer(r'<a[^>]*rel="author"[^>]*>([^<]+)</a>', html, re.I):
+    for m in re.finditer(r'<a[^>]*rel="author"[^>]*>([^<]+)</a>', html, re.IGNORECASE):
         authors.append(_clean(m.group(1)))
     meta["authors"] = authors
 

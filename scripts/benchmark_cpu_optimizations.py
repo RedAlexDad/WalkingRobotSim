@@ -7,8 +7,8 @@ Numba JIT компилирует Python-циклы в машинный код б
 """
 
 import time
+
 import numpy as np
-from scipy.ndimage import minimum_filter, maximum_filter
 from numba import njit
 
 np.random.seed(42)
