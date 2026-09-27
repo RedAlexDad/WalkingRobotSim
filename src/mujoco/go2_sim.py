@@ -6,13 +6,13 @@
 Запуск:
     .venv-mujoco/bin/python src/mujoco/go2_sim.py --duration 3 --render out.png
 """
+
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
 
 import mujoco
-import numpy as np
 
 REPO = Path(__file__).resolve().parents[2]
 MENAGERIE = REPO / "external" / "mujoco_menagerie" / "unitree_go2"
@@ -37,8 +37,13 @@ def main() -> None:
         f"model: nq={model.nq} nv={model.nv} nu={model.nu} "
         f"dt={model.opt.timestep} bodies={model.nbody}",
     )
-    print("joints:", [mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, i)
-                      for i in range(model.njnt)])
+    print(
+        "joints:",
+        [
+            mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, i)
+            for i in range(model.njnt)
+        ],
+    )
 
     n_steps = int(args.duration / model.opt.timestep)
     for _ in range(n_steps):

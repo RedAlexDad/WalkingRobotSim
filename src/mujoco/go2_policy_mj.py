@@ -7,26 +7,48 @@
 Запуск:
     .venv-mujoco/bin/python src/mujoco/go2_policy_mj.py --duration 10 --vx 0.5
 """
+
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
 
-import mujoco
 import numpy as np
 import torch
 
+import mujoco
+
 REPO = Path(__file__).resolve().parents[2]
 SCENE = REPO / "external" / "mujoco_menagerie" / "unitree_go2" / "scene.xml"
-POLICY = REPO / "src" / "isaac" / "assets" / "Isaac" / "Samples" / "Policies" / "go2" / "physx_policy.pt"
+POLICY = (
+    REPO
+    / "src"
+    / "isaac"
+    / "assets"
+    / "Isaac"
+    / "Samples"
+    / "Policies"
+    / "go2"
+    / "physx_policy.pt"
+)
 
 # Порядок суставов MuJoCo = FL, FR, RL, RR × (hip, thigh, calf) — совпадает
 # с порядком Go2 в IsaacLab.
 DEFAULT = np.array(
-    [0.1, 0.8, -1.5,   # FL
-     -0.1, 0.8, -1.5,  # FR
-     0.1, 1.0, -1.5,   # RL
-     -0.1, 1.0, -1.5], # RR
+    [
+        0.1,
+        0.8,
+        -1.5,  # FL
+        -0.1,
+        0.8,
+        -1.5,  # FR
+        0.1,
+        1.0,
+        -1.5,  # RL
+        -0.1,
+        1.0,
+        -1.5,
+    ],  # RR
     dtype=np.float32,
 )
 
@@ -36,11 +58,14 @@ ACTION_SCALE = 0.25
 
 def quat_to_mat(q: np.ndarray) -> np.ndarray:
     w, x, y, z = q
-    return np.array([
-        [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
-        [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
-        [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
-    ], dtype=np.float32)
+    return np.array(
+        [
+            [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+            [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+            [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
+        ],
+        dtype=np.float32,
+    )
 
 
 def main() -> None:
@@ -79,15 +104,17 @@ def main() -> None:
         if step % decimation == 0:
             mat = quat_to_mat(data.qpos[3:7])
             vel = np.concatenate([data.qvel[:3], data.qvel[3:6]])  # [lin, ang] в мире
-            obs = np.concatenate([
-                mat.T @ vel[:3],            # lin vel (body)
-                mat.T @ vel[3:],            # ang vel (body)
-                mat.T @ np.array([0, 0, -1], dtype=np.float32),  # gravity (body)
-                cmd,
-                (data.qpos[7:19] - DEFAULT).astype(np.float32),
-                data.qvel[6:18].astype(np.float32),
-                last_action,
-            ]).astype(np.float32)
+            obs = np.concatenate(
+                [
+                    mat.T @ vel[:3],  # lin vel (body)
+                    mat.T @ vel[3:],  # ang vel (body)
+                    mat.T @ np.array([0, 0, -1], dtype=np.float32),  # gravity (body)
+                    cmd,
+                    (data.qpos[7:19] - DEFAULT).astype(np.float32),
+                    data.qvel[6:18].astype(np.float32),
+                    last_action,
+                ]
+            ).astype(np.float32)
             with torch.inference_mode():
                 last_action = policy(torch.from_numpy(obs[None]))[0].numpy().copy()
             target = DEFAULT + ACTION_SCALE * last_action
@@ -102,7 +129,9 @@ def main() -> None:
         if viewer is not None:
             viewer.sync()
 
-    print(f"после {args.duration:.1f}с: base x={data.qpos[0]:+.3f} y={data.qpos[1]:+.3f} z={data.qpos[2]:.3f} | min_z={min_z:.3f}")
+    print(
+        f"после {args.duration:.1f}с: base x={data.qpos[0]:+.3f} y={data.qpos[1]:+.3f} z={data.qpos[2]:.3f} | min_z={min_z:.3f}"
+    )
     print(f"скорость x (м/с) ≈ {data.qpos[0] / args.duration:+.3f}")
 
 
