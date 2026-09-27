@@ -65,9 +65,13 @@ pub fn compute_local_positions(
             1.0,
         );
         let pos_local = inv_t * leg_pos_h;
-        result[(0, i)] = pos_local.x;
-        result[(1, i)] = pos_local.y;
-        result[(2, i)] = pos_local.z;
+        // r_legs() переставляет оси: локальный (x,y,z) выходит как
+        // (lateral, height, forward), из-за чего z (высота) терялся и IK не
+        // давал подъёма. Возвращаем ожидаемый IK порядок (forward, lateral,
+        // height): x' <- forward(z), y' <- lateral(x), z' <- height(y).
+        result[(0, i)] = pos_local.z;
+        result[(1, i)] = pos_local.x;
+        result[(2, i)] = pos_local.y;
     }
 
     result
