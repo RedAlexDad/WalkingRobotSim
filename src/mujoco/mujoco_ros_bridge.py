@@ -76,6 +76,19 @@ def _write_row(
             pos = data.xpos[i]
             foot_z.append(float(pos[2]))
             foot_x.append(float(pos[0]))
+    # FK целевой стопы: forward-кинематика по target (в той же позе базы).
+    sdata = mujoco.MjData(model)
+    sdata.qpos[:7] = data.qpos[:7]
+    sdata.qpos[7:19] = target
+    mujoco.mj_forward(model, sdata)
+    tgt_foot_z = [0.0] * 4
+    j = 0
+    for i in range(1, model.nbody):
+        name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, i) or ""
+        if name.endswith("_calf") and j < 4:
+            tgt_foot_z[j] = float(sdata.xpos[i][2])
+            j += 1
+
     vals = (
         [f"{data.time:.3f}", node.mode]
         + [f"{v:.3f}" for v in node.cmd]
@@ -90,6 +103,7 @@ def _write_row(
         + [f"{v:.4f}" for v in tau]
         + [f"{v:.4f}" for v in (foot_z + [0.0] * 4)[:4]]
         + [f"{v:.4f}" for v in (foot_x + [0.0] * 4)[:4]]
+        + [f"{v:.4f}" for v in tgt_foot_z]
     )
     csv.write(",".join(vals) + "\n")
 
@@ -225,6 +239,7 @@ def main() -> None:
         + [f"tau{i}" for i in range(12)]
         + [f"foot_z{i}" for i in range(4)]
         + [f"foot_x{i}" for i in range(4)]
+        + [f"tgt_foot_z{i}" for i in range(4)]
     )
     csv.write(",".join(_cols) + "\n")
     n = int(args.duration / model.opt.timestep)
