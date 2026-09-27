@@ -15,6 +15,8 @@ pub struct TrotGaitController {
     swing_: TrotSwingController,
     stance_: TrotStanceController,
     pid_: PIDController,
+    /// A1-траектории стоп по лапам (FR, FL, RR, RL).
+    trajs: [super::foot_traj::FootTraj; 4],
 }
 
 impl TrotGaitController {
@@ -64,39 +66,39 @@ impl TrotGaitController {
         // (стопы остаются горизонтальны в мире); kd — демпфирование.
         let pid_ = PIDController::new(1.0, 0.0, 0.05);
 
-        Self { gait, use_imu, swing_, stance_, pid_ }
+        // A1-трот: диагональные пары (FR,RL | FL,RR). Стартуют махом лапы 0,3.
+        let t_step = 0.15;
+        let lz0 = -0.249;
+        let hcl = 0.075;
+        let trajs = [
+            super::foot_traj::FootTraj::new(t_step, lz0, hcl, 0.0, true),
+            super::foot_traj::FootTraj::new(t_step, lz0, hcl, 0.0, false),
+            super::foot_traj::FootTraj::new(t_step, lz0, hcl, 0.0, false),
+            super::foot_traj::FootTraj::new(t_step, lz0, hcl, 0.0, true),
+        ];
+        Self { gait, use_imu, swing_, stance_, pid_, trajs }
     }
 
     /// Step the gait controller for one tick
     /// Returns new foot positions (3x4 matrix)
     pub fn step(
-        &self,
-        ticks: i32,
+        &mut self,
+        _ticks: i32,
         current: &SMatrix<f64, 3, 4>,
         cmd_vel: &[f64; 3],
         robot_height: f64,
     ) -> SMatrix<f64, 3, 4> {
+        // A1-траектория: стопа относительно стойки = стойка + (lx, ly, lz - lz0).
         let mut next = *current;
-        let contacts = self.gait.contacts(ticks);
-        let sub = self.gait.subphase_ticks(ticks);
-
         for leg in 0..4 {
-            if contacts[leg] == 1 {
-                // Stance phase — foot on ground
-                let cmd = nalgebra::Vector3::new(cmd_vel[0], cmd_vel[1], cmd_vel[2]);
-                next.column_mut(leg).copy_from(
-                    &self.stance_.next_foot_location(leg, current, &cmd, robot_height)
-                );
-            } else {
-                // Swing phase — foot in air
-                let swing_prop = sub as f64 / self.gait.swing_ticks as f64;
-                let cmd = nalgebra::Vector3::new(cmd_vel[0], cmd_vel[1], cmd_vel[2]);
-                next.column_mut(leg).copy_from(
-                    &self.swing_.next_foot_location(swing_prop, leg, current, &cmd, robot_height)
-                );
-            }
+            let (lx, ly, lz) = self.trajs[leg].step(self.trajs[leg].t_step, cmd_vel[0]);
+            let dx = lx;
+            let dy = ly;
+            let dz = (lz - self.trajs[leg].lz0) + (robot_height + 0.25);
+            next[(0, leg)] = self.gait.default_stance[(0, leg)] + dx;
+            next[(1, leg)] = self.gait.default_stance[(1, leg)] + dy;
+            next[(2, leg)] = robot_height + dz;
         }
-
         next
     }
 
