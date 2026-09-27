@@ -64,6 +64,29 @@ MuJoCo закрывает физику/рельеф/RL, но требует **RO
 | 6 | Запуск политики | `src/mujoco/go2_policy_mj.py` |
 | 7 | GUI-viewer | `--viewer` (launch_passive) |
 | 8 | Ruff + mypy --strict | ✅ чисто |
+| 9 | **ROS 2-мост к Rust-контроллеру** | `src/mujoco/mujoco_ros_bridge.py` |
+| 10 | Цели Makefile | `mujoco`, `mujoco-viewer`, `mujoco-lite`, `mujoco-kill` |
+| 11 | Телеметрия моста | `logs/mujoco/telemetry_*.csv` |
+| 12 | **Unit-тесты** | `test_mujoco.py`, `test_mujoco_bridge.py` — 19 тестов |
+
+### A.3.1. Интеграция с Rust-контроллером
+
+Выяснено, что `robot_controller_node` — **feedforward**: ему нужны только
+`imu` и `sim_time`, а публикует он целевые углы суставов (обратной связи по
+суставам нет — `SharedState` хранит только `foot_locations`, IMU и команды).
+Поэтому мост получился тривиальным:
+
+```mermaid
+graph LR
+    MJ["MuJoCo go2.xml"] -->|q, dq, quat| BR["mujoco_ros_bridge.py"]
+    BR -->|/robot1/imu, /robot1/sim_time| RUST["robot_controller_node (Rust)"]
+    RUST -->|/robot1/joint_group_controller/commands| BR
+    BR -->|tau = kp(q*-q) - kd dq| MJ
+```
+
+- PD: `kp=25, kd=0.5`, конверт `23.5·(1±dq/30)` (как в эталоне Isaac Lab).
+- Реиндексация `FR,FL,RR,RL → FL,FR,RL,RR` (`CMD_TO_MJ`).
+- Запуск: `make mujoco VX=0.3` (Rust-нода в контейнере + мост на host-ROS).
 
 ### A.4. Проблемы и решения
 
@@ -73,6 +96,8 @@ MuJoCo закрывает физику/рельеф/RL, но требует **RO
 | B2 | dtype-конфликт наблюдения | ✅ решено |
 | B3 | Затенение модуля в GUI-viewer | ✅ решено |
 | B4 | Python-линт и типизация | ✅ решено |
+| B5 | Мост: нет зависимостей ROS (empy, pyyaml) | ✅ решено |
+| B6 | Робот стоит и в MuJoCo (как и в Isaac) | ℹ️ находка |
 
 ### A.5. Итоговая архитектура
 
@@ -87,8 +112,11 @@ graph TB
     POL --> MJ
     SIM --> MJ
     POL --> VIEW
-    MJ -->|план| BRIDGE["ROS 2-мост<br/>(не реализован)"]
-    BRIDGE -->|PointCloud2, odom, TF| NIRS["Стек НИР"]
+    MJ -->|план| BRIDGE["ROS 2-мост<br/>(реализован: rust-bridge)"]
+    BRIDGE -->|joint targets| RUST["Rust-контроллер"]
+    RUST -->|imu, sim_time| BRIDGE
+    MJ -->|план| LIDAR["LiDAR raycast->PointCloud2<br/>(не реализован)"]
+    LIDAR --> NIRS["Стек НИР"]
 ```
 
 - Модель: `mujoco_menagerie/unitree_go2` (`nq=19`, `nv=18`, `nu=12`, `dt=0.002`).
@@ -97,10 +125,13 @@ graph TB
 
 ### A.6. Дальнейшие шаги
 
-1. Взять политику, обученную **в MuJoCo** (`unitree-go2-mjx-rl`, MJX) —
-   устраняет проблему переноса (B1).
-2. Реализовать ROS 2-мост (`rclpy`): `PointCloud2`, `odom`, `joint_states`, TF.
-3. Сгенерировать 5 сценариев рельефа НИР (`hfield`).
+1. ~~ROS 2-мост к Rust-контроллеру~~ — **сделано** (`mujoco_ros_bridge.py`,
+   `make mujoco`).
+2. Взять политику, обученную **в MuJoCo** (`unitree-go2-mjx-rl`, MJX) —
+   устраняет проблему переноса (B1) и даёт «ходящее» демо.
+3. Реализовать **LiDAR-мост**: raycasting → `PointCloud2` + `odom`/`TF` —
+   это то, что требует НИР (`docs/NIRS`).
+4. Сгенерировать 5 сценариев рельефа НИР (`hfield`).
 
 ---
 
@@ -114,6 +145,8 @@ graph TB
 | B2 | `RuntimeError: mat1 and mat2 ... Double and Float` | `np.concatenate` дал float64 | `.astype(np.float32)` | ✅ |
 | B3 | `UnboundLocalError: mujoco` | локальный `import mujoco.viewer` затеняет модуль | `import mujoco.viewer as mjviewer` | ✅ |
 | B4 | ruff/mypy замечания | импорты, формат, стабы | автофикс + `type: ignore` | ✅ |
+| B5 | Мост: нет `em`/`yaml` | ROS-зависимости вне venv | `pip install empy pyyaml` | ✅ |
+| B6 | Робот стоит и в MuJoCo (0.034 м/25 с) | ограничение модельного контроллера, не среды | вынесено как результат (§25–27 Isaac) | ℹ️ |
 
 ---
 
@@ -260,19 +293,86 @@ mypy --strict    -> Success: no issues found in 2 source files
 
 ---
 
+## 5. Проблема: мост не находил зависимости ROS (empy, pyyaml)
+
+### 5.1. Симптом
+
+```text
+ModuleNotFoundError: No module named 'em'      # empy
+ModuleNotFoundError: No module named 'yaml'    # pyyaml
+```
+
+### 5.2. Причина
+
+Мост запускается python-интерпретатором из `.venv-mujoco`, а ROS-зависимости
+(`empy`, `pyyaml` для `rclpy`) есть только в системном окружении ROS.
+
+### 5.3. Решение
+
+```bash
+.venv-mujoco/bin/pip install "empy==3.3.4" pyyaml
+```
+
+### 5.4. Результат
+
+`import rclpy` в venv работает; мост публикует `imu`/`sim_time` и принимает
+команды контроллера.
+
+---
+
+## 6. Находка: робот стоит и в MuJoCo (как и в Isaac)
+
+### 6.1. Симптом
+
+После запуска Rust-контроллера в MuJoCo (через мост) робот **не идёт**:
+`пройдено=0.034 м за 25 с` (средняя скорость 0.001 м/с, z=0.265 — стоит).
+
+### 6.2. Гипотезы
+
+- H1: мост неверно передаёт команды/момент.
+- H2: порядок суставов неверен.
+- H3: контроллер сам по себе не создаёт продвижения.
+
+### 6.3. Диагностика
+
+- Контроллер вышел в TROT: `cmd=[0.300, 0.000, -0.012]`, стопы машут
+  (`foot_x` колеблются) — то есть **команды доходят и IK работает**.
+- Мост применяет моменты (`<motor>` в MuJoCo), реиндексация проверена
+  юнит-тестами.
+
+### 6.4. Причина
+
+Тот же результат, что и в Isaac Sim (робот оседает/стоит, скорость ≈0).
+Значит проблема **не в среде**, а в **самом модельном контроллере**: он
+формирует движение стоп, но не создаёт поступательного продвижения корпуса
+(см. §25–27 отчёта Isaac — проскальзывание/нагрузка опорных лап).
+
+### 6.5. Значение для НИР
+
+MuJoCo дал **чистый эксперимент**: одинаковый контроллер, другая физика —
+результат тот же. Это отделяет «баг среды» от «ограничения модельного
+подхода» и усиливает вывод статьи (граница применимости кинематики).
+
+---
+
 ## Итоговая статистика
 
 | Метрика | Значение |
 |---|---|
-| Всего проблем | 4 |
-| Решено | 3 |
+| Всего проблем | 6 |
+| Решено | 4 (B2, B3, B4, B5) |
 | Открыто | 1 (B1 — модель/политика) |
+| Находка | 1 (B6 — контроллер стоит в обеих средах) |
 | Развёрнуто | MuJoCo 3.14.0, torch 2.14.0+cpu, menagerie Go2 |
-| Скрипты | `go2_sim.py`, `go2_policy_mj.py` |
+| Скрипты | `go2_sim.py`, `go2_policy_mj.py`, `mujoco_ros_bridge.py`, `mujoco_params.py` |
+| Makefile | `mujoco`, `mujoco-viewer`, `mujoco-lite`, `mujoco-kill` |
+| Тесты | 19 (pytest) ✅ |
 | Проверки | ruff ✅, mypy --strict ✅ |
 
-**Ключевой вывод:** MuJoCo поднят, модель Go2 работает, GUI есть; для ходьбы
-нужна политика, обученная в MuJoCo (`unitree-go2-mjx-rl`), а не Isaac-модель.
+**Ключевой вывод:** MuJoCo поднят, модель Go2 работает, мост к Rust-контроллеру
+готов и проверен; **робот стоит и в MuJoCo, и в Isaac** → причина в модельном
+контроллере, а не в среде. Для «ходящего» демо нужна RL-политика (MuJoCo-обученная),
+для научного вывода — кинематический контроллер как граница применимости.
 
 ---
 
