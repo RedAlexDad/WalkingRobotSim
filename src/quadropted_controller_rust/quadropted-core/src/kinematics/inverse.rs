@@ -48,10 +48,10 @@ pub fn compute_local_positions(
 
     // FR, FL, RR, RL — same order as C++ compute_local_positions
     let t_leg = [
-        t_blwbl * make_leg_t(hl, -hw, 0.0),   // FR: (hl, -hw)
-        t_blwbl * make_leg_t(hl, hw, 0.0),    // FL: (hl, hw)
-        t_blwbl * make_leg_t(-hl, -hw, 0.0),  // RR: (-hl, -hw)
-        t_blwbl * make_leg_t(-hl, hw, 0.0),   // RL: (-hl, hw)
+        t_blwbl * make_leg_t(hl, -hw, 0.0465),   // FR: (hl, -hw)
+        t_blwbl * make_leg_t(hl, hw, 0.0465),    // FL: (hl, hw)
+        t_blwbl * make_leg_t(-hl, -hw, 0.0465),  // RR: (-hl, -hw)
+        t_blwbl * make_leg_t(-hl, hw, 0.0465),   // RL: (-hl, hw)
     ];
 
     // Inverse transformation for each leg
@@ -67,34 +67,54 @@ pub fn compute_local_positions(
         let pos_local = inv_t * leg_pos_h;
         // Как в оригинале C++ (inverse_kinematics.cpp):
         // result.row(i) = pos_local.head<3>() — порядок (x, y, z).
-        result[(0, i)] = pos_local.x;
-        result[(1, i)] = pos_local.y;
-        result[(2, i)] = pos_local.z;
+        // r_legs() выдаёт (lateral, height, forward); приводим к порядку Go2-IK
+        // (forward, lateral, height): x' <- forward(z), y' <- lateral(x), z' <- height(y).
+        result[(0, i)] = pos_local.z;
+        result[(1, i)] = -pos_local.x;
+        result[(2, i)] = pos_local.y;
     }
 
     result
 }
 
-/// Compute joint angles for a single leg
-/// Returns [theta1 (hip), theta3 (thigh), theta4 (calf)]
-pub fn compute_joint_angles_for_leg(x: f64, y: f64, z: f64, leg_index: usize, l1: f64, l2: f64, l3: f64, l4: f64) -> [f64; 3] {
-    const LEG_SIGNS: [f64; 4] = [1.0, -1.0, 1.0, -1.0];
+/// Compute joint angles for a single leg — КОНВЕНЦИЯ Go2 (hip об X, звенья вдоль Z).
+/// Вход (x, y, z) = стопа относительно бедра: forward, lateral, height (вниз < 0).
+/// Возврат [theta1 (hip), theta2 (thigh), theta3 (calf)].
+/// Выведено и валидировано против MuJoCo (reports/mujoco §10.9-10.11):
+/// FK->IK round-trip точен до 1e-6 для всех 4 лап.
+pub fn compute_joint_angles_for_leg(
+    x: f64,
+    y: f64,
+    z: f64,
+    leg_index: usize,
+    _l1: f64,
+    l2: f64,
+    l3: f64,
+    l4: f64,
+) -> [f64; 3] {
+    // Знаки латерали по лапам в ПОРЯДКЕ IK: FR, FL, RR, RL.
+    const LEG_SIGNS: [f64; 4] = [-1.0, 1.0, -1.0, 1.0];
+    let c = l2; // боковой вынос бедра (0.0955)
+    let s = LEG_SIGNS[leg_index];
 
-    let l2_sq = l2 * l2;
-    let f_sq = x * x + y * y - l2_sq;
-    let f = if f_sq > 0.0 { f_sq.sqrt() } else { 0.0 };
-    let g = f - l1;
-    let h = (g * g + z * z).sqrt();
+    // 1) абдукция бедра (hip, ось X)
+    let r = (y * y + z * z).sqrt();
+    let qz = -((r * r - c * c).max(0.0)).sqrt();
+    let theta1 = y.atan2(-z) - (s * c).atan2(-qz);
 
-    let theta1 = -y.atan2(x) - f.atan2(l2 * LEG_SIGNS[leg_index]);
+    // 2) разворот в плоскость ноги: Rx(-theta1)
+    let ca = (-theta1).cos();
+    let sa = (-theta1).sin();
+    let fx = x;
+    let fz = y * sa + z * ca;
 
-    let d = (h * h - l3 * l3 - l4 * l4) / (2.0 * l3 * l4);
-    let d = d.clamp(-1.0, 1.0);
+    // 3) 2-звенная нога (thigh l3, calf l4)
+    let h = (fx * fx + fz * fz).sqrt();
+    let d = ((h * h - l3 * l3 - l4 * l4) / (2.0 * l3 * l4)).clamp(-1.0, 1.0);
+    let theta3 = -(std::f64::consts::PI - d.acos());
+    let theta2 = (-fx).atan2(-fz) - (l4 * theta3.sin()).atan2(l3 + l4 * theta3.cos());
 
-    let theta4 = -(1.0 - d * d).sqrt().atan2(d);
-    let theta3 = z.atan2(g) - (l4 * theta4.sin()).atan2(l3 + l4 * theta4.cos());
-
-    [theta1, theta3, theta4]
+    [theta1, theta2, theta3]
 }
 
 /// Compute joint angles for all 4 legs
