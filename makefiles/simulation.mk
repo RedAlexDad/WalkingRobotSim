@@ -47,7 +47,8 @@ mujoco-kill:
 gazebo: gazebo-rust
 
 ## Запуск Gazebo симуляции с Rust контроллером (контроллер + одометрия)
-## Опции: FPS=5 camera_fps, RVZ=false — без RViz (лёгкий режим)
+## Опции: WORLD=terrain.world (по умолчанию cafe.world), FPS=5 camera_fps,
+##         RVZ=false — без RViz (лёгкий режим)
 gazebo-rust:
 	$(require-container)
 	$(check-x11)
@@ -57,6 +58,7 @@ gazebo-rust:
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
 		ros2 launch gazebo_sim launch.launch.py \
 			use_sim_time:=true gui:=true \
+			$(if $(WORLD),world:=${WORLD}) \
 			$(if $(FPS),camera_fps:=${FPS}) \
 			$(if $(RVZ),enable_rviz:=${RVZ}) \
 			$(if $(ELEVATION),use_elevation:=${ELEVATION})"
@@ -74,6 +76,7 @@ gazebo-lite:
 		source /root/ws/install/setup.bash 2>/dev/null || true; \
 		ros2 launch gazebo_sim launch.launch.py \
 			use_sim_time:=true gui:=true camera_fps:=5 enable_rviz:=false \
+			$(if $(WORLD),world:=${WORLD}) \
 			$(if $(ELEVATION),use_elevation:=${ELEVATION})"
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs

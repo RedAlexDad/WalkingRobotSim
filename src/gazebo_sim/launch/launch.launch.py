@@ -14,7 +14,7 @@ from launch.actions import (DeclareLaunchArgument, ExecuteProcess,
                             RegisterEventHandler)
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import SetParameter
 
 
@@ -36,9 +36,13 @@ def generate_launch_description():
                                        description='Использовать elevation costmap'))
     ld.add_action(DeclareLaunchArgument('enable_rviz', default_value='true',
                                        description='Включить RViz (false — лёгкий режим, меньше нагрузка на CPU)'))
+    world = LaunchConfiguration('world', default='cafe.world')
+    ld.add_action(DeclareLaunchArgument(
+        'world', default_value='cafe.world',
+        description='Файл мира в gazebo_sim/world (cafe.world | terrain.world)'))
     ld.add_action(SetParameter(name='use_sim_time', value=use_sim_time))
 
-    world_file = os.path.join(pkg_path, 'world', 'cafe.world')
+    world_file = PathJoinSubstitution([pkg_path, 'world', world])
     # NOTE: окно Gazebo GUI работает, когда контейнер видит встроенный AMD GPU
     # (radeonsi в образе). Если контейнер видит NVIDIA RTX без драйвера —
     # Qt RHI/OGRE падает (driver null, Segmentation fault). Поэтому GPU в
