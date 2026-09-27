@@ -40,12 +40,28 @@ class Bridge(Node):
         self.imu_pub = self.create_publisher(Imu, f"{ns}/imu", 10)
         self.time_pub = self.create_publisher(Float64MultiArray, f"{ns}/sim_time", 10)
         self.target = DEFAULT_MJ.copy()
+        self.cmd_count = 0
         self.lock = threading.Lock()
+        # QoS BEST_EFFORT: Rust-публикатор (rclrs) может быть BEST_EFFORT,
+        # а RELIABLE-подписка с ним несовместима (данные не идут).
+        from rclpy.qos import (
+            QoSDurabilityPolicy,
+            QoSHistoryPolicy,
+            QoSProfile,
+            ReliabilityPolicy,
+        )
+
+        qos = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=10,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=QoSDurabilityPolicy.VOLATILE,
+        )
         self.create_subscription(
             Float64MultiArray,
             f"{ns}/joint_group_controller/commands",
             self._on_cmd,
-            10,
+            qos,
         )
 
     def _on_cmd(self, msg: Float64MultiArray) -> None:
@@ -56,6 +72,7 @@ class Bridge(Node):
         tgt[CMD_TO_MJ] = cmd
         with self.lock:
             self.target = tgt
+            self.cmd_count += 1
 
     def publish_state(
         self, quat: np.ndarray, gyro: np.ndarray, sim_time: float
@@ -140,7 +157,7 @@ def main() -> None:
     finally:
         csv.close()
         dist = math.hypot(float(data.qpos[0]), float(data.qpos[1]))
-        print(f"пройдено={dist:.3f} м, телеметрия: {csv_path}")
+        print(f"пройдено={dist:.3f} м, команд получено={node.cmd_count}, телеметрия: {csv_path}")
         if viewer is not None:
             viewer.close()
         node.destroy_node()
