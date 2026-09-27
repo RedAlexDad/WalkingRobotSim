@@ -29,7 +29,7 @@ def generate_launch_description():
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
     camera_fps = LaunchConfiguration('camera_fps', default='10')
-    use_elevation = LaunchConfiguration('use_elevation', default='false')
+    LaunchConfiguration('use_elevation', default='false')
     enable_rviz = LaunchConfiguration('enable_rviz', default='true')
 
     ld.add_action(DeclareLaunchArgument('use_sim_time', default_value='true',
@@ -53,7 +53,7 @@ def generate_launch_description():
     # контейнер пробрасывается только AMD (см. compose.yml, devices).
     # gz_server_only=true запускает Gazebo без GUI (headless) — фолбэк,
     # если отображение недоступно.
-    gz_server_only = LaunchConfiguration('gz_server_only', default='false')
+    LaunchConfiguration('gz_server_only', default='false')
     ld.add_action(DeclareLaunchArgument('gz_server_only', default_value='false',
                                         description='Запускать Gazebo без GUI (-s, headless). '
                                                     'false (по умолчанию) — GUI-режим на встроенном AMD GPU'))
