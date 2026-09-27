@@ -18,7 +18,8 @@ mujoco-viewer:
 	$(check-x11)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск MuJoCo + Rust контроллер...${NC}\n"
 	@docker exec -d $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; ros2 run quadropted_controller_rust robot_controller_node --ros-args -r __ns:=/robot1 > /tmp/rust.log 2>&1"
-	@sleep 3
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Ожидание регистрации контроллера...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; for i in \$$(seq 1 20); do n=\$$(ros2 topic info /robot1/joint_group_controller/commands 2>/dev/null | awk '/Publisher count/{print \$$3}'); [ \"\$$n\" = 1 ] && break; sleep 0.5; done"
 	@source /opt/ros/lyrical/setup.bash 2>/dev/null || true; \
 	 $(MUJOCO_VENV)/bin/python $(MUJOCO_BRIDGE) \
 		--duration $(if $(DURATION),${DURATION},60) $(if $(VX),--vx ${VX}) --viewer
@@ -29,7 +30,8 @@ mujoco-lite:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск MuJoCo (headless)...${NC}\n"
 	@docker exec -d $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; ros2 run quadropted_controller_rust robot_controller_node --ros-args -r __ns:=/robot1 > /tmp/rust.log 2>&1"
-	@sleep 3
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Ожидание регистрации контроллера...${NC}\n"
+	@docker exec $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; for i in \$$(seq 1 20); do n=\$$(ros2 topic info /robot1/joint_group_controller/commands 2>/dev/null | awk '/Publisher count/{print \$$3}'); [ \"\$$n\" = 1 ] && break; sleep 0.5; done"
 	@source /opt/ros/lyrical/setup.bash 2>/dev/null || true; \
 	 $(MUJOCO_VENV)/bin/python $(MUJOCO_BRIDGE) \
 		--duration $(if $(DURATION),${DURATION},60) $(if $(VX),--vx ${VX})
