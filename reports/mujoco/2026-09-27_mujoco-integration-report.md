@@ -933,6 +933,61 @@ z = 0.261..0.264 (стоит ровно), max|roll| = 0°, dx = +0.002 м  (не
 
 ---
 
+## 13. Референс A1-trot (MuJoCo) и спецификация порта
+
+### 13.1. Источник
+`~/GitHub/Unitree_a1_trot_mujoco` (`yayabash/Unitree_a1_trot_mujoco`) —
+кинематический трот для **Unitree A1** в MuJoCo: FSM + квинтические
+Cartesian-траектории + аналитический IK + stance-force компенсация.
+
+### 13.2. Извлечённые формулы
+
+**IK** (`inverse_kinematics_analytic.py`, L=0.2):
+```python
+l = sqrt(lx²+ly²+lz²)
+q_abduction = asin(ly/l)
+q_knee = -π + acos((2L²-l²)/(2L²))
+q_hip  = -0.5*q_knee + asin(-lx/l)
+```
+(у A1 нет выноса бедра `c`; наш IK с `c` валидирован под Go2 — **оставляем наш**).
+
+**Квинтик** (`quintic_poly.py`): `q(t)=Σ a_i t^i`, коэффициенты из
+`[q0,qf,0,0,0,0]` и матрицы 6×6 (гладко по поз/скор/ускор).
+
+**FSM** (`state_machine.py`, `t_step=0.15`): каждая нога чередует
+stance/swing по `t_step`; диагональные пары синхронны (0,3 | 1,2).
+
+**Траектории:**
+
+| Фаза | lx | ly | lz |
+|---|---|---|---|
+| Stance | `+0.5·xdot·t_step → −0.5·xdot·t_step` | аналогично | `lz0` (const) |
+| Swing | `−0.5·xdot·t_step → +0.5·xdot·t_step` | аналогично | `lz0 → lz0+hcl` (квинтик) |
+
+Параметры: `t_step=0.15`, `lz0=−0.249`, `hcl=0.075`, `c=0.183` (yaw).
+
+### 13.3. Вывод: наша походка структурно эквивалентна
+Наш `stance` уже даёт `−vx·dt` за тик (то же, что A1 `−xdot·t_step` в сумме),
+а порт страйда (`total_time=0.15`) **не изменил результат** (0.031 м). Значит
+различие не в длине страйда, а в **координации/траектории под Go2-стойку**.
+
+### 13.4. Спецификация порта (следующий заход)
+
+| # | Что | Откуда | Куда |
+|---|---|---|---|
+| 1 | Квинтик-полином | `quintic_poly.py` | `quadropted-core/…/math/` (новый) |
+| 2 | FSM фаз (per-leg) | `state_machine.py` | `controllers/gait.rs` (или новый) |
+| 3 | Траектория стоп (lx/ly/lz) | `cartesian_traj.py` | `controllers/trot/{stance,swing}.rs` |
+| 4 | Подъём `hcl=0.075`, `t_step=0.15` | `parameters.py` | константы |
+| 5 | Мой IK (уже есть) | — | оставить |
+
+**Критерий:** `dx` > 0 и растёт с `vx`; робот идёт ровно.
+
+**Файлы референса:** `~/GitHub/Unitree_a1_trot_mujoco/a1_trot/{cartesian_traj,
+state_machine,quintic_poly,inverse_kinematics_analytic}.py`.
+
+---
+
 ## Итоговая статистика
 
 | Метрика | Значение |
