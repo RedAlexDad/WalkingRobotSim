@@ -58,9 +58,11 @@ impl SharedState {
         let l2 = 0.0955;
         // Симметричная стойка (без смещения переда вперёд) — убирает постоянный
         // момент крена/курса от асимметрии front/back в диагональном троте.
-        let dx_front = body_length * 0.5;
-        let dx_back = body_length * 0.5;
-        let dy = body_width * 0.5 + l2;
+        // Стойка Go2 снята из MuJoCo FK (foot-геометрия, menagerie): асимметрия
+        // перед/зад, ширина и высота корпуса штатные.
+        let dx_front = 0.1763;
+        let dx_back = 0.2723;
+        let dy = 0.1723;
 
         let mut default_stance = SMatrix::<f64, 3, 4>::zeros();
         default_stance[(0, 0)] = dx_front; default_stance[(1, 0)] = -dy;

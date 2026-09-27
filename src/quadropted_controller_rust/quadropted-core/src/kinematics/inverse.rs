@@ -69,7 +69,7 @@ pub fn compute_local_positions(
         // result.row(i) = pos_local.head<3>() — порядок (x, y, z).
         // r_legs() выдаёт (lateral, height, forward); приводим к порядку Go2-IK
         // (forward, lateral, height): x' <- forward(z), y' <- lateral(x), z' <- height(y).
-        result[(0, i)] = pos_local.z;
+        result[(0, i)] = -pos_local.z;
         result[(1, i)] = -pos_local.x;
         result[(2, i)] = pos_local.y;
     }
