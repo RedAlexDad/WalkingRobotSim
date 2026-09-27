@@ -1,6 +1,45 @@
 # makefiles/simulation.mk
 
-.PHONY: gazebo gazebo-rust gazebo-cpp teleop set-pose reset-pose kill-ros exec test-aliases save-logs
+.PHONY: gazebo gazebo-rust gazebo-cpp teleop set-pose reset-pose kill-ros exec test-aliases save-logs \
+        mujoco mujoco-viewer mujoco-lite mujoco-kill
+
+# ════ MuJoCo ════
+MUJOCO_DIR    := $(PROJECT_ROOT)/src/mujoco
+MUJOCO_VENV   := $(PROJECT_ROOT)/.venv-mujoco
+MUJOCO_BRIDGE := $(MUJOCO_DIR)/mujoco_ros_bridge.py
+
+## Запуск MuJoCo симуляции (Rust контроллер — по умолчанию, с окном)
+mujoco: mujoco-viewer
+
+## Запуск MuJoCo с GUI-окном + Rust контроллер
+## Опции: VX=0.5 команда скорости, DURATION=60 длительность (с)
+mujoco-viewer:
+	$(require-container)
+	$(check-x11)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск MuJoCo + Rust контроллер...${NC}\n"
+	@docker exec -d $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; ros2 run quadropted_controller_rust robot_controller_node --ros-args -r __ns:=/robot1 > /tmp/rust.log 2>&1"
+	@sleep 3
+	@source /opt/ros/lyrical/setup.bash 2>/dev/null || true; \
+	 $(MUJOCO_VENV)/bin/python $(MUJOCO_BRIDGE) \
+		--duration $(if $(DURATION),${DURATION},60) $(if $(VX),--vx ${VX}) --viewer
+	@$(MAKE) mujoco-kill
+
+## Лёгкий режим: MuJoCo без окна (меньше нагрузка, для автотестов)
+mujoco-lite:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск MuJoCo (headless)...${NC}\n"
+	@docker exec -d $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; ros2 run quadropted_controller_rust robot_controller_node --ros-args -r __ns:=/robot1 > /tmp/rust.log 2>&1"
+	@sleep 3
+	@source /opt/ros/lyrical/setup.bash 2>/dev/null || true; \
+	 $(MUJOCO_VENV)/bin/python $(MUJOCO_BRIDGE) \
+		--duration $(if $(DURATION),${DURATION},60) $(if $(VX),--vx ${VX})
+	@$(MAKE) mujoco-kill
+
+## Очистка MuJoCo и Rust-контроллера
+mujoco-kill:
+	@pkill -f mujoco_ros_bridge 2>/dev/null || true
+	@docker exec $(CONTAINER_NAME) pkill -f robot_controller_node 2>/dev/null || true
+	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}MuJoCo и Rust-контроллер остановлены${NC}\n"
 
 ## Запуск Gazebo симуляции (Rust контроллер — по умолчанию)
 gazebo: gazebo-rust
