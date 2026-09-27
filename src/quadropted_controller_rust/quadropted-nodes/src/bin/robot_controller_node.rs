@@ -162,6 +162,16 @@ impl SharedState {
                         // Yaw-стабилизация отключена: вызывает крен (roll), т.к.
                         // поворот стоп вокруг Z при наклоне робота нестабилен.
                     }
+                    // ДИАГНОСТИКА stride: команда и x-координаты стоп (тело).
+                    if self.ticks % 50 == 0 {
+                        eprintln!(
+                            "[TROT] t={} cmd=[{:.3},{:.3},{:.3}] foot_x=[{:.3},{:.3},{:.3},{:.3}] foot_z=[{:.3},{:.3},{:.3},{:.3}] yaw_err={:.2}",
+                            self.ticks, gait_cmd[0], gait_cmd[1], gait_cmd[2],
+                            new_foot[(0,0)], new_foot[(0,1)], new_foot[(0,2)], new_foot[(0,3)],
+                            new_foot[(2,0)], new_foot[(2,1)], new_foot[(2,2)], new_foot[(2,3)],
+                            yaw_err,
+                        );
+                    }
                     new_foot
                 }
             }
