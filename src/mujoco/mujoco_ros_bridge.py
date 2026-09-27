@@ -21,6 +21,7 @@ import math
 import threading
 import time
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import rclpy
@@ -29,10 +30,68 @@ from rclpy.node import Node
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Float64MultiArray
 
+# quadropted_msgs собраны только в контейнере (Jazzy); в host-ROS lyrical их
+# нет. Импортируем опционально: при отсутствии телеметрия теряет cmd/mode,
+# но движение (joint commands) работает.
+try:
+    from quadropted_msgs.msg import (  # type: ignore[import-not-found]
+        RobotModeCommand,
+        RobotVelocity,
+    )
+
+    _HAS_QUADROPTED = True
+except ImportError:
+    RobotModeCommand = Any
+    RobotVelocity = Any
+    _HAS_QUADROPTED = False
+
 import mujoco  # type: ignore[import-untyped]
 
 REPO = Path(__file__).resolve().parents[2]
 SCENE = REPO / "external" / "mujoco_menagerie" / "unitree_go2" / "scene.xml"
+
+
+def _write_row(
+    csv: Any,
+    model: Any,
+    data: Any,
+    node: Any,
+    tau: np.ndarray,
+    target: np.ndarray,
+) -> None:
+    """Записать полную строку телеметрии (как в Isaac: суставы, момент, стопы)."""
+
+    r, p, y = _rpy(data.qpos[3:7])
+    base = data.qpos[:3]
+    quat = data.qpos[3:7]
+    lin = data.qvel[:3]
+    ang = data.qvel[3:6]
+    q = data.qpos[7:19]
+    dq = data.qvel[6:18]
+    # Позиции стоп как proxy — тела *_calf (в Menagerie нет тел foot).
+    foot_z, foot_x = [], []
+    for i in range(1, model.nbody):
+        name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, i) or ""
+        if name.endswith("_calf"):
+            pos = data.xpos[i]
+            foot_z.append(float(pos[2]))
+            foot_x.append(float(pos[0]))
+    vals = (
+        [f"{data.time:.3f}", node.mode]
+        + [f"{v:.3f}" for v in node.cmd]
+        + [f"{v:.4f}" for v in base]
+        + [f"{v:.5f}" for v in quat]
+        + [f"{r:.4f}", f"{p:.4f}", f"{y:.4f}"]
+        + [f"{v:.4f}" for v in lin]
+        + [f"{v:.4f}" for v in ang]
+        + [f"{v:.5f}" for v in q]
+        + [f"{v:.5f}" for v in dq]
+        + [f"{v:.5f}" for v in target]
+        + [f"{v:.4f}" for v in tau]
+        + [f"{v:.4f}" for v in (foot_z + [0.0] * 4)[:4]]
+        + [f"{v:.4f}" for v in (foot_x + [0.0] * 4)[:4]]
+    )
+    csv.write(",".join(vals) + "\n")
 
 
 class Bridge(Node):
@@ -41,6 +100,8 @@ class Bridge(Node):
         self.imu_pub = self.create_publisher(Imu, f"{ns}/imu", 10)
         self.time_pub = self.create_publisher(Float64MultiArray, f"{ns}/sim_time", 10)
         self.target = DEFAULT_MJ.copy()
+        self.cmd = np.zeros(3, dtype=np.float32)  # [vx, vy, wz]
+        self.mode = "STAND"
         self.cmd_count = 0
         self.lock = threading.Lock()
         # QoS BEST_EFFORT: Rust-публикатор (rclrs) может быть BEST_EFFORT,
@@ -64,6 +125,25 @@ class Bridge(Node):
             self._on_cmd,
             qos,
         )
+        if _HAS_QUADROPTED:
+            self.create_subscription(
+                RobotVelocity, f"{ns}/robot_velocity", self._on_vel, qos
+            )
+            self.create_subscription(
+                RobotModeCommand, f"{ns}/robot_mode", self._on_mode, qos
+            )
+
+    def _on_vel(self, msg: RobotVelocity) -> None:
+        with self.lock:
+            self.cmd[:] = [
+                msg.cmd_vel.linear.x,
+                msg.cmd_vel.linear.y,
+                msg.cmd_vel.angular.z,
+            ]
+
+    def _on_mode(self, msg: RobotModeCommand) -> None:
+        with self.lock:
+            self.mode = msg.mode
 
     def _on_cmd(self, msg: Float64MultiArray) -> None:
         if len(msg.data) != 12:
@@ -104,6 +184,7 @@ def main() -> None:
 
     rclpy.init()
     node = Bridge()
+
     def _spin() -> None:
         # Ctrl+C завершает spin() исключением — глушим штатно.
         with contextlib.suppress(Exception):
@@ -131,7 +212,21 @@ def main() -> None:
     log_dir.mkdir(parents=True, exist_ok=True)
     csv_path = log_dir / f"telemetry_{time.strftime('%Y%m%d-%H%M%S')}.csv"
     csv = csv_path.open("w")
-    csv.write("t,x,y,z,roll,pitch,yaw,qw,qx,qy,qz\n")
+    _cols = (
+        ["t", "mode", "cmd_vx", "cmd_vy", "cmd_wz"]
+        + [f"base_p{i}" for i in "xyz"]
+        + [f"quat_{i}" for i in ("w", "x", "y", "z")]
+        + [f"rpy_{i}" for i in ("r", "p", "y")]
+        + [f"base_v{i}" for i in ("x", "y", "z")]
+        + [f"base_w{i}" for i in ("x", "y", "z")]
+        + [f"q{i}" for i in range(12)]
+        + [f"dq{i}" for i in range(12)]
+        + [f"tgt{i}" for i in range(12)]
+        + [f"tau{i}" for i in range(12)]
+        + [f"foot_z{i}" for i in range(4)]
+        + [f"foot_x{i}" for i in range(4)]
+    )
+    csv.write(",".join(_cols) + "\n")
     n = int(args.duration / model.opt.timestep)
     try:
         for step in range(n):
@@ -147,12 +242,7 @@ def main() -> None:
             if step % 10 == 0:
                 node.publish_state(data.qpos[3:7], data.qvel[3:6], float(data.time))
             if step % 25 == 0:
-                r, p, y = _rpy(data.qpos[3:7])
-                csv.write(
-                    f"{data.time:.3f},{data.qpos[0]:.4f},{data.qpos[1]:.4f},{data.qpos[2]:.4f},"
-                    f"{r:.4f},{p:.4f},{y:.4f},"
-                    f"{data.qpos[3]:.5f},{data.qpos[4]:.5f},{data.qpos[5]:.5f},{data.qpos[6]:.5f}\n"
-                )
+                _write_row(csv, model, data, node, tau, target)
             if viewer is not None:
                 if not viewer.is_running():
                     break
@@ -163,7 +253,9 @@ def main() -> None:
     finally:
         csv.close()
         dist = math.hypot(float(data.qpos[0]), float(data.qpos[1]))
-        print(f"пройдено={dist:.3f} м, команд получено={node.cmd_count}, телеметрия: {csv_path}")
+        print(
+            f"пройдено={dist:.3f} м, команд получено={node.cmd_count}, телеметрия: {csv_path}"
+        )
         if viewer is not None:
             viewer.close()
         node.destroy_node()
