@@ -603,6 +603,24 @@ graph LR
 `external/mujoco_menagerie/unitree_go2/go2.xml`,
 `Data-Science/…/quadropted_controller_cpp/src/kinematics/forward_kinematics.cpp`.
 
+### 10.6. Проверка варианта B: опровергнут
+
+Сверены оси суставов у **всех доступных Go2 URDF**:
+
+| Источник | hip | thigh | calf |
+|---|---|---|---|
+| `menagerie/unitree_go2/go2.xml` | X | Y | Y |
+| `quadruped-robotics-stack/urdf/go2_unitree/go2.urdf` | **X** | **Y** | **Y** |
+| стандарт Unitree (URDF) | X | Y | Y |
+
+**Все Go2-модели используют конвенцию Unitree (hip=X, thigh=Y, calf=Y)** —
+ту же, что и menagerie. Значит конвертация URDF→MJCF **даст ту же модель** и
+**не устранит** расхождение с IK (у которого hip вокруг Z).
+
+**Вывод:** вариант B **не работает**; остаётся **вариант A** — привести IK к
+конвенции Unitree (ось hip X, звенья вдоль Z), с пересчётом знаков θ1 для
+FL/FR/RL/RR. Это следует делать аккуратно (юнит-тестами на FK).
+
 ---
 
 ## Итоговая статистика
