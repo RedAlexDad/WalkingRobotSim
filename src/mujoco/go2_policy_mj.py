@@ -47,6 +47,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--duration", type=float, default=10.0)
     ap.add_argument("--vx", type=float, default=0.5)
+    ap.add_argument("--viewer", action="store_true", help="открыть GUI-окно MuJoCo")
     args = ap.parse_args()
 
     model = mujoco.MjModel.from_xml_path(str(SCENE))
@@ -64,6 +65,12 @@ def main() -> None:
 
     cmd = np.array([args.vx, 0.0, 0.0], dtype=np.float32)
     last_action = np.zeros(12, dtype=np.float32)
+
+    viewer = None
+    if args.viewer:
+        import mujoco.viewer as mjviewer
+
+        viewer = mjviewer.launch_passive(model, data)
 
     n = int(args.duration / model.opt.timestep)
     decimation = 10  # политика 50 Гц при dt=0.002
@@ -92,6 +99,8 @@ def main() -> None:
         data.ctrl[:] = np.clip(tau, lower, upper)
         mujoco.mj_step(model, data)
         min_z = min(min_z, float(data.qpos[2]))
+        if viewer is not None:
+            viewer.sync()
 
     print(f"после {args.duration:.1f}с: base x={data.qpos[0]:+.3f} y={data.qpos[1]:+.3f} z={data.qpos[2]:.3f} | min_z={min_z:.3f}")
     print(f"скорость x (м/с) ≈ {data.qpos[0] / args.duration:+.3f}")
