@@ -32,8 +32,12 @@ POLICY = (
     / "physx_policy.pt"
 )
 
-# Порядок суставов MuJoCo = FL, FR, RL, RR × (hip, thigh, calf) — совпадает
-# с порядком Go2 в IsaacLab.
+# Порядок суставов MuJoCo = FL, FR, RL, RR × (hip, thigh, calf).
+# Порядок политики IsaacLab Go2 = FR, FL, RR, RL × (hip, thigh, calf).
+# POLICY_TO_MJ[i]: индекс сустава политики -> индекс сустава MuJoCo.
+POLICY_TO_MJ = np.arange(12)  # порядок политики == порядку MuJoCo (FL,FR,RL,RR)
+
+# Стойка (default_joint_pos) в порядке ПОЛИТИКИ: FR, FL, RR, RL.
 DEFAULT = np.array(
     [
         0.1,
@@ -47,8 +51,8 @@ DEFAULT = np.array(
         -1.5,  # RL
         -0.1,
         1.0,
-        -1.5,
-    ],  # RR
+        -1.5,  # RR
+    ],
     dtype=np.float32,
 )
 
@@ -84,8 +88,9 @@ def main() -> None:
     mujoco.mj_resetData(model, data)
     data.qpos[2] = 0.30
     data.qpos[3:7] = [1, 0, 0, 0]
-    for i in range(12):
-        data.qpos[7 + i] = DEFAULT[i]
+    default_mj = np.zeros(12, dtype=np.float32)
+    default_mj[POLICY_TO_MJ] = DEFAULT
+    data.qpos[7:19] = default_mj
     mujoco.mj_forward(model, data)
 
     cmd = np.array([args.vx, 0.0, 0.0], dtype=np.float32)
@@ -101,6 +106,10 @@ def main() -> None:
     decimation = 10  # политика 50 Гц при dt=0.002
     min_z = 1e9
     for step in range(n):
+        q_mj = data.qpos[7:19]
+        dq_mj = data.qvel[6:18]
+        q_pol = q_mj[POLICY_TO_MJ]
+        dq_pol = dq_mj[POLICY_TO_MJ]
         if step % decimation == 0:
             mat = quat_to_mat(data.qpos[3:7])
             vel = np.concatenate([data.qvel[:3], data.qvel[3:6]])  # [lin, ang] в мире
@@ -110,20 +119,21 @@ def main() -> None:
                     mat.T @ vel[3:],  # ang vel (body)
                     mat.T @ np.array([0, 0, -1], dtype=np.float32),  # gravity (body)
                     cmd,
-                    (data.qpos[7:19] - DEFAULT).astype(np.float32),
-                    data.qvel[6:18].astype(np.float32),
+                    (q_pol - DEFAULT).astype(np.float32),
+                    dq_pol.astype(np.float32),
                     last_action,
                 ]
             ).astype(np.float32)
             with torch.inference_mode():
                 last_action = policy(torch.from_numpy(obs[None]))[0].numpy().copy()
             target = DEFAULT + ACTION_SCALE * last_action
-        q = data.qpos[7:19]
-        dq = data.qvel[6:18]
-        tau = KP * (target - q) - KD * dq
-        upper = np.clip(LIMIT * (1 - dq / VMAX), 0, LIMIT)
-        lower = np.clip(LIMIT * (-1 - dq / VMAX), -LIMIT, 0)
-        data.ctrl[:] = np.clip(tau, lower, upper)
+        tau = KP * (target - q_pol) - KD * dq_pol
+        upper = np.clip(LIMIT * (1 - dq_pol / VMAX), 0, LIMIT)
+        lower = np.clip(LIMIT * (-1 - dq_pol / VMAX), -LIMIT, 0)
+        tau_pol = np.clip(tau, lower, upper)
+        tau_mj = np.zeros(12, dtype=np.float32)
+        tau_mj[POLICY_TO_MJ] = tau_pol
+        data.ctrl[:] = tau_mj
         mujoco.mj_step(model, data)
         min_z = min(min_z, float(data.qpos[2]))
         if viewer is not None:
