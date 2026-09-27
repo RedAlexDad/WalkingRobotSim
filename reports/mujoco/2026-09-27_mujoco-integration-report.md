@@ -355,14 +355,61 @@ MuJoCo дал **чистый эксперимент**: одинаковый ко
 
 ---
 
+## 7. Интеграция с Rust-контроллером и телеметрия (доработка)
+
+### 7.1. Что сделано
+
+- **ROS 2-мост** `src/mujoco/mujoco_ros_bridge.py`: MuJoCo ↔ Rust-контроллер
+  (`robot_controller_node`). Контроллер **feedforward** — слушает `imu` и
+  `sim_time`, публикует целевые углы суставов.
+- **Makefile-цели**: `mujoco`, `mujoco-viewer`, `mujoco-lite`, `mujoco-kill`.
+- **Teleop с походкой**: `scripts/robot_teleop.py` (i/,/j/l + 1–4 режимы).
+
+### 7.2. Проблемы, найденные при интеграции
+
+| # | Симптом | Причина | Решение |
+|---|---|---|---|
+| B7 | Мост получал 0 команд | QoS: Rust-публикатор `BEST_EFFORT`, подписка `RELIABLE` | подписка `BEST_EFFORT` |
+| B8 | Teleop не управлял движением | публиковал `Twist` в `/cmd_vel`, контроллер слушает `RobotVelocity` в `/robot_velocity` | публиковать `RobotVelocity` |
+| B9 | Ctrl+C не завершал teleop | raw-режим: 0x03 читается как символ | обработка `0x03` = выход |
+| B10 | Traceback при выходе viewer | `ExternalShutdownException` в spin-потоке | `contextlib.suppress` |
+| B11 | `No module 'quadropted_msgs'` в мосте | сообщения есть только в контейнере (Jazzy), host — lyrical | опциональный импорт |
+
+### 7.3. Телеметрия
+
+Расширена с **11 до 77 колонок**:
+
+| Группа | Колонки |
+|---|---|
+| Время/режим | `t`, `mode` |
+| Команда | `cmd_vx`, `cmd_vy`, `cmd_wz` |
+| База | `base_p{x,y,z}`, `quat_{w,x,y,z}`, `rpy_{r,p,y}`, `base_v{x,y,z}`, `base_w{x,y,z}` |
+| Суставы (12) | `q0..q11`, `dq0..dq11`, `tgt0..tgt11`, `tau0..tau11` |
+| Лапы | `foot_z0..3`, `foot_x0..3` |
+
+Файлы: `logs/mujoco/telemetry_*.csv`.
+
+### 7.4. Результат
+
+- Связка **работает**: команды доходят (проверено — 1225 команд за прогон),
+  робот управляется Rust-контроллером в MuJoCo.
+- **Продольное движение остаётся малым** (~0.15 м за прогон) — это ограничение
+  модельного контроллера (совпадает с Isaac), а не среды/канала.
+
+**Файлы:** `src/mujoco/mujoco_ros_bridge.py`, `scripts/robot_teleop.py`,
+`makefiles/simulation.mk`, `makefiles/help.mk`.
+
+---
+
 ## Итоговая статистика
 
 | Метрика | Значение |
 |---|---|
-| Всего проблем | 6 |
-| Решено | 4 (B2, B3, B4, B5) |
+| Всего проблем | 11 |
+| Решено | 9 (B2–B5, B7–B11) |
 | Открыто | 1 (B1 — модель/политика) |
 | Находка | 1 (B6 — контроллер стоит в обеих средах) |
+| Телеметрия | 77 колонок |
 | Развёрнуто | MuJoCo 3.14.0, torch 2.14.0+cpu, menagerie Go2 |
 | Скрипты | `go2_sim.py`, `go2_policy_mj.py`, `mujoco_ros_bridge.py`, `mujoco_params.py` |
 | Makefile | `mujoco`, `mujoco-viewer`, `mujoco-lite`, `mujoco-kill` |
