@@ -1,0 +1,131 @@
+<!-- вставки <model> в .world (по одному сценарию) -->
+
+    <model name="s1_flat">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <heightmap>
+              <uri>model://terrain/s1_flat.png</uri>
+              <size>20.0 20.0 0.010</size>
+              <pos>0 0 0</pos>
+            </heightmap>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <heightmap>
+              <uri>model://terrain/s1_flat.png</uri>
+              <size>20.0 20.0 0.010</size>
+              <pos>0 0 0</pos>
+              <texture><diffuse>0.6 0.6 0.5</diffuse></texture>
+              <blend><min_height>0.0</min_height><fade_dist>0.1</fade_dist></blend>
+            </heightmap>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="s2_bumps">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <heightmap>
+              <uri>model://terrain/s2_bumps.png</uri>
+              <size>20.0 20.0 0.067</size>
+              <pos>0 0 0</pos>
+            </heightmap>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <heightmap>
+              <uri>model://terrain/s2_bumps.png</uri>
+              <size>20.0 20.0 0.067</size>
+              <pos>0 0 0</pos>
+              <texture><diffuse>0.6 0.6 0.5</diffuse></texture>
+              <blend><min_height>0.0</min_height><fade_dist>0.1</fade_dist></blend>
+            </heightmap>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="s3_hills">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <heightmap>
+              <uri>model://terrain/s3_hills.png</uri>
+              <size>20.0 20.0 0.300</size>
+              <pos>0 0 0</pos>
+            </heightmap>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <heightmap>
+              <uri>model://terrain/s3_hills.png</uri>
+              <size>20.0 20.0 0.300</size>
+              <pos>0 0 0</pos>
+              <texture><diffuse>0.6 0.6 0.5</diffuse></texture>
+              <blend><min_height>0.0</min_height><fade_dist>0.1</fade_dist></blend>
+            </heightmap>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="s4_mixed">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <heightmap>
+              <uri>model://terrain/s4_mixed.png</uri>
+              <size>20.0 20.0 0.196</size>
+              <pos>0 0 0</pos>
+            </heightmap>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <heightmap>
+              <uri>model://terrain/s4_mixed.png</uri>
+              <size>20.0 20.0 0.196</size>
+              <pos>0 0 0</pos>
+              <texture><diffuse>0.6 0.6 0.5</diffuse></texture>
+              <blend><min_height>0.0</min_height><fade_dist>0.1</fade_dist></blend>
+            </heightmap>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="s5_obstacles">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <heightmap>
+              <uri>model://terrain/s5_obstacles.png</uri>
+              <size>20.0 20.0 0.250</size>
+              <pos>0 0 0</pos>
+            </heightmap>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <heightmap>
+              <uri>model://terrain/s5_obstacles.png</uri>
+              <size>20.0 20.0 0.250</size>
+              <pos>0 0 0</pos>
+              <texture><diffuse>0.6 0.6 0.5</diffuse></texture>
+              <blend><min_height>0.0</min_height><fade_dist>0.1</fade_dist></blend>
+            </heightmap>
+          </geometry>
+        </visual>
+      </link>
+    </model>
