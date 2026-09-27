@@ -1,0 +1,2 @@
+<?xml version="1.0"?>
+<sdf version="1.8"><model name="terrain"><static>true</static><link name="link"><collision name="c"><geometry><heightmap><uri>model://terrain/terrain.png</uri><size>20 20 0.3</size><pos>0 0 0</pos></heightmap></geometry></collision><visual name="v"><geometry><heightmap><uri>model://terrain/terrain.png</uri><size>20 20 0.3</size><pos>0 0 0</pos><texture><diffuse>0.6 0.6 0.5</diffuse></texture></heightmap></geometry></visual></link></model></sdf>
