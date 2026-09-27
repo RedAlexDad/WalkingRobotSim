@@ -34,7 +34,7 @@ def test_default_mj_length() -> None:
 
 
 def test_gains_match_reference() -> None:
-    assert (KP, KD, LIMIT, VMAX) == (25.0, 0.5, 23.5, 30.0)
+    assert (KP, KD, LIMIT, VMAX) == (50.0, 3.5, 23.5, 30.0)
 
 
 def test_rpy_identity() -> None:

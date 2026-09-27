@@ -20,7 +20,7 @@ DEFAULT_MJ = np.array(
     dtype=np.float32,
 )
 
-KP, KD, LIMIT, VMAX = 25.0, 0.5, 23.5, 30.0
+KP, KD, LIMIT, VMAX = 50.0, 3.5, 23.5, 30.0
 
 
 def _rpy(quat: np.ndarray) -> tuple[float, float, float]:
