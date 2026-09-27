@@ -103,7 +103,13 @@ def main() -> None:
 
     rclpy.init()
     node = Bridge()
-    spin = threading.Thread(target=rclpy.spin, args=(node,), daemon=True)
+    def _spin() -> None:
+        try:
+            rclpy.spin(node)
+        except Exception:  # noqa: BLE001 — тихий выход при Ctrl+C
+            pass
+
+    spin = threading.Thread(target=_spin, daemon=True)
     spin.start()
 
     model = mujoco.MjModel.from_xml_path(str(SCENE))

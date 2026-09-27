@@ -22,10 +22,12 @@ import termios
 import tty
 
 import rclpy
-from geometry_msgs.msg import Twist
 from rclpy.node import Node
 
-from quadropted_msgs.msg import RobotModeCommand
+from quadropted_msgs.msg import (  # type: ignore[import-not-found]
+    RobotModeCommand,
+    RobotVelocity,
+)
 
 MODES = {"1": "TROT", "2": "CRAWL", "3": "STAND", "4": "REST"}
 STEP = 0.05
@@ -36,16 +38,22 @@ class Teleop(Node):
         super().__init__("robot_teleop")
         self.vx = vx0
         self.wz = wz0
-        self.pub_vel = self.create_publisher(Twist, f"{ns}/cmd_vel", 10)
+        # Rust-контроллер слушает RobotVelocity (не Twist/cmd_vel).
+        self.pub_vel = self.create_publisher(RobotVelocity, f"{ns}/robot_velocity", 10)
         self.pub_mode = self.create_publisher(RobotModeCommand, f"{ns}/robot_mode", 10)
         self.get_logger().info(
             "teleop: i/,/j/l движение; 1 TROT 2 CRAWL 3 STAND 4 REST; q выход"
         )
 
     def send(self, lx: float, az: float) -> None:
-        msg = Twist()
-        msg.linear.x = float(lx)
-        msg.angular.z = float(az)
+        msg = RobotVelocity()
+        msg.robot_id = 1
+        msg.cmd_vel.linear.x = float(lx)
+        msg.cmd_vel.linear.y = 0.0
+        msg.cmd_vel.linear.z = 0.0
+        msg.cmd_vel.angular.x = 0.0
+        msg.cmd_vel.angular.y = 0.0
+        msg.cmd_vel.angular.z = float(az)
         self.pub_vel.publish(msg)
 
     def set_mode(self, mode: str) -> None:
@@ -79,7 +87,7 @@ def main() -> None:
     try:
         while rclpy.ok():
             k = getkey()
-            if k == "q":
+            if k in ("q", "\x03"):  # q или Ctrl+C
                 break
             if k == "i":
                 node.send(node.vx, 0.0)
