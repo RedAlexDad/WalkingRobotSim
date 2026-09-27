@@ -46,7 +46,7 @@ impl TrotGaitController {
         let swing_ = TrotSwingController::new(
             gait.swing_ticks,
             time_step,
-            0.04,  // z_leg_lift (по CHAMP Go2: swing_height=0.04, было 0.14)
+            0.10,  // z_leg_lift (0.04 — лапа не отрывалась; 0.14/0.20 — крен/падение)
             gait.default_stance.clone(),
             gait.phase_length,
             gait.stance_ticks,
