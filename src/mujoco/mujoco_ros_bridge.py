@@ -110,38 +110,42 @@ def main() -> None:
     csv = csv_path.open("w")
     csv.write("t,x,y,z,roll,pitch,yaw,qw,qx,qy,qz\n")
     n = int(args.duration / model.opt.timestep)
-    for step in range(n):
-        q = data.qpos[7:19]
-        dq = data.qvel[6:18]
-        with node.lock:
-            target = node.target.copy()
-        tau = KP * (target - q) - KD * dq
-        upper = np.clip(LIMIT * (1 - dq / VMAX), 0, LIMIT)
-        lower = np.clip(LIMIT * (-1 - dq / VMAX), -LIMIT, 0)
-        data.ctrl[:] = np.clip(tau, lower, upper)
-        mujoco.mj_step(model, data)
-        if step % 10 == 0:
-            node.publish_state(data.qpos[3:7], data.qvel[3:6], float(data.time))
-        if step % 25 == 0:
-            r, p, y = _rpy(data.qpos[3:7])
-            csv.write(
-                f"{data.time:.3f},{data.qpos[0]:.4f},{data.qpos[1]:.4f},{data.qpos[2]:.4f},"
-                f"{r:.4f},{p:.4f},{y:.4f},"
-                f"{data.qpos[3]:.5f},{data.qpos[4]:.5f},{data.qpos[5]:.5f},{data.qpos[6]:.5f}\n"
-            )
+    try:
+        for step in range(n):
+            q = data.qpos[7:19]
+            dq = data.qvel[6:18]
+            with node.lock:
+                target = node.target.copy()
+            tau = KP * (target - q) - KD * dq
+            upper = np.clip(LIMIT * (1 - dq / VMAX), 0, LIMIT)
+            lower = np.clip(LIMIT * (-1 - dq / VMAX), -LIMIT, 0)
+            data.ctrl[:] = np.clip(tau, lower, upper)
+            mujoco.mj_step(model, data)
+            if step % 10 == 0:
+                node.publish_state(data.qpos[3:7], data.qvel[3:6], float(data.time))
+            if step % 25 == 0:
+                r, p, y = _rpy(data.qpos[3:7])
+                csv.write(
+                    f"{data.time:.3f},{data.qpos[0]:.4f},{data.qpos[1]:.4f},{data.qpos[2]:.4f},"
+                    f"{r:.4f},{p:.4f},{y:.4f},"
+                    f"{data.qpos[3]:.5f},{data.qpos[4]:.5f},{data.qpos[5]:.5f},{data.qpos[6]:.5f}\n"
+                )
+            if viewer is not None:
+                if not viewer.is_running():
+                    break
+                viewer.sync()
+            time.sleep(0.0)
+    except KeyboardInterrupt:
+        print("\nпрервано пользователем")
+    finally:
+        csv.close()
+        dist = math.hypot(float(data.qpos[0]), float(data.qpos[1]))
+        print(f"пройдено={dist:.3f} м, телеметрия: {csv_path}")
         if viewer is not None:
-            viewer.sync()
-        time.sleep(0.0)
-    csv.close()
-
-    dist = math.hypot(float(data.qpos[0]), float(data.qpos[1]))
-    print(
-        f"после {args.duration:.1f}с: base x={data.qpos[0]:+.3f} y={data.qpos[1]:+.3f} z={data.qpos[2]:.3f}"
-    )
-    print(f"пройдено={dist:.3f} м, средняя скорость={dist / args.duration:.3f} м/с")
-    print(f"телеметрия: {csv_path}")
-    node.destroy_node()
-    rclpy.shutdown()
+            viewer.close()
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":
