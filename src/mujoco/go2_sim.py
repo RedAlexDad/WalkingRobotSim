@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-import mujoco
+import mujoco  # type: ignore[import-untyped]
 
 REPO = Path(__file__).resolve().parents[2]
 MENAGERIE = REPO / "external" / "mujoco_menagerie" / "unitree_go2"
@@ -56,7 +56,7 @@ def main() -> None:
         renderer = mujoco.Renderer(model, height=480, width=640)
         renderer.update_scene(data)
         img = renderer.render()
-        import imageio.v3 as iio
+        import imageio.v3 as iio  # type: ignore[import-not-found]
 
         iio.imwrite(args.render, img)
         print("кадр:", args.render)

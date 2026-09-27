@@ -16,7 +16,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-import mujoco
+import mujoco  # type: ignore[import-untyped]
 
 REPO = Path(__file__).resolve().parents[2]
 SCENE = REPO / "external" / "mujoco_menagerie" / "unitree_go2" / "scene.xml"
@@ -77,7 +77,7 @@ def main() -> None:
 
     model = mujoco.MjModel.from_xml_path(str(SCENE))
     data = mujoco.MjData(model)
-    policy = torch.jit.load(str(POLICY), map_location="cpu").eval()
+    policy = torch.jit.load(str(POLICY), map_location="cpu").eval()  # type: ignore[no-untyped-call]
     torch.set_num_threads(1)
 
     # Начальная поза — стоячая (default), корпус чуть выше.
@@ -93,7 +93,7 @@ def main() -> None:
 
     viewer = None
     if args.viewer:
-        import mujoco.viewer as mjviewer
+        import mujoco.viewer as mjviewer  # type: ignore[import-untyped]
 
         viewer = mjviewer.launch_passive(model, data)
 
