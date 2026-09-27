@@ -41,6 +41,13 @@
       <direction>-0.5 0.1 -0.9</direction>
     </light>
 
+    <!-- Рельеф: модель terrain (heightmap). Сценарий выбирается scripts/select_terrain.py -->
+    <include>
+      <uri>model://terrain</uri>
+      <name>terrain</name>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
     <model name="ground_plane">
       <static>true</static>
       <link name="link">
