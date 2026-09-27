@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""Генератор рельефа для Gazebo (heightmap PNG + SDF) под 5 сценариев НИР.
+"""Генератор рельефа для Gazebo под 5 сценариев НИР.
 
-Пишет grayscale-PNG (16-бит) карты высот и фрагмент `<heightmap>` для SDF.
+Пишет grayscale-PNG (16-бит) — карту высот — и OBJ-меш той же поверхности.
+Меш используется в model.sdf вместо <heightmap>: визуальный <heightmap>
+рендерится через OGRE-Next Terra HLMS и роняет gz-rendering на встроенной
+AMD (radeonsi), а физика dartsim не поддерживает heightmap-коллизию
+(см. gazebosim/gz-sim#3479). Меш работает и в рендере, и в физике.
+
 Пути менять в `--out-dir`; имена сценариев — по docs/NIRS (ch3_11_testing.md).
 
 Запуск:
-    python3 scripts/generate_terrain.py --out-dir src/gazebo_sim/world/terrain
+    python3 scripts/generate_terrain.py --out-dir src/gazebo_sim/models/terrain
 """
 
 from __future__ import annotations
@@ -17,7 +22,8 @@ from pathlib import Path
 
 import numpy as np
 
-SIZE = 256  # разрешение карты высот
+SIZE = 256  # разрешение карты высот (PNG)
+MESH = 129  # число вершин меша по стороне (2^7+1)
 WORLD = 20.0  # размер мира (м)
 
 
@@ -50,10 +56,10 @@ def _norm(z: np.ndarray) -> np.ndarray:
     return (z * 65535).astype(np.uint16)
 
 
-def scenarios() -> dict[str, np.ndarray]:
+def scenarios(size: int = SIZE) -> dict[str, np.ndarray]:
     """5 сценариев НИР (docs/NIRS/ch3/ch3_11_testing.md)."""
-    x = np.linspace(-WORLD / 2, WORLD / 2, SIZE)
-    y = np.linspace(-WORLD / 2, WORLD / 2, SIZE)
+    x = np.linspace(-WORLD / 2, WORLD / 2, size)
+    y = np.linspace(-WORLD / 2, WORLD / 2, size)
     xx, yy = np.meshgrid(x, y)
     rng = np.random.default_rng(42)
 
@@ -74,55 +80,54 @@ def scenarios() -> dict[str, np.ndarray]:
     return out
 
 
-def sdf_snippet(name: str, z_max: float) -> str:
-    """Фрагмент SDF с heightmap для вставки в world."""
-    return f"""
-    <model name="{name}">
-      <static>true</static>
-      <link name="link">
-        <collision name="collision">
-          <geometry>
-            <heightmap>
-              <uri>model://terrain/{name}.png</uri>
-              <size>{WORLD} {WORLD} {z_max:.3f}</size>
-              <pos>0 0 0</pos>
-            </heightmap>
-          </geometry>
-        </collision>
-        <visual name="visual">
-          <geometry>
-            <heightmap>
-              <uri>model://terrain/{name}.png</uri>
-              <size>{WORLD} {WORLD} {z_max:.3f}</size>
-              <pos>0 0 0</pos>
-              <texture><diffuse>0.6 0.6 0.5</diffuse></texture>
-              <blend><min_height>0.0</min_height><fade_dist>0.1</fade_dist></blend>
-            </heightmap>
-          </geometry>
-        </visual>
-      </link>
-    </model>
-"""
+def _write_obj(path: Path, z: np.ndarray) -> None:
+    """Записать OBJ-меш поверхности z (метры, вершины n x n, шаг по сетке)."""
+    n = z.shape[0]
+    step = WORLD / (n - 1)
+    x0 = -WORLD / 2
+    y0 = -WORLD / 2
+
+    lines = [f"# terrain mesh {n}x{n}, {WORLD}x{WORLD} m"]
+    for j in range(n):
+        y = y0 + j * step
+        for i in range(n):
+            lines.append(f"v {x0 + i * step:.4f} {y:.4f} {z[j, i]:.4f}")
+
+    dzdx = np.gradient(z, step, axis=1)
+    dzdy = np.gradient(z, step, axis=0)
+    for j in range(n):
+        for i in range(n):
+            nx, ny, nz = -dzdx[j, i], -dzdy[j, i], 1.0
+            norm = float(np.sqrt(nx * nx + ny * ny + nz * nz))
+            lines.append(f"vn {nx / norm:.4f} {ny / norm:.4f} {nz / norm:.4f}")
+
+    for j in range(n - 1):
+        for i in range(n - 1):
+            a = j * n + i + 1
+            b = a + 1
+            c = a + n
+            d = c + 1
+            lines.append(f"f {a}//{a} {b}//{b} {c}//{c}")
+            lines.append(f"f {b}//{b} {d}//{d} {c}//{c}")
+
+    path.write_text("\n".join(lines) + "\n")
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out-dir", default="src/gazebo_sim/world/terrain")
+    ap.add_argument("--out-dir", default="src/gazebo_sim/models/terrain")
     args = ap.parse_args()
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    sc = scenarios()
-    snippets = []
-    for name, z in sc.items():
+    maps_hi = scenarios(SIZE)
+    maps_lo = scenarios(MESH)
+    for name, z in maps_hi.items():
         _write_png16(out / f"{name}.png", _norm(z))
-        snippets.append(sdf_snippet(name, max(float(z.max()), 0.01)))
-        print(f"{name}: z_max={z.max():.3f} -> {name}.png")
+        _write_obj(out / f"{name}.obj", maps_lo[name])
+        print(f"{name}: {name}.png + {name}.obj")
 
-    (out / "terrain_snippets.sdf").write_text(
-        "<!-- вставки <model> в .world (по одному сценарию) -->\n" + "".join(snippets)
-    )
-    print(f"\nготово: {out} (+ terrain_snippets.sdf)")
+    print(f"\nготово: {out}")
 
 
 if __name__ == "__main__":

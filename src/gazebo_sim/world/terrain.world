@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.8">
-  <world name="terrain">
+  <world name="default">
 
     <plugin
       filename="gz-sim-physics-system"
@@ -41,7 +41,7 @@
       <direction>-0.5 0.1 -0.9</direction>
     </light>
 
-    <!-- Рельеф: модель terrain (heightmap, 20x20 м).
+    <!-- Рельеф: модель terrain (mesh 20x20 м из карты высот).
          Сценарий выбирается: python3 scripts/select_terrain.py s3_hills -->
     <include>
       <uri>model://terrain</uri>

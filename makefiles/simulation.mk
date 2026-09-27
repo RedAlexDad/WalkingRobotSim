@@ -204,8 +204,8 @@ save-logs:
 		printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Сохранение логов сессии Gazebo...${NC}\n"; \
 		timestamp=$$(date +%s); \
 		hostname=$$(hostname); \
-		backup_folder="logs/gazebo_backup_$${timestamp}_$${hostname}"; \
-		gazebo_folder="logs/gazebo"; \
+		backup_folder="$(PROJECT_ROOT)/logs/gazebo_backup_$${timestamp}_$${hostname}"; \
+		gazebo_folder="$(PROJECT_ROOT)/logs/gazebo"; \
 		mkdir -p "$$backup_folder" 2>/dev/null || { \
 			printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Не удалось создать $$backup_folder, используем /tmp/${NC}\n"; \
 			backup_folder="/tmp/gazebo_backup_$${timestamp}_$${hostname}"; \
@@ -235,20 +235,22 @@ save-logs:
 				done; \
 				echo "Объединен: $$pattern ($$(echo $$files | wc -w) файлов)"; \
 			fi; \
-		done && \
-		if [ -d "../$$gazebo_folder" ]; then \
-			cp -r ../"$$gazebo_folder"/* "./" 2>/dev/null || true; \
-		fi && \
-		cd $(DOCKER_DIR) && $(COMPOSE) logs --no-color > "$$backup_folder/docker_compose.log" 2>/dev/null || true && \
-		echo "=== Логи сессии Walking Robot Simulator ===" > "$$backup_folder/session_info.log" && \
-		echo "Время: $$(date)" >> "$$backup_folder/session_info.log" && \
-		echo "Тип: Gazebo симуляция" >> "$$backup_folder/session_info.log" && \
-		echo "Хост: $$hostname" >> "$$backup_folder/session_info.log" && \
-		echo "Контейнер: $(CONTAINER_NAME)" >> "$$backup_folder/session_info.log" && \
+		done; \
 		cd "$(PROJECT_ROOT)"; \
 		if [ -d "$$gazebo_folder" ]; then \
+			cp -r "$$gazebo_folder"/* "$$backup_folder/" 2>/dev/null || true; \
+		fi; \
+		$(COMPOSE) logs --no-color > "$$backup_folder/docker_compose.log" 2>/dev/null || true; \
+		{ \
+			echo "=== Логи сессии Walking Robot Simulator ==="; \
+			echo "Время: $$(date)"; \
+			echo "Тип: Gazebo симуляция"; \
+			echo "Хост: $$hostname"; \
+			echo "Контейнер: $(CONTAINER_NAME)"; \
+		} > "$$backup_folder/session_info.log"; \
+		if [ -d "$$gazebo_folder" ]; then \
 			printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Очистка папки gazebo...${NC}\n"; \
-			docker run --rm -v "$$(pwd)/$$gazebo_folder":/tmp/clean alpine sh -c "rm -rf /tmp/clean/*" 2>/dev/null || true; \
+			docker run --rm -v "$$gazebo_folder":/tmp/clean alpine sh -c "rm -rf /tmp/clean/*" 2>/dev/null || true; \
 		fi; \
 		mkdir -p "$$gazebo_folder"; \
 		file_count=$$(find "$$backup_folder" -type f 2>/dev/null | wc -l); \
