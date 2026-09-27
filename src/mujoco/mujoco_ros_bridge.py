@@ -16,12 +16,14 @@
 from __future__ import annotations
 
 import argparse
+import math
 import threading
 import time
 from pathlib import Path
 
 import numpy as np
 import rclpy
+from mujoco_params import CMD_TO_MJ, DEFAULT_MJ, KD, KP, LIMIT, VMAX, _rpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Float64MultiArray
@@ -30,16 +32,6 @@ import mujoco  # type: ignore[import-untyped]
 
 REPO = Path(__file__).resolve().parents[2]
 SCENE = REPO / "external" / "mujoco_menagerie" / "unitree_go2" / "scene.xml"
-
-# Порядок суставов MuJoCo = FL, FR, RL, RR; контроллер/Isaac = FR, FL, RR, RL.
-CMD_TO_MJ = np.array([3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8])
-
-KP, KD, LIMIT, VMAX = 25.0, 0.5, 23.5, 30.0
-# Стойка (в порядке MuJoCo FL, FR, RL, RR): hip ∓0.1, thigh 0.8/1.0, calf −1.5.
-DEFAULT_MJ = np.array(
-    [0.1, 0.8, -1.5, -0.1, 0.8, -1.5, 0.1, 1.0, -1.5, -0.1, 1.0, -1.5],
-    dtype=np.float32,
-)
 
 
 class Bridge(Node):
@@ -112,6 +104,11 @@ def main() -> None:
         viewer = mjviewer.launch_passive(model, data)
 
     print(f"мост запущен: {model.opt.timestep} c, vx={args.vx} (управляет Rust-нода)")
+    log_dir = REPO / "logs" / "mujoco"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = log_dir / f"telemetry_{time.strftime('%Y%m%d-%H%M%S')}.csv"
+    csv = csv_path.open("w")
+    csv.write("t,x,y,z,roll,pitch,yaw,qw,qx,qy,qz\n")
     n = int(args.duration / model.opt.timestep)
     for step in range(n):
         q = data.qpos[7:19]
@@ -125,13 +122,24 @@ def main() -> None:
         mujoco.mj_step(model, data)
         if step % 10 == 0:
             node.publish_state(data.qpos[3:7], data.qvel[3:6], float(data.time))
+        if step % 25 == 0:
+            r, p, y = _rpy(data.qpos[3:7])
+            csv.write(
+                f"{data.time:.3f},{data.qpos[0]:.4f},{data.qpos[1]:.4f},{data.qpos[2]:.4f},"
+                f"{r:.4f},{p:.4f},{y:.4f},"
+                f"{data.qpos[3]:.5f},{data.qpos[4]:.5f},{data.qpos[5]:.5f},{data.qpos[6]:.5f}\n"
+            )
         if viewer is not None:
             viewer.sync()
         time.sleep(0.0)
+    csv.close()
 
+    dist = math.hypot(float(data.qpos[0]), float(data.qpos[1]))
     print(
         f"после {args.duration:.1f}с: base x={data.qpos[0]:+.3f} y={data.qpos[1]:+.3f} z={data.qpos[2]:.3f}"
     )
+    print(f"пройдено={dist:.3f} м, средняя скорость={dist / args.duration:.3f} м/с")
+    print(f"телеметрия: {csv_path}")
     node.destroy_node()
     rclpy.shutdown()
 
