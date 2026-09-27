@@ -217,7 +217,9 @@ def run_sim():
     try:
         _robot = env._env.scene.articulations['robot']
         _names = list(_robot.data.body_names)
-        _fid = [i for i, n in enumerate(_names) if 'foot' in n.lower()]
+        # В Menagerie-ассете нет отдельных тел foot — лапа часть calf,
+        # поэтому как прокси стопы используем тела *_calf.
+        _fid = [i for i, n in enumerate(_names) if 'calf' in n.lower()]
         log("run_sim", f"body_names={_names}")
         if len(_fid) == 4:
             foot_ids = _fid
