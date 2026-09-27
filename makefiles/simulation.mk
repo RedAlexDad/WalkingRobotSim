@@ -1,6 +1,6 @@
 # makefiles/simulation.mk
 
-.PHONY: gazebo gazebo-rust gazebo-cpp teleop set-pose reset-pose kill-ros exec test-aliases save-logs \
+.PHONY: gazebo gazebo-rust gazebo-cpp teleop teleop-simple set-pose reset-pose kill-ros exec test-aliases save-logs \
         mujoco mujoco-viewer mujoco-lite mujoco-kill
 
 # ════ MuJoCo ════
@@ -91,10 +91,20 @@ gazebo-cpp:
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
-## Запуск управления роботом (teleop)
+## Запуск управления роботом (teleop) — скорость + переключение походки (1 TROT 2 CRAWL 3 STAND 4 REST)
 teleop:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск управления роботом (ROS $(ROS_DISTRO))...${NC}\n"
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск teleop (скорость + походка)...${NC}\n"
+	@docker cp scripts/robot_teleop.py $(CONTAINER_NAME):/tmp/robot_teleop.py >/dev/null
+	@docker exec -it $(CONTAINER_NAME) bash -c "\
+		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
+		source /root/ws/install/setup.bash 2>/dev/null || true; \
+		python3 /tmp/robot_teleop.py --ns /robot1 $(if $(VX),--vx ${VX}) $(if $(WZ),--wz ${WZ})"
+
+## Простой teleop (только скорость, без переключения походки)
+teleop-simple:
+	$(require-container)
+	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск teleop_twist_keyboard...${NC}\n"
 	@docker exec -it $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
 		source /root/ws/install/setup.bash 2>/dev/null || true; \

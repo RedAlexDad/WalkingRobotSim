@@ -23,7 +23,7 @@ help:
 	@printf "  ${GREEN}${BOLD}make gazebo-lite${NC}    Лёгкий режим: без RViz, камера 5 FPS (меньше нагрузка)\n"
 	@printf "  ${GREEN}${BOLD}make gazebo-cpp${NC}     Запуск с C++ контроллером (для сравнения)\n"
 	@printf "  ${GREEN}${BOLD}make gazebo ELEVATION=true${NC}  С картой высот (elevation costmap)\n"
-	@printf "  ${GREEN}${BOLD}make teleop${NC}         Запуск управления роботом\n"
+	@printf "  ${GREEN}${BOLD}make teleop${NC}         Управление роботом + переключение походки (1 TROT 2 CRAWL 3 STAND 4 REST)\n"
 	@printf "  ${GREEN}${BOLD}make kill-ros${NC}       Очистка всех ROS/Gazebo процессов\n"
 	@echo ""
 	@printf "${BOLD}Симуляция MuJoCo:${NC}\n"
