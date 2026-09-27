@@ -2,6 +2,7 @@
 //!
 //! Uses nalgebra as the linear algebra backend (replaces Eigen).
 
+pub mod quintic;
 pub mod quaternion;
 pub mod rotation;
 pub mod transform;
