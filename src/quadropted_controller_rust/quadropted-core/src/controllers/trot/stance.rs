@@ -51,10 +51,15 @@ impl TrotStanceController {
         let foot_location: Vector3<f64> = state_foot.column(leg_index).into();
         let delta_pos = self.position_delta(leg_index, state_foot, cmd_vel, robot_height);
 
-        // rotxyz(roll, pitch, yaw) — cmd_vel = [roll_rate, pitch_rate, yaw_rate]
+        // cmd_vel = [vx, vy, yaw_rate]. Поворот стопы в стойке задаётся ТОЛЬКО
+        // угловой скоростью рыскания: линейные vx/vy уже учтены в position_delta
+        // (фиксированная в мире стопа смещается по телу на -v*dt). Прежний код
+        // подставлял vx/vy как roll_rate/pitch_rate — стопа «закручивалась»
+        // вокруг продольной оси со скоростью, равной скорости ходьбы (0.3 рад/с
+        // при vx=0.3), робот терял устойчивость.
         let delta_ori = rotxyz(
-            -cmd_vel.x * self.time_step,
-            -cmd_vel.y * self.time_step,
+            0.0,
+            0.0,
             -cmd_vel.z * self.time_step,
         );
 
