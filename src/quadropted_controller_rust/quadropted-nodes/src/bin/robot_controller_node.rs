@@ -220,7 +220,7 @@ impl SharedState {
         );
         let angles = compute_all_joint_angles(&local, 0.0, 0.0955, 0.213, 0.213);
 
-        if self.ticks % 120 == 0 {
+        if self.ticks % 6 == 0 {
             println!("[Rust LOCL] x=[{:.3} {:.3} {:.3} {:.3}] y=[{:.3} {:.3} {:.3} {:.3}] z=[{:.3} {:.3} {:.3} {:.3}]",
                 local[(0,0)], local[(0,1)], local[(0,2)], local[(0,3)],
                 local[(1,0)], local[(1,1)], local[(1,2)], local[(1,3)],
@@ -422,7 +422,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let angles = s.step(-0.25, st.max(0.0));
 
-        if s.ticks % 120 == 0 {
+        if s.ticks % 6 == 0 {
             println!("[Rust DEBUG] Tick #{} ({:.1}s) {:?} mode, vx={:.3}",
                 s.ticks, s.ticks as f64 / 60.0, s.behavior_state, s.cmd_linear[0]);
             // Диагностика: foot_locations (сырые позиции стоп, 3x4)
