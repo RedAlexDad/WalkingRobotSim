@@ -1,0 +1,16 @@
+# compose.nvidia.yml — проброс NVIDIA eGPU (RTX 5070 Ti) для GUI и сенсоров.
+# Подключается Makefile при WRS_GPU=nvidia (или автоматически, если найден
+# nvidia-smi и включён режим auto). Требуется nvidia-container-toolkit.
+services:
+  simulator:
+    runtime: nvidia
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

@@ -32,8 +32,18 @@ define require-device
 		printf "$(ERR)устройство $(1) не найдено${NC}\n" >&2; exit 1; }
 endef
 
-# ── GPU: динамический проброс iGPU AMD ───────────────────
+# ── GPU: выбор режима рендера ────────────────────────────
+#
+#   WRS_GPU=auto     — nvidia, если доступна (nvidia-smi), иначе amd, иначе none
+#   WRS_GPU=nvidia   — NVIDIA eGPU (RTX) через nvidia runtime
+#   WRS_GPU=amd      — встроенная AMD (iGPU) по vendor 0x1002
+#   WRS_GPU=none     — без проброса GPU (headless)
+#
+# Пример: WRS_GPU=nvidia make deploy
 
+WRS_GPU ?= auto
+
+# Встроенная AMD (iGPU) — по vendor 0x1002 (номера cardN плавают)
 WRS_DRI_CARD   ?= $(shell bash $(PROJECT_ROOT)/scripts/detect-gpu.sh card 2>/dev/null)
 WRS_DRI_RENDER ?= $(shell bash $(PROJECT_ROOT)/scripts/detect-gpu.sh render 2>/dev/null)
 
@@ -47,12 +57,30 @@ override WRS_DRI_CARD :=
 endif
 endif
 
+# NVIDIA доступна?
+WRS_HAS_NVIDIA := $(shell command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1 && echo 1)
+
+# Итоговый режим
+ifeq ($(WRS_GPU),auto)
+  ifneq ($(WRS_HAS_NVIDIA),)
+    WRS_GPU_EFF := nvidia
+  else ifneq ($(WRS_DRI_RENDER),)
+    WRS_GPU_EFF := amd
+  else
+    WRS_GPU_EFF := none
+  endif
+else
+  WRS_GPU_EFF := $(WRS_GPU)
+endif
+
 export WRS_DRI_CARD
 export WRS_DRI_RENDER
+export WRS_GPU_EFF
 
 # Рекурсивные переменные: раскрываются при вызове, уже после проверки выше.
 WRS_COMPOSE_FILES = -f $(PROJECT_ROOT)/compose.yml \
-  $(if $(WRS_DRI_RENDER),-f $(PROJECT_ROOT)/compose.gpu.yml)
+  $(if $(filter nvidia,$(WRS_GPU_EFF)),-f $(PROJECT_ROOT)/compose.nvidia.yml) \
+  $(if $(filter amd,$(WRS_GPU_EFF)),$(if $(WRS_DRI_RENDER),-f $(PROJECT_ROOT)/compose.gpu.yml))
 COMPOSE = docker compose $(WRS_COMPOSE_FILES)
 
 # ── preflight ─────────────────────────────────────────────
@@ -87,10 +115,13 @@ doctor:
 		printf "  ${YELLOW}[!]${NC} контейнер $(CONTAINER_NAME) не запущен\n"; \
 	fi
 
-## Показать, какая iGPU будет проброшена
+## Показать, какая GPU будет проброшена
 gpu-info:
-	@if [ -n "$(WRS_DRI_RENDER)" ]; then \
-		printf "$(OK)iGPU пробрасывается: card=$(WRS_DRI_CARD) render=$(WRS_DRI_RENDER)${NC}\n"; \
+	@printf "$(OK)Режим GPU: $(WRS_GPU_EFF)${NC}\n"
+	@if [ "$(WRS_GPU_EFF)" = "nvidia" ]; then \
+		printf "$(OK)NVIDIA eGPU: $(shell nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1)${NC}\n"; \
+	elif [ -n "$(WRS_DRI_RENDER)" ]; then \
+		printf "$(OK)iGPU AMD: card=$(WRS_DRI_CARD) render=$(WRS_DRI_RENDER)${NC}\n"; \
 	else \
-		printf "$(WARN)iGPU не найден — контейнер стартует без проброса GPU (headless)${NC}\n"; \
+		printf "$(WARN)GPU не найден — контейнер стартует headless${NC}\n"; \
 	fi

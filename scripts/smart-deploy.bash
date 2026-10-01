@@ -24,6 +24,19 @@ if [ -z "${WRS_DRI_CARD:-}" ]; then
     export WRS_DRI_CARD WRS_DRI_RENDER
 fi
 
+# Режим GPU: nvidia | amd | none. Приоритет — WRS_GPU_EFF (из Makefile),
+# иначе WRS_GPU, иначе auto (nvidia если доступна, затем amd, затем none).
+GPU_MODE="${WRS_GPU_EFF:-${WRS_GPU:-auto}}"
+if [ "$GPU_MODE" = "auto" ]; then
+    if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1; then
+        GPU_MODE="nvidia"
+    elif [ -n "${WRS_DRI_RENDER:-}" ] && [ -e "${WRS_DRI_RENDER:-}" ]; then
+        GPU_MODE="amd"
+    else
+        GPU_MODE="none"
+    fi
+fi
+
 LAST_BUILD_FILE=".last_build_commit"
 CONTAINER_NAME="walking_robot_sim"
 
@@ -31,11 +44,14 @@ CONTAINER_NAME="walking_robot_sim"
 command -v docker >/dev/null 2>&1 || { echo "docker не установлен"; exit 1; }
 docker info >/dev/null 2>&1 || { echo "демон docker не запущен"; exit 1; }
 
-# GPU-override подключаем только если iGPU реально найден.
+# GPU-override: nvidia → compose.nvidia.yml; amd → compose.gpu.yml (если iGPU есть).
 COMPOSE=(docker compose -f "$PROJECT_ROOT/compose.yml")
-if [ -n "${WRS_DRI_RENDER:-}" ] && [ -e "$WRS_DRI_RENDER" ]; then
-    COMPOSE+=(-f "$PROJECT_ROOT/compose.gpu.yml")
-fi
+case "$GPU_MODE" in
+    nvidia) COMPOSE+=(-f "$PROJECT_ROOT/compose.nvidia.yml") ;;
+    amd)    if [ -n "${WRS_DRI_RENDER:-}" ] && [ -e "${WRS_DRI_RENDER:-}" ]; then
+                COMPOSE+=(-f "$PROJECT_ROOT/compose.gpu.yml")
+            fi ;;
+esac
 
 # ── helpers ──────────────────────────────────────────────
 red()    { printf "\033[0;31m%s\033[0m\n" "$*"; }
