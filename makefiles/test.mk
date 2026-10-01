@@ -5,135 +5,128 @@
 
 ## Покрытие кода Rust (tarpaulin, требование ≥ 90%)
 test-coverage:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Измерение покрытия кода (tarpaulin)...${NC}\n"
+	@printf "$(INFO)Измерение покрытия кода (tarpaulin)...${NC}\n"
 	@source /opt/ros/$(ROS_DISTRO)/setup.bash 2>/dev/null; \
 	source install/setup.bash 2>/dev/null || true; \
 	cd $(PROJECT_ROOT)/src/quadropted_controller_rust && \
 	cargo tarpaulin --package quadropted-core --tests --out Stdout 2>&1 | tail -30
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Покрытие измерено (цель 90%%)${NC}\n"
+	@printf "$(OK)Покрытие измерено (цель 90%%)${NC}\n"
 
 ## Полный цикл тестирования
 test: check-deps check-structure test-yaml test-build test-container
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Все тесты пройдены успешно!${NC}\n"
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Теперь можно выполнять git push${NC}\n"
+	@printf "$(OK)Все тесты пройдены успешно!${NC}\n"
+	@printf "$(INFO)Теперь можно выполнять git push${NC}\n"
 
 ## Все автоматические тесты Rust: юнит + кросс-валидация + интеграционные
 test-rust:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск всех Rust тестов (юнит + кросс-валидация + интеграционные)...${NC}\n"
+	@printf "$(INFO)Запуск всех Rust тестов (юнит + кросс-валидация + интеграционные)...${NC}\n"
 	@$(call ros-exec,cd /root/ws/src/quadropted_controller_rust && cargo test --workspace 2>&1 | tail -40)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск скрипта кросс-валидации (на хосте, C++ харнесс + Rust)...${NC}\n"
+	@printf "$(INFO)Запуск скрипта кросс-валидации (на хосте, C++ харнесс + Rust)...${NC}\n"
 	@bash scripts/test_cross_validation.sh 2>&1 | tail -40
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Rust тесты завершены${NC}\n"
+	@printf "$(OK)Rust тесты завершены${NC}\n"
 
 ## Интеграционные тесты против ЖИВОЙ симуляции (нужен запущенный make gazebo)
 test-sim:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск интеграционных тестов против живой симуляции...${NC}\n"
-	@printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Убедитесь, что симуляция запущена: make gazebo${NC}\n"
+	@printf "$(INFO)Запуск интеграционных тестов против живой симуляции...${NC}\n"
+	@printf "$(WARN)Убедитесь, что симуляция запущена: make gazebo${NC}\n"
 	@bash scripts/test_sim_integration.sh
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Интеграционные тесты завершены${NC}\n"
+	@printf "$(OK)Интеграционные тесты завершены${NC}\n"
 
 ## Только сборка образа для теста
 test-build: check-deps check-structure test-yaml
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Локальная сборка Docker-образа...${NC}\n"
-	@cd $(DOCKER_DIR) && $(COMPOSE) build --no-cache
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Локальная сборка завершена успешно${NC}\n"
+	@printf "$(INFO)Локальная сборка Docker-образа...${NC}\n"
+	@$(COMPOSE) build --no-cache
+	@printf "$(OK)Локальная сборка завершена успешно${NC}\n"
 
 ## Тестовый запуск контейнера
 test-container:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Тестовый запуск контейнера...${NC}\n"
-	@cd $(DOCKER_DIR) && $(COMPOSE) up -d
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Ожидание запуска контейнера...${NC}\n"
+	@printf "$(INFO)Тестовый запуск контейнера...${NC}\n"
+	@$(COMPOSE) up -d
+	@printf "$(INFO)Ожидание запуска контейнера...${NC}\n"
 	@sleep 15
 	@if $(COMPOSE) ps | grep -q "healthy"; then \
-		printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Контейнер запущен и здоров${NC}\n"; \
+		printf "$(OK)Контейнер запущен и здоров${NC}\n"; \
 	else \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Контейнер запущен, но статус здоровья неизвестен${NC}\n"; \
+		printf "$(WARN)Контейнер запущен, но статус здоровья неизвестен${NC}\n"; \
 	fi
 	@if $(COMPOSE) exec -T simulator bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash && ros2 node list"; then \
-		printf "${GREEN}${BOLD}[v]${NC} ${GREEN}ROS функциональность проверена успешно${NC}\n"; \
+		printf "$(OK)ROS функциональность проверена успешно${NC}\n"; \
 	else \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}ROS функциональность не проверена (контейнер может быть в процессе инициализации)${NC}\n"; \
+		printf "$(WARN)ROS функциональность не проверена (контейнер может быть в процессе инициализации)${NC}\n"; \
 	fi
-	@cd $(DOCKER_DIR) && $(COMPOSE) down
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Контейнер остановлен${NC}\n"
+	@$(COMPOSE) down
+	@printf "$(OK)Контейнер остановлен${NC}\n"
 
 ## Очистка Docker ресурсов после тестов
 test-clean:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Очистка Docker ресурсов...${NC}\n"
-	@cd $(DOCKER_DIR) && $(COMPOSE) down -v 2>/dev/null || true
+	@printf "$(INFO)Очистка Docker ресурсов...${NC}\n"
+	@$(COMPOSE) down -v 2>/dev/null || true
 	@docker rmi walking_robot_sim:latest 2>/dev/null || true
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Очистка завершена${NC}\n"
+	@printf "$(OK)Очистка завершена${NC}\n"
 
 ## Проверка зависимостей
 check-deps:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Проверка необходимых инструментов...${NC}\n"
-	@if ! command -v docker &> /dev/null; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Docker не установлен. Пожалуйста, установите Docker.${NC}\n"; \
-		exit 1; \
-	fi
-	@if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Docker Compose не установлен.${NC}\n"; \
-		exit 1; \
-	fi
+	@printf "$(INFO)Проверка необходимых инструментов...${NC}\n"
+	$(require-docker)
 	@if ! command -v yamllint &> /dev/null; then \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}yamllint не установлен. Установите: pip install yamllint${NC}\n"; \
+		printf "$(WARN)yamllint не установлен. Установите: pip install yamllint${NC}\n"; \
 	fi
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Все необходимые инструменты установлены${NC}\n"
+	@printf "$(OK)Все необходимые инструменты установлены${NC}\n"
 
 ## Проверка структуры проекта
 check-structure:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Проверка структуры проекта...${NC}\n"
+	@printf "$(INFO)Проверка структуры проекта...${NC}\n"
 	@if [ ! -d "$(PROJECT_ROOT)/src" ]; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Директория src не найдена${NC}\n"; \
+		printf "$(ERR)Директория src не найдена${NC}\n"; \
 		exit 1; \
 	fi
 	@if [ ! -d "$(PROJECT_ROOT)/src/docker" ]; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Директория src/docker не найдена${NC}\n"; \
+		printf "$(ERR)Директория src/docker не найдена${NC}\n"; \
 		exit 1; \
 	fi
 	@if [ ! -f "$(PROJECT_ROOT)/compose.yml" ]; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Файл compose.yml не найден${NC}\n"; \
+		printf "$(ERR)Файл compose.yml не найден${NC}\n"; \
 		exit 1; \
 	fi
 	@if [ ! -f "$(PROJECT_ROOT)/src/docker/Dockerfile" ]; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Файл src/docker/Dockerfile не найден${NC}\n"; \
+		printf "$(ERR)Файл src/docker/Dockerfile не найден${NC}\n"; \
 		exit 1; \
 	fi
 	@if [ ! -d "$(PROJECT_ROOT)/src/gazebo_sim" ]; then \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Директория src/gazebo_sim не найдена${NC}\n"; \
+		printf "$(WARN)Директория src/gazebo_sim не найдена${NC}\n"; \
 	fi
 	@if [ ! -d "$(PROJECT_ROOT)/src/go1_description" ]; then \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Директория src/go1_description не найдена${NC}\n"; \
+		printf "$(WARN)Директория src/go1_description не найдена${NC}\n"; \
 	fi
 	@if [ ! -d "$(PROJECT_ROOT)/src/go2_description" ]; then \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Директория src/go2_description не найдена${NC}\n"; \
+		printf "$(WARN)Директория src/go2_description не найдена${NC}\n"; \
 	fi
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Структура проекта проверена${NC}\n"
+	@printf "$(OK)Структура проекта проверена${NC}\n"
 
 ## Проверка синтаксиса YAML
 test-yaml:
 	@if command -v yamllint &> /dev/null; then \
-		printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Проверка синтаксиса YAML...${NC}\n"; \
+		printf "$(INFO)Проверка синтаксиса YAML...${NC}\n"; \
 		if yamllint $(PROJECT_ROOT)/compose.yml; then \
-			printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Синтаксис compose.yml корректен${NC}\n"; \
+			printf "$(OK)Синтаксис compose.yml корректен${NC}\n"; \
 		else \
-			printf "${RED}${BOLD}[x]${NC} ${RED}Обнаружены ошибки в синтаксисе compose.yml${NC}\n"; \
+			printf "$(ERR)Обнаружены ошибки в синтаксисе compose.yml${NC}\n"; \
 			exit 1; \
 		fi; \
 		if [ -d "$(PROJECT_ROOT)/.github/workflows" ]; then \
 			if yamllint $(PROJECT_ROOT)/.github/workflows/; then \
-				printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Синтаксис GitHub workflows корректен${NC}\n"; \
+				printf "$(OK)Синтаксис GitHub workflows корректен${NC}\n"; \
 			else \
-				printf "${RED}${BOLD}[x]${NC} ${RED}Обнаружены ошибки в синтаксисе GitHub workflows${NC}\n"; \
+				printf "$(ERR)Обнаружены ошибки в синтаксисе GitHub workflows${NC}\n"; \
 				exit 1; \
 			fi; \
 		else \
-			printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Директория .github/workflows не найдена${NC}\n"; \
+			printf "$(WARN)Директория .github/workflows не найдена${NC}\n"; \
 		fi; \
 	else \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}yamllint не установлен, пропускаем проверку YAML${NC}\n"; \
+		printf "$(WARN)yamllint не установлен, пропускаем проверку YAML${NC}\n"; \
 	fi
 
 ## Начальная настройка проекта
@@ -143,34 +136,23 @@ setup: check-x11
 	@printf "${CYAN}${BOLD}║${NC}  ${BOLD}WalkingRobotSim - Setup${NC}                               ${CYAN}${BOLD}║${NC}\n"
 	@printf "${CYAN}${BOLD}╚════════════════════════════════════════════════════════════╝${NC}\n"
 	@echo ""
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Проверка Docker...${NC}\n"
-	@if ! command -v docker &> /dev/null; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Docker не установлен${NC}\n"; \
-		echo "Установите Docker: https://docs.docker.com/get-docker/"; \
-		exit 1; \
-	fi
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Docker найден: $$(docker --version)${NC}\n"
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Проверка Docker Compose...${NC}\n"
-	@if ! docker compose version &> /dev/null 2>&1; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Docker Compose не установлен${NC}\n"; \
-		echo "Установите Docker Compose: https://docs.docker.com/compose/install/"; \
-		exit 1; \
-	fi
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Docker Compose найден: $$(docker compose version --short)${NC}\n"
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Проверка структуры проекта...${NC}\n"
+	$(require-docker)
+	@printf "$(OK)Docker: $$(docker --version)${NC}\n"
+	@printf "$(OK)Compose: $$(docker compose version --short)${NC}\n"
+	@printf "$(INFO)Проверка структуры проекта...${NC}\n"
 	@for file in "docker/Dockerfile" "docker/cyclonedds.xml"; do \
 		if [ ! -f "$(PROJECT_ROOT)/src/$$file" ]; then \
-			printf "${RED}${BOLD}[x]${NC} ${RED}Файл не найден: $$file${NC}\n"; \
+			printf "$(ERR)Файл не найден: $$file${NC}\n"; \
 			exit 1; \
 		fi; \
 	done; \
 	if [ ! -f "$(PROJECT_ROOT)/compose.yml" ]; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Файл compose.yml не найден${NC}\n"; \
+		printf "$(ERR)Файл compose.yml не найден${NC}\n"; \
 		exit 1; \
 	fi
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Структура проекта верна${NC}\n"
+	@printf "$(OK)Структура проекта верна${NC}\n"
 	@echo ""
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Информация о системе:${NC}\n"
+	@printf "$(INFO)Информация о системе:${NC}\n"
 	@printf "  OS: $$(uname -s)\n"
 	@printf "  Kernel: $$(uname -r)\n"
 	@printf "  Docker: $$(docker --version)\n"
@@ -178,9 +160,9 @@ setup: check-x11
 	@printf "  User: $$(whoami)\n"
 	@printf "  Home: $$HOME\n"
 	@echo ""
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Инициализация завершена успешно!${NC}\n"
+	@printf "$(OK)Инициализация завершена успешно!${NC}\n"
 	@echo ""
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Следующие шаги:${NC}\n"
+	@printf "$(INFO)Следующие шаги:${NC}\n"
 	@printf "  1. ${BOLD}make deploy${NC}              # Сборка и запуск\n"
 	@printf "  2. ${BOLD}make gazebo${NC}              # Запуск Gazebo\n"
 	@printf "  3. ${BOLD}make teleop${NC}              # Управление роботом (в другом терминале)\n"
@@ -188,43 +170,43 @@ setup: check-x11
 
 ## Проверка X11 (для GUI)
 check-x11:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Проверка X11 (для GUI)...${NC}\n"
+	@printf "$(INFO)Проверка X11 (для GUI)...${NC}\n"
 	@if [ -z "$$DISPLAY" ]; then \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}DISPLAY не установлен. X11 GUI может не работать.${NC}\n"; \
-		printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Для использования GUI установите DISPLAY:${NC}\n"; \
+		printf "$(WARN)DISPLAY не установлен. X11 GUI может не работать.${NC}\n"; \
+		printf "$(INFO)Для использования GUI установите DISPLAY:${NC}\n"; \
 		echo "  export DISPLAY=:0"; \
 		echo "  xhost +local:"; \
 	else \
-		printf "${GREEN}${BOLD}[v]${NC} ${GREEN}DISPLAY установлен: $$DISPLAY${NC}\n"; \
+		printf "$(OK)DISPLAY установлен: $$DISPLAY${NC}\n"; \
 	fi
 
 ## Создание бэкапа данных
 backup:
 	@backup_file="walking_robot_backup_$$(date +%Y%m%d_%H%M%S).tar.gz"; \
-	printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Создание бэкапа: $$backup_file${NC}\n"; \
+	printf "$(INFO)Создание бэкапа: $$backup_file${NC}\n"; \
 	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 		-v $(DOCKER_DIR):/backup alpine tar czf /backup/"$$backup_file" \
 		/var/lib/docker/volumes/gazebo_logs /var/lib/docker/volumes/gazebo_data 2>/dev/null || true; \
-	printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Бэкап создан: $$backup_file${NC}\n"
+	printf "$(OK)Бэкап создан: $$backup_file${NC}\n"
 
 ## Проверка корректности — запуск всех тестов в correctness/
 test-correctness:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Тесты корректности...${NC}\n"
+	@printf "$(INFO)Тесты корректности...${NC}\n"
 	@cd $(PROJECT_ROOT)/src/tests/correctness && python3 run_all.py
 	@echo ""
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Тесты корректности завершены${NC}\n"
+	@printf "$(OK)Тесты корректности завершены${NC}\n"
 
 ## Benchmark производительности — замер времени
 test-benchmark:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Benchmark производительности...${NC}\n"
+	@printf "$(INFO)Benchmark производительности...${NC}\n"
 	@cd $(PROJECT_ROOT) && python3 src/tests/benchmark_performance.py
 	@echo ""
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Benchmark завершён${NC}\n"
+	@printf "$(OK)Benchmark завершён${NC}\n"
 
 ## Запуск бенчмарка (C++)
 benchmark: benchmark-cpp
 
 benchmark-cpp:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск C++ бенчмарка...${NC}\n"
+	@printf "$(INFO)Запуск C++ бенчмарка...${NC}\n"
 	@$(call ros-exec,/root/ws/build/quadropted_controller_cpp/benchmark)

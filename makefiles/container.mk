@@ -13,8 +13,8 @@
 ## Проверка что контейнер запущен
 define require-container
 	@if ! docker ps --format '{{.Names}}' | grep -q $(CONTAINER_NAME); then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Контейнер $(CONTAINER_NAME) не запущен.${NC}\n" >&2; \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Запустите: make deploy${NC}\n" >&2; \
+		printf "$(ERR)Контейнер $(CONTAINER_NAME) не запущен.${NC}\n" >&2; \
+		printf "$(WARN)Запустите: make deploy${NC}\n" >&2; \
 		exit 1; \
 	fi
 endef
@@ -22,13 +22,13 @@ endef
 ## Проверка и настройка X11 для GUI
 define check-x11
 	@if [ -z "$$DISPLAY" ]; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}DISPLAY не установлен.${NC}\n" >&2; \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Установите: export DISPLAY=:0${NC}\n" >&2; \
+		printf "$(ERR)DISPLAY не установлен.${NC}\n" >&2; \
+		printf "$(WARN)Установите: export DISPLAY=:0${NC}\n" >&2; \
 		exit 1; \
 	fi
 	@xhost +local:root >/dev/null 2>&1 || true
 	@xhost +local:$(USER) >/dev/null 2>&1 || true
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}X11 настроен: DISPLAY=$$DISPLAY${NC}\n"
+	@printf "$(OK)X11 настроен: DISPLAY=$$DISPLAY${NC}\n"
 endef
 
 # ── запуск в контейнере с ROS + workspace ─────────────────
@@ -55,9 +55,9 @@ comma := ,
 # Публикация режима робота (REST/TROT/CRAWL/STAND)
 define set-robot-mode
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Перевод робота в режим $(1)...${NC}\n"
+	@printf "$(INFO)Перевод робота в режим $(1)...${NC}\n"
 	@$(call ros-exec,ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: $(1)$(comma) robot_id: 1}\")
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Режим $(1) установлен${NC}\n"
+	@printf "$(OK)Режим $(1) установлен${NC}\n"
 endef
 
 # Вызов сервиса std_srvs/Trigger по пути $(1)
@@ -84,7 +84,7 @@ endef
 
 # Ожидание регистрации контроллера
 define wait-controller
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Ожидание регистрации контроллера...${NC}\n"
+	@printf "$(INFO)Ожидание регистрации контроллера...${NC}\n"
 	@docker exec $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; for i in \$$(seq 1 20); do n=\$$(ros2 topic info /robot1/joint_group_controller/commands 2>/dev/null | awk '/Publisher count/{print \$$3}'); [ \"\$$n\" = 1 ] && break; sleep 0.5; done"
 endef
 

@@ -5,53 +5,53 @@
 ## Запустить навигацию по всем waypoints (сервис /start_navigation)
 waypoint-start:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск навигации по waypoints...${NC}\n"
+	@printf "$(INFO)Запуск навигации по waypoints...${NC}\n"
 	$(call ros-call-trigger,/start_navigation)
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Команда отправлена${NC}\n"
+	@printf "$(OK)Команда отправлена${NC}\n"
 
 ## Очистить все waypoints (сервис /clear_waypoints)
 waypoint-clear:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Очистка waypoints...${NC}\n"
+	@printf "$(INFO)Очистка waypoints...${NC}\n"
 	$(call ros-call-trigger,/clear_waypoints)
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Команда отправлена${NC}\n"
+	@printf "$(OK)Команда отправлена${NC}\n"
 
 ## Навигация к конкретному waypoint по индексу (пример: make waypoint-navigate INDEX=2)
 waypoint-navigate:
 	$(require-container)
 	@if [ -z "$(INDEX)" ]; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Укажите индекс: make waypoint-navigate INDEX=2${NC}\n"; \
+		printf "$(ERR)Укажите индекс: make waypoint-navigate INDEX=2${NC}\n"; \
 		exit 1; \
 	fi
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Навигация к waypoint $(INDEX)...${NC}\n"
+	@printf "$(INFO)Навигация к waypoint $(INDEX)...${NC}\n"
 	@$(call ros-exec,ros2 service call /navigate_to_waypoint quadropted_msgs/srv/WaypointNavigate \"{index: $(INDEX)}\")
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Команда отправлена${NC}\n"
+	@printf "$(OK)Команда отправлена${NC}\n"
 
 ## Остановить текущую навигацию (сервис /stop_navigation)
 waypoint-stop:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Остановка навигации...${NC}\n"
+	@printf "$(INFO)Остановка навигации...${NC}\n"
 	$(call ros-call-trigger,/stop_navigation)
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Команда отправлена${NC}\n"
+	@printf "$(OK)Команда отправлена${NC}\n"
 
 ## Продолжить навигацию с прерванного waypoint (сервис /resume_navigation)
 waypoint-resume:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Продолжение навигации...${NC}\n"
+	@printf "$(INFO)Продолжение навигации...${NC}\n"
 	$(call ros-call-trigger,/resume_navigation)
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Команда отправлена${NC}\n"
+	@printf "$(OK)Команда отправлена${NC}\n"
 
 ## Загрузить waypoints из JSON-файла (пример: make waypoint-load FILE=test.json)
 waypoint-load:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Загрузка waypoints..."
+	@printf "$(INFO)Загрузка waypoints..."
 ifneq ($(FILE),)
 	@printf " из $(FILE)...${NC}\n"
 else
 	@printf " (по умолчанию)...${NC}\n"
 endif
 	@$(call ros-exec,ros2 service call /load_waypoints quadropted_msgs/srv/LoadWaypoints \"{file_path: '$(FILE)'}\")
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Команда отправлена${NC}\n"
+	@printf "$(OK)Команда отправлена${NC}\n"
 
 ## Получить текущие waypoints (сервис /get_waypoints)
 waypoint-get:

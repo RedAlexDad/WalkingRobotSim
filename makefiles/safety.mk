@@ -18,18 +18,18 @@
 # docker + compose + запущенный демон
 define require-docker
 	@command -v docker >/dev/null 2>&1 || { \
-		printf "${RED}${BOLD}[x]${NC} ${RED}docker не установлен${NC}\n" >&2; exit 1; }
+		printf "$(ERR)docker не установлен${NC}\n" >&2; exit 1; }
 	@docker compose version >/dev/null 2>&1 || { \
-		printf "${RED}${BOLD}[x]${NC} ${RED}плагин docker compose недоступен${NC}\n" >&2; exit 1; }
+		printf "$(ERR)плагин docker compose недоступен${NC}\n" >&2; exit 1; }
 	@docker info >/dev/null 2>&1 || { \
-		printf "${RED}${BOLD}[x]${NC} ${RED}демон docker не запущен (sudo systemctl start docker)${NC}\n" >&2; \
+		printf "$(ERR)демон docker не запущен (sudo systemctl start docker)${NC}\n" >&2; \
 		exit 1; }
 endef
 
 # require-device <path> — устройство/файл существует
 define require-device
 	@[ -e "$(1)" ] || { \
-		printf "${RED}${BOLD}[x]${NC} ${RED}устройство $(1) не найдено${NC}\n" >&2; exit 1; }
+		printf "$(ERR)устройство $(1) не найдено${NC}\n" >&2; exit 1; }
 endef
 
 # ── GPU: динамический проброс iGPU AMD ───────────────────
@@ -90,7 +90,7 @@ doctor:
 ## Показать, какая iGPU будет проброшена
 gpu-info:
 	@if [ -n "$(WRS_DRI_RENDER)" ]; then \
-		printf "${GREEN}${BOLD}[v]${NC} ${GREEN}iGPU пробрасывается: card=$(WRS_DRI_CARD) render=$(WRS_DRI_RENDER)${NC}\n"; \
+		printf "$(OK)iGPU пробрасывается: card=$(WRS_DRI_CARD) render=$(WRS_DRI_RENDER)${NC}\n"; \
 	else \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}iGPU не найден — контейнер стартует без проброса GPU (headless)${NC}\n"; \
+		printf "$(WARN)iGPU не найден — контейнер стартует без проброса GPU (headless)${NC}\n"; \
 	fi

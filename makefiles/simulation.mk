@@ -16,15 +16,15 @@ GAZEBO_RUST_ARGS   := $(GAZEBO_COMMON_ARGS) $(if $(WORLD),world:=${WORLD}) $(if 
 GAZEBO_LITE_ARGS   := $(GAZEBO_COMMON_ARGS) camera_fps:=5 enable_rviz:=false $(if $(WORLD),world:=${WORLD}) $(if $(ELEVATION),use_elevation:=${ELEVATION})
 GAZEBO_CPP_ARGS    := $(GAZEBO_COMMON_ARGS) $(if $(FPS),camera_fps:=${FPS}) $(if $(ELEVATION),use_elevation:=${ELEVATION})
 
-## Запуск MuJoCo симуляции (Rust контроллер — по умолчанию, с окном)
+##! Запуск MuJoCo симуляции (Rust контроллер — по умолчанию, с окном)
 mujoco: mujoco-viewer
 
-## Запуск MuJoCo с GUI-окном + Rust контроллер
+##! Запуск MuJoCo с GUI-окном + Rust контроллер
 ## Опции: VX=0.5 команда скорости, DURATION=60 длительность (с)
 mujoco-viewer:
 	$(require-container)
 	$(check-x11)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск MuJoCo + Rust контроллер...${NC}\n"
+	@printf "$(INFO)Запуск MuJoCo + Rust контроллер...${NC}\n"
 	$(start-rust-controller)
 	$(wait-controller)
 	@source /opt/ros/lyrical/setup.bash 2>/dev/null || true; \
@@ -32,10 +32,10 @@ mujoco-viewer:
 		--duration $(if $(DURATION),${DURATION},60) $(if $(VX),--vx ${VX}) --viewer
 	@$(MAKE) mujoco-kill
 
-## Лёгкий режим: MuJoCo без окна (меньше нагрузка, для автотестов)
+##! Лёгкий режим: MuJoCo без окна (меньше нагрузка, для автотестов)
 mujoco-lite:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск MuJoCo (headless)...${NC}\n"
+	@printf "$(INFO)Запуск MuJoCo (headless)...${NC}\n"
 	$(start-rust-controller)
 	$(wait-controller)
 	@source /opt/ros/lyrical/setup.bash 2>/dev/null || true; \
@@ -43,97 +43,91 @@ mujoco-lite:
 		--duration $(if $(DURATION),${DURATION},60) $(if $(VX),--vx ${VX})
 	@$(MAKE) mujoco-kill
 
-## Очистка MuJoCo и Rust-контроллера
+##! Очистка MuJoCo и Rust-контроллера
 mujoco-kill:
 	@pkill -f mujoco_ros_bridge 2>/dev/null || true
 	@docker exec $(CONTAINER_NAME) pkill -f robot_controller_node 2>/dev/null || true
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}MuJoCo и Rust-контроллер остановлены${NC}\n"
+	@printf "$(OK)MuJoCo и Rust-контроллер остановлены${NC}\n"
 
 ## Запуск Gazebo симуляции (Rust контроллер — по умолчанию)
 gazebo: gazebo-rust
 
-## Запуск Gazebo симуляции с Rust контроллером (контроллер + одометрия)
+##! Запуск Gazebo симуляции с Rust контроллером (контроллер + одометрия)
 ## Опции: WORLD=terrain.world (по умолчанию cafe.world), FPS=5 camera_fps,
 ##         RVZ=false — без RViz (лёгкий режим)
 gazebo-rust:
 	$(require-container)
 	$(check-x11)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Gazebo симуляции с Rust контроллером...${NC}\n"
+	@printf "$(INFO)Запуск Gazebo симуляции с Rust контроллером...${NC}\n"
 	$(call gazebo-launch,launch.launch.py,$(GAZEBO_RUST_ARGS))
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
+	@printf "$(INFO)Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
-## Лёгкий режим: Gazebo (Rust) без RViz и с пониженным FPS камеры —
+##! Лёгкий режим: Gazebo (Rust) без RViz и с пониженным FPS камеры —
 ## меньше нагрузка на CPU (полезно при тормозах ноутбука)
 gazebo-lite:
 	$(require-container)
 	$(check-x11)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Gazebo (Rust) в лёгком режиме: RViz выключен, камера 5 FPS...${NC}\n"
+	@printf "$(INFO)Запуск Gazebo (Rust) в лёгком режиме: RViz выключен, камера 5 FPS...${NC}\n"
 	$(call gazebo-launch,launch.launch.py,$(GAZEBO_LITE_ARGS))
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
+	@printf "$(INFO)Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
-## Запуск Gazebo симуляции с C++ контроллером
+##! Запуск Gazebo симуляции с C++ контроллером
 gazebo-cpp:
 	$(require-container)
 	$(check-x11)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Gazebo симуляции с C++ контроллером...${NC}\n"
+	@printf "$(INFO)Запуск Gazebo симуляции с C++ контроллером...${NC}\n"
 	$(call gazebo-launch,launch_cpp.launch.py,$(GAZEBO_CPP_ARGS))
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
+	@printf "$(INFO)Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
 ## Запуск управления роботом (teleop) — скорость + переключение походки (1 TROT 2 CRAWL 3 STAND 4 REST)
 teleop:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск teleop (скорость + походка)...${NC}\n"
+	@printf "$(INFO)Запуск teleop (скорость + походка)...${NC}\n"
 	@docker cp scripts/robot_teleop.py $(CONTAINER_NAME):/tmp/robot_teleop.py >/dev/null
-	@docker exec -it $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		python3 /tmp/robot_teleop.py --ns /robot1 $(if $(VX),--vx ${VX}) $(if $(WZ),--wz ${WZ})"
+	@$(PROJECT_ROOT)/scripts/wrs-exec.sh -it python3 /tmp/robot_teleop.py --ns /robot1 $(if $(VX),--vx ${VX}) $(if $(WZ),--wz ${WZ})
 
 ## Простой teleop (только скорость, без переключения походки)
 teleop-simple:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск teleop_twist_keyboard...${NC}\n"
-	@docker exec -it $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel"
+	@printf "$(INFO)Запуск teleop_twist_keyboard...${NC}\n"
+	@$(PROJECT_ROOT)/scripts/wrs-exec.sh -it ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel
 
 ## Установка положения робота в Gazebo (пример: make set-pose X=1.0 Y=0.0 Z=0.0 YAW=0.0)
 set-pose:
 	$(require-container)
 	@if [ -z "$(X)" ] || [ -z "$(Y)" ] || [ -z "$(Z)" ] || [ -z "$(YAW)" ]; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Укажите все параметры: X Y Z YAW${NC}\n"; \
+		printf "$(ERR)Укажите все параметры: X Y Z YAW${NC}\n"; \
 		printf "Пример: make set-pose X=1.0 Y=0.0 Z=0.0 YAW=0.0\n"; \
 		exit 1; \
 	fi
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Установка положения робота: X=$(X) Y=$(Y) Z=$(Z) YAW=$(YAW)${NC}\n"
+	@printf "$(INFO)Установка положения робота: X=$(X) Y=$(Y) Z=$(Z) YAW=$(YAW)${NC}\n"
 	@$(call gz-set-pose,$(X),$(Y),$(Z),$(YAW))
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Положение установлено${NC}\n"
+	@printf "$(OK)Положение установлено${NC}\n"
 
 ## Сброс положения робота в начало (0, 0, 0.5, 0)
 reset-pose:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Сброс положения робота в начало...${NC}\n"
+	@printf "$(INFO)Сброс положения робота в начало...${NC}\n"
 	@$(call gz-set-pose,0,0,0.5,0)
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Положение сброшено${NC}\n"
+	@printf "$(OK)Положение сброшено${NC}\n"
 
 ## Выполнение команды в контейнере (пример: make exec CMD="ros2 topic list")
 exec:
 	$(require-container)
 	@if [ -z "$(CMD)" ]; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Укажите команду для выполнения${NC}\n" >&2; \
+		printf "$(ERR)Укажите команду для выполнения${NC}\n" >&2; \
 		printf "Пример: make exec CMD='ros2 topic list'\n" >&2; \
 		exit 1; \
 	fi
-	@docker exec -i $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash && source /root/ws/install/setup.bash && $(CMD)"
+	@$(PROJECT_ROOT)/scripts/wrs-exec.sh -i $(CMD)
 
 ## Проверка алиасов в контейнере
 test-aliases:
 	$(require-container)
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Проверка алиасов в контейнере...${NC}\n"
+	@printf "$(INFO)Проверка алиасов в контейнере...${NC}\n"
 	@docker exec -it $(CONTAINER_NAME) bash -c "\
 		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
 		source /root/ws/install/setup.bash && \
@@ -146,9 +140,9 @@ test-aliases:
 
 ## Очистка всех ROS/Gazebo процессов в контейнере
 kill-ros:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Очистка всех ROS/Gazebo процессов...${NC}\n"
+	@printf "$(INFO)Очистка всех ROS/Gazebo процессов...${NC}\n"
 	@if docker ps --format '{{.Names}}' | grep -q $(CONTAINER_NAME); then \
-		printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Убиваем ROS/Gazebo процессы в контейнере...${NC}\n"; \
+		printf "$(INFO)Убиваем ROS/Gazebo процессы в контейнере...${NC}\n"; \
 		docker exec -it $(CONTAINER_NAME) bash -c "\
 			pkill -f 'ros2\|gz sim\|rviz2\|gazebo' || true; \
 			pkill -f 'robot_controller\|quadruped\|teleop' || true; \
@@ -161,31 +155,31 @@ kill-ros:
 			pkill -f 'ign-' || true; \
 			sleep 2; \
 			if pgrep -f 'ros2\|gz sim\|rviz2' > /dev/null; then \
-				printf '${YELLOW}${BOLD}[!]${NC} ${YELLOW}Некоторые ROS процессы все еще запущены${NC}\n'; \
+				printf '$(WARN)Некоторые ROS процессы все еще запущены${NC}\n'; \
 				pgrep -f 'ros2\|gz sim\|rviz2' || true; \
 			else \
-				printf '${GREEN}${BOLD}[v]${NC} ${GREEN}Все ROS/Gazebo процессы успешно остановлены${NC}\n'; \
+				printf '$(OK)Все ROS/Gazebo процессы успешно остановлены${NC}\n'; \
 			fi"; \
 	else \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Контейнер $(CONTAINER_NAME) не запущен${NC}\n"; \
+		printf "$(WARN)Контейнер $(CONTAINER_NAME) не запущен${NC}\n"; \
 	fi
 
 ## Сохранение логов Gazebo сессии
 save-logs:
 	@if docker ps --format '{{.Names}}' | grep -q $(CONTAINER_NAME); then \
-		printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Сохранение логов сессии Gazebo...${NC}\n"; \
+		printf "$(INFO)Сохранение логов сессии Gazebo...${NC}\n"; \
 		timestamp=$$(date +%s); \
 		hostname=$$(hostname); \
 		backup_folder="$(PROJECT_ROOT)/logs/gazebo_backup_$${timestamp}_$${hostname}"; \
 		gazebo_folder="$(PROJECT_ROOT)/logs/gazebo"; \
 		mkdir -p "$$backup_folder" 2>/dev/null || { \
-			printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Не удалось создать $$backup_folder, используем /tmp/${NC}\n"; \
+			printf "$(WARN)Не удалось создать $$backup_folder, используем /tmp/${NC}\n"; \
 			backup_folder="/tmp/gazebo_backup_$${timestamp}_$${hostname}"; \
 			mkdir -p "$$backup_folder"; \
 		}; \
-		printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Копирование ROS логов из контейнера...${NC}\n"; \
+		printf "$(INFO)Копирование ROS логов из контейнера...${NC}\n"; \
 		docker cp $(CONTAINER_NAME):/root/ws/logs/. "$$backup_folder/" 2>/dev/null || true; \
-		printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Объединение логов по типам...${NC}\n"; \
+		printf "$(INFO)Объединение логов по типам...${NC}\n"; \
 		cd "$$backup_folder" && \
 		mkdir -p merged_logs && \
 		for pattern in "amcl" "behavior_server" "bt_navigator" "controller_server" "ekf_node" "gz sim server" "image_bridge" "lifecycle_manager" "map_server" "parameter_bridge" "planner_server" "python3" "robot_state_publisher" "rviz2" "smoother_server"; do \
@@ -221,32 +215,32 @@ save-logs:
 			echo "Контейнер: $(CONTAINER_NAME)"; \
 		} > "$$backup_folder/session_info.log"; \
 		if [ -d "$$gazebo_folder" ]; then \
-			printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Очистка папки gazebo...${NC}\n"; \
+			printf "$(INFO)Очистка папки gazebo...${NC}\n"; \
 			docker run --rm -v "$$gazebo_folder":/tmp/clean alpine sh -c "rm -rf /tmp/clean/*" 2>/dev/null || true; \
 		fi; \
 		mkdir -p "$$gazebo_folder"; \
 		file_count=$$(find "$$backup_folder" -type f 2>/dev/null | wc -l); \
 		merged_count=$$(find "$$backup_folder/merged_logs" -type f 2>/dev/null | wc -l); \
-		printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Логи сохранены: $$backup_folder${NC}\n"; \
+		printf "$(OK)Логи сохранены: $$backup_folder${NC}\n"; \
 		printf "Всего файлов: $$file_count\n"; \
 		printf "Объединенных логов: $$merged_count\n"; \
 		printf "Проверьте: $$backup_folder/merged_logs/\n"; \
 	else \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Контейнер не запущен, логи не сохранены${NC}\n"; \
+		printf "$(WARN)Контейнер не запущен, логи не сохранены${NC}\n"; \
 	fi
 
 ## Очистка старых логов сборки colcon (старше 30 дней)
 clean-build-logs:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Очистка старых логов сборки...${NC}\n"
+	@printf "$(INFO)Очистка старых логов сборки...${NC}\n"
 	@find log/ -maxdepth 1 -type d -name "build_*" -mtime +30 -exec rm -rf {} + 2>/dev/null || true
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Логи сборки старше 30 дней удалены${NC}\n"
+	@printf "$(OK)Логи сборки старше 30 дней удалены${NC}\n"
 
 ## Очистка логов Gazebo
 clean-gazebo-logs:
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Очистка логов Gazebo...${NC}\n"
+	@printf "$(INFO)Очистка логов Gazebo...${NC}\n"
 	@rm -rf logs/gazebo/* 2>/dev/null || true
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Логи Gazebo очищены${NC}\n"
+	@printf "$(OK)Логи Gazebo очищены${NC}\n"
 
 ## Очистка всех логов
 clean-logs: clean-build-logs clean-gazebo-logs
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Все логи очищены${NC}\n"
+	@printf "$(OK)Все логи очищены${NC}\n"
