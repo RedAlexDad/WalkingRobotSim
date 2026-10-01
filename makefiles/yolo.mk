@@ -69,12 +69,6 @@ yolo-visualizer:
 	$(require-container)
 	$(check-x11)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск визуализации детекций...${NC}\n"
-	@docker exec -d $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
-		source /root/ws/install/setup.bash && \
-		ros2 run quadropted_perception visualizer"
+	$(call ros-exec-d,ros2 run quadropted_perception visualizer)
 	@sleep 1
-	@docker exec -d $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
-		source /root/ws/install/setup.bash && \
-		rviz2 -d /root/ws/src/quadropted_perception/rviz/yolo_detection.rviz"
+	$(call ros-exec-d,rviz2 -d /root/ws/src/quadropted_perception/rviz/yolo_detection.rviz)

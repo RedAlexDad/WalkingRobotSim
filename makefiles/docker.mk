@@ -63,64 +63,8 @@ up-bg:
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Контейнер запущен${NC}\n"
 
 ## Остановка контейнера с сохранением логов
-down:
+down: save-logs
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Остановка контейнера $(CONTAINER_NAME)...${NC}\n"
-	@if docker ps --format '{{.Names}}' | grep -q $(CONTAINER_NAME); then \
-		printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Сохранение логов сессии...${NC}\n"; \
-		timestamp=$$(date +%s); \
-		hostname=$$(hostname); \
-		backup_folder="logs/gazebo_backup_$${timestamp}_$${hostname}"; \
-		gazebo_folder="logs/gazebo"; \
-		mkdir -p "$$backup_folder" 2>/dev/null || { \
-			printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Не удалось создать $$backup_folder, используем /tmp/${NC}\n"; \
-			backup_folder="/tmp/gazebo_backup_$${timestamp}_$${hostname}"; \
-			mkdir -p "$$backup_folder"; \
-		}; \
-		printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Копирование ROS логов из контейнера...${NC}\n"; \
-		docker cp $(CONTAINER_NAME):/root/ws/logs/. "$$backup_folder/" 2>/dev/null || true; \
-		printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Объединение логов по типам...${NC}\n"; \
-		cd "$$backup_folder" && \
-		mkdir -p merged_logs && \
-		for pattern in "amcl" "behavior_server" "bt_navigator" "controller_server" "ekf_node" "gz sim server" "image_bridge" "lifecycle_manager" "map_server" "parameter_bridge" "planner_server" "python3" "robot_state_publisher" "rviz2" "smoother_server"; do \
-			files=$$(ls $${pattern}_*.log 2>/dev/null || true); \
-			if [ -n "$$files" ]; then \
-				mkdir -p "$$pattern"; \
-				merged_file="merged_logs/$${pattern}_combined.log"; \
-				echo "=== Объединенные логи $${pattern} ===" > "$$merged_file"; \
-				echo "Время создания: $$(date)" >> "$$merged_file"; \
-				echo "" >> "$$merged_file"; \
-				for file in $$files; do \
-					if [ -f "$$file" ]; then \
-						mv "$$file" "$$pattern/"; \
-						echo "" >> "$$merged_file"; \
-						echo "=== Файл: $$pattern/$$(basename $$file) ===" >> "$$merged_file"; \
-						cat "$$pattern/$$(basename $$file)" >> "$$merged_file"; \
-						echo "" >> "$$merged_file"; \
-					fi; \
-				done; \
-				echo "Объединен: $$pattern ($$(echo $$files | wc -w) файлов)"; \
-			fi; \
-		done && \
-		if [ -d "../$$gazebo_folder" ]; then \
-			cp -r ../"$$gazebo_folder"/* "./" 2>/dev/null || true; \
-		fi && \
-		$(COMPOSE) logs --no-color > "docker_compose.log" 2>/dev/null || true && \
-		echo "=== Логи сессии Walking Robot Simulator ===" > "session_info.log" && \
-		echo "Время: $$(date)" >> "session_info.log" && \
-		echo "Хост: $$hostname" >> "session_info.log" && \
-		echo "Контейнер: $(CONTAINER_NAME)" >> "session_info.log" && \
-		cd "../.."; \
-		if [ -d "$$gazebo_folder" ]; then \
-			printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Очистка папки gazebo...${NC}\n"; \
-			docker run --rm -v "$$(pwd)/$$gazebo_folder":/tmp/clean alpine sh -c "rm -rf /tmp/clean/*" 2>/dev/null || true; \
-		fi; \
-		mkdir -p "$$gazebo_folder"; \
-		file_count=$$(find "$$backup_folder" -type f 2>/dev/null | wc -l); \
-		merged_count=$$(find "$$backup_folder/merged_logs" -type f 2>/dev/null | wc -l); \
-		printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Логи сохранены: $$backup_folder${NC}\n"; \
-		printf "Всего файлов: $$file_count\n"; \
-		printf "Объединенных логов: $$merged_count\n"; \
-	fi
 	@cd $(DOCKER_DIR) && $(COMPOSE) down
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Контейнер остановлен${NC}\n"
 

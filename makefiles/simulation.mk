@@ -8,6 +8,14 @@ MUJOCO_DIR    := $(PROJECT_ROOT)/src/mujoco
 MUJOCO_VENV   := $(PROJECT_ROOT)/.venv-mujoco
 MUJOCO_BRIDGE := $(MUJOCO_DIR)/mujoco_ros_bridge.py
 
+# ════ Gazebo: аргументы launch ════
+# В переменных, а не в $(call) — make делит аргументы call по запятым,
+# а внутри $(if ...) они есть.
+GAZEBO_COMMON_ARGS := use_sim_time:=true gui:=true
+GAZEBO_RUST_ARGS   := $(GAZEBO_COMMON_ARGS) $(if $(WORLD),world:=${WORLD}) $(if $(FPS),camera_fps:=${FPS}) $(if $(RVZ),enable_rviz:=${RVZ}) $(if $(ELEVATION),use_elevation:=${ELEVATION})
+GAZEBO_LITE_ARGS   := $(GAZEBO_COMMON_ARGS) camera_fps:=5 enable_rviz:=false $(if $(WORLD),world:=${WORLD}) $(if $(ELEVATION),use_elevation:=${ELEVATION})
+GAZEBO_CPP_ARGS    := $(GAZEBO_COMMON_ARGS) $(if $(FPS),camera_fps:=${FPS}) $(if $(ELEVATION),use_elevation:=${ELEVATION})
+
 ## Запуск MuJoCo симуляции (Rust контроллер — по умолчанию, с окном)
 mujoco: mujoco-viewer
 
@@ -17,9 +25,8 @@ mujoco-viewer:
 	$(require-container)
 	$(check-x11)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск MuJoCo + Rust контроллер...${NC}\n"
-	@docker exec -d $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; ros2 run quadropted_controller_rust robot_controller_node --ros-args -r __ns:=/robot1 > /tmp/rust.log 2>&1"
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Ожидание регистрации контроллера...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; for i in \$$(seq 1 20); do n=\$$(ros2 topic info /robot1/joint_group_controller/commands 2>/dev/null | awk '/Publisher count/{print \$$3}'); [ \"\$$n\" = 1 ] && break; sleep 0.5; done"
+	$(start-rust-controller)
+	$(wait-controller)
 	@source /opt/ros/lyrical/setup.bash 2>/dev/null || true; \
 	 $(MUJOCO_VENV)/bin/python $(MUJOCO_BRIDGE) \
 		--duration $(if $(DURATION),${DURATION},60) $(if $(VX),--vx ${VX}) --viewer
@@ -29,9 +36,8 @@ mujoco-viewer:
 mujoco-lite:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск MuJoCo (headless)...${NC}\n"
-	@docker exec -d $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; ros2 run quadropted_controller_rust robot_controller_node --ros-args -r __ns:=/robot1 > /tmp/rust.log 2>&1"
-	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Ожидание регистрации контроллера...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; for i in \$$(seq 1 20); do n=\$$(ros2 topic info /robot1/joint_group_controller/commands 2>/dev/null | awk '/Publisher count/{print \$$3}'); [ \"\$$n\" = 1 ] && break; sleep 0.5; done"
+	$(start-rust-controller)
+	$(wait-controller)
 	@source /opt/ros/lyrical/setup.bash 2>/dev/null || true; \
 	 $(MUJOCO_VENV)/bin/python $(MUJOCO_BRIDGE) \
 		--duration $(if $(DURATION),${DURATION},60) $(if $(VX),--vx ${VX})
@@ -53,15 +59,7 @@ gazebo-rust:
 	$(require-container)
 	$(check-x11)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Gazebo симуляции с Rust контроллером...${NC}\n"
-	@docker exec -it $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 launch gazebo_sim launch.launch.py \
-			use_sim_time:=true gui:=true \
-			$(if $(WORLD),world:=${WORLD}) \
-			$(if $(FPS),camera_fps:=${FPS}) \
-			$(if $(RVZ),enable_rviz:=${RVZ}) \
-			$(if $(ELEVATION),use_elevation:=${ELEVATION})"
+	$(call gazebo-launch,launch.launch.py,$(GAZEBO_RUST_ARGS))
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
@@ -71,13 +69,7 @@ gazebo-lite:
 	$(require-container)
 	$(check-x11)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Gazebo (Rust) в лёгком режиме: RViz выключен, камера 5 FPS...${NC}\n"
-	@docker exec -it $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 launch gazebo_sim launch.launch.py \
-			use_sim_time:=true gui:=true camera_fps:=5 enable_rviz:=false \
-			$(if $(WORLD),world:=${WORLD}) \
-			$(if $(ELEVATION),use_elevation:=${ELEVATION})"
+	$(call gazebo-launch,launch.launch.py,$(GAZEBO_LITE_ARGS))
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
@@ -86,13 +78,7 @@ gazebo-cpp:
 	$(require-container)
 	$(check-x11)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск Gazebo симуляции с C++ контроллером...${NC}\n"
-	@docker exec -it $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 launch gazebo_sim launch_cpp.launch.py \
-			use_sim_time:=true gui:=true \
-			$(if $(FPS),camera_fps:=${FPS}) \
-			$(if $(ELEVATION),use_elevation:=${ELEVATION})"
+	$(call gazebo-launch,launch_cpp.launch.py,$(GAZEBO_CPP_ARGS))
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
@@ -124,28 +110,14 @@ set-pose:
 		exit 1; \
 	fi
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Установка положения робота: X=$(X) Y=$(Y) Z=$(Z) YAW=$(YAW)${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		gz service -s /world/default/set_pose \
-			--reqtype gz.msgs.Pose \
-			--reptype gz.msgs.Boolean \
-			--timeout 1000 \
-			--req \"name: 'go2', position: {x: $(X), y: $(Y), z: $(Z)}, orientation: {z: $(YAW)}\""
+	@$(call gz-set-pose,$(X),$(Y),$(Z),$(YAW))
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Положение установлено${NC}\n"
 
 ## Сброс положения робота в начало (0, 0, 0.5, 0)
 reset-pose:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Сброс положения робота в начало...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		gz service -s /world/default/set_pose \
-			--reqtype gz.msgs.Pose \
-			--reptype gz.msgs.Boolean \
-			--timeout 1000 \
-			--req \"name: 'go2', position: {x: 0, y: 0, z: 0.5}, orientation: {z: 0}\""
+	@$(call gz-set-pose,0,0,0.5,0)
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Положение сброшено${NC}\n"
 
 ## Выполнение команды в контейнере (пример: make exec CMD="ros2 topic list")

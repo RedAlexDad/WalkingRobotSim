@@ -21,10 +21,7 @@ test: check-deps check-structure test-yaml test-build test-container
 test-rust:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск всех Rust тестов (юнит + кросс-валидация + интеграционные)...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		cd /root/ws/src/quadropted_controller_rust && cargo test --workspace 2>&1 | tail -40"
+	@$(call ros-exec,cd /root/ws/src/quadropted_controller_rust && cargo test --workspace 2>&1 | tail -40)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск скрипта кросс-валидации (на хосте, C++ харнесс + Rust)...${NC}\n"
 	@bash scripts/test_cross_validation.sh 2>&1 | tail -40
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Rust тесты завершены${NC}\n"
@@ -230,6 +227,4 @@ benchmark: benchmark-cpp
 benchmark-cpp:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск C++ бенчмарка...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
-		/root/ws/build/quadropted_controller_cpp/benchmark"
+	@$(call ros-exec,/root/ws/build/quadropted_controller_cpp/benchmark)

@@ -28,35 +28,11 @@ BOLD    := \033[1m
 NC      := \033[0m
 
 # ════════════════════════════════════════════════════════════
-# HELPER
-# ════════════════════════════════════════════════════════════
-
-# Проверка что контейнер запущен
-define require-container
-	@if ! docker ps --format '{{.Names}}' | grep -q $(CONTAINER_NAME); then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}Контейнер $(CONTAINER_NAME) не запущен.${NC}\n" >&2; \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Запустите: make deploy${NC}\n" >&2; \
-		exit 1; \
-	fi
-endef
-
-# Проверка и настройка X11 для GUI
-define check-x11
-	@if [ -z "$$DISPLAY" ]; then \
-		printf "${RED}${BOLD}[x]${NC} ${RED}DISPLAY не установлен.${NC}\n" >&2; \
-		printf "${YELLOW}${BOLD}[!]${NC} ${YELLOW}Установите: export DISPLAY=:0${NC}\n" >&2; \
-		exit 1; \
-	fi
-	@xhost +local:root >/dev/null 2>&1 || true
-	@xhost +local:$(USER) >/dev/null 2>&1 || true
-	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}X11 настроен: DISPLAY=$$DISPLAY${NC}\n"
-endef
-
-# ════════════════════════════════════════════════════════════
 # ПОДКЛЮЧЕНИЕ МОДУЛЕЙ
 # ════════════════════════════════════════════════════════════
 
 include makefiles/safety.mk
+include makefiles/container.mk
 include makefiles/help.mk
 include makefiles/docker.mk
 include makefiles/nvidia.mk

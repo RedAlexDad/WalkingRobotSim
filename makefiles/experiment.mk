@@ -6,20 +6,14 @@
 experiment-start:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск эксперимента...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 service call /start_experiment std_srvs/Trigger"
+	$(call ros-call-trigger,/start_experiment)
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Эксперимент запущен${NC}\n"
 
 ## Остановить эксперимент и сохранить результаты
 experiment-stop:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Остановка эксперимента...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 service call /stop_experiment std_srvs/Trigger"
+	$(call ros-call-trigger,/stop_experiment)
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Результаты сохранены${NC}\n"
 
 ## Скопировать результаты эксперимента на хост
@@ -38,21 +32,12 @@ experiment-run:
 		exit 1; \
 	fi
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Загрузка маршрута $(FILE)...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 service call /load_waypoints quadropted_msgs/srv/LoadWaypoints \"{file_path: '$(FILE)'}\""
+	@$(call ros-exec,ros2 service call /load_waypoints quadropted_msgs/srv/LoadWaypoints \"{file_path: '$(FILE)'}\")
 	@sleep 1
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск эксперимента...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 service call /start_experiment std_srvs/Trigger"
+	$(call ros-call-trigger,/start_experiment)
 	@sleep 1
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Старт навигации...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 service call /start_navigation std_srvs/Trigger"
+	$(call ros-call-trigger,/start_navigation)
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Эксперимент запущен! Дождитесь завершения навигации в RViz.${NC}\n"
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}После завершения выполните: make experiment-stop${NC}\n"

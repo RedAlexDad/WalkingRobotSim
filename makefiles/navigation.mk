@@ -6,20 +6,14 @@
 waypoint-start:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск навигации по waypoints...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 service call /start_navigation std_srvs/Trigger"
+	$(call ros-call-trigger,/start_navigation)
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Команда отправлена${NC}\n"
 
 ## Очистить все waypoints (сервис /clear_waypoints)
 waypoint-clear:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Очистка waypoints...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 service call /clear_waypoints std_srvs/Trigger"
+	$(call ros-call-trigger,/clear_waypoints)
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Команда отправлена${NC}\n"
 
 ## Навигация к конкретному waypoint по индексу (пример: make waypoint-navigate INDEX=2)
@@ -30,30 +24,21 @@ waypoint-navigate:
 		exit 1; \
 	fi
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Навигация к waypoint $(INDEX)...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 service call /navigate_to_waypoint quadropted_msgs/srv/WaypointNavigate \"{index: $(INDEX)}\""
+	@$(call ros-exec,ros2 service call /navigate_to_waypoint quadropted_msgs/srv/WaypointNavigate \"{index: $(INDEX)}\")
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Команда отправлена${NC}\n"
 
 ## Остановить текущую навигацию (сервис /stop_navigation)
 waypoint-stop:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Остановка навигации...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 service call /stop_navigation std_srvs/Trigger"
+	$(call ros-call-trigger,/stop_navigation)
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Команда отправлена${NC}\n"
 
 ## Продолжить навигацию с прерванного waypoint (сервис /resume_navigation)
 waypoint-resume:
 	$(require-container)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Продолжение навигации...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 service call /resume_navigation std_srvs/Trigger"
+	$(call ros-call-trigger,/resume_navigation)
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Команда отправлена${NC}\n"
 
 ## Загрузить waypoints из JSON-файла (пример: make waypoint-load FILE=test.json)
@@ -65,10 +50,7 @@ ifneq ($(FILE),)
 else
 	@printf " (по умолчанию)...${NC}\n"
 endif
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash; \
-		source /root/ws/install/setup.bash 2>/dev/null || true; \
-		ros2 service call /load_waypoints quadropted_msgs/srv/LoadWaypoints \"{file_path: '$(FILE)'}\""
+	@$(call ros-exec,ros2 service call /load_waypoints quadropted_msgs/srv/LoadWaypoints \"{file_path: '$(FILE)'}\")
 	@printf "${GREEN}${BOLD}[v]${NC} ${GREEN}Команда отправлена${NC}\n"
 
 ## Получить текущие waypoints (сервис /get_waypoints)
