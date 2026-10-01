@@ -86,12 +86,11 @@ services:
     # Если контейнер видит NVIDIA RTX без её драйвера в образе — OGRE падает
     # с "driver (null)" / Segmentation fault. На встроенной AMD (radeonsi,
     # есть в образе) окно gazebo работает стабильно и независимо от eGPU.
-    # AMD = card2/renderD129 на этой машине (pci 6f:00.0). Если номера иные —
-    # см. ls -la /dev/dri/by-path/ и поправьте пути.
+    # Устройства пробрасываются отдельным override-файлом compose.gpu.yml
+    # (см. makefiles/gpu.mk): номера cardN/renderDN встроенной AMD меняются
+    # при подключении/отключении eGPU, поэтому пути определяются динамически.
+    # Если iGPU нет — override не подключается и контейнер стартует headless.
     privileged: false
-    devices:
-      - /dev/dri/card2:/dev/dri/card2
-      - /dev/dri/renderD129:/dev/dri/renderD129
     group_add:
       - "44"
     command: bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && tail -f /dev/null"

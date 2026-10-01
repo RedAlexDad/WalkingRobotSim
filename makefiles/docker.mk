@@ -4,6 +4,7 @@
 
 ## Умная сборка и запуск: пересобирает только если есть C++/Docker изменения
 deploy smart-deploy:
+	$(require-docker)
 	@bash scripts/smart-deploy.bash
 
 ## Сборка и запуск контейнера без кэша
@@ -23,6 +24,7 @@ build-no-cache:
 
 ## Запуск контейнера
 up:
+	$(require-docker)
 	@printf "${BLUE}${BOLD}[INFO]${NC} ${CYAN}Запуск контейнера $(CONTAINER_NAME)...${NC}\n"
 	@cd $(DOCKER_DIR) && $(COMPOSE) up -d 2>&1 || { \
 		if docker ps -a --format '{{.Names}}' | grep -Fxq '$(CONTAINER_NAME)'; then \

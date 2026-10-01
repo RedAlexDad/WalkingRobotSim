@@ -12,7 +12,8 @@ IMAGE_NAME      := walking_robot_sim:latest
 DOCKER_DIR      := $(CURDIR)/src/docker
 PROJECT_ROOT    := $(CURDIR)
 ROS_DISTRO      := jazzy
-COMPOSE         := docker compose -f $(CURDIR)/compose.yml
+
+# COMPOSE и проброс iGPU определяются в makefiles/safety.mk (подключается ниже).
 
 # ════════════════════════════════════════════════════════════
 # ЦВЕТА
@@ -55,6 +56,7 @@ endef
 # ПОДКЛЮЧЕНИЕ МОДУЛЕЙ
 # ════════════════════════════════════════════════════════════
 
+include makefiles/safety.mk
 include makefiles/help.mk
 include makefiles/docker.mk
 include makefiles/nvidia.mk

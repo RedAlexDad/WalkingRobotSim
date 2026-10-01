@@ -16,9 +16,26 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
+# DRM-узлы встроенной AMD для проброса через compose.gpu.yml — если не заданы
+# Makefile (номера cardN/renderDN меняются при подключении/отключении eGPU).
+if [ -z "${WRS_DRI_CARD:-}" ]; then
+    WRS_DRI_CARD="$(bash "$PROJECT_ROOT/scripts/detect-gpu.sh" card 2>/dev/null || true)"
+    WRS_DRI_RENDER="$(bash "$PROJECT_ROOT/scripts/detect-gpu.sh" render 2>/dev/null || true)"
+    export WRS_DRI_CARD WRS_DRI_RENDER
+fi
+
 LAST_BUILD_FILE=".last_build_commit"
-COMPOSE="docker compose -f ${PROJECT_ROOT}/compose.yml"
 CONTAINER_NAME="walking_robot_sim"
+
+# Защита: docker установлен и демон запущен.
+command -v docker >/dev/null 2>&1 || { echo "docker не установлен"; exit 1; }
+docker info >/dev/null 2>&1 || { echo "демон docker не запущен"; exit 1; }
+
+# GPU-override подключаем только если iGPU реально найден.
+COMPOSE=(docker compose -f "$PROJECT_ROOT/compose.yml")
+if [ -n "${WRS_DRI_RENDER:-}" ] && [ -e "$WRS_DRI_RENDER" ]; then
+    COMPOSE+=(-f "$PROJECT_ROOT/compose.gpu.yml")
+fi
 
 # ── helpers ──────────────────────────────────────────────
 red()    { printf "\033[0;31m%s\033[0m\n" "$*"; }
@@ -86,7 +103,7 @@ collect_changes() {
 do_build_main() {
     if [ "$REBUILD_MAIN" = true ]; then
         green "→ Building main image..."
-        $COMPOSE build
+        "${COMPOSE[@]}" build
         git rev-parse HEAD > "$LAST_BUILD_FILE" 2>/dev/null || true
     else
         cyan "→ No changes requiring main rebuild, skipping build"
@@ -96,7 +113,7 @@ do_build_main() {
 do_build_elevation() {
     if [ "$REBUILD_ELEVATION" = true ]; then
         green "→ Building elevation_mapping image..."
-        $COMPOSE build elevation_mapping
+        "${COMPOSE[@]}" build elevation_mapping
     else
         cyan "→ No elevation changes, skipping elevation build"
     fi
@@ -110,7 +127,7 @@ do_up() {
     fi
 
     cyan "→ Starting container..."
-    $COMPOSE up -d 2>&1
+    "${COMPOSE[@]}" up -d 2>&1
 
     cyan "→ Waiting for ROS..."
     attempt=0
