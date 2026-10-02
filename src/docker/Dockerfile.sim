@@ -17,6 +17,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     ros-${ROS_DISTRO}-ros-gz-bridge \
     ros-${ROS_DISTRO}-ros-gz-image \
     ros-${ROS_DISTRO}-gz-ros2-control \
+    ros-${ROS_DISTRO}-ros2-control \
+    ros-${ROS_DISTRO}-ros2-controllers \
+    ros-${ROS_DISTRO}-controller-manager \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR ${WORKSPACE_DIR}
