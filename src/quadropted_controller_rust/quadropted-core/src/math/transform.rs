@@ -2,7 +2,7 @@
 //!
 //! Direct translation from C++ `homogeneous_transforms.hpp`.
 
-use nalgebra::{Matrix3, Matrix4, Vector3, Vector4};
+use nalgebra::{Matrix3, Matrix4, Vector3};
 
 /// Homogeneous transformation with translation only
 pub fn homog_transxyz(dx: f64, dy: f64, dz: f64) -> Matrix4<f64> {

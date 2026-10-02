@@ -182,6 +182,7 @@ where
 #[link(name = "quadropted_msgs__rosidl_generator_c")]
 unsafe extern "C" {
     fn quadropted_msgs__msg__RobotFootContact__init(msg: *mut RobotFootContact) -> bool;
+    #[allow(dead_code)]
     fn quadropted_msgs__msg__RobotFootContact__fini(msg: *mut RobotFootContact);
     fn quadropted_msgs__msg__RobotFootContact__Sequence__init(seq: *mut Sequence<RobotFootContact>, size: usize) -> bool;
     fn quadropted_msgs__msg__RobotFootContact__Sequence__fini(seq: *mut Sequence<RobotFootContact>);

@@ -25,7 +25,6 @@ pub fn update_odometry(state: &mut OdometryState, dt: f64, contact_count_coeff: 
     let mut delta_x_total = 0.0;
     let mut delta_y_total = 0.0;
     let mut contact_sum = 0.0;
-    let mut actual_contacts = 0;
 
     for foot in state.foot_states.iter_mut() {
         if foot.contact {
@@ -39,7 +38,6 @@ pub fn update_odometry(state: &mut OdometryState, dt: f64, contact_count_coeff: 
                 delta_x_total += delta_x;
                 delta_y_total += -delta_y;
                 contact_sum += contact_count_coeff;
-                actual_contacts += 1;
             }
 
             foot.prev_position = Some(foot.position);

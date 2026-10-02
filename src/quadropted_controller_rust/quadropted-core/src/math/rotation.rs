@@ -2,7 +2,7 @@
 //!
 //! Direct translation from C++ `rotation_matrices.hpp` using nalgebra.
 
-use nalgebra::{Matrix3, Vector3};
+use nalgebra::Matrix3;
 
 /// Rotation matrix around X axis
 pub fn rotx(angle: f64) -> Matrix3<f64> {

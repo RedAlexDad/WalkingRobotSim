@@ -4,7 +4,7 @@
 
 use crate::controllers::pid::PIDController;
 use crate::math::rotation::rotxyz;
-use nalgebra::{Matrix3, SMatrix};
+use nalgebra::SMatrix;
 
 /// Rest controller state (simplified)
 pub struct RestState {

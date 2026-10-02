@@ -5,6 +5,7 @@
 use nalgebra::{DMatrix, DVector, SMatrix};
 
 /// Base GaitController for managing contact phases
+#[allow(dead_code)]
 pub struct GaitController {
     stance_time: f64,
     swing_time: f64,
@@ -78,7 +79,7 @@ impl GaitController {
     pub fn subphase_ticks(&self, ticks: i32) -> i32 {
         let phase_time = ticks % self.phase_length;
         let mut phase_sum = 0;
-        for (i, &ticks_in_phase) in self.phase_ticks.iter().enumerate() {
+        for &ticks_in_phase in self.phase_ticks.iter() {
             phase_sum += ticks_in_phase;
             if phase_time < phase_sum {
                 return phase_time - phase_sum + ticks_in_phase;

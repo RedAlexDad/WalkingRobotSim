@@ -2,7 +2,7 @@
 //!
 //! Provides nav_msgs/msg/Odometry message type.
 
-use geometry_msgs_rs::{Point, Pose, PoseWithCovariance, Twist, TwistWithCovariance};
+use geometry_msgs_rs::{PoseWithCovariance, TwistWithCovariance};
 use rosidl_runtime_rs::{Message, RmwMessage, Sequence, SequenceAlloc};
 use sensor_msgs_rs::Header;
 

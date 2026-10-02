@@ -2,7 +2,7 @@
 //!
 //! Direct translation from C++ `trot_swing.cpp`.
 
-use crate::math::rotation::{rotxyz, rotz};
+use crate::math::rotation::rotz;
 use nalgebra::{SMatrix, Vector3};
 
 /// Trot swing controller

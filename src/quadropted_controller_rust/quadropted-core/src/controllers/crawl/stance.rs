@@ -3,7 +3,7 @@
 //! Direct translation from C++ `crawl_stance.cpp`.
 
 use crate::math::rotation::rotz;
-use nalgebra::{Matrix3, SMatrix, Vector3};
+use nalgebra::{SMatrix, Vector3};
 
 /// Crawl stance controller
 pub struct CrawlStanceController {

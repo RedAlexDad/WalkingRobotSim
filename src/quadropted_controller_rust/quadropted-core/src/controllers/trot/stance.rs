@@ -3,7 +3,7 @@
 //! Direct translation from C++ `trot_stance.cpp`.
 
 use crate::math::rotation::rotxyz;
-use nalgebra::{Matrix3, SMatrix, Vector3};
+use nalgebra::{SMatrix, Vector3};
 
 /// Trot stance controller
 pub struct TrotStanceController {

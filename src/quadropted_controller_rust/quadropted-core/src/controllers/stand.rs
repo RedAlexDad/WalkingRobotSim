@@ -4,7 +4,7 @@
 //! Allows manual adjustment of body pose via velocity commands.
 //! On stop (zero velocity), smoothly returns to center.
 
-use nalgebra::{Matrix3, SMatrix};
+use nalgebra::SMatrix;
 
 /// Stand controller state
 pub struct StandController {

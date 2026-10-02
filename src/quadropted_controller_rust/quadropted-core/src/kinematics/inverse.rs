@@ -5,7 +5,7 @@
 
 use crate::math::rotation::rotxyz;
 use crate::math::transform::homog_transform_inverse;
-use nalgebra::{Matrix3, Matrix4, SMatrix, Vector3, Vector4};
+use nalgebra::{Matrix3, Matrix4, SMatrix, Vector4};
 
 /// Fixed rotation matrix for legs: R = rotxyz(pi/2, -pi/2, 0)
 fn r_legs() -> Matrix3<f64> {

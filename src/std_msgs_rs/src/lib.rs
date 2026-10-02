@@ -128,6 +128,7 @@ where
 #[link(name = "std_msgs__rosidl_generator_c")]
 unsafe extern "C" {
     fn std_msgs__msg__Bool__init(msg: *mut Bool) -> bool;
+    #[allow(dead_code)]
     fn std_msgs__msg__Bool__fini(msg: *mut Bool);
     fn std_msgs__msg__Bool__Sequence__init(seq: *mut Sequence<Bool>, size: usize) -> bool;
     fn std_msgs__msg__Bool__Sequence__fini(seq: *mut Sequence<Bool>);
