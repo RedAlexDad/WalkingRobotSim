@@ -16,7 +16,9 @@ ROOT = Path(__file__).resolve().parent.parent
 
 SECTIONS: list[tuple[str, list[str], str | None]] = [
     ("Основные команды", ["Makefile"], None),
-    ("Docker / контейнер", ["makefiles/docker.mk"], None),
+    ("Docker / контейнер", ["makefiles/docker.mk"],
+     "Аргументы: NO_CACHE=1 — сборка без кэша (build); BG=1 — запуск в фоне "
+     "без ожидания ROS (up); STAGE=<этап> — этап сборки (build-stage)"),
     ("Диагностика", ["makefiles/safety.mk"], None),
     ("ROS MCP", ["makefiles/mcp.mk"], None),
     ("Микросервисы Docker", ["makefiles/microservices.mk"], None),

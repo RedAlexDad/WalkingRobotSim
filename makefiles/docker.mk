@@ -1,29 +1,36 @@
 # makefiles/docker.mk
 
-.PHONY: deploy smart-deploy build up up-bg down restart clean status logs shell deploy-no-cache build-stage build-stage-list
+.PHONY: deploy smart-deploy build up up-bg up-foreground down restart clean status logs shell deploy-no-cache build-stage build-stage-list
 
 ## Умная сборка и запуск: пересобирает только если есть C++/Docker изменения
 deploy smart-deploy:
 	$(require-docker)
 	@bash scripts/smart-deploy.bash
 
-## Сборка и запуск контейнера без кэша
-deploy-no-cache: build-no-cache up
-
 ## Сборка Docker образа
 build:
-	@printf "$(INFO)Сборка Docker образа с кэшированием по этапам...${NC}\n"
-	@$(COMPOSE) --progress=auto build
+	@printf "$(INFO)Сборка Docker образа$(if $(NO_CACHE), БЕЗ кэширования,) ...${NC}\n"
+	@$(COMPOSE) --progress=auto build $(if $(NO_CACHE),--no-cache,)
 	@printf "$(OK)Образ собран${NC}\n"
 
-## Сборка Docker образа без кэша
+##! Сборка и запуск контейнера без кэша (make deploy-no-cache)
+deploy-no-cache: build-no-cache up
+
+##! Сборка образа без кэша (make build NO_CACHE=1)
 build-no-cache:
-	@printf "$(INFO)Сборка Docker образа БЕЗ кэширования...${NC}\n"
-	@$(COMPOSE) --progress=auto build --no-cache
-	@printf "$(OK)Образ собран без кэша${NC}\n"
+	@$(MAKE) --no-print-directory build NO_CACHE=1
 
 ## Запуск контейнера
 up:
+	$(require-docker)
+	@if [ -n "$(BG)" ]; then \
+		$(MAKE) --no-print-directory up-bg; \
+	else \
+		$(MAKE) --no-print-directory up-foreground; \
+	fi
+
+##! Запуск контейнера с ожиданием ROS (foreground)
+up-foreground:
 	$(require-docker)
 	@printf "$(INFO)Запуск контейнера $(CONTAINER_NAME)...${NC}\n"
 	@$(COMPOSE) up -d 2>&1 || { \
@@ -56,7 +63,7 @@ up:
 	@docker ps --filter "name=$(CONTAINER_NAME)" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
 	@printf "$(OK)Контейнер запущен${NC}\n"
 
-## Запуск контейнера в фоновом режиме (без ожидания ROS)
+##! Запуск контейнера в фоновом режиме (make up BG=1)
 up-bg:
 	@printf "$(INFO)Запуск контейнера $(CONTAINER_NAME) в фоновом режиме...${NC}\n"
 	@$(COMPOSE) up -d
@@ -98,7 +105,7 @@ shell:
 	@docker cp $(PROJECT_ROOT)/scripts/container-shell.sh $(CONTAINER_NAME):/tmp/container-shell.sh >/dev/null
 	@docker exec -it $(CONTAINER_NAME) bash /tmp/container-shell.sh
 
-## Сборка конкретного этапа Docker (пример: make build-stage STAGE=ros-core)
+## Сборка конкретного этапа Docker
 build-stage:
 	@if [ -z "$(STAGE)" ]; then \
 		printf "$(ERR)Укажите этап: make build-stage STAGE=<stage>${NC}\n"; \
