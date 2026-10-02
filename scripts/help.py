@@ -23,7 +23,9 @@ SECTIONS: list[tuple[str, list[str], str | None]] = [
     ("ROS MCP", ["makefiles/mcp.mk"], None),
     ("Микросервисы Docker", ["makefiles/microservices.mk"],
      "Аргумент: SVC=sim|core|nav|rviz — только один сервис (по умолчанию все)"),
-    ("Симуляция Gazebo", ["makefiles/simulation.mk"], None),
+    ("Симуляция Gazebo", ["makefiles/simulation.mk"],
+     "Аргументы: teleop SIMPLE=1 (простой), VX/WZ — скорость; set-pose X=.. Y=.. "
+     "Z=.. YAW=..; exec CMD=\"...\"; clean-logs WHAT=build|gazebo"),
     ("Состояния робота", ["makefiles/controller.mk"], None),
     ("Waypoint навигация", ["makefiles/navigation.mk"], None),
     ("Эксперименты", ["makefiles/experiment.mk"], None),

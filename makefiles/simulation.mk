@@ -82,20 +82,23 @@ gazebo-cpp:
 	@printf "$(INFO)Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
-## Запуск управления роботом (teleop) — скорость + переключение походки (1 TROT 2 CRAWL 3 STAND 4 REST)
+## Запуск управления роботом (teleop)
 teleop:
 	$(require-container)
-	@printf "$(INFO)Запуск teleop (скорость + походка)...${NC}\n"
-	@docker cp scripts/robot_teleop.py $(CONTAINER_NAME):/tmp/robot_teleop.py >/dev/null
-	@$(PROJECT_ROOT)/scripts/wrs-exec.sh -it python3 /tmp/robot_teleop.py --ns /robot1 $(if $(VX),--vx ${VX}) $(if $(WZ),--wz ${WZ})
+	@if [ -n "$(SIMPLE)" ]; then \
+		printf "$(INFO)Запуск teleop_twist_keyboard...${NC}\n"; \
+		$(PROJECT_ROOT)/scripts/wrs-exec.sh -it ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel; \
+	else \
+		printf "$(INFO)Запуск teleop (скорость + походка)...${NC}\n"; \
+		docker cp scripts/robot_teleop.py $(CONTAINER_NAME):/tmp/robot_teleop.py >/dev/null; \
+		$(PROJECT_ROOT)/scripts/wrs-exec.sh -it python3 /tmp/robot_teleop.py --ns /robot1 $(if $(VX),--vx ${VX}) $(if $(WZ),--wz ${WZ}); \
+	fi
 
-## Простой teleop (только скорость, без переключения походки)
+##! Простой teleop (только скорость) — make teleop SIMPLE=1
 teleop-simple:
-	$(require-container)
-	@printf "$(INFO)Запуск teleop_twist_keyboard...${NC}\n"
-	@$(PROJECT_ROOT)/scripts/wrs-exec.sh -it ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel
+	@$(MAKE) --no-print-directory teleop SIMPLE=1
 
-## Установка положения робота в Gazebo (пример: make set-pose X=1.0 Y=0.0 Z=0.0 YAW=0.0)
+## Установка положения робота в Gazebo
 set-pose:
 	$(require-container)
 	@if [ -z "$(X)" ] || [ -z "$(Y)" ] || [ -z "$(Z)" ] || [ -z "$(YAW)" ]; then \
@@ -114,7 +117,7 @@ reset-pose:
 	@$(call gz-set-pose,0,0,0.5,0)
 	@printf "$(OK)Положение сброшено${NC}\n"
 
-## Выполнение команды в контейнере (пример: make exec CMD="ros2 topic list")
+## Выполнение команды в контейнере
 exec:
 	$(require-container)
 	@if [ -z "$(CMD)" ]; then \
@@ -229,18 +232,24 @@ save-logs:
 		printf "$(WARN)Контейнер не запущен, логи не сохранены${NC}\n"; \
 	fi
 
-## Очистка старых логов сборки colcon (старше 30 дней)
+## Очистка логов
+clean-logs:
+	@case "$(WHAT)" in \
+		build)  $(MAKE) --no-print-directory clean-build-logs ;; \
+		gazebo) $(MAKE) --no-print-directory clean-gazebo-logs ;; \
+		"")     $(MAKE) --no-print-directory clean-build-logs clean-gazebo-logs ;; \
+		*) printf "$(ERR)WHAT=$(WHAT): build|gazebo${NC}\n" >&2; exit 1 ;; \
+	esac
+	@printf "$(OK)Логи очищены${NC}\n"
+
+##! Очистка старых логов сборки colcon (старше 30 дней)
 clean-build-logs:
 	@printf "$(INFO)Очистка старых логов сборки...${NC}\n"
 	@find log/ -maxdepth 1 -type d -name "build_*" -mtime +30 -exec rm -rf {} + 2>/dev/null || true
 	@printf "$(OK)Логи сборки старше 30 дней удалены${NC}\n"
 
-## Очистка логов Gazebo
+##! Очистка логов Gazebo
 clean-gazebo-logs:
 	@printf "$(INFO)Очистка логов Gazebo...${NC}\n"
 	@rm -rf logs/gazebo/* 2>/dev/null || true
 	@printf "$(OK)Логи Gazebo очищены${NC}\n"
-
-## Очистка всех логов
-clean-logs: clean-build-logs clean-gazebo-logs
-	@printf "$(OK)Все логи очищены${NC}\n"
