@@ -165,7 +165,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
     # rclrs 0.7 (crates.io) линкуется с test_msgs__rosidl_* — нужен в этапе workspace
-    apt-get install -y --no-install-recommends ros-${ROS_DISTRO}-test-msgs && \
+    # rosbridge-server — для ROS MCP (см. makefiles/mcp.mk)
+    apt-get install -y --no-install-recommends \
+        ros-${ROS_DISTRO}-test-msgs \
+        ros-${ROS_DISTRO}-rosbridge-server && \
     rosdep update && \
     rosdep install --from-paths src --ignore-src --skip-keys "Eigen3 torch ultralytics" -y && \
     rm -rf /var/lib/apt/lists/*

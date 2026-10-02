@@ -18,6 +18,7 @@ SECTIONS: list[tuple[str, list[str]]] = [
     ("Основные команды", ["Makefile"]),
     ("Docker / контейнер", ["makefiles/docker.mk"]),
     ("Диагностика", ["makefiles/safety.mk"]),
+    ("ROS MCP", ["makefiles/mcp.mk"]),
     ("Симуляция Gazebo", ["makefiles/simulation.mk"]),
     ("Состояния робота", ["makefiles/controller.mk"]),
     ("Waypoint навигация", ["makefiles/navigation.mk"]),
