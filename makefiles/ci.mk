@@ -1,12 +1,23 @@
 # makefiles/ci.mk
+#
+# CI-проверки: по умолчанию запускаются все. Выбор одной — аргументом:
+#   make ci-lint LINT=yaml            # только YAML
+#   make ci-test TEST=cpp            # только C++
 
 .PHONY: ci-lint ci-test ci-lint-yaml ci-lint-python ci-lint-cpp ci-test-cpp
 
-## Полный CI lint check (YAML + Python + C++)
-ci-lint: ci-lint-yaml ci-lint-python ci-lint-cpp
-	@printf "$(OK)Все lint проверки пройдены${NC}\n"
+## Полный CI lint (YAML + Python + C++)
+ci-lint:
+	@case "$(LINT)" in \
+		yaml)   $(MAKE) --no-print-directory ci-lint-yaml ;; \
+		python) $(MAKE) --no-print-directory ci-lint-python ;; \
+		cpp)    $(MAKE) --no-print-directory ci-lint-cpp ;; \
+		"")     $(MAKE) --no-print-directory ci-lint-yaml ci-lint-python ci-lint-cpp ;; \
+		*) printf "$(ERR)Неизвестный LINT=$(LINT) (yaml|python|cpp)${NC}\n" >&2; exit 1 ;; \
+	esac
+	@printf "$(OK)CI lint пройден${NC}\n"
 
-## YAML lint (yamllint)
+##! YAML lint (yamllint)
 ci-lint-yaml:
 	@printf "$(INFO)YAML lint (yamllint)...${NC}\n"
 	@if command -v yamllint &> /dev/null; then \
@@ -20,7 +31,7 @@ ci-lint-yaml:
 		printf "$(OK)YAML lint OK${NC}\n"; \
 	fi
 
-## Python lint (ruff)
+##! Python lint (ruff)
 ci-lint-python:
 	@printf "$(INFO)Python lint (ruff)...${NC}\n"
 	@if command -v ruff &> /dev/null; then \
@@ -32,7 +43,7 @@ ci-lint-python:
 		printf "$(OK)Python lint OK${NC}\n"; \
 	fi
 
-## C++ format check (clang-format)
+##! C++ format check (clang-format)
 ci-lint-cpp:
 	@printf "$(INFO)C++ format check (clang-format)...${NC}\n"
 	@if command -v clang-format &> /dev/null; then \
@@ -43,11 +54,15 @@ ci-lint-cpp:
 		printf "$(WARN)clang-format не установлен, пропускаем${NC}\n"; \
 	fi
 
-## Локальный запуск C++ тестов (через Docker)
-ci-test: ci-test-cpp
-	@printf "$(OK)Все тесты пройдены${NC}\n"
+## Локальные CI тесты
+ci-test:
+	@case "$(TEST)" in \
+		cpp|"") $(MAKE) --no-print-directory ci-test-cpp ;; \
+		*) printf "$(ERR)Неизвестный TEST=$(TEST)${NC}\n" >&2; exit 1 ;; \
+	esac
+	@printf "$(OK)CI тесты пройдены${NC}\n"
 
-## C++ unit tests через Docker
+##! C++ unit tests через Docker
 ci-test-cpp:
 	$(require-container)
 	@printf "$(INFO)Запуск C++ unit тестов...${NC}\n"

@@ -1,108 +1,85 @@
 # makefiles/elevation.mk
+#
+# Elevation mapping: по умолчанию GPU, CPU — через аргумент CPU=1.
+#   make elevation            # GPU
+#   make elevation CPU=1      # CPU
 
-.PHONY: elevation-build elevation elevation-bg elevation-rviz elevation-logs elevation-down
-.PHONY: elevation-cpu-build elevation-cpu elevation-cpu-bg elevation-cpu-logs elevation-cpu-down
-.PHONY: elevation-test
+# CPU=1 (любое непустое) -> CPU-сервис, иначе GPU.
+ELEV_CPU        := $(if $(CPU),1,)
+ELEV_SERVICE     = $(if $(ELEV_CPU),elevation_mapping_cpu,elevation_mapping)
+ELEV_CONTAINER   = $(ELEV_SERVICE)
+ELEV_SUFFIX      = $(if $(ELEV_CPU), (CPU),)
+ELEV_RVIZ_CONFIG = $(if $(ELEV_CPU),go2_elevation_nav2.rviz,elevation.rviz)
+ELEV_NVIDIA_DEP  = $(if $(ELEV_CPU),,nvidia-check)
+
+.PHONY: elevation elevation-build elevation-force-build elevation-bg \
+        elevation-rviz elevation-logs elevation-down elevation-test
 
 require-elevation = \
-if [ -z "$$(docker ps -q -f name=elevation_mapping)" ]; then \
-	printf "$(ERR)Контейнер elevation_mapping не запущен. Сначала выполните 'make elevation'${NC}\n" >&2; \
+if [ -z "$$(docker ps -q -f name=$(ELEV_CONTAINER))" ]; then \
+	printf "$(ERR)Контейнер $(ELEV_CONTAINER) не запущен. Сначала: make elevation$(if $(ELEV_CPU), CPU=1,)${NC}\n" >&2; \
 	exit 1; \
 fi
 
-require-elevation-cpu = \
-if [ -z "$$(docker ps -q -f name=elevation_mapping_cpu)" ]; then \
-	printf "$(ERR)Контейнер elevation_mapping_cpu не запущен. Сначала выполните 'make elevation-cpu'${NC}\n" >&2; \
-	exit 1; \
-fi
+## Сборка образа elevation mapping
+elevation-build: $(ELEV_NVIDIA_DEP)
+	@if [ -n "$(ELEV_CPU)" ]; then \
+		printf "$(INFO)Сборка CPU-образа elevation_mapping...${NC}\n"; \
+		$(COMPOSE) build elevation_mapping_cpu; \
+		printf "$(OK)CPU-образ elevation_mapping собран${NC}\n"; \
+	else \
+		bash scripts/smart-elevation.bash; \
+	fi
 
-## Сборка GPU-образа для elevation mapping (умная: только при изменениях)
-elevation-build: nvidia-check
-	@bash scripts/smart-elevation.bash
-
-## Принудительная пересборка GPU-образа
-elevation-force-build: nvidia-check
-	@bash scripts/smart-elevation.bash --build
-
-## Запуск elevation mapping в фоне (без логов)
-elevation-bg: nvidia-check
-	@xhost +local: >/dev/null 2>&1 || true
-	@printf "$(INFO)Запуск elevation mapping в фоне...${NC}\n"
-	@$(COMPOSE) up -d elevation_mapping
-	@printf "$(OK)Elevation mapping запущен${NC}\n"
-	@printf "$(INFO)Логи: make elevation-logs${NC}\n"
+## Принудительная пересборка образа
+elevation-force-build: $(ELEV_NVIDIA_DEP)
+	@if [ -n "$(ELEV_CPU)" ]; then \
+		printf "$(INFO)Пересборка CPU-образа elevation_mapping...${NC}\n"; \
+		$(COMPOSE) build --no-cache elevation_mapping_cpu; \
+		printf "$(OK)CPU-образ elevation_mapping собран${NC}\n"; \
+	else \
+		bash scripts/smart-elevation.bash --build; \
+	fi
 
 ## Запуск elevation mapping с логами (foreground)
-elevation: nvidia-check
+elevation: $(ELEV_NVIDIA_DEP)
 	@xhost +local: >/dev/null 2>&1 || true
-	@printf "$(INFO)Запуск elevation mapping с логами...${NC}\n"
-	@$(COMPOSE) up elevation_mapping
+	@printf "$(INFO)Запуск elevation mapping$(ELEV_SUFFIX) с логами...${NC}\n"
+	@$(COMPOSE) up $(ELEV_SERVICE)
 
-## Запуск только RViz в elevation контейнере
+## Запуск elevation mapping в фоне
+elevation-bg: $(ELEV_NVIDIA_DEP)
+	@xhost +local: >/dev/null 2>&1 || true
+	@printf "$(INFO)Запуск elevation mapping$(ELEV_SUFFIX) в фоне...${NC}\n"
+	@$(COMPOSE) up -d $(ELEV_SERVICE)
+	@printf "$(OK)Elevation mapping$(ELEV_SUFFIX) запущен${NC}\n"
+	@printf "$(INFO)Логи: make elevation-logs$(if $(ELEV_CPU), CPU=1,)${NC}\n"
+
+## Запуск RViz в контейнере elevation mapping
 elevation-rviz:
 	$(require-elevation)
 	@xhost +local: >/dev/null 2>&1 || true
-	@printf "$(INFO)Запуск RViz в elevation контейнере...${NC}\n"
-	@docker exec -it elevation_mapping bash -c '\
+	@printf "$(INFO)Запуск RViz в $(ELEV_CONTAINER)...${NC}\n"
+	@docker exec -it $(ELEV_CONTAINER) bash -c '\
 		source /opt/ros/jazzy/setup.bash; \
 		source /ws/install/setup.bash 2>/dev/null; \
-		rviz2 -d /ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/rviz/elevation.rviz; \
+		rviz2 -d /ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/rviz/$(ELEV_RVIZ_CONFIG); \
 	'
 
 ## Логи elevation mapping
 elevation-logs:
-	@$(COMPOSE) logs -f elevation_mapping
+	@$(COMPOSE) logs -f $(ELEV_SERVICE)
 
 ## Остановка elevation mapping
 elevation-down:
-	@printf "$(INFO)Остановка elevation mapping...${NC}\n"
-	@$(COMPOSE) stop elevation_mapping
-	@printf "$(OK)Elevation mapping остановлен${NC}\n"
+	@printf "$(INFO)Остановка elevation mapping$(ELEV_SUFFIX)...${NC}\n"
+	@$(COMPOSE) stop $(ELEV_SERVICE)
+	@printf "$(OK)Elevation mapping$(ELEV_SUFFIX) остановлен${NC}\n"
 
-## Сборка CPU-образа для elevation mapping
-elevation-cpu-build:
-	@printf "$(INFO)Сборка CPU-образа elevation_mapping...${NC}\n"
-	@$(COMPOSE) build elevation_mapping_cpu
-	@printf "$(OK)CPU-образ elevation_mapping собран${NC}\n"
-
-## Запуск elevation mapping (CPU) с логами (foreground)
-elevation-cpu:
-	@xhost +local: >/dev/null 2>&1 || true
-	@printf "$(INFO)Запуск elevation mapping (CPU) с логами...${NC}\n"
-	@$(COMPOSE) up elevation_mapping_cpu
-
-## Запуск elevation mapping (CPU) в фоне (без логов)
-elevation-cpu-bg:
-	@xhost +local: >/dev/null 2>&1 || true
-	@printf "$(INFO)Запуск elevation mapping (CPU) в фоне...${NC}\n"
-	@$(COMPOSE) up -d elevation_mapping_cpu
-	@printf "$(OK)Elevation mapping (CPU) запущен${NC}\n"
-
-## Запуск RViz в CPU-контейнере (Go2 elevation + Nav2 costmap)
-elevation-cpu-rviz:
-	$(require-elevation-cpu)
-	@xhost +local: >/dev/null 2>&1 || true
-	@printf "$(INFO)Запуск RViz в CPU-контейнере...${NC}\n"
-	@docker exec -it elevation_mapping_cpu bash -c '\
-		source /opt/ros/jazzy/setup.bash; \
-		source /ws/install/setup.bash 2>/dev/null; \
-		rviz2 -d /ws/install/elevation_mapping_cupy/share/elevation_mapping_cupy/rviz/go2_elevation_nav2.rviz; \
-	'
-
-## Запуск unit-тестов elevation_mapping_cupy (pytest) с coverage
+## Запуск unit-тестов elevation_mapping_cupy (pytest + coverage)
 elevation-test:
 	@printf "$(INFO)Запуск unit-тестов elevation_mapping_cupy...${NC}\n"
 	cd elevation_mapping_cupy/elevation_mapping_cupy/elevation_mapping_cupy/tests && \
 		python3 -m pytest -v --tb=short \
 			--cov=.. --cov-report=term
 	@printf "$(OK)Unit-тесты завершены${NC}\n"
-
-## Логи elevation mapping (CPU)
-elevation-cpu-logs:
-	@$(COMPOSE) logs -f elevation_mapping_cpu
-
-## Остановка elevation mapping (CPU)
-elevation-cpu-down:
-	@printf "$(INFO)Остановка elevation mapping (CPU)...${NC}\n"
-	@$(COMPOSE) stop elevation_mapping_cpu
-	@printf "$(OK)Elevation mapping (CPU) остановлен${NC}\n"

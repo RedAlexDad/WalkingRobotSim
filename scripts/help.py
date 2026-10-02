@@ -14,24 +14,27 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-SECTIONS: list[tuple[str, list[str]]] = [
-    ("Основные команды", ["Makefile"]),
-    ("Docker / контейнер", ["makefiles/docker.mk"]),
-    ("Диагностика", ["makefiles/safety.mk"]),
-    ("ROS MCP", ["makefiles/mcp.mk"]),
-    ("Микросервисы Docker", ["makefiles/microservices.mk"]),
-    ("Симуляция Gazebo", ["makefiles/simulation.mk"]),
-    ("Состояния робота", ["makefiles/controller.mk"]),
-    ("Waypoint навигация", ["makefiles/navigation.mk"]),
-    ("Эксперименты", ["makefiles/experiment.mk"]),
-    ("YOLO", ["makefiles/yolo.mk"]),
-    ("Elevation Mapping", ["makefiles/elevation.mk"]),
-    ("Сборка и тесты", ["makefiles/rust.mk", "makefiles/test.mk"]),
-    ("CI и линт", ["makefiles/ci.mk"]),
-    ("NVIDIA", ["makefiles/nvidia.mk"]),
+SECTIONS: list[tuple[str, list[str], str | None]] = [
+    ("Основные команды", ["Makefile"], None),
+    ("Docker / контейнер", ["makefiles/docker.mk"], None),
+    ("Диагностика", ["makefiles/safety.mk"], None),
+    ("ROS MCP", ["makefiles/mcp.mk"], None),
+    ("Микросервисы Docker", ["makefiles/microservices.mk"], None),
+    ("Симуляция Gazebo", ["makefiles/simulation.mk"], None),
+    ("Состояния робота", ["makefiles/controller.mk"], None),
+    ("Waypoint навигация", ["makefiles/navigation.mk"], None),
+    ("Эксперименты", ["makefiles/experiment.mk"], None),
+    ("YOLO", ["makefiles/yolo.mk"], None),
+    ("Elevation Mapping", ["makefiles/elevation.mk"],
+     "Аргумент: CPU=1 — CPU-образ (по умолчанию GPU)"),
+    ("Сборка и тесты", ["makefiles/rust.mk", "makefiles/test.mk"], None),
+    ("CI и линт", ["makefiles/ci.mk"],
+     "Аргументы: LINT=yaml|python|cpp — одна проверка (по умолчанию все); "
+     "TEST=cpp — только C++ тесты"),
+    ("NVIDIA", ["makefiles/nvidia.mk"], None),
 ]
 
-GREEN, BOLD, NC = "\033[0;32m", "\033[1m", "\033[0m"
+GREEN, GREY, BOLD, NC = "\033[0;32m", "\033[0;90m", "\033[1m", "\033[0m"
 TARGET_RE = re.compile(r"^([A-Za-z0-9_-]+):")
 
 
@@ -57,13 +60,15 @@ def entries(path: Path) -> list[tuple[str, str]]:
 def main() -> None:
     print()
     print(f"{BOLD}Walking Robot Simulation Manager{NC}")
-    for title, files in SECTIONS:
+    for title, files, hint in SECTIONS:
         rows: list[tuple[str, str]] = []
         for f in files:
             rows += entries(ROOT / f)
         if not rows:
             continue
         print(f"\n{BOLD}{title}:{NC}")
+        if hint:
+            print(f"  {GREY}{hint}{NC}")
         for target, desc in rows:
             print(f"  {GREEN}{BOLD}make {target:<22}{NC} {desc}")
     print()
