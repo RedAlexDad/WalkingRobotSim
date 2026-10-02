@@ -158,6 +158,12 @@ do_up() {
     done
     echo ""
     green "✓ Container running"
+
+    # Rust-бинарник контейнер берёт из bind-mount ./src/target — пересобираем.
+    cyan "→ Rebuilding Rust controller (host ./src/target)..."
+    if [ -x "$PROJECT_ROOT/scripts/build-rust.sh" ]; then
+        "$PROJECT_ROOT/scripts/build-rust.sh" || yellow "  [!] Rust rebuild FAILED — см. вывод выше"
+    fi
 }
 
 do_status() {

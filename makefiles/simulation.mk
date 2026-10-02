@@ -55,7 +55,7 @@ gazebo: gazebo-rust
 ##! Запуск Gazebo симуляции с Rust контроллером (контроллер + одометрия)
 ## Опции: WORLD=terrain.world (по умолчанию cafe.world), FPS=5 camera_fps,
 ##         RVZ=false — без RViz (лёгкий режим)
-gazebo-rust:
+gazebo-rust: rust-build
 	$(require-container)
 	$(check-x11)
 	@printf "$(INFO)Запуск Gazebo симуляции с Rust контроллером...${NC}\n"
@@ -65,7 +65,7 @@ gazebo-rust:
 
 ##! Лёгкий режим: Gazebo (Rust) без RViz и с пониженным FPS камеры —
 ## меньше нагрузка на CPU (полезно при тормозах ноутбука)
-gazebo-lite:
+gazebo-lite: rust-build
 	$(require-container)
 	$(check-x11)
 	@printf "$(INFO)Запуск Gazebo (Rust) в лёгком режиме: RViz выключен, камера 5 FPS...${NC}\n"

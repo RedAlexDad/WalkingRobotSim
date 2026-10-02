@@ -24,7 +24,7 @@ SECTIONS: list[tuple[str, list[str]]] = [
     ("Эксперименты", ["makefiles/experiment.mk"]),
     ("YOLO", ["makefiles/yolo.mk"]),
     ("Elevation Mapping", ["makefiles/elevation.mk"]),
-    ("Сборка и тесты", ["makefiles/test.mk"]),
+    ("Сборка и тесты", ["makefiles/rust.mk", "makefiles/test.mk"]),
     ("CI и линт", ["makefiles/ci.mk"]),
     ("NVIDIA", ["makefiles/nvidia.mk"]),
 ]
