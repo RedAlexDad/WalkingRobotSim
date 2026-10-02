@@ -6,15 +6,10 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import (
-    DeclareLaunchArgument,
-    ExecuteProcess,
-    IncludeLaunchDescription,
-    RegisterEventHandler,
-)
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription, RegisterEventHandler
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import SetParameter
 
 
@@ -28,11 +23,7 @@ def generate_launch_description():
                                        description='Использовать симуляционное время'))
     ld.add_action(SetParameter(name='use_sim_time', value=use_sim_time))
 
-    world = LaunchConfiguration('world', default='cafe.world')
-    ld.add_action(DeclareLaunchArgument(
-        'world', default_value='cafe.world',
-        description='Файл мира в gazebo_sim/world (cafe.world | terrain.world)'))
-    world_file = PathJoinSubstitution([pkg_path, 'world', world])
+    world_file = os.path.join(pkg_path, 'world', 'cafe.world')
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
             get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')),

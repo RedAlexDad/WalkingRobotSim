@@ -35,20 +35,9 @@ struct SharedState {
     cmd_angular: [f64; 3],
     imu_roll: f64,
     imu_pitch: f64,
-    imu_yaw: f64,
-    desired_yaw: f64,
     mode_msg_count: u64,
     vel_msg_count: u64,
     startup_grace: i32,
-}
-
-/// Печать yaw-коррекции (раз в ~2с) — диагностика стабилизации курса
-fn log_once_yaw(_foot: &nalgebra::SMatrix<f64, 3, 4>, yaw: f64, correction: f64) {
-    use std::sync::atomic::{AtomicBool, Ordering};
-    static LOGGED: AtomicBool = AtomicBool::new(false);
-    if !LOGGED.swap(true, Ordering::Relaxed) {
-        println!("[Rust YAW] imu_yaw={:.3} correction={:.3}", yaw, correction);
-    }
 }
 
 impl SharedState {
@@ -56,9 +45,7 @@ impl SharedState {
         let body_length = 0.3762;
         let body_width = 0.0935;
         let l2 = 0.0955;
-        // Симметричная стойка (без смещения переда вперёд) — убирает постоянный
-        // момент крена/курса от асимметрии front/back в диагональном троте.
-        let dx_front = body_length * 0.5;
+        let dx_front = body_length * 0.5 + 0.02;
         let dx_back = body_length * 0.5;
         let dy = body_width * 0.5 + l2;
 
@@ -68,13 +55,7 @@ impl SharedState {
         default_stance[(0, 2)] = -dx_back; default_stance[(1, 2)] = -dy;
         default_stance[(0, 3)] = -dx_back; default_stance[(1, 3)] = dy;
 
-        // IMU-компенсация применяется ТОЛЬКО к позициям для IK (ниже), а не к
-        // self.foot_locations. Иначе повёрнутые стопы становятся входом stance
-        // следующего тика и наклон накапливается (hip → clamp → закрутка).
-        // time_step походки = период управления (1/60 с): контроллер теперь
-        // шагает по сим-времени ровно 60 Гц. Ранее 0.02 (50 Гц) не совпадало
-        // с фактическим периодом и делало поведение зависимым от fps.
-        let trot_gait = TrotGaitController::new(0.04, 0.18, 0.02, true, default_stance.clone());
+        let trot_gait = TrotGaitController::new(0.04, 0.18, 0.02, false, default_stance.clone());
         let crawl_gait = CrawlGaitController::new(0.55, 0.45, 0.02, default_stance.clone());
         let rest_ctrl = RestController::new(default_stance.clone());
         let stand_ctrl = StandController::new(default_stance.clone());
@@ -103,20 +84,14 @@ impl SharedState {
             cmd_angular: [0.0, 0.0, 0.0],
             imu_roll: 0.0,
             imu_pitch: 0.0,
-            imu_yaw: 0.0,
-            desired_yaw: 0.0,
             mode_msg_count: 0,
             vel_msg_count: 0,
             startup_grace: 120, // 2 сек @ 60 Гц (как C++ startup_grace_)
         }
     }
 
-    fn step(&mut self, robot_height: f64, sim_t: f64) -> [f64; 12] {
+    fn step(&mut self, robot_height: f64) -> [f64; 12] {
         self.ticks += 1;
-
-        // Поворот IMU-компенсации, применяется только к IK (не к состоянию походки)
-        let mut imu_rot: Option<nalgebra::Matrix3<f64>> = None;
-        let mut roll_z: f64 = 0.0;
 
         // State machine: select controller based on behavior_state
         self.foot_locations = match self.behavior_state {
@@ -124,13 +99,7 @@ impl SharedState {
                 self.rest_ctrl.step(&self.rest_state, robot_height)
             }
             BehaviorState::TROT => {
-                let mut gait_cmd = [self.cmd_linear[0], self.cmd_linear[1], self.cmd_angular[2]];
-                // yaw-стабилизация: P-регулятор удерживает курс, зафиксированный
-                // при входе в TROT (устраняет медленный уход по дуге).
-                let yaw_err = quadropted_core::math::quaternion::normalize_angle(
-                    self.imu_yaw - self.desired_yaw,
-                );
-                gait_cmd[2] += 0.5 * yaw_err;
+                let gait_cmd = [self.cmd_linear[0], self.cmd_linear[1], self.cmd_angular[2]];
                 // C++ step_trot: при нулевой скорости — плавное возвращение к default_stance
                 let has_command =
                     gait_cmd[0].abs() > 1e-4 || gait_cmd[1].abs() > 1e-4 || gait_cmd[2].abs() > 1e-4;
@@ -140,37 +109,21 @@ impl SharedState {
                     let alpha = 0.1;
                     self.foot_locations * (1.0 - alpha) + result * alpha
                 } else {
-                    let new_foot = self.trot_gait.step(
+                    let mut new_foot = self.trot_gait.step(
                         self.ticks,
                         &self.foot_locations,
                         &gait_cmd,
                         robot_height,
                     );
-                    // IMU-компенсация: считаем поворот, но НЕ применяем к
-                    // self.foot_locations (иначе накапливается). Применим к IK.
+                    // IMU compensation (как в C++ step_trot)
                     if self.trot_gait.use_imu() {
-                        // PID по СИМ-времени (не wall-clock): контроллер шагает
-                        // по сим-времени, dt PID должен быть сим-временем.
-                        let comp = self.trot_gait.pid_controller().run(self.imu_roll, self.imu_pitch, sim_t);
-                        // comp = kp*(0 - θ) = -kp*θ. Желаемый поворот стоп в
-                        // системе тела — R(-θ), т.е. R(comp). Прежний R(-comp)
-                        // давал R(+kp*θ) — усиление наклона вместо компенсации.
-                        // Тангаж — поворотом стоп; крен — дифференциальной
-                        // длиной ног (roll_z), чтобы НЕ уводить hip в насыщение.
-                        imu_rot = Some(quadropted_core::math::rotation::rotxyz(0.0, comp[1], 0.0));
-                        roll_z = comp[0];
-                        // Yaw-стабилизация отключена: вызывает крен (roll), т.к.
-                        // поворот стоп вокруг Z при наклоне робота нестабилен.
-                    }
-                    // ДИАГНОСТИКА stride: команда и x-координаты стоп (тело).
-                    if self.ticks % 50 == 0 {
-                        eprintln!(
-                            "[TROT] t={} cmd=[{:.3},{:.3},{:.3}] foot_x=[{:.3},{:.3},{:.3},{:.3}] foot_z=[{:.3},{:.3},{:.3},{:.3}] yaw_err={:.2}",
-                            self.ticks, gait_cmd[0], gait_cmd[1], gait_cmd[2],
-                            new_foot[(0,0)], new_foot[(0,1)], new_foot[(0,2)], new_foot[(0,3)],
-                            new_foot[(2,0)], new_foot[(2,1)], new_foot[(2,2)], new_foot[(2,3)],
-                            yaw_err,
-                        );
+                        let now_sec = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .map(|d| d.as_secs_f64())
+                            .unwrap_or(0.0);
+                        let comp = self.trot_gait.pid_controller().run(self.imu_roll, self.imu_pitch, now_sec);
+                        let rot = quadropted_core::math::rotation::rotxyz(-comp[0], -comp[1], 0.0);
+                        new_foot = rot * new_foot;
                     }
                     new_foot
                 }
@@ -195,37 +148,14 @@ impl SharedState {
         };
 
         // IK: foot positions → joint angles
-        // IMU-компенсация применяется к КОПИИ стоп (не к состоянию походки),
-        // чтобы поворот не накапливался в stance.
-        let mut feet_for_ik = match imu_rot {
-            Some(r) => r * self.foot_locations,
-            None => self.foot_locations,
-        };
-        // Крен-компенсация: точная z-составляющая поворота стоп по крену
-        // (y*sin(a)+z*cos(a)), БЕЗ y-сдвига → hip не уводится в насыщение.
-        if roll_z != 0.0 {
-            let a = roll_z;
-            for leg in 0..4 {
-                let y = feet_for_ik[(1, leg)];
-                let z = feet_for_ik[(2, leg)];
-                feet_for_ik[(2, leg)] = y * a.sin() + z * a.cos();
-            }
-        }
         // C++ передаёт body_local_position/orientation (высота тела из change_controller)
         let bp = &self.body_state.body_local_position;
         let bo = &self.body_state.body_local_orientation;
         let local = compute_local_positions(
-            &feet_for_ik, 0.3762, 0.0935,
+            &self.foot_locations, 0.3762, 0.0935,
             bp[0], bp[1], bp[2], bo[0], bo[1], bo[2],
         );
         let angles = compute_all_joint_angles(&local, 0.0, 0.0955, 0.213, 0.213);
-
-        if self.ticks % 120 == 0 {
-            println!("[Rust LOCL] x=[{:.3} {:.3} {:.3} {:.3}] y=[{:.3} {:.3} {:.3} {:.3}] z=[{:.3} {:.3} {:.3} {:.3}]",
-                local[(0,0)], local[(0,1)], local[(0,2)], local[(0,3)],
-                local[(1,0)], local[(1,1)], local[(1,2)], local[(1,3)],
-                local[(2,0)], local[(2,1)], local[(2,2)], local[(2,3)]);
-        }
 
         angles
     }
@@ -275,10 +205,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     BehaviorState::TROT => {
                         // C++: trot_gait_->pid_controller().reset(this->now().seconds())
-                        s.trot_gait.pid_controller().reset(-1.0);
+                        s.trot_gait.pid_controller().reset(
+                            std::time::SystemTime::now()
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .map(|d| d.as_secs_f64())
+                                .unwrap_or(0.0),
+                        );
                         s.body_state.body_local_position[2] = 0.0;
-                        // запоминаем курс на момент входа в TROT
-                        s.desired_yaw = s.imu_yaw;
                     }
                     BehaviorState::REST => {
                         // C++: body_local_position[2] = -0.15 (лечь на землю)
@@ -329,22 +262,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
         s.imu_roll = quadropted_core::math::quaternion::euler_roll(&q);
         s.imu_pitch = quadropted_core::math::quaternion::euler_pitch(&q);
-        s.imu_yaw = quadropted_core::math::quaternion::euler_yaw(&q);
     })?;
     println!("✅ Subscription: imu");
-
-    // Subscription: sim_time (std_msgs/Float64) — шаг по сим-времени.
-    // Если топика нет, контроллер падает на wall-clock 60 Гц (fallback).
-    let sim_time_state = Arc::new(Mutex::new(-1.0f64));
-    let st_state = sim_time_state.clone();
-    let _simtime_sub = node.create_subscription("sim_time", move |msg: std_msgs_rs::Float64MultiArray| {
-        if let Ok(mut t) = st_state.lock() {
-            if let Some(v) = msg.data.iter().next() {
-                *t = *v;
-            }
-        }
-    })?;
-    println!("✅ Subscription: sim_time");
 
     // Service: robot_behavior_command (sit/up/walk) — как C++ behavior_srv_
     let srv_state = state.clone();
@@ -378,7 +297,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // C++: rest_event + trot_event → REST затем TROT
                     s.behavior_state = BehaviorState::TROT;
                     s.ticks = 0;
-                    s.trot_gait.pid_controller().reset(-1.0);
+                    s.trot_gait.pid_controller().reset(
+                        std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .map(|d| d.as_secs_f64())
+                            .unwrap_or(0.0),
+                    );
                     resp.success = true;
                     resp.message = "Robot started walking.".into();
                 }
@@ -392,23 +316,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     println!("✅ Service: robot_behavior_command");
 
-    // Control loop: шаг по сим-времени (1/60 с), fallback — wall-clock 16 мс
+    // 60Hz control loop
     let ctrl_state = state.clone();
     let ctrl_pub = joint_pub.clone();
-    let ctrl_sim_time = sim_time_state.clone();
-    std::thread::spawn(move || {
-        let mut last_sim_t = -1.0f64;
-        loop {
-            let st = *ctrl_sim_time.lock().unwrap();
-            if st > 0.0 {
-                while *ctrl_sim_time.lock().unwrap() - last_sim_t < 1.0 / 60.0 {
-                    std::thread::sleep(Duration::from_millis(1));
-                }
-                last_sim_t = *ctrl_sim_time.lock().unwrap();
-            } else {
-                std::thread::sleep(Duration::from_millis(16));
-            }
-            let mut s = ctrl_state.lock().unwrap();
+    std::thread::spawn(move || loop {
+        let mut s = ctrl_state.lock().unwrap();
 
         // Startup grace period: ждём пока робот приземлится (как C++ startup_grace_)
         if s.startup_grace > 0 {
@@ -417,29 +329,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("[Rust] Startup grace period complete, controller active");
             }
             drop(s);
+            std::thread::sleep(Duration::from_millis(16));
             continue;
         }
 
-        let angles = s.step(-0.25, st.max(0.0));
+        let angles = s.step(-0.25);
 
         if s.ticks % 120 == 0 {
             println!("[Rust DEBUG] Tick #{} ({:.1}s) {:?} mode, vx={:.3}",
                 s.ticks, s.ticks as f64 / 60.0, s.behavior_state, s.cmd_linear[0]);
-            // Диагностика: foot_locations (сырые позиции стоп, 3x4)
-            let fl = &s.foot_locations;
-            println!("[Rust FOOT] x=[{:.3} {:.3} {:.3} {:.3}] y=[{:.3} {:.3} {:.3} {:.3}] z=[{:.3} {:.3} {:.3} {:.3}]",
-                fl[(0,0)], fl[(0,1)], fl[(0,2)], fl[(0,3)],
-                fl[(1,0)], fl[(1,1)], fl[(1,2)], fl[(1,3)],
-                fl[(2,0)], fl[(2,1)], fl[(2,2)], fl[(2,3)]);
-            println!("[Rust ANGL] hip=[{:.3} {:.3} {:.3} {:.3}] thg=[{:.3} {:.3} {:.3} {:.3}] clf=[{:.3} {:.3} {:.3} {:.3}]",
-                angles[0], angles[3], angles[6], angles[9],
-                angles[1], angles[4], angles[7], angles[10],
-                angles[2], angles[5], angles[8], angles[11]);
-            if s.behavior_state == BehaviorState::TROT {
-                let c = s.trot_gait.contacts(s.ticks);
-                println!("[Rust CONT] t={} contacts=[{} {} {} {}] (FR FL RR RL)",
-                    s.ticks, c[0], c[1], c[2], c[3]);
-            }
         }
 
         let mut msg = Float64MultiArray::default();
@@ -469,7 +367,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         contact_pub.publish(&contact_msg).ok();
 
         drop(s);
-        }
+        std::thread::sleep(Duration::from_millis(16)); // 60Hz
     });
 
     println!("✅ 60Hz control loop with State Machine");

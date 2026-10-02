@@ -29,17 +29,12 @@ impl TrotStanceController {
     pub fn position_delta(&self, leg_index: usize, state_foot: &SMatrix<f64, 3, 4>, cmd_vel: &Vector3<f64>, robot_height: f64) -> Vector3<f64> {
         let z = state_foot[(2, leg_index)]; // FIX: use leg_index, not 0
 
-        // Физически корректная скорость стопы в stance: стопа, зафиксированная
-        // в мире, в системе тела движется со скоростью -cmd_vel.
-        //
-        // Прежняя формула -(step_dist/4)/(dt*stance_ticks) делила на длину
-        // ОДНОЙ stance-фазы, тогда как в трот-расписании нога стоит на земле
-        // 3 фазы подряд (27 тиков при stance_ticks=9). Стопа уезжала назад
-        // втрое дальше, чем возвращал swing, IK уходил в насыщение (calf=0),
-        // робот падал. Исправление проверено численной моделью походки.
+        let step_dist_x = cmd_vel.x * (self.phase_length as f64 / self.swing_ticks as f64);
+        let step_dist_y = cmd_vel.y * (self.phase_length as f64 / self.swing_ticks as f64);
+
         let velocity = Vector3::new(
-            -cmd_vel.x,
-            -cmd_vel.y,
+            -(step_dist_x / 4.0) / (self.time_step * self.stance_ticks as f64),
+            -(step_dist_y / 4.0) / (self.time_step * self.stance_ticks as f64),
             (1.0 / self.z_error_constant) * (robot_height - z),
         );
 
@@ -51,15 +46,10 @@ impl TrotStanceController {
         let foot_location: Vector3<f64> = state_foot.column(leg_index).into();
         let delta_pos = self.position_delta(leg_index, state_foot, cmd_vel, robot_height);
 
-        // cmd_vel = [vx, vy, yaw_rate]. Поворот стопы в стойке задаётся ТОЛЬКО
-        // угловой скоростью рыскания: линейные vx/vy уже учтены в position_delta
-        // (фиксированная в мире стопа смещается по телу на -v*dt). Прежний код
-        // подставлял vx/vy как roll_rate/pitch_rate — стопа «закручивалась»
-        // вокруг продольной оси со скоростью, равной скорости ходьбы (0.3 рад/с
-        // при vx=0.3), робот терял устойчивость.
+        // rotxyz(roll, pitch, yaw) — cmd_vel = [roll_rate, pitch_rate, yaw_rate]
         let delta_ori = rotxyz(
-            0.0,
-            0.0,
+            -cmd_vel.x * self.time_step,
+            -cmd_vel.y * self.time_step,
             -cmd_vel.z * self.time_step,
         );
 
@@ -116,9 +106,10 @@ mod tests {
         }
         let cmd_vel = Vector3::new(0.3, 0.0, 0.0);
         let delta = controller.position_delta(0, &foot, &cmd_vel, -0.25);
-        // Физически корректно: delta_x = -cmd_vel.x * time_step = -0.3 * 0.02 = -0.006
+        // step_dist_x = 0.3 * (11/9) = 0.3667; velocity_x = -(0.3667/4)/(0.02*2) = -2.29
+        // delta_x = velocity_x * 0.02 = -0.0458
         assert!(delta.x < 0.0, "delta_x should be negative, got {}", delta.x);
-        assert!((delta.x + 0.006).abs() < 1e-9, "delta_x = {}", delta.x);
+        assert!((delta.x + 0.0458).abs() < 1e-3, "delta_x = {}", delta.x);
     }
 
     #[test]

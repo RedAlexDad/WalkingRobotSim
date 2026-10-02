@@ -357,7 +357,6 @@ fn xval_crawl_gait_phases() {
 // Controllers: TROT
 // ═══════════════════════════════════════════════════════════
 #[test]
-#[ignore = "stance-скорость намеренно исправлена (фикс дрейфа стопы/IK); C++-эталон устарел"]
 fn xval_trot_stance_swing() {
     use quadropted_core::controllers::trot::stance::TrotStanceController;
     use quadropted_core::controllers::trot::swing::TrotSwingController;
@@ -385,7 +384,6 @@ fn xval_trot_stance_swing() {
 }
 
 #[test]
-#[ignore = "stance-скорость намеренно исправлена (фикс дрейфа стопы/IK); C++-эталон устарел"]
 fn xval_trot_gait_step() {
     use quadropted_core::controllers::trot::gait::TrotGaitController;
     let data = run_harness("trot_gait_step");

@@ -36,10 +36,7 @@ impl TrotSwingController {
 
     /// Compute Raibert heuristic touchdown location
     pub fn raibert_touchdown_location(&self, leg_index: usize, cmd_vel: &Vector3<f64>) -> Vector3<f64> {
-        // phase_length — полная длина цикла (2+9+2+9 = 22 тика): нога стоит
-        // 13 тиков и машет 9. За цикл корпус проходит v_xy·phase_length·dt,
-        // и touchdown должен сместиться ровно на это, чтобы стопа возвращалась
-        // в нейтраль (иначе стопы накапливают смещение и корпус «отстаёт»).
+        // FIX: phase_length * time_step for delta_pos (like Python)
         let total_time = self.phase_length as f64 * self.time_step;
         let delta_pos = Vector3::new(
             cmd_vel.x * total_time,

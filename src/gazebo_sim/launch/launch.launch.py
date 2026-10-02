@@ -9,16 +9,10 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import (
-    DeclareLaunchArgument,
-    ExecuteProcess,
-    IncludeLaunchDescription,
-    OpaqueFunction,
-    RegisterEventHandler,
-)
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription, RegisterEventHandler
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import SetParameter
 
 
@@ -29,7 +23,7 @@ def generate_launch_description():
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
     camera_fps = LaunchConfiguration('camera_fps', default='10')
-    LaunchConfiguration('use_elevation', default='false')
+    use_elevation = LaunchConfiguration('use_elevation', default='false')
     enable_rviz = LaunchConfiguration('enable_rviz', default='true')
 
     ld.add_action(DeclareLaunchArgument('use_sim_time', default_value='true',
@@ -40,36 +34,16 @@ def generate_launch_description():
                                        description='Использовать elevation costmap'))
     ld.add_action(DeclareLaunchArgument('enable_rviz', default_value='true',
                                        description='Включить RViz (false — лёгкий режим, меньше нагрузка на CPU)'))
-    world = LaunchConfiguration('world', default='cafe.world')
-    ld.add_action(DeclareLaunchArgument(
-        'world', default_value='cafe.world',
-        description='Файл мира в gazebo_sim/world (cafe.world | terrain.world)'))
     ld.add_action(SetParameter(name='use_sim_time', value=use_sim_time))
 
-    world_file = PathJoinSubstitution([pkg_path, 'world', world])
-    # NOTE: окно Gazebo GUI работает, когда контейнер видит встроенный AMD GPU
-    # (radeonsi в образе). Если контейнер видит NVIDIA RTX без драйвера —
-    # Qt RHI/OGRE падает (driver null, Segmentation fault). Поэтому GPU в
-    # контейнер пробрасывается только AMD (см. compose.yml, devices).
-    # gz_server_only=true запускает Gazebo без GUI (headless) — фолбэк,
-    # если отображение недоступно.
-    LaunchConfiguration('gz_server_only', default='false')
-    ld.add_action(DeclareLaunchArgument('gz_server_only', default_value='false',
-                                        description='Запускать Gazebo без GUI (-s, headless). '
-                                                    'false (по умолчанию) — GUI-режим на встроенном AMD GPU'))
+    world_file = os.path.join(pkg_path, 'world', 'cafe.world')
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(
+            get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')),
+        launch_arguments={'gz_args': ['-r -v4 ', world_file], 'on_exit_shutdown': 'true'}.items()
+    )
+    ld.add_action(gazebo)
 
-    def _start_gazebo(context, *args, **kwargs):
-        mode = LaunchConfiguration('gz_server_only').perform(context)
-        flag = '-s ' if mode == 'true' else ''
-        return [
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(
-                    get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')),
-                launch_arguments={'gz_args': ['-r -v4 ', flag, world_file],
-                                  'on_exit_shutdown': 'true'}.items())
-        ]
-
-    ld.add_action(OpaqueFunction(function=_start_gazebo))
     pause = ExecuteProcess(cmd=['sleep', '6'], output='screen')
     ld.add_action(pause)
 
