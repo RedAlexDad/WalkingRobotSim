@@ -32,7 +32,9 @@ SECTIONS: list[tuple[str, list[str], str | None]] = [
     ("YOLO", ["makefiles/yolo.mk"], None),
     ("Elevation Mapping", ["makefiles/elevation.mk"],
      "Аргумент: CPU=1 — CPU-образ (по умолчанию GPU)"),
-    ("Сборка и тесты", ["makefiles/rust.mk", "makefiles/test.mk"], None),
+    ("Сборка и тесты", ["makefiles/rust.mk", "makefiles/test.mk"],
+     "Аргументы: test TARGET=rust|sim|coverage|correctness|benchmark; "
+     "check WHAT=deps|structure|yaml|x11; benchmark WHAT=cpp|python"),
     ("CI и линт", ["makefiles/ci.mk"],
      "Аргументы: LINT=yaml|python|cpp — одна проверка (по умолчанию все); "
      "TEST=cpp — только C++ тесты"),
