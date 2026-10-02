@@ -40,7 +40,7 @@ impl TrotSwingController {
         // 13 тиков и машет 9. За цикл корпус проходит v_xy·phase_length·dt,
         // и touchdown должен сместиться ровно на это, чтобы стопа возвращалась
         // в нейтраль (иначе стопы накапливают смещение и корпус «отстаёт»).
-        let total_time = 0.15;  // страйд A1: t_step (было phase_length*dt=0.44)
+        let total_time = self.phase_length as f64 * self.time_step;
         let delta_pos = Vector3::new(
             cmd_vel.x * total_time,
             cmd_vel.y * total_time,

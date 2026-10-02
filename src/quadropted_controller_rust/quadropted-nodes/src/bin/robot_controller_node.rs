@@ -58,11 +58,9 @@ impl SharedState {
         let l2 = 0.0955;
         // Симметричная стойка (без смещения переда вперёд) — убирает постоянный
         // момент крена/курса от асимметрии front/back в диагональном троте.
-        // Стойка Go2 снята из MuJoCo FK (foot-геометрия, menagerie): асимметрия
-        // перед/зад, ширина и высота корпуса штатные.
-        let dx_front = 0.1763;
-        let dx_back = 0.2723;
-        let dy = 0.1723;
+        let dx_front = body_length * 0.5;
+        let dx_back = body_length * 0.5;
+        let dy = body_width * 0.5 + l2;
 
         let mut default_stance = SMatrix::<f64, 3, 4>::zeros();
         default_stance[(0, 0)] = dx_front; default_stance[(1, 0)] = -dy;
@@ -76,7 +74,7 @@ impl SharedState {
         // time_step походки = период управления (1/60 с): контроллер теперь
         // шагает по сим-времени ровно 60 Гц. Ранее 0.02 (50 Гц) не совпадало
         // с фактическим периодом и делало поведение зависимым от fps.
-        let trot_gait = TrotGaitController::new(0.25, 0.25, 0.02, true, default_stance.clone());
+        let trot_gait = TrotGaitController::new(0.04, 0.18, 0.02, true, default_stance.clone());
         let crawl_gait = CrawlGaitController::new(0.55, 0.45, 0.02, default_stance.clone());
         let rest_ctrl = RestController::new(default_stance.clone());
         let stand_ctrl = StandController::new(default_stance.clone());
@@ -222,7 +220,7 @@ impl SharedState {
         );
         let angles = compute_all_joint_angles(&local, 0.0, 0.0955, 0.213, 0.213);
 
-        if self.ticks % 6 == 0 {
+        if self.ticks % 120 == 0 {
             println!("[Rust LOCL] x=[{:.3} {:.3} {:.3} {:.3}] y=[{:.3} {:.3} {:.3} {:.3}] z=[{:.3} {:.3} {:.3} {:.3}]",
                 local[(0,0)], local[(0,1)], local[(0,2)], local[(0,3)],
                 local[(1,0)], local[(1,1)], local[(1,2)], local[(1,3)],
@@ -424,7 +422,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let angles = s.step(-0.25, st.max(0.0));
 
-        if s.ticks % 6 == 0 {
+        if s.ticks % 120 == 0 {
             println!("[Rust DEBUG] Tick #{} ({:.1}s) {:?} mode, vx={:.3}",
                 s.ticks, s.ticks as f64 / 60.0, s.behavior_state, s.cmd_linear[0]);
             // Диагностика: foot_locations (сырые позиции стоп, 3x4)
