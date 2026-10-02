@@ -26,16 +26,19 @@ def generate_launch_description():
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
             get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')),
-        launch_arguments={'gz_args': ['-r -v4 ', world_file],
+        launch_arguments={'gz_args': ['-s -r -v4 ', world_file],
                           'on_exit_shutdown': 'true'}.items())
     ld.add_action(gazebo)
 
     # Проброс /clock: ROS-время для всех сервисов (healthcheck + use_sim_time).
+    # ВАЖНО: только GZ->ROS ('['), иначе мост создаёт gz-публишера на /clock,
+    # и gz-sim перестаёт публиковать глобальный /clock
+    # (SimulationRunner: "Found additional publishers on /clock").
     clock_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         name='clock_bridge',
-        arguments=['/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock'],
+        arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
         output='screen',
     )
     ld.add_action(clock_bridge)

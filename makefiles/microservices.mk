@@ -43,25 +43,26 @@ ms-build-rviz: base
 ## Поднять полный микросервис-стек (sim+core+nav+viz)
 ms-up:
 	$(require-docker)
-	@$(COMPOSE) --profile full up -d
+	@$(COMPOSE) --profile full up -d wrs-sim wrs-core wrs-nav wrs-rviz
 	@printf "$(OK)Полный стек поднят${NC}\n"
 
 ## Остановить микросервис-стек
 ms-down:
-	@$(COMPOSE) --profile full down
+	@docker rm -f wrs-sim wrs-core wrs-nav wrs-rviz >/dev/null 2>&1 || true
+	@printf "$(OK)Микросервис-стек остановлен${NC}\n"
 
 ## Поднять симулятор
 ms-sim:
-	@$(COMPOSE) --profile sim up -d
+	@$(COMPOSE) --profile sim up -d wrs-sim
 
 ## Поднять ядро (нужен запущенный симулятор)
 ms-core:
-	@$(COMPOSE) --profile core up -d
+	@$(COMPOSE) --profile core up -d wrs-core
 
 ## Поднять навигацию
 ms-nav:
-	@$(COMPOSE) --profile nav up -d
+	@$(COMPOSE) --profile nav up -d wrs-nav
 
 ## Поднять визуализацию
 ms-viz:
-	@$(COMPOSE) --profile viz up -d
+	@$(COMPOSE) --profile viz up -d wrs-rviz

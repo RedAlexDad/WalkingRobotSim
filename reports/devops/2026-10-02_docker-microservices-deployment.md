@@ -2,7 +2,7 @@
 
 **Дата:** 2026-10-02
 **Ветка:** `feat/docker-microservices`
-**Версия:** 1.0
+**Версия:** 1.1
 
 ---
 
@@ -122,9 +122,12 @@ Rust + rosbridge + Python-зависимости). Цель `make base`.
 
 **Решение 2:** монолит остановлен.
 
-**Ошибка 3 (часы):** ROS-`/clock` не публикуется → use_sim_time-узлы
-идут по wall-time, EKF не публикует (подробно —
-[Проблема 11](#11-проблема-нет-ros-clock)). **Статус: не решено.**
+**Ошибка 3 (часы):** ROS-`/clock` не публиковался → use_sim_time-узлы
+шли по wall-time, EKF не публиковал данные (подробно —
+[Проблема 11](#11-проблема-нет-ros-clock)).
+
+**Решение 3:** `clock_bridge` сделан односторонним GZ→ROS (форма `[`),
+дублирующий `clock` убран из `gz_bridge.yaml`.
 
 **Результат проверки после фиксов:**
 
@@ -132,12 +135,12 @@ Rust + rosbridge + Python-зависимости). Цель `make base`.
 |---|---|
 | `wrs-sim`/`core`/`nav` health | healthy |
 | `wrs-rviz` | up |
-| `/robot1/joint_states` | ~94 Гц |
+| `/clock` | ~1000 Гц |
+| `/robot1/joint_states` | ~99 Гц |
 | `/robot1/odom` | 50 Гц |
+| `/robot1/odometry/filtered` (EKF) | ~30 Гц |
 | `/robot1/scan` | ~9 Гц |
-| Управление (TROT + `vx=0.05`) | odom 0.64 → 4.73 за 6 с |
-| `/robot1/odometry/filtered` (EKF) | нет данных |
-| `/clock` (ROS) | нет данных |
+| Управление (TROT + `vx=0.05`) | odom 0.65 → 4.39 за 6 с |
 
 ### A.4. Проблемы и решения
 
@@ -146,7 +149,7 @@ Rust + rosbridge + Python-зависимости). Цель `make base`.
 | [8](#8-проблема-отсутствие-управления-роботом) | Робот не управляется | В `wrs-sim` нет плагинов контроллеров | Плагины добавлены в `Dockerfile.sim` | [x] |
 | [9](#9-проблема-параллельный-запуск-двух-стеков) | Дублирование топиков | Монолит запущен параллельно | Остановка монолита | [x] |
 | [10](#10-проблема-wrs-rviz-не-собирается) | Сборка rviz падает | `gazebo_sim` требует `gz-msgs10` | rviz без сборки `gazebo_sim` | [x] |
-| [11](#11-проблема-нет-ros-clock) | Use_sim_time, EKF | ROS `/clock` не публикуется | Не найдено | [ ] |
+| [11](#11-проблема-нет-ros-clock) | Use_sim_time, EKF | `clock_bridge` двунаправленный → gz перестаёт публиковать `/clock` | Мост только GZ→ROS (`[`) | [x] |
 
 ### A.5. Итоговая архитектура
 
@@ -174,7 +177,7 @@ graph TB
 | Общая база | `wrs-base` | — | ✅ |
 | Симулятор | `wrs-sim` | `sim` | ✅ |
 | Ядро | `wrs-core` | `core` | ✅ |
-| Навигация | `wrs-nav` | `nav` | ⚠️ (нужен clock) |
+| Навигация | `wrs-nav` | `nav` | ✅ |
 | Визуализация | `wrs-rviz` | `viz` | ✅ |
 
 #### A.5.2. Параметры
@@ -196,7 +199,7 @@ graph TB
 | Тяжёлые группы | все (Nav2, torch) | раздельно |
 | Оркестрация | одна команда | профили compose |
 | Управление роботом | работало | работает (после [Проблемы 8](#8-проблема-отсутствие-управления-роботом)) |
-| `/clock` | (не проверялось) | **не работает** ([Проблема 11](#11-проблема-нет-ros-clock)) |
+| `/clock` | (не проверялось) | работает (~1000 Гц) |
 
 ### A.6. Дальнейшие шаги
 
@@ -206,7 +209,7 @@ graph TB
 - [x] Разделить launch по сервисам
 - [x] compose-профили и Makefile
 - [x] Починить управление ([Проблема 8](#8-проблема-отсутствие-управления-роботом))
-- [ ] Починить ROS `/clock` ([Проблема 11](#11-проблема-нет-ros-clock))
+- [x] Починить ROS `/clock` ([Проблема 11](#11-проблема-нет-ros-clock))
 
 #### Среднесрочно
 
@@ -253,7 +256,7 @@ graph TB
 | [8](#8-проблема-отсутствие-управления-роботом) | Робот не управляется | ✅ нет плагинов контроллеров в sim; ❌ монолит; ❌ нет спавна | `gz_ros2_control`/`controller_manager` работают в симуляторе, а `ros2_controllers` стояли только в ядре | Добавить `ros2-control/ros2-controllers/controller-manager` в `Dockerfile.sim` | `cargo`/`ros2 topic hz`, лог `Loader for controller` | 🔴 |
 | [9](#9-проблема-параллельный-запуск-двух-стеков) | Дублирование топиков | ✅ два стека в DDS; ❌ причина отсутствия управления | Монолит и микросервисы в одном домене | `docker stop walking_robot_sim` | `docker ps`, `ros2 node list` | 🟢 |
 | [10](#10-проблема-wrs-rviz-не-собирается) | rviz не собирается | ✅ `gazebo_sim` требует gz-msgs; ❌ базовый образ | C++ `laser_to_cloud_converter` тянет `gz-msgs10` | rviz без сборки `gazebo_sim` | лог `colcon`, `Find gz-msgs10` | 🟡 |
-| [11](#11-проблема-нет-ros-clock) | ROS `/clock` пуст | ✅ gz-топик `/clock` пуст; ❌ двунаправленный мост; ❌ `-s`; ❌ версия gz | Не локализована: запущенный gz не публикует `/clock` (изолированный — публикует) | Не найдено | `gz topic -e`, `ros2 topic hz` | 🔴 |
+| [11](#11-проблема-нет-ros-clock) | ROS `/clock` пуст | ✅ двунаправленный мост создаёт gz-публишера; ❌ `-s`; ❌ версия gz | Двунаправленный `clock_bridge` → gz-sim публикует namespaced clock | Мост только GZ→ROS (`[`) | `ros2 topic hz`, лог `SimulationRunner` | 🟡 |
 
 ---
 
@@ -372,9 +375,10 @@ ros2 node list    # узлы обоих стеков вперемешку
 
 ### 9.6. Исправление в скриптах/конфигах
 
-Явного автоматического шага нет. Рекомендуется в `make ms-up` при
-необходимости останавливать `simulator` (профиль-конфликт).
-Кандидат на доработку.
+- `makefiles/microservices.mk`: `ms-up`/`ms-sim`/`ms-core`/`ms-nav`/`ms-viz`
+  поднимают только свои сервисы (явные имена после `up -d`), поэтому
+  `simulator` (без профиля) больше не запускается вместе с микросервисами.
+- `ms-down` удаляет контейнеры `wrs-*`.
 
 ### 9.7. Результат
 
@@ -467,10 +471,11 @@ wall-clock 60 Гц).
 
 ### 11.2. Гипотезы
 
-- ✅ **Гипотеза A:** gz-топик `/clock` не публикуется. **Принята**
-  (как рабочая): в запущенном стеке `gz topic -e -t /clock` пуст.
-- ❌ **Гипотеза B:** мешает двунаправленный `clock_bridge`.
-  **Опровергнута:** после `pkill clock_bridge` gz `/clock` всё равно пуст.
+- ✅ **Гипотеза A:** двунаправленный `clock_bridge` создаёт со стороны gz
+  публишера на `/clock`, и gz-sim перестаёт публиковать глобальный
+  `/clock`. **Принята** — подтвердилась как причина в [11.3](#113-причина).
+- ❌ **Гипотеза B:** нужно просто убрать мост. **Опровергнута:** мост
+  нужен, но **односторонний** (GZ→ROS), а не отсутствие моста.
 - ❌ **Гипотеза C:** нужен headless (`-s`). **Опровергнута:** перевод
   `launch_sim.py` на `-s` не помог.
 - ❌ **Гипотеза D:** версия Gazebo. **Опровергнута:** и монолит, и
@@ -478,48 +483,71 @@ wall-clock 60 Гц).
 
 ### 11.3. Причина
 
-**Не локализована окончательно.** Факты: Gazebo шагает
-(в `/world/default/stats` `sim_time` растёт, `real_time_factor ≈ 1.0`),
-gz-transport работает (тот же `/world/default/stats` читается), но
-gz-топик `/clock` пуст в запущенном стеке. При этом **изолированный**
-headless-сервер `gz sim -s -r -v4 world/cafe.world --force-version 8`
-в отдельном `GZ_PARTITION` **публикует** `/clock` с теми же аргументами.
-Наиболее вероятно — особенность gz-transport/публикации `/clock`
-в конфигурации запущенного сервера (возможно, взаимодействие с
-сенсорами/плагинами мира). Требует дальнейшего разбора.
+`clock_bridge` в `launch_sim.py` был **двунаправленным**
+(`/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock`). Такой мост создаёт
+со стороны gz **публишера** на `/clock`. gz-sim (`SimulationRunner`),
+обнаружив «дополнительных публишеров на /clock», перестаёт публиковать
+глобальный `/clock` и уходит на namespaced-топик:
+
+```
+[Wrn] [SimulationRunner.cc:854] Found additional publishers on /clock,
+  using namespaced clock topic only
+```
+
+В монолите clock бриджился через `gz_bridge.yaml` с
+`direction: GZ_TO_ROS` (односторонний) — поэтому проблемы не было.
+Регрессию внёс микросервисный `launch_sim.py` (добавил двунаправленный
+`clock_bridge`). Дополнительно `make ms-*` неявно поднимал монолит
+(`simulator` без профиля), создавая второй gz-сервер в том же
+gz-partition.
 
 ### 11.4. Диагностика
 
 ```
-# gz шагает и публикует stats, но /clock пуст
-docker exec wrs-sim bash -lc 'source /opt/ros/jazzy/setup.bash;
-  gz topic -e -n1 -m gz.msgs.Clock -t /clock'      # пусто
-  gz topic -e -n1 -m gz.msgs.WorldStatistics -t /world/default/stats
-  # → sim_time растёт (55 → 57 c)
+# gz шагает, stats идёт, но /clock пуст
+gz topic -e -n1 -m gz.msgs.Clock -t /clock           # пусто
+gz topic -e -n1 -m gz.msgs.WorldStatistics -t /world/default/stats
+# → sim_time растёт
 
-# изолированный сервер тех же аргументов — /clock есть
-GZ_PARTITION=t3 gz sim -s -r -v4 world/cafe.world --force-version 8 &
-gz topic -e -n1 -m gz.msgs.Clock -t /clock          # → сообщение Clock
+# ключевая строка в логе симулятора:
+docker logs wrs-sim | grep "additional publishers on /clock"
+# → Found additional publishers on /clock, using namespaced clock topic only
+
+# синтаксис направления ros_gz_bridge:
+parameter_bridge '/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock'  # двунаправленный (плохо)
+parameter_bridge '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'  # GZ->ROS (нужно)
+parameter_bridge '/clock@rosgraph_msgs/msg/Clock]gz.msgs.Clock'  # ROS->GZ
+```
+
+После фикса:
+
+```
+ros2 topic hz /clock                      # ~1000 Гц
+ros2 topic hz /robot1/odometry/filtered   # ~30 Гц (EKF)
 ```
 
 ### 11.5. Решение
 
-Не найдено. Варианты для следующего шага: явный `GZ_PARTITION` для всего
-стека; проверка публикации `/clock` при разных наборах плагинов мира
-(сенсоры/camera); сверка с монолитом (там clock работал) на предмет
-различий в мире/плагинах.
+1. `launch_sim.py`: `clock_bridge` → `/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock`
+   (односторонний GZ→ROS).
+2. `gz_bridge.yaml`: убран дублирующий `clock` (единственный источник — sim).
+3. `microservices.mk`: цели `ms-*` поднимают **только свои** сервисы
+   (явные имена), монолит не запускается.
 
 ### 11.6. Исправление в скриптах/конфигах
 
-Пока нет. (`launch_sim.py` переведён на headless `-s` — это не решило
-проблему, но полезно для симулятора без GUI.)
+- `src/gazebo_sim/launch/launch_sim.py` — односторонний `[`-мост `clock`.
+- `src/gazebo_sim/config/gz_bridge.yaml` — удалён `clock`-бридж.
+- `makefiles/microservices.mk` — `ms-up/ms-sim/ms-core/ms-nav/ms-viz`
+  с явными сервисами.
 
 ### 11.7. Результат
 
 | Метрика | До | После |
 |---|---|---|
-| `/clock` | нет данных | нет данных (не решено) |
-| `/robot1/odometry/filtered` | нет данных | нет данных |
+| `additional publishers on /clock` | есть | отсутствует |
+| `/clock` | нет данных | ~1000 Гц |
+| `/robot1/odometry/filtered` | нет данных | ~30 Гц |
 | Управление | работает | работает |
 
 **Связь с развёртыванием (Часть A):** проблема встречена на этапе
@@ -532,11 +560,11 @@ gz topic -e -n1 -m gz.msgs.Clock -t /clock          # → сообщение Clo
 | Метрика | Значение |
 |---------|----------|
 | Всего проблем | 4 |
-| Из них решено | 3 |
+| Из них решено | 4 |
 | 🟢 (<1ч) | 1 |
-| 🟡 (1-4ч) | 1 |
-| 🔴 (>4ч) | 2 |
-| Ключевые выводы | Микросервисы собираются и поднимаются; управление восстановлено переносом плагинов контроллеров в образ симулятора. Остаётся нерешённой публикация ROS `/clock` — блокирует EKF и Nav2/SLAM по симуляционному времени. |
+| 🟡 (1-4ч) | 2 |
+| 🔴 (>4ч) | 1 |
+| Ключевые выводы | Микросервисы собираются и поднимаются; управление восстановлено переносом плагинов контроллеров в образ симулятора; ROS `/clock` починен переводом `clock_bridge` в односторонний режим GZ→ROS (двунаправленный мост заставлял gz-sim уходить на namespaced clock). EKF и Nav2 получают симуляционное время. |
 
 ---
 
