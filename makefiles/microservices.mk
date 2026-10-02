@@ -1,14 +1,13 @@
 # makefiles/microservices.mk
 #
-# Микросервисная декомпозиция (см. reports/isaam/2026-08-22_docker-microservices-v2.md).
+# Микросервисная декомпозиция (reports/isaam/2026-08-22_docker-microservices-v2.md).
 # Образы: wrs-base -> wrs-sim / wrs-core / wrs-nav / wrs-rviz.
-# Профили compose: sim | core | nav | viz | full.
+# SVC=sim|core|nav|rviz — только один сервис; по умолчанию все.
 
-MICRO_BASE_DF := src/docker/Dockerfile.base
+MICRO_BASE_DF  := src/docker/Dockerfile.base
 MICRO_SERVICES := wrs-sim wrs-core wrs-nav wrs-rviz
 
-.PHONY: base ms-build ms-build-sim ms-build-core ms-build-nav ms-build-rviz \
-        ms-up ms-down ms-sim ms-core ms-nav ms-viz
+.PHONY: base ms-build ms-up ms-down
 
 ## Собрать общий базовый образ wrs-base
 base:
@@ -17,52 +16,33 @@ base:
 	@docker build --network=host -f $(MICRO_BASE_DF) -t wrs-base:latest .
 	@printf "$(OK)wrs-base собран${NC}\n"
 
-## Собрать все микросервис-образы (сначала база)
+## Собрать образы микросервисов
 ms-build: base
 	$(require-docker)
-	@printf "$(INFO)Сборка сервисов: $(MICRO_SERVICES)...${NC}\n"
-	@$(COMPOSE) build $(MICRO_SERVICES)
-	@printf "$(OK)Микросервисы собраны${NC}\n"
+	@case "$(SVC)" in \
+		"")   $(COMPOSE) build $(MICRO_SERVICES) ;; \
+		sim)  $(COMPOSE) build wrs-sim ;; \
+		core) $(COMPOSE) build wrs-core ;; \
+		nav)  $(COMPOSE) build wrs-nav ;; \
+		rviz) $(COMPOSE) build wrs-rviz ;; \
+		*) printf "$(ERR)SVC=$(SVC): ожидается sim|core|nav|rviz${NC}\n" >&2; exit 1 ;; \
+	esac
+	@printf "$(OK)Образы собраны${NC}\n"
 
-## Собрать симулятор
-ms-build-sim: base
-	@$(COMPOSE) build wrs-sim
-
-## Собрать ядро (Rust-контроллер — частая пересборка)
-ms-build-core: base
-	@$(COMPOSE) build wrs-core
-
-## Собрать навигацию
-ms-build-nav: base
-	@$(COMPOSE) build wrs-nav
-
-## Собрать RViz
-ms-build-rviz: base
-	@$(COMPOSE) build wrs-rviz
-
-## Поднять полный микросервис-стек (sim+core+nav+viz)
+## Поднять микросервис-стек
 ms-up:
 	$(require-docker)
-	@$(COMPOSE) --profile full up -d wrs-sim wrs-core wrs-nav wrs-rviz
-	@printf "$(OK)Полный стек поднят${NC}\n"
+	@case "$(SVC)" in \
+		"")   $(COMPOSE) --profile full up -d wrs-sim wrs-core wrs-nav wrs-rviz ;; \
+		sim)  $(COMPOSE) --profile sim up -d wrs-sim ;; \
+		core) $(COMPOSE) --profile core up -d wrs-core ;; \
+		nav)  $(COMPOSE) --profile nav up -d wrs-nav ;; \
+		rviz) $(COMPOSE) --profile viz up -d wrs-rviz ;; \
+		*) printf "$(ERR)SVC=$(SVC): ожидается sim|core|nav|rviz${NC}\n" >&2; exit 1 ;; \
+	esac
+	@printf "$(OK)Микросервисы запущены${NC}\n"
 
 ## Остановить микросервис-стек
 ms-down:
-	@docker rm -f wrs-sim wrs-core wrs-nav wrs-rviz >/dev/null 2>&1 || true
+	@docker rm -f $(if $(SVC),wrs-$(SVC),$(MICRO_SERVICES)) >/dev/null 2>&1 || true
 	@printf "$(OK)Микросервис-стек остановлен${NC}\n"
-
-## Поднять симулятор
-ms-sim:
-	@$(COMPOSE) --profile sim up -d wrs-sim
-
-## Поднять ядро (нужен запущенный симулятор)
-ms-core:
-	@$(COMPOSE) --profile core up -d wrs-core
-
-## Поднять навигацию
-ms-nav:
-	@$(COMPOSE) --profile nav up -d wrs-nav
-
-## Поднять визуализацию
-ms-viz:
-	@$(COMPOSE) --profile viz up -d wrs-rviz
