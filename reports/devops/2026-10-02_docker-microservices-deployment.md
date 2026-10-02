@@ -210,17 +210,36 @@ graph TB
 - [x] compose-профили и Makefile
 - [x] Починить управление ([Проблема 8](#8-проблема-отсутствие-управления-роботом))
 - [x] Починить ROS `/clock` ([Проблема 11](#11-проблема-нет-ros-clock))
+- [ ] Healthchecks и каскад старта: `rviz` без healthcheck; `nav`/`rviz`
+  ждут `core` по `service_started` → `service_healthy`; подобрать `start_period`
+- [ ] Защита от конфликта: при `ms-up` предупреждать/останавливать
+  запущенный монолит `simulator`
+- [ ] Make-цели: `ms-status`, `ms-logs`, `ms-shell`, `ms-restart`, `ms-teleop`
 
 #### Среднесрочно
 
-- [ ] Прогнать интеграционный тест `scripts/test_sim_integration.sh` на стеке
-- [ ] Проверить Nav2/SLAM (после починки clock)
-- [ ] Healthcheck'и и порядок старта
+- [ ] Smoke/интеграционный тест микросервисов: параметризовать
+  `scripts/test_sim_integration.sh` под контейнер; проверять `/clock`,
+  `joint_states`, `odom`, `odometry/filtered`
+- [ ] Прогнать Nav2/SLAM end-to-end (поставить goal) на стеке
+- [ ] Проверить рендер сенсоров в headless sim (камера
+  `/robot1/color/image_raw`, лидар `/robot1/scan/points`); в логах были
+  `libEGL: failed to create dri2 screen`
+- [ ] ROS MCP для микросервисов: `mcp-start` привязан к `walking_robot_sim`
+  → параметризовать контейнер (`WRS_CONTAINER`) и поднимать rosbridge в
+  `wrs-core`
 
 #### Долгосрочно
 
+- [ ] Облегчить `wrs-base`: `osrf/ros:jazzy-desktop` (7.8 ГБ) →
+  `ros:jazzy-ros-base` для `sim`/`core`/`nav` + точечные пакеты,
+  desktop — только для `rviz`
+- [ ] `--mixin ccache` в `sim`/`nav`/`rviz` (сейчас только в `core`)
+- [ ] `.dockerignore` для контекста сборки
 - [ ] Замена источника на Isaac Sim нативно (только `wrs-sim`)
 - [ ] Профиль vision (YOLO) отдельным сервисом
+- [ ] Обновить README и пометить `2026-08-22_docker-microservices-v2.md`
+  как реализованный
 
 ### A.7. Приложения
 
