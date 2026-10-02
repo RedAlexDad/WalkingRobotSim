@@ -173,6 +173,104 @@ services:
     pids_limit: 256
     command: *el_command
 
+  # ══════════ Микросервисы (makefiles/docker-microservices) ══════════
+  # Образы самодостаточны (src собран внутри), без bind-mount project_src.
+  # Профили: sim | core | nav | viz | full. Базовый образ wrs-base — make base.
+  wrs-sim:
+    <<: *basic
+    image: wrs-sim:latest
+    container_name: wrs-sim
+    profiles: ["sim", "full"]
+    group_add: ["44"]
+    environment:
+      <<: [*env_gui, *env_ros]
+      WORKSPACE_DIR: "/root/ws"
+    build:
+      context: .
+      dockerfile: src/docker/Dockerfile.sim
+      args: {BASE_IMG: wrs-base:latest, ROS_DISTRO: jazzy}
+      network: host
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
+      - ./logs/gazebo:/root/ws/logs
+    restart: unless-stopped
+    mem_limit: 8g
+    memswap_limit: 10g
+    pids_limit: 8192
+
+  wrs-core:
+    <<: *basic
+    image: wrs-core:latest
+    container_name: wrs-core
+    profiles: ["core", "full"]
+    depends_on:
+      wrs-sim:
+        condition: service_healthy
+    environment:
+      <<: *env_ros
+      WORKSPACE_DIR: "/root/ws"
+    build:
+      context: .
+      dockerfile: src/docker/Dockerfile.core
+      args: {BASE_IMG: wrs-base:latest, ROS_DISTRO: jazzy}
+      network: host
+    volumes:
+      - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
+      - ./logs/gazebo:/root/ws/logs
+    restart: unless-stopped
+    mem_limit: 6g
+    memswap_limit: 8g
+    pids_limit: 8192
+
+  wrs-nav:
+    <<: *basic
+    image: wrs-nav:latest
+    container_name: wrs-nav
+    profiles: ["nav", "full"]
+    depends_on:
+      wrs-core:
+        condition: service_started
+    environment:
+      <<: *env_ros
+      WORKSPACE_DIR: "/root/ws"
+    build:
+      context: .
+      dockerfile: src/docker/Dockerfile.nav
+      args: {BASE_IMG: wrs-base:latest, ROS_DISTRO: jazzy}
+      network: host
+    volumes:
+      - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
+      - ./logs/gazebo:/root/ws/logs
+    restart: unless-stopped
+    mem_limit: 4g
+    memswap_limit: 6g
+    pids_limit: 8192
+
+  wrs-rviz:
+    <<: *basic
+    image: wrs-rviz:latest
+    container_name: wrs-rviz
+    profiles: ["viz", "full"]
+    depends_on:
+      wrs-core:
+        condition: service_started
+    environment:
+      <<: [*env_gui, *env_ros]
+      WORKSPACE_DIR: "/root/ws"
+    build:
+      context: .
+      dockerfile: src/docker/Dockerfile.rviz
+      args: {BASE_IMG: wrs-base:latest, ROS_DISTRO: jazzy}
+      network: host
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./src/docker/cyclonedds.xml:/cyclonedds.xml:ro
+    restart: unless-stopped
+    mem_limit: 4g
+    memswap_limit: 6g
+    pids_limit: 4096
+
 volumes:
   project_src:
     driver: local

@@ -1,0 +1,38 @@
+# ============================================================
+# wrs-nav — навигация: Nav2 + SLAM + карты. Без Gazebo и без Rust-сборки.
+#
+# Сборка: docker build -f src/docker/Dockerfile.nav -t wrs-nav:latest .
+# ============================================================
+ARG BASE_IMG=wrs-base:latest
+FROM ${BASE_IMG}
+
+ARG ROS_DISTRO=jazzy
+ENV ROS_DISTRO=${ROS_DISTRO}
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    ros-${ROS_DISTRO}-slam-toolbox \
+    ros-${ROS_DISTRO}-navigation2 \
+    ros-${ROS_DISTRO}-nav2-bringup \
+    ros-${ROS_DISTRO}-nav2-simple-commander \
+    ros-${ROS_DISTRO}-robot-localization \
+    ros-${ROS_DISTRO}-geometry-msgs \
+    ros-${ROS_DISTRO}-sensor-msgs \
+    ros-${ROS_DISTRO}-tf2-ros \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR ${WORKSPACE_DIR}
+
+COPY src/quadropted_msgs       src/quadropted_msgs
+COPY src/walking_robot_utils   src/walking_robot_utils
+COPY src/gazebo_sim            src/gazebo_sim
+
+RUN bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && colcon build --symlink-install --packages-select gazebo_sim quadropted_msgs walking_robot_utils"
+
+RUN sed -i '/exec "\$@"/i source "${WORKSPACE_DIR}/install/setup.bash"' /ros_entrypoint.sh
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD bash -c 'source /opt/ros/${ROS_DISTRO}/setup.bash && ros2 node list | grep -q planner_server || exit 1'
+
+CMD ["ros2", "launch", "gazebo_sim", "launch_nav.py"]

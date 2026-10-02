@@ -2,8 +2,17 @@
 # сенсорного рендера. Подключается Makefile только когда iGPU найден:
 #   docker compose -f compose.yml -f compose.gpu.yml up -d
 # Пути подставляет scripts/detect-gpu.sh (WRS_DRI_CARD / WRS_DRI_RENDER).
+# GPU нужен симулятору (сенсоры/рендер) и RViz.
 services:
   simulator:
+    devices:
+      - ${WRS_DRI_CARD:-/dev/dri/card1}
+      - ${WRS_DRI_RENDER:-/dev/dri/renderD128}
+  wrs-sim:
+    devices:
+      - ${WRS_DRI_CARD:-/dev/dri/card1}
+      - ${WRS_DRI_RENDER:-/dev/dri/renderD128}
+  wrs-rviz:
     devices:
       - ${WRS_DRI_CARD:-/dev/dri/card1}
       - ${WRS_DRI_RENDER:-/dev/dri/renderD128}

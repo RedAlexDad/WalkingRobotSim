@@ -43,6 +43,7 @@ include makefiles/help.mk
 include makefiles/docker.mk
 include makefiles/rust.mk
 include makefiles/mcp.mk
+include makefiles/microservices.mk
 include makefiles/nvidia.mk
 include makefiles/elevation.mk
 include makefiles/simulation.mk

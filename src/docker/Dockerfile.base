@@ -1,0 +1,41 @@
+# ============================================================
+# wrs-base — общий базовый образ для всех сервисов.
+# Система + ROS base + CycloneDDS + инструменты сборки + Rust + Python.
+# Собирается один раз; core/sim/nav/rviz наследуют его.
+#
+# Сборка: docker build -f src/docker/Dockerfile.base -t wrs-base:latest .
+# ============================================================
+ARG BASE_IMG=osrf/ros:jazzy-desktop
+ARG ROS_DISTRO=jazzy
+FROM ${BASE_IMG} AS wrs-base
+
+ARG ROS_DISTRO
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    build-essential cmake git wget curl nano tmux ccache \
+    python3 python3-pip python3-dev libeigen3-dev ros-dev-tools \
+    python3-colcon-common-extensions \
+    ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
+    ros-${ROS_DISTRO}-rclcpp ros-${ROS_DISTRO}-rclpy \
+    ros-${ROS_DISTRO}-urdf ros-${ROS_DISTRO}-xacro \
+    ros-${ROS_DISTRO}-std-msgs ros-${ROS_DISTRO}-angles \
+    ros-${ROS_DISTRO}-tf2-ros ros-${ROS_DISTRO}-tf2 \
+    ros-${ROS_DISTRO}-test-msgs \
+    ros-${ROS_DISTRO}-rosbridge-server \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip3 install --no-cache-dir --break-system-packages \
+    git+https://github.com/ruffsl/colcon-cache.git \
+    'numpy<2' scipy pandas PyYAML
+
+# Rust toolchain (для quadropted_controller_rust)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+ENV ROS_DISTRO=${ROS_DISTRO}
+ENV WORKSPACE_DIR=/root/ws
+WORKDIR ${WORKSPACE_DIR}
+RUN mkdir -p ${WORKSPACE_DIR}/logs

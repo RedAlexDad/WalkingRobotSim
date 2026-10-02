@@ -1,0 +1,30 @@
+# ============================================================
+# wrs-rviz — визуализация: RViz + конфиг проекта + описания роботов.
+# Отдельный образ, чтобы GUI-зависимости не тянулись в ядро.
+#
+# Сборка: docker build -f src/docker/Dockerfile.rviz -t wrs-rviz:latest .
+# ============================================================
+ARG BASE_IMG=wrs-base:latest
+FROM ${BASE_IMG}
+
+ARG ROS_DISTRO=jazzy
+ENV ROS_DISTRO=${ROS_DISTRO}
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    ros-${ROS_DISTRO}-rviz2 \
+    ros-${ROS_DISTRO}-tf2-ros \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR ${WORKSPACE_DIR}
+
+COPY src/gazebo_sim         src/gazebo_sim
+COPY src/go1_description    src/go1_description
+COPY src/go2_description    src/go2_description
+
+RUN bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && colcon build --symlink-install --packages-select gazebo_sim go1_description go2_description"
+
+RUN sed -i '/exec "\$@"/i source "${WORKSPACE_DIR}/install/setup.bash"' /ros_entrypoint.sh
+
+CMD ["ros2", "launch", "gazebo_sim", "rviz_launch.py", "namespace:=robot1", "use_namespace:=true", "rviz_config:=/root/ws/install/gazebo_sim/share/gazebo_sim/rviz/nav2_default_view.rviz"]

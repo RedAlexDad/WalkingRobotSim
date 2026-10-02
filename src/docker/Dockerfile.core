@@ -1,0 +1,62 @@
+# ============================================================
+# wrs-core — ядро: Rust-контроллер, одометрия, EKF, мост GZ↔ROS,
+# ros2_control spawner'ы, cmd_vel_pub, robot_state_publisher.
+# Собирает только пакеты ядра (без Nav2, без torch/YOLO).
+#
+# Сборка: docker build -f src/docker/Dockerfile.core -t wrs-core:latest .
+# ============================================================
+ARG BASE_IMG=wrs-base:latest
+FROM ${BASE_IMG}
+
+ARG ROS_DISTRO=jazzy
+ENV ROS_DISTRO=${ROS_DISTRO}
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    ros-${ROS_DISTRO}-ros2-control \
+    ros-${ROS_DISTRO}-gz-ros2-control \
+    ros-${ROS_DISTRO}-controller-manager \
+    ros-${ROS_DISTRO}-hardware-interface \
+    ros-${ROS_DISTRO}-pluginlib \
+    ros-${ROS_DISTRO}-joint-state-publisher \
+    ros-${ROS_DISTRO}-robot-state-publisher \
+    ros-${ROS_DISTRO}-ros2-controllers \
+    ros-${ROS_DISTRO}-robot-localization \
+    ros-${ROS_DISTRO}-ros-gz-bridge \
+    ros-${ROS_DISTRO}-ros-gz-image \
+    ros-${ROS_DISTRO}-ros-gz-sim \
+    ros-${ROS_DISTRO}-geometry-msgs \
+    ros-${ROS_DISTRO}-sensor-msgs \
+    ros-${ROS_DISTRO}-tf2-ros \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR ${WORKSPACE_DIR}
+
+# Пакеты ядра (сообщения + Rust-контроллер + C++ cmd_vel_pub + описания робота + launch/config)
+COPY src/geometry_msgs_rs        src/geometry_msgs_rs
+COPY src/std_msgs_rs             src/std_msgs_rs
+COPY src/sensor_msgs_rs          src/sensor_msgs_rs
+COPY src/nav_msgs_rs             src/nav_msgs_rs
+COPY src/tf2_msgs_rs             src/tf2_msgs_rs
+COPY src/visualization_msgs_rs   src/visualization_msgs_rs
+COPY src/quadropted_msgs         src/quadropted_msgs
+COPY src/quadropted_msgs_rs      src/quadropted_msgs_rs
+COPY src/quadropted_controller_rust src/quadropted_controller_rust
+COPY src/quadropted_controller_cpp  src/quadropted_controller_cpp
+COPY src/walking_robot_utils     src/walking_robot_utils
+COPY src/gazebo_sim              src/gazebo_sim
+COPY src/go1_description         src/go1_description
+COPY src/go2_description         src/go2_description
+
+RUN --mount=type=cache,target=/root/.ccache \
+    bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && ccache colcon build --symlink-install --mixin ccache"
+
+RUN sed -i '/exec "\$@"/i source "${WORKSPACE_DIR}/install/setup.bash"' /ros_entrypoint.sh
+
+ENV GZ_SIM_RESOURCE_PATH=${WORKSPACE_DIR}/install/gazebo_sim/share/gazebo_sim/models
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD bash -c 'source /opt/ros/${ROS_DISTRO}/setup.bash && ros2 node list | grep -q robot_controller_rust || exit 1'
+
+CMD ["ros2", "launch", "gazebo_sim", "launch_core.py"]
