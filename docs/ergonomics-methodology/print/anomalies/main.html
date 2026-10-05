@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><title>Эргономическое обоснование информационной модели оператора шагающего робота на основе анализа деятельности (на примере обнаружения аномалий)</title>
+<style>
+@page { size: A4 portrait; margin: 9mm 11mm; }
+* { box-sizing: border-box; }
+body { font-family: "PT Serif", Georgia, "Times New Roman", serif;
+       font-size: 8.9pt; line-height: 1.15; color: #1a1a1a;
+       max-width: 186mm; margin: 0 auto; }
+.kicker { font-size: 8.5pt; letter-spacing: 1px; text-transform: uppercase;
+          color: #7a8b9c; margin-bottom: 1mm; }
+h1 { font-size: 15pt; color: #14395c; border-bottom: 2px solid #2c5f8a;
+     padding-bottom: 3px; margin: 1mm 0 3mm; line-height: 1.15; }
+h2 { font-size: 11.5pt; color: #14395c; border-bottom: 1px solid #cfd8e3;
+     padding-bottom: 2px; margin: 8px 0 4px; }
+h3 { font-size: 10.5pt; color: #2c5f8a; margin: 7px 0 3px; }
+p { margin: 3px 0; }
+ul, ol { margin: 3px 0 3px 16px; padding: 0; }
+li { margin: 0.5px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 7.8pt; margin: 3px 0; }
+th, td { border: 1px solid #b9c4d0; padding: 2px 4px; text-align: left;
+         vertical-align: top; }
+th { background: #e8eef5; }
+tr:nth-child(even) td { background: #f6f9fc; }
+code { background: #eef1f4; padding: 0 3px; border-radius: 3px;
+       font-family: Consolas, "DejaVu Sans Mono", monospace; font-size: 8.4pt; }
+pre code { display: block; padding: 5px; background: #f6f8fa;
+           border: 1px solid #e1e4e8; white-space: pre-wrap; }
+blockquote { border-left: 3px solid #2c5f8a; margin: 5px 0; padding: 2px 8px;
+             background: #f6f9fc; color: #333; }
+hr { border: none; border-top: 1px solid #d0d7de; margin: 8px 0; }
+.mermaid { text-align: center; margin: 6px 0; page-break-inside: avoid; }
+.mermaid svg { max-height: 55mm; height: auto; }
+h2, h3 { page-break-after: avoid; }
+table { page-break-inside: auto; }
+tr, blockquote { page-break-inside: avoid; }
+.reco { font-size: 8.5pt; color: #5a6b7c; margin-bottom: 1mm; }
+</style><script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: "neutral" });</script></head><body>
+<div class="kicker">КР по эргономике (ЭА_СОиОИ)</div><h1>Эргономическое обоснование информационной модели оператора шагающего робота на основе анализа деятельности (на примере обнаружения аномалий)</h1>
+<h2>2. Вектор анализа (основной)</h2>
+<p><strong>Вектор:</strong> информационно-перцептивный — как информация о состоянии
+робота доходит до оператора и воспринимается им.</p>
+<table>
+<thead>
+<tr>
+<th>Что</th>
+<th>Значение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Вектор</td>
+<td>восприятие информации оператором</td>
+</tr>
+<tr>
+<td>Узкий выбор</td>
+<td>экран оператора в сценарии обнаружения аномалии</td>
+</tr>
+<tr>
+<td>На что смотрим</td>
+<td>критические параметры и форма их представления</td>
+</tr>
+<tr>
+<td>Что оцениваем</td>
+<td>полнота, своевременность, однозначность, нагрузка</td>
+</tr>
+<tr>
+<td>Что НЕ смотрим</td>
+<td>суставы, моменты, алгоритм походки (это техника)</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Критерии, метрики, значения (пример):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Критерий</th>
+<th>Метрика</th>
+<th>Пример значения</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Полнота</td>
+<td>доля критичных параметров в ИМ</td>
+<td>4 из 4 = 100%</td>
+</tr>
+<tr>
+<td>Своевременность</td>
+<td>задержка индикации аномалии</td>
+<td>≤ 0.5 с (проектно)</td>
+</tr>
+<tr>
+<td>Однозначность</td>
+<td>число трактовок показателя</td>
+<td>1 (нет двусмысленности)</td>
+</tr>
+<tr>
+<td>Нагрузка</td>
+<td>число одновременно отображаемых параметров</td>
+<td>≤ 5</td>
+</tr>
+</tbody>
+</table>
+<p><em>Метрики структурные/проектные — считаются по модели, а не измеряются на
+людях.</em></p>
+<p><strong>Ключевая мысль:</strong> обнаружение аномалии — в роботе, а эргономика
+начинается там, где событие превращается в информацию для оператора.</p>
+<hr />
+<h2>3. Ответы на три вопроса</h2>
+<table>
+<thead>
+<tr>
+<th>Вопрос</th>
+<th>Мой ответ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Объект</td>
+<td>Экран оператора (информационная модель)</td>
+</tr>
+<tr>
+<td>2. Где анализ</td>
+<td>Вывод требований из деятельности + сравнение форм</td>
+</tr>
+<tr>
+<td>3. Характеристики</td>
+<td>Полнота, своевременность, однозначность, нагрузка</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>3a. Характеристики и параметры (основная тема A)</h2>
+<p><strong>Параметры</strong> — что отображаем оператору (с приоритетом):</p>
+<table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Что показывает</th>
+<th>Приоритет</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Высота корпуса</td>
+<td>просадка/падение</td>
+<td>критичный</td>
+</tr>
+<tr>
+<td>Наклон (крен/дифферент)</td>
+<td>риск опрокидывания</td>
+<td>критичный</td>
+</tr>
+<tr>
+<td>Контакты ног</td>
+<td>потеря опоры</td>
+<td>критичный</td>
+</tr>
+<tr>
+<td>Статус связи</td>
+<td>доступность данных</td>
+<td>критичный</td>
+</tr>
+<tr>
+<td>Ошибки/аварии</td>
+<td>флаги неисправностей</td>
+<td>критичный</td>
+</tr>
+<tr>
+<td>Отклонение от маршрута</td>
+<td>уход с задания</td>
+<td>важный</td>
+</tr>
+<tr>
+<td>Скорость</td>
+<td>темп движения</td>
+<td>важный</td>
+</tr>
+<tr>
+<td>Режим походки (TROT/CRAWL/STAND)</td>
+<td>текущий режим</td>
+<td>важный</td>
+</tr>
+<tr>
+<td>Ориентация (курс)</td>
+<td>направление движения</td>
+<td>важный</td>
+</tr>
+<tr>
+<td>Положение на карте</td>
+<td>локализация</td>
+<td>важный</td>
+</tr>
+<tr>
+<td>Тренд высоты</td>
+<td>динамика просадки</td>
+<td>важный</td>
+</tr>
+<tr>
+<td>Опасность препятствия</td>
+<td>близость объекта</td>
+<td>важный</td>
+</tr>
+<tr>
+<td>Углы суставов</td>
+<td>состояние конечностей</td>
+<td>фоновый</td>
+</tr>
+<tr>
+<td>Наработка/время работы</td>
+<td>ресурс</td>
+<td>фоновый</td>
+</tr>
+<tr>
+<td>Заряд батареи</td>
+<td>ресурс питания</td>
+<td>фоновый</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Характеристики</strong> — качества самой модели (с приоритетом):</p>
+<table>
+<thead>
+<tr>
+<th>Характеристика</th>
+<th>Что означает</th>
+<th>Приоритет</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Полнота</td>
+<td>все критичные параметры присутствуют</td>
+<td>высокий</td>
+</tr>
+<tr>
+<td>Своевременность</td>
+<td>аномалия видна до развития</td>
+<td>высокий</td>
+</tr>
+<tr>
+<td>Однозначность</td>
+<td>сигнал читается однозначно</td>
+<td>высокий</td>
+</tr>
+<tr>
+<td>Наглядность аномалии</td>
+<td>отклонение сразу заметно</td>
+<td>высокий</td>
+</tr>
+<tr>
+<td>Различимость состояний</td>
+<td>норма/предупреждение/авария</td>
+<td>высокий</td>
+</tr>
+<tr>
+<td>Помехозащищённость</td>
+<td>«нет данных» ≠ «норма»</td>
+<td>высокий</td>
+</tr>
+<tr>
+<td>Приоритизация</td>
+<td>критичное выделено крупно</td>
+<td>средний</td>
+</tr>
+<tr>
+<td>Нагрузка на внимание</td>
+<td>минимум одновременно</td>
+<td>средний</td>
+</tr>
+<tr>
+<td>Устойчивость индикации</td>
+<td>не мерцает, не скачет</td>
+<td>средний</td>
+</tr>
+<tr>
+<td>Локализуемость</td>
+<td>видно, где проблема</td>
+<td>средний</td>
+</tr>
+<tr>
+<td>Прогностичность</td>
+<td>тренд показывает развитие</td>
+<td>средний</td>
+</tr>
+<tr>
+<td>Цветовая различимость</td>
+<td>состояния различаются цветом</td>
+<td>средний</td>
+</tr>
+<tr>
+<td>Согласованность</td>
+<td>единый стиль обозначений</td>
+<td>фоновый</td>
+</tr>
+<tr>
+<td>Простота восприятия</td>
+<td>мало шагов считывания</td>
+<td>фоновый</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Ключевой принцип приоритизации:</strong> критичные параметры — всегда и
+крупно; важные — постоянно, но компактно; фоновые — по запросу.</p>
+<hr />
+<h2>4. Пример: обнаружение аномалии по массиву</h2>
+<p>Ряд высоты корпуса (10 тактов):</p>
+<p><code>19 19 19 18 18 17 15 14 14 13</code></p>
+<ul>
+<li>19 — норма; 18–17 — ещё похоже на норму (простой порог не сработал бы);</li>
+<li>15 → 13 — просадка видна <strong>по массиву</strong>, а не по одному значению.</li>
+</ul>
+<p>Цепочка: массив → признак (тренд) → событие → индикация оператору.</p>
+<hr />
+</body></html>

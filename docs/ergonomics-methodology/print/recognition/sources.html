@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><title>Эргономическое обоснование представления результатов распознавания объектов оператору мобильного робота</title>
+<style>
+@page { size: A4 portrait; margin: 9mm 11mm; }
+* { box-sizing: border-box; }
+body { font-family: "PT Serif", Georgia, "Times New Roman", serif;
+       font-size: 8.9pt; line-height: 1.15; color: #1a1a1a;
+       max-width: 186mm; margin: 0 auto; }
+.kicker { font-size: 8.5pt; letter-spacing: 1px; text-transform: uppercase;
+          color: #7a8b9c; margin-bottom: 1mm; }
+h1 { font-size: 15pt; color: #14395c; border-bottom: 2px solid #2c5f8a;
+     padding-bottom: 3px; margin: 1mm 0 3mm; line-height: 1.15; }
+h2 { font-size: 11.5pt; color: #14395c; border-bottom: 1px solid #cfd8e3;
+     padding-bottom: 2px; margin: 8px 0 4px; }
+h3 { font-size: 10.5pt; color: #2c5f8a; margin: 7px 0 3px; }
+p { margin: 3px 0; }
+ul, ol { margin: 3px 0 3px 16px; padding: 0; }
+li { margin: 0.5px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 7.8pt; margin: 3px 0; }
+th, td { border: 1px solid #b9c4d0; padding: 2px 4px; text-align: left;
+         vertical-align: top; }
+th { background: #e8eef5; }
+tr:nth-child(even) td { background: #f6f9fc; }
+code { background: #eef1f4; padding: 0 3px; border-radius: 3px;
+       font-family: Consolas, "DejaVu Sans Mono", monospace; font-size: 8.4pt; }
+pre code { display: block; padding: 5px; background: #f6f8fa;
+           border: 1px solid #e1e4e8; white-space: pre-wrap; }
+blockquote { border-left: 3px solid #2c5f8a; margin: 5px 0; padding: 2px 8px;
+             background: #f6f9fc; color: #333; }
+hr { border: none; border-top: 1px solid #d0d7de; margin: 8px 0; }
+.mermaid { text-align: center; margin: 6px 0; page-break-inside: avoid; }
+.mermaid svg { max-height: 55mm; height: auto; }
+h2, h3 { page-break-after: avoid; }
+table { page-break-inside: auto; }
+tr, blockquote { page-break-inside: avoid; }
+.reco { font-size: 8.5pt; color: #5a6b7c; margin-bottom: 1mm; }
+</style><script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: "neutral" });</script></head><body>
+<div class="kicker">КР по эргономике (ЭА_СОиОИ) &middot; распознавание объектов</div><h1>Математические основания и источники</h1>
+<h2>12. Математические основания и источники</h2>
+<p>Каждая характеристика и параметр опираются на измеримую модель
+(психофизика, теория информации, теория обнаружения сигналов) или
+стандарт. Это позволяет обосновывать решения ссылками, а не мнением.</p>
+<h3>12.1. Формулы</h3>
+<table>
+<thead>
+<tr>
+<th>Модель</th>
+<th>Формула</th>
+<th>Что даёт</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Закон Хика–Хаймана</td>
+<td><code>RT = a + b·log2(n+1)</code></td>
+<td>время выбора растёт логарифмически от числа альтернатив</td>
+</tr>
+<tr>
+<td>Закон Фиттса</td>
+<td><code>MT = a + b·log2(A/W + 1)</code></td>
+<td>время/точность наведения зависит от размера цели</td>
+</tr>
+<tr>
+<td>Энтропия Шеннона</td>
+<td><code>H = −Σ pᵢ·log2 pᵢ</code></td>
+<td>количественная мера неопределённости</td>
+</tr>
+<tr>
+<td>Теория обнаружения сигналов</td>
+<td><code>d′ = z(H) − z(F)</code>; <code>c = −½(z(H)+z(F))</code></td>
+<td>различимость сигнала и смещение критерия</td>
+</tr>
+<tr>
+<td>Калибровка уверенности (ECE)</td>
+<td><code>ECE = Σ (|B_m|/n)·|acc(B_m) − conf(B_m)|</code></td>
+<td>насколько уверенность соответствует точности</td>
+</tr>
+<tr>
+<td>Brier score</td>
+<td><code>BS = (1/N)Σ (fᵢ − oᵢ)²</code></td>
+<td>качество вероятностного прогноза</td>
+</tr>
+<tr>
+<td>Закон Вебера (JND)</td>
+<td><code>ΔI/I = k</code></td>
+<td>минимально различимое изменение</td>
+</tr>
+<tr>
+<td>Визуальный угол</td>
+<td><code>θ = 2·arctan(h/2d)</code></td>
+<td>связь размера и дистанции</td>
+</tr>
+<tr>
+<td>Цветовое различие CIE</td>
+<td><code>ΔE00</code> (CIEDE2000)</td>
+<td>численная различимость цветов</td>
+</tr>
+<tr>
+<td>Контраст WCAG</td>
+<td><code>(L1+0.05)/(L2+0.05)</code></td>
+<td>читаемость текста/меток</td>
+</tr>
+<tr>
+<td>Возраст информации (AoI)</td>
+<td><code>Δ(t) = t − u(t)</code></td>
+<td>свежесть данных</td>
+</tr>
+<tr>
+<td>NASA-TLX</td>
+<td>взвешенная сумма 6 шкал</td>
+<td>субъективная нагрузка</td>
+</tr>
+<tr>
+<td>SEEV</td>
+<td>внимание ∝ Salience · Effort · Expectancy · Value</td>
+<td>распределение внимания</td>
+</tr>
+</tbody>
+</table>
+<h3>12.2. Характеристика → модель → источник</h3>
+<table>
+<thead>
+<tr>
+<th>Характеристика</th>
+<th>Модель/формула</th>
+<th>Источник</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Однозначность класса</td>
+<td>энтропия <code>H</code></td>
+<td>Shannon, 1948</td>
+</tr>
+<tr>
+<td>Наглядность надёжности</td>
+<td>калибровка <code>ECE</code></td>
+<td>Guo et al., 2017; Niculescu-Mizil &amp; Caruana, 2005</td>
+</tr>
+<tr>
+<td>Помехозащищённость</td>
+<td><code>d′</code>, ROC</td>
+<td>Green &amp; Swets, 1966; Tanner &amp; Swets, 1954</td>
+</tr>
+<tr>
+<td>Своевременность</td>
+<td><code>RT</code> (Хик–Хайман)</td>
+<td>Hick, 1952; Hyman, 1953</td>
+</tr>
+<tr>
+<td>Полнота</td>
+<td>доля пропусков (SDT)</td>
+<td>Green &amp; Swets, 1966</td>
+</tr>
+<tr>
+<td>Калибровка доверия</td>
+<td><code>ECE</code>, <code>BS</code>; доверие к автоматике</td>
+<td>Brier, 1950; Guo, 2017; Lee &amp; See, 2004</td>
+</tr>
+<tr>
+<td>Различимость объектов</td>
+<td><code>ΔI/I</code>; визуальный угол</td>
+<td>Weber; MIL-STD-1472</td>
+</tr>
+<tr>
+<td>Нагрузка на внимание</td>
+<td>7±2; 4±1; MRT</td>
+<td>Miller, 1956; Cowan, 2001; Wickens, 2002</td>
+</tr>
+<tr>
+<td>Устойчивость метки</td>
+<td>change blindness</td>
+<td>Simons &amp; Rensink, 2005</td>
+</tr>
+<tr>
+<td>Локализуемость</td>
+<td>закон Фиттса</td>
+<td>Fitts, 1954</td>
+</tr>
+<tr>
+<td>Цветовая различимость</td>
+<td><code>ΔE00</code>; контраст WCAG</td>
+<td>CIE, 2000; Sharma et al., 2005; W3C WCAG 2.1</td>
+</tr>
+<tr>
+<td>Приоритизация</td>
+<td>SEEV</td>
+<td>Wickens et al., 2001</td>
+</tr>
+<tr>
+<td>Непрерывность (трекинг)</td>
+<td>MOT (≈4 объекта)</td>
+<td>Pylyshyn &amp; Storm, 1988</td>
+</tr>
+<tr>
+<td>Простота восприятия</td>
+<td>Хик; когнитивная нагрузка</td>
+<td>Hick, 1952; Sweller, 1988</td>
+</tr>
+</tbody>
+</table>
+<h3>12.3. Параметр → модель → источник</h3>
+<table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Модель/формула</th>
+<th>Источник</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Класс объекта</td>
+<td>идентификация (SDT)</td>
+<td>Green &amp; Swets, 1966</td>
+</tr>
+<tr>
+<td>Уверенность</td>
+<td>апостериорная вероятность; <code>ECE</code></td>
+<td>Guo, 2017</td>
+</tr>
+<tr>
+<td>Тип ошибки</td>
+<td><code>H</code>, <code>F</code>, <code>d′</code>, <code>c</code></td>
+<td>Green &amp; Swets, 1966</td>
+</tr>
+<tr>
+<td>Положение (bbox)</td>
+<td>закон Фиттса</td>
+<td>Fitts, 1954</td>
+</tr>
+<tr>
+<td>Размер</td>
+<td>визуальный угол; мин. высота ≈20′</td>
+<td>MIL-STD-1472</td>
+</tr>
+<tr>
+<td>Дистанция</td>
+<td><code>θ = 2·arctan(h/2d)</code></td>
+<td>физиология зрения</td>
+</tr>
+<tr>
+<td>Число объектов</td>
+<td>7±2 / 4±1</td>
+<td>Miller, 1956; Cowan, 2001</td>
+</tr>
+<tr>
+<td>Опасность</td>
+<td>ценность (SEEV, Value)</td>
+<td>Wickens et al., 2001</td>
+</tr>
+<tr>
+<td>Вид/направление движения</td>
+<td>восприятие движения</td>
+<td>Wickens, 2002</td>
+</tr>
+<tr>
+<td>Зона/центральность</td>
+<td>салиентность, эксцентриситет</td>
+<td>SEEV; зрение</td>
+</tr>
+<tr>
+<td>Время жизни метки</td>
+<td>временная интеграция</td>
+<td>Simons &amp; Rensink, 2005</td>
+</tr>
+<tr>
+<td>Окклюзия</td>
+<td>перцептивная дополненность</td>
+<td>психология восприятия</td>
+</tr>
+<tr>
+<td>Свежесть данных</td>
+<td>Age of Information</td>
+<td>Kaul, Yates, Gruteser</td>
+</tr>
+</tbody>
+</table>
+<h3>12.4. Стандарты</h3>
+<ul>
+<li><strong>ГОСТ Р ИСО 9241</strong> (ч. 110 — принципы диалога, ч. 112 — представление информации).</li>
+<li><strong>ГОСТ Р ИСО 6385-2007</strong> — эргономические принципы.</li>
+<li><strong>ГОСТ 21829-76</strong> (СЧМ, кодирование), <strong>ГОСТ Р 50923-96</strong>, <strong>ГОСТ Р 50948-2001</strong> (дисплеи, средства отображения).</li>
+<li><strong>ISO 9241-3/-303</strong>, <strong>ISO 9355</strong>.</li>
+<li><strong>MIL-STD-1472</strong> — человеко-инженерные критерии (высота знака, цвета, плотность).</li>
+<li><strong>ANSI/HFES 100</strong>, <strong>WCAG 2.1</strong>.</li>
+</ul>
+<h3>12.5. Оговорки</h3>
+<ul>
+<li>Часть характеристик выводится из формул напрямую (нагрузка,
+  уверенность, ошибки, различимость, свежесть), часть — качественные
+  принципы из стандартов (полнота, приоритизация, простота).</li>
+<li><strong>Скорость восприятия не нормируется ГОСТом</strong> — она оценивается через
+  экспериментальные законы (Хик, Фиттс) и SDT.</li>
+<li>В работе эти модели используются как <strong>обоснование требований</strong>, а не
+  как обязательные измерения (без экспертов и без замеров на людях).</li>
+</ul>
+</body></html>
