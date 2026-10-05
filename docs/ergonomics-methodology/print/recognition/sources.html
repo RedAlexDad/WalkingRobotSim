@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8"><title>Эргономическое обоснование представления результатов распознавания объектов оператору мобильного робота</title>
 <style>
-@page { size: A4 portrait; margin: 9mm 11mm; }
+@page { size: A4 portrait; margin: 8mm 11mm; }
 * { box-sizing: border-box; }
 body { font-family: "PT Serif", Georgia, "Times New Roman", serif;
        font-size: 8.9pt; line-height: 1.15; color: #1a1a1a;
@@ -11,13 +11,13 @@ body { font-family: "PT Serif", Georgia, "Times New Roman", serif;
 h1 { font-size: 15pt; color: #14395c; border-bottom: 2px solid #2c5f8a;
      padding-bottom: 3px; margin: 1mm 0 3mm; line-height: 1.15; }
 h2 { font-size: 11.5pt; color: #14395c; border-bottom: 1px solid #cfd8e3;
-     padding-bottom: 2px; margin: 8px 0 4px; }
+     padding-bottom: 2px; margin: 5px 0 3px; }
 h3 { font-size: 10.5pt; color: #2c5f8a; margin: 7px 0 3px; }
 p { margin: 3px 0; }
 ul, ol { margin: 3px 0 3px 16px; padding: 0; }
 li { margin: 0.5px 0; }
 table { border-collapse: collapse; width: 100%; font-size: 7.8pt; margin: 3px 0; }
-th, td { border: 1px solid #b9c4d0; padding: 2px 4px; text-align: left;
+th, td { border: 1px solid #b9c4d0; padding: 1.5px 4px; text-align: left;
          vertical-align: top; }
 th { background: #e8eef5; }
 tr:nth-child(even) td { background: #f6f9fc; }
@@ -35,7 +35,21 @@ table { page-break-inside: auto; }
 tr, blockquote { page-break-inside: avoid; }
 .reco { font-size: 8.5pt; color: #5a6b7c; margin-bottom: 1mm; }
 </style><script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-<script>mermaid.initialize({ startOnLoad: true, theme: "neutral" });</script></head><body>
+<script>mermaid.initialize({ startOnLoad: true, theme: "neutral" });</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  renderMathInElement(document.body, {
+    delimiters: [
+      { left: "$$", right: "$$", display: true },
+      { left: "$", right: "$", display: false }
+    ],
+    throwOnError: false
+  });
+});
+</script></head><body>
 <div class="kicker">КР по эргономике (ЭА_СОиОИ) &middot; распознавание объектов</div><h1>Математические основания и источники</h1>
 <h2>12. Математические основания и источники</h2>
 <p>Каждая характеристика и параметр опираются на измеримую модель
@@ -53,67 +67,67 @@ tr, blockquote { page-break-inside: avoid; }
 <tbody>
 <tr>
 <td>Закон Хика–Хаймана</td>
-<td><code>RT = a + b·log2(n+1)</code></td>
+<td>$RT = a + b\,\log_2(n+1)$</td>
 <td>время выбора растёт логарифмически от числа альтернатив</td>
 </tr>
 <tr>
 <td>Закон Фиттса</td>
-<td><code>MT = a + b·log2(A/W + 1)</code></td>
+<td>$MT = a + b\,\log_2(A/W + 1)$</td>
 <td>время/точность наведения зависит от размера цели</td>
 </tr>
 <tr>
 <td>Энтропия Шеннона</td>
-<td><code>H = −Σ pᵢ·log2 pᵢ</code></td>
+<td>$H = -\sum_i p_i \log_2 p_i$</td>
 <td>количественная мера неопределённости</td>
 </tr>
 <tr>
 <td>Теория обнаружения сигналов</td>
-<td><code>d′ = z(H) − z(F)</code>; <code>c = −½(z(H)+z(F))</code></td>
+<td>$d' = z(H) - z(F)$; $c = -\tfrac{1}{2}(z(H)+z(F))$</td>
 <td>различимость сигнала и смещение критерия</td>
 </tr>
 <tr>
 <td>Калибровка уверенности (ECE)</td>
-<td><code>ECE = Σ (|B_m|/n)·|acc(B_m) − conf(B_m)|</code></td>
+<td>$\mathrm{ECE} = \sum_m \tfrac{\lvert B_m \rvert}{n}\,\lvert \mathrm{acc}(B_m) - \mathrm{conf}(B_m) \rvert$</td>
 <td>насколько уверенность соответствует точности</td>
 </tr>
 <tr>
 <td>Brier score</td>
-<td><code>BS = (1/N)Σ (fᵢ − oᵢ)²</code></td>
+<td>$BS = \tfrac{1}{N}\sum_i (f_i - o_i)^2$</td>
 <td>качество вероятностного прогноза</td>
 </tr>
 <tr>
 <td>Закон Вебера (JND)</td>
-<td><code>ΔI/I = k</code></td>
+<td>$\Delta I / I = k$</td>
 <td>минимально различимое изменение</td>
 </tr>
 <tr>
 <td>Визуальный угол</td>
-<td><code>θ = 2·arctan(h/2d)</code></td>
+<td>$\theta = 2\arctan(h/2d)$</td>
 <td>связь размера и дистанции</td>
 </tr>
 <tr>
 <td>Цветовое различие CIE</td>
-<td><code>ΔE00</code> (CIEDE2000)</td>
+<td>$\Delta E_{00}$ (CIEDE2000)</td>
 <td>численная различимость цветов</td>
 </tr>
 <tr>
 <td>Контраст WCAG</td>
-<td><code>(L1+0.05)/(L2+0.05)</code></td>
+<td>$(L_1+0.05)/(L_2+0.05)$</td>
 <td>читаемость текста/меток</td>
 </tr>
 <tr>
 <td>Возраст информации (AoI)</td>
-<td><code>Δ(t) = t − u(t)</code></td>
+<td>$\Delta(t) = t - u(t)$</td>
 <td>свежесть данных</td>
 </tr>
 <tr>
 <td>NASA-TLX</td>
-<td>взвешенная сумма 6 шкал</td>
+<td>$\mathrm{TLX} = \sum_k w_k R_k$</td>
 <td>субъективная нагрузка</td>
 </tr>
 <tr>
 <td>SEEV</td>
-<td>внимание ∝ Salience · Effort · Expectancy · Value</td>
+<td>$A \propto S \cdot E_f \cdot E_x \cdot V$</td>
 <td>распределение внимания</td>
 </tr>
 </tbody>
