@@ -86,3 +86,46 @@ Reference-контроллер — **rl_sar**. Это ровно две проб
   gz-sim **не гарантируется** — это согласуется с опытом сообщества.
 - Для статьи/ВКРМ это, скорее, **самоценный результат** (sim-to-sim
   переносимость), чем тупик.
+
+---
+
+## 5. Практическая попытка взять rl_sar / quadruped-robotics-stack
+
+**rl_sar** — склонирован с сабмодулями (`git submodule update --init
+--recursive`). Окружение собирается **только целиком через свой Docker**
+(ROS2 **Humble** + **Gazebo Classic** + libtorch + MuJoCo). Сборка образа
+запущена и **упала** на шаге `./build.sh`:
+`[ERROR] Cannot download robot descriptions in offline mode`
+`[ERROR] Failed to setup robot descriptions`
+(нужны дополнительные загрузки описаний роботов в сети/сабмодулях; отладка
+— отдельная задача). Вывод: rl_sar — это отдельный тяжёлый контейнер, не
+наш gz-sim-стек.
+
+**quadruped-robotics-stack** — склонирован. Полезное из их конфигов
+(стек **тот же — gz-sim8 + gz_ros2_control**, что и у нас):
+
+- контроллер — **позиционный** (`position_controllers/
+  JointGroupPositionController`), `update_rate = 200`;
+- **порядок суставов — FL, FR, RL, RR** (FL первым);
+- для стойки — нативные gz `JointPositionController` по суставам
+  (`/go2/cmd/<joint>`, `std_msgs/Float64`), мосты через `ros_gz_bridge`;
+- политика **обучается прямо в Gazebo** (`training/envs/
+  go2_gazebo_env.py`, SB3) — поэтому у них нет sim-to-sim gap;
+- их же заметка: фактическая скорость ≈25% заданной, «нужна настройка
+  походки».
+
+## 6. Наши эксперименты (сводка)
+
+В `docs/gazebo-rl-vs-ik/run-log.md` и `performance-assessment.md`:
+
+- порядок суставов: пробовали **FL-first** (как quadruped) и **FR-first**
+  (как rl_sar) — не помогло;
+- интерфейс: **position** и **effort+PD** — не помогло;
+- при **RTF ≈ 1.0** (минимальный launch) NVIDIA-политика всё равно
+  **оседает** (z ≈ 0.1) и дрейфует.
+
+**Итог:** прямой перенос предобученной **PhysX**-политики в **gz-sim**
+рабочей походки не даёт (sim-to-sim gap), независимо от порядка/интерфейса
+и производительности. Надёжные пути: **обучать политику прямо в Gazebo**
+(подход quadruped-robotics-stack) либо запускать **готовое окружение
+rl_sar** (Gazebo Classic, своя политика).
