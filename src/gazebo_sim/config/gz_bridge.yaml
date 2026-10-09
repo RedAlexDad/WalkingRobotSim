@@ -4,6 +4,12 @@
   gz_type_name: "gz.msgs.Clock"
   direction: GZ_TO_ROS
 
+- ros_topic_name: "/robot1/odom_gz"
+  gz_topic_name: "/model/robot1_my_bot/odometry"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "gz.msgs.Odometry"
+  direction: GZ_TO_ROS
+
 - ros_topic_name: "/robot1/scan/points"
   gz_topic_name: "/robot1/scan/points"
   ros_type_name: "sensor_msgs/msg/PointCloud2"

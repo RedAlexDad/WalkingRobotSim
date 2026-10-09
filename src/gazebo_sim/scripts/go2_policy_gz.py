@@ -47,17 +47,23 @@ JOINT_ORDER = [
     "lh_hip_joint", "lh_upper_leg_joint", "lh_lower_leg_joint",
 ]
 
-# default_joint_pos (порядок контроллера). Стандартные стойки Go2:
-# FR -0.1/0.8/-1.5, FL 0.1/0.8/-1.5, RR -0.1/1.0/-1.5, RL 0.1/1.0/-1.5.
+# Порядок ПОЛИТИКИ (IsaacLab/NVIDIA Go2): FL, FR, RL, RR x (hip, thigh, calf).
+# default_joint_pos в порядке политики:
+#   FL 0.1/0.8/-1.5, FR -0.1/0.8/-1.5, RL 0.1/1.0/-1.5, RR -0.1/1.0/-1.5.
 DEFAULT_POS = np.array(
     [
-        -0.1, 0.8, -1.5,  # rf (FR)
-        0.1, 0.8, -1.5,   # lf (FL)
-        -0.1, 1.0, -1.5,  # rh (RR)
-        0.1, 1.0, -1.5,   # lh (RL)
+        0.1, 0.8, -1.5,   # FL
+        -0.1, 0.8, -1.5,  # FR
+        0.1, 1.0, -1.5,   # RL
+        -0.1, 1.0, -1.5,  # RR
     ],
     dtype=np.float32,
 )
+
+# JOINT_ORDER (контроллер Gazebo) = rf(FR), lf(FL), rh(RR), lh(RL).
+# PERM[i] — индекс сустава в порядке политики для i-го сустава контроллера.
+# (Перестановка симметрична: одинаково переводит контроллер<->политику.)
+PERM = np.array([3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8], dtype=np.intp)
 
 ACTION_SCALE = 0.25
 CONTROL_HZ = 50.0
@@ -164,8 +170,19 @@ def run_ros() -> int:
             self.declare_parameter("odom_topic", "")
             self.declare_parameter("joint_order", JOINT_ORDER)
             self.declare_parameter("imu_invert", False)
+            self.declare_parameter("control_mode", "position")  # position | effort
+            self.declare_parameter("kp", 25.0)
+            self.declare_parameter("kd", 0.5)
+            self.declare_parameter("effort_limit", 23.5)
+            self.declare_parameter("vel_limit", 30.0)
+            self.declare_parameter("hip_sign", 1.0)
 
             ns = self.get_parameter("namespace").value
+            self.mode = str(self.get_parameter("control_mode").value)
+            self.kp = float(self.get_parameter("kp").value)
+            self.kd = float(self.get_parameter("kd").value)
+            self.effort_limit = float(self.get_parameter("effort_limit").value)
+            self.vel_limit = float(self.get_parameter("vel_limit").value)
             self.policy = load_policy()
             self.last_action = np.zeros(NUM_JOINTS, dtype=np.float32)
             self.joint_names = list(self.get_parameter("joint_order").value)
@@ -185,21 +202,25 @@ def run_ros() -> int:
             )
             self.received = False
 
-            odom_topic = self.get_parameter("odom_topic").value or f"/{ns}/odom"
+            odom_topic = self.get_parameter("odom_topic").value or f"/{ns}/odom_gz"
             self.create_subscription(JointState, f"/{ns}/joint_states", self._on_joints, 10)
             self.create_subscription(Imu, f"/{ns}/imu_plugin/out", self._on_imu, 10)
             self.create_subscription(Odometry, odom_topic, self._on_odom, 10)
             self.create_subscription(Twist, "/cmd_vel", self._on_cmd, 10)
 
             self.pub = self.create_publisher(
-                Float64MultiArray, f"/{ns}/joint_group_controller/commands", 10
+                Float64MultiArray,
+                (f"/{ns}/joint_group_effort_controller/commands"
+                 if self.mode == "effort"
+                 else f"/{ns}/joint_group_controller/commands"),
+                10,
             )
-            # Публикуем дефолтную стойку до прихода данных.
-            self._publish_target(DEFAULT_POS)
+            # Публикуем дефолтную стойку (в порядке контроллера) до прихода данных.
+            self._publish_target(DEFAULT_POS[PERM])
             self.create_timer(1.0 / CONTROL_HZ, self._control)
             self.get_logger().info(
-                f"go2_policy_gz запущен (ns={ns}, vx={self.cmd[0]:.2f}, "
-                f"{CONTROL_HZ:.0f} Hz)"
+                f"go2_policy_gz запущен (ns={ns}, mode={self.mode}, "
+                f"vx={self.cmd[0]:.2f}, {CONTROL_HZ:.0f} Hz)"
             )
 
         def _on_joints(self, msg: JointState) -> None:
@@ -237,8 +258,11 @@ def run_ros() -> int:
             if self.q is None:
                 return
             dq = self.dq if self.dq is not None else np.zeros(NUM_JOINTS, dtype=np.float32)
+            # В порядок политики (FL, FR, RL, RR).
+            q_p = self.q[PERM]
+            dq_p = dq[PERM]
             obs = build_obs(
-                self.quat, self.lin_vel, self.ang_vel, self.cmd, self.q, dq, self.last_action
+                self.quat, self.lin_vel, self.ang_vel, self.cmd, q_p, dq_p, self.last_action
             )
             try:
                 action = _run_policy(self.policy, obs)
@@ -246,7 +270,23 @@ def run_ros() -> int:
                 self.get_logger().error(f"policy error: {exc}")
                 return
             self.last_action = action
-            self._publish_target(DEFAULT_POS + ACTION_SCALE * action)
+            target_p = DEFAULT_POS + ACTION_SCALE * action
+            if self.mode == "effort":
+                tau_p = self.kp * (target_p - q_p) - self.kd * dq_p
+                upper = np.clip(
+                    self.effort_limit * (1 - dq_p / self.vel_limit), 0, self.effort_limit
+                )
+                lower = np.clip(
+                    self.effort_limit * (-1 - dq_p / self.vel_limit), -self.effort_limit, 0
+                )
+                out_p = np.clip(tau_p, lower, upper).astype(np.float32)
+            else:
+                out_p = target_p.astype(np.float32)
+            # Обратно в порядок контроллера Gazebo и публикация.
+            if float(self.get_parameter("hip_sign").value) != 1.0:
+                out_p = out_p.copy()
+                out_p[[0, 3, 6, 9]] *= float(self.get_parameter("hip_sign").value)
+            self._publish_target(out_p[PERM])
             self.received = True
 
     rclpy.init()

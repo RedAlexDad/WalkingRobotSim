@@ -13,6 +13,15 @@
             </plugin>
         </gazebo>
 
+        <gazebo>
+            <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+                <odom_frame>odom</odom_frame>
+                <robot_base_frame>base_link</robot_base_frame>
+                <odom_publish_frequency>50</odom_publish_frequency>
+                <dimensions>3</dimensions>
+            </plugin>
+        </gazebo>
+
 
         <ros2_control name="${robot_name}_GazeboSystem" type="system">
             <hardware>
@@ -21,18 +30,21 @@
 
             <joint name="lf_hip_joint">
                 <command_interface name="position"/>
+                <command_interface name="effort"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
             </joint>
             <joint name="lf_upper_leg_joint">
                 <command_interface name="position"/>
+                <command_interface name="effort"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
             </joint>
             <joint name="lf_lower_leg_joint">
                 <command_interface name="position"/>
+                <command_interface name="effort"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
@@ -40,18 +52,21 @@
 
             <joint name="rf_hip_joint">
                 <command_interface name="position"/>
+                <command_interface name="effort"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
             </joint>
             <joint name="rf_upper_leg_joint">
                 <command_interface name="position"/>
+                <command_interface name="effort"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
             </joint>
             <joint name="rf_lower_leg_joint">
                 <command_interface name="position"/>
+                <command_interface name="effort"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
@@ -59,18 +74,21 @@
 
             <joint name="lh_hip_joint">
                 <command_interface name="position"/>
+                <command_interface name="effort"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
             </joint>
             <joint name="lh_upper_leg_joint">
                 <command_interface name="position"/>
+                <command_interface name="effort"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
             </joint>
             <joint name="lh_lower_leg_joint">
                 <command_interface name="position"/>
+                <command_interface name="effort"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
@@ -78,18 +96,21 @@
 
             <joint name="rh_hip_joint">
                 <command_interface name="position"/>
+                <command_interface name="effort"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
             </joint>
             <joint name="rh_upper_leg_joint">
                 <command_interface name="position"/>
+                <command_interface name="effort"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
             </joint>
             <joint name="rh_lower_leg_joint">
                 <command_interface name="position"/>
+                <command_interface name="effort"/>
                 <state_interface name="position"/>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
