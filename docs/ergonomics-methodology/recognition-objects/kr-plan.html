@@ -1,0 +1,416 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8">
+<title>kr-plan.html</title><style>
+@page { size: A4 portrait; margin: 12mm; }
+body { font-family: "PT Serif", Georgia, "Times New Roman", serif;
+       font-size: 10pt; line-height: 1.3; color: #1a1a1a; max-width: 186mm; margin: 0 auto; }
+h1 { font-size: 16pt; color: #14395c; border-bottom: 2px solid #2c5f8a; padding-bottom: 4px; }
+h2 { font-size: 12.5pt; color: #14395c; border-bottom: 1px solid #cfd8e3; padding-bottom: 2px; margin: 12px 0 5px; }
+h3 { font-size: 11pt; color: #2c5f8a; margin: 9px 0 4px; }
+table { border-collapse: collapse; width: 100%; font-size: 9pt; margin: 6px 0; }
+th, td { border: 1px solid #b9c4d0; padding: 3px 5px; text-align: left; vertical-align: top; }
+th { background: #e8eef5; }
+tr:nth-child(even) td { background: #f6f9fc; }
+code { background: #eef1f4; padding: 0 3px; border-radius: 3px; font-family: Consolas, monospace; }
+blockquote { border-left: 3px solid #2c5f8a; margin: 6px 0; padding: 3px 10px; background: #f6f9fc; }
+.mermaid { text-align: center; margin: 8px 0; page-break-inside: avoid; }
+h2, h3 { page-break-after: avoid; }
+table, tr { page-break-inside: avoid; }
+</style><script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: "neutral" });</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  renderMathInElement(document.body, {
+    delimiters: [ { left: "$$", right: "$$", display: true },
+                  { left: "$", right: "$", display: false } ],
+    throwOnError: false
+  });
+});
+</script></head>
+<body><h1>План КР: расчёт информационной цепочки (черновик для согласования)</h1>
+<p><strong>Тема:</strong> Эргономическое обоснование представления результатов
+распознавания объектов оператору мобильного робота
+<strong>Дата:</strong> 2026-10-09
+<strong>Статус:</strong> черновик плана (на проверку и правку)
+<strong>Основание:</strong> консультация 06.10.2026 (расчёт модели, без экспертов)</p>
+<hr />
+<h2>1. Решения (ваши ответы на 6 вопросов)</h2>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Вопрос</th>
+<th>Решение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Какую часть цепочки берём</td>
+<td>всю: кадр, камера, детектор, представление, оператор, решение</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Откуда числа</td>
+<td>литература / датасет</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Формализация представления</td>
+<td>% уверенности правильного ответа, F1-score и др. метрики</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Связь с ВКРМ</td>
+<td>прямая</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Эксперимент</td>
+<td>в конце, Gazebo-симуляция</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Результат</td>
+<td>расчёт/модель + рекомендации по представлению</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>2. Вопрос 1. Что такое ECE и различимость, чем дополнить</h2>
+<h3>2.1. Калибровка ECE — «правдивость уверенности»</h3>
+<p>Идея: детектор выдаёт уверенность (например, 0.8). <strong>Калибровка</strong> — это
+совпадение уверенности с фактической долей верных ответов. Если детектор
+говорит «0.8», а прав в 60% случаев — он <strong>переуверен</strong>.</p>
+<p>Формула (Expected Calibration Error):</p>
+<p>ECE = Σₘ (∣Bₘ∣/ n)·∣acc(Bₘ) − conf(Bₘ)∣</p>
+<p>где Bₘ — доверительный интервал (бины по уверенности), acc —
+фактическая точность в бине, conf — средняя уверенность в бине.</p>
+<p><strong>Как выглядит</strong> (reliability diagram, пример):</p>
+<table>
+<thead>
+<tr>
+<th>Бин уверенности</th>
+<th>Средняя уверенность</th>
+<th>Фактическая точность</th>
+<th>Разрыв (пере-уверенность)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.5–0.6</td>
+<td>0.55</td>
+<td>0.50</td>
+<td>+0.05</td>
+</tr>
+<tr>
+<td>0.6–0.7</td>
+<td>0.65</td>
+<td>0.58</td>
+<td>+0.07</td>
+</tr>
+<tr>
+<td>0.7–0.8</td>
+<td>0.75</td>
+<td>0.66</td>
+<td>+0.09</td>
+</tr>
+<tr>
+<td>0.8–0.9</td>
+<td>0.85</td>
+<td>0.78</td>
+<td>+0.07</td>
+</tr>
+<tr>
+<td>0.9–1.0</td>
+<td>0.95</td>
+<td>0.93</td>
+<td>+0.02</td>
+</tr>
+</tbody>
+</table>
+<p>Если фактические точки лежат <strong>ниже</strong> диагонали — детектор переуверен
+(оператор будет доверять ошибочно). ECE = средневзвешенный разрыв.</p>
+<p><div class="mermaid">graph LR
+    D["Детектор:<br/>уверенность"] --> B["Бины"]
+    B --> A["acc vs conf"]
+    A --> E["ECE"]
+    E --> R["Требование к<br/>представлению"]
+</div></p>
+<p><strong>Чем дополнить:</strong>
+- <strong>MCE</strong> (Maximum Calibration Error) — худший бин;
+- <strong>Brier score</strong> — BS = (1)/(N)Σ (fᵢ − oᵢ)²;
+- способы калибровки: temperature scaling, isotonic/Platt.</p>
+<h3>2.2. Различимость — «можно ли уверенно считать сигнал»</h3>
+<p>Различимость — насколько оператор может отличить одно состояние
+(класс/метку/индикатор) от другого. Основные модели:</p>
+<table>
+<thead>
+<tr>
+<th>Модель</th>
+<th>Формула</th>
+<th>Что задаёт</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Закон Вебера (JND)</td>
+<td>ΔI / I = k</td>
+<td>минимально различимое изменение</td>
+</tr>
+<tr>
+<td>Визуальный угол</td>
+<td>θ = 2 arctan(h/2d)</td>
+<td>размер знака vs дистанция; порог ≈ 20′</td>
+</tr>
+<tr>
+<td>Цветовое различие CIE</td>
+<td>ΔE₀₀</td>
+<td>численная различимость цветов</td>
+</tr>
+<tr>
+<td>Контраст WCAG</td>
+<td>(L₁+0.05)/(L₂+0.05)</td>
+<td>порог читаемости 4.5:1</td>
+</tr>
+</tbody>
+</table>
+<p>Практические пороги:
+- <strong>ΔE₀₀</strong>: &lt; 1 — неразличимо; 1–2 — заметно при близком взгляде;
+  2–10 — заметно сразу; &gt; 10 — разные цвета.
+- <strong>Контраст</strong>: ≥ 4.5:1 — обычный текст; ≥ 3:1 — крупный.</p>
+<p><strong>Как выглядит</strong> (для меток детекции): цвет класса берётся с ΔE₀₀ ≥ 10 к
+соседним классам и к фону; толщина рамки — не тоньше X px; высота шрифта
+метки — ≥ 20 угловых минут.</p>
+<h3>2.3. Что ещё стоит добавить в модель</h3>
+<table>
+<thead>
+<tr>
+<th>Значение</th>
+<th>Метрика</th>
+<th>Звено</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Качество детекции</td>
+<td>precision, recall, <strong>F1</strong>, mAP@0.5, AUC-ROC</td>
+<td>детектор</td>
+</tr>
+<tr>
+<td>Калибровка</td>
+<td>ECE, MCE, Brier</td>
+<td>детектор → представление</td>
+</tr>
+<tr>
+<td>Различимость</td>
+<td>ΔE₀₀, контраст WCAG, угл. минуты</td>
+<td>представление</td>
+</tr>
+<tr>
+<td>Различение сигнал/шум</td>
+<td>SDT d', критерий c, ROC</td>
+<td>оператор</td>
+</tr>
+<tr>
+<td>Время</td>
+<td>Хик–Хайман, Фиттс</td>
+<td>оператор</td>
+</tr>
+<tr>
+<td>Нагрузка</td>
+<td>число объектов vs 7±2</td>
+<td>представление/оператор</td>
+</tr>
+<tr>
+<td>Свежесть</td>
+<td>Age of Information</td>
+<td>камера → представление</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Вывод по вопросу 1:</strong> F1 — метрика <strong>детектора</strong>; для звена
+«представление» нужна <strong>своя</strong> метрика (ECE + различимость). Их нельзя
+смешивать — иначе «представление» окажется просто копией детектора.</p>
+<hr />
+<h2>3. Вопрос 2. Сколько звеньев лучше для курсовой — обоснование</h2>
+<h3>3.1. Варианты</h3>
+<table>
+<thead>
+<tr>
+<th>Вариант</th>
+<th>Звенья</th>
+<th>Плюсы</th>
+<th>Минусы</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6 звеньев</td>
+<td>кадр, камера, детектор, представление, оператор, решение</td>
+<td>полное соответствие сказанному</td>
+<td>кадр и камера — одна стадия; трудно разделить числами</td>
+</tr>
+<tr>
+<td><strong>5 звеньев</strong></td>
+<td>захват, детектор, представление, оператор, решение</td>
+<td>каждая стадия различима и обоснуема</td>
+<td>«кадр+камера» объединены</td>
+</tr>
+<tr>
+<td>4 звена</td>
+<td>захват, детектор, представление, оператор+решение</td>
+<td>проще считать</td>
+<td>теряется отдельный этап «решение»</td>
+</tr>
+</tbody>
+</table>
+<h3>3.2. Рекомендация: <strong>5 звеньев</strong></h3>
+<ul>
+<li><strong>Захват</strong> (кадр+камера) — одна физическая стадия: сенсор → изображение.
+  Разделять «кадр» и «камеру» нечем: это один акт захвата;</li>
+<li><strong>Детектор</strong> — метрики precision/recall/F1;</li>
+<li><strong>Представление</strong> — ECE + различимость (ядро эргономики);</li>
+<li><strong>Оператор</strong> — восприятие/понимание (SDT, время, нагрузка);</li>
+<li><strong>Решение</strong> — итог.</li>
+</ul>
+<p>Обоснование:
+1. <strong>Считаемость:</strong> у каждой стадии есть свой источник чисел (датасет,
+   нормы, литература). Для «кадра» и «камеры» отдельные числа взять негде.
+2. <strong>Прозрачность вклада:</strong> 5 звеньев достаточно, чтобы показать, где
+   теряется точность (требование преподавателя).
+3. <strong>Соответствие цели:</strong> эргономика сосредоточена в «представление →
+   оператор»; остальные звенья дают контекст и вклад.</p>
+<p>Итог: A = a_cap· a_det· a_rep· a_op· a_dec.</p>
+<blockquote>
+<p>Если преподаватель настаивает на 6 — просто разделим захват на
+«кадр» и «камера» (a₁, a₂). Модель это выдержит.</p>
+</blockquote>
+<hr />
+<h2>4. План работ</h2>
+<h3>4.1. Шаги</h3>
+<p><div class="mermaid">graph LR
+    T["Теория:<br/>звенья и метрики"] --> M["Модель:<br/>A = Π a_i"]
+    M --> C["Расчёт:<br/>числа по звеньям"]
+    C --> P["Представление:<br/>варианты и a3"]
+    P --> G["Эксперимент<br/>в Gazebo"]
+    G --> R["Рекомендации"]
+</div></p>
+<h3>4.2. Этапы и результат</h3>
+<table>
+<thead>
+<tr>
+<th>Этап</th>
+<th>Действие</th>
+<th>Результат</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Описать 5 звеньев и метрики</td>
+<td>таблица звеньев</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Записать формулы потерь</td>
+<td>модель A=∏ aᵢ</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Собрать числа (датасет/литература/нормы)</td>
+<td>таблица значений</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Посчитать потери и вклады</td>
+<td>где узкое место</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Варианты представления и их a₃</td>
+<td>сравнение</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Эксперимент в Gazebo</td>
+<td>проверка расчёта</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Выводы и рекомендации</td>
+<td>раздел РПЗ</td>
+</tr>
+</tbody>
+</table>
+<h3>4.3. Метрики по звеньям (сводно)</h3>
+<table>
+<thead>
+<tr>
+<th>Звено</th>
+<th>Коэф.</th>
+<th>Метрика</th>
+<th>Источник</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Захват</td>
+<td>a₁</td>
+<td>доля потерянных объектов</td>
+<td>параметры сцены</td>
+</tr>
+<tr>
+<td>Детектор</td>
+<td>a₂</td>
+<td>F1, precision, recall, mAP</td>
+<td>датасет</td>
+</tr>
+<tr>
+<td>Представление</td>
+<td>a₃</td>
+<td>ECE, ΔE₀₀, контраст</td>
+<td>нормы + модель</td>
+</tr>
+<tr>
+<td>Оператор</td>
+<td>a₄</td>
+<td>d', время (Хик/Фиттс), нагрузка</td>
+<td>литература</td>
+</tr>
+<tr>
+<td>Решение</td>
+<td>a₅</td>
+<td>вероятность верного решения</td>
+<td>модель</td>
+</tr>
+</tbody>
+</table>
+<h3>4.4. Связь с ВКРМ</h3>
+<ul>
+<li>ВКРМ: Go2, Gazebo/Isaac, YOLO-детектор (<code>quadropted_perception</code>),
+  <code>gazebo_sim</code>.</li>
+<li>КР: эргономическая часть — модель цепочки + рекомендации по
+  представлению.</li>
+</ul>
+<h3>4.5. Эксперимент в Gazebo</h3>
+<ul>
+<li>прогнать сцену, записать детекции (класс, confidence, bbox);</li>
+<li>посчитать фактические ошибки;</li>
+<li>сравнить с моделью (совпал/не совпал расчёт).</li>
+</ul>
+<h3>4.6. Результат</h3>
+<ul>
+<li>расчёт (числа по звеньям, вклады) + рекомендации по представлению.</li>
+</ul>
+<hr />
+<h2>5. Что предстоит согласовать</h2>
+<ul>
+<li>[ ] Оставляем 5 звеньев или возвращаемся к 6?</li>
+<li>[ ] Метрика представления: ECE + различимость (не F1) — согласны?</li>
+<li>[ ] Набор дополнительных метрик (см. 2.3).</li>
+<li>[ ] Числа для «захвата» — брать из параметров сцены или зафиксировать?</li>
+<li>[ ] Объём Gazebo-эксперимента (число прогонов).</li>
+</ul></body></html>
