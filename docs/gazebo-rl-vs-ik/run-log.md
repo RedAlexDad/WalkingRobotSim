@@ -67,3 +67,26 @@
   перестановка суставов, `imu_invert`, `hip_sign`, `odom_gz`).
 - Правки: `launch.launch.py`, `gz_bridge.yaml`, `gazebo.xacro`,
   `ros_control.yaml`.
+
+## 2026-10-09 (часть 3) — сверка с rl_sar и правки
+
+- Найдены готовые решения (см. `existing-solutions.md`): **rl_sar**,
+  Go2Arm_sim2sim, legged_gym_gazebo, quadruped-robotics-stack.
+- Разобран **rl_sar** (`rl_sim.cpp`): control-loop **200 Гц**
+  (`dt=0.005`, `decimation=4`), политика — 50 Гц; шлёт **целевую позу +
+  kp/kd по каждому суставу** (свой `robot_joint_controller`); есть
+  `joint_mapping`; `ang_vel` в body.
+- **Внесено** в `go2_policy_gz.py`: PD считается на **200 Гц**
+  (политика — 50 Гц, `POLICY_DECIMATION=4`) — раньше PD был 50 Гц.
+- **Ограничение среды**: headless gz-sim на CPU — низкий real-time
+  factor / высокая нагрузка; фактический поток команд ≈17 Гц вместо 200,
+  замеры нестабильны. Для полноценной оценки ходьбы нужна ускоренная
+  симуляция (GPU) либо существенно больше времени.
+
+### Промежуточный вывод
+
+Порт методологически верен (сверено с `physx_env.yaml` и rl_sar);
+остаточная проблема — **sim-to-sim gap** + производительность
+симуляции в текущем окружении. Практические варианты — взять rl_sar
+(Gazebo Classic) / quadruped-robotics-stack (gz-sim8) или обучать
+политику сразу в Gazebo.

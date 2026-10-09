@@ -66,7 +66,9 @@ DEFAULT_POS = np.array(
 PERM = np.array([3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8], dtype=np.intp)
 
 ACTION_SCALE = 0.25
-CONTROL_HZ = 50.0
+RL_HZ = 50.0          # частота политики (dt * decimation)
+CTRL_HZ = 200.0       # частота control-loop (как в rl_sar: dt=0.005, dec=4)
+POLICY_DECIMATION = int(CTRL_HZ / RL_HZ)
 NUM_JOINTS = 12
 OBS_DIM = 48
 
@@ -215,12 +217,14 @@ def run_ros() -> int:
                  else f"/{ns}/joint_group_controller/commands"),
                 10,
             )
+            self.tick = 0
+            self.target_p = DEFAULT_POS.copy()
             # Публикуем дефолтную стойку (в порядке контроллера) до прихода данных.
             self._publish_target(DEFAULT_POS[PERM])
-            self.create_timer(1.0 / CONTROL_HZ, self._control)
+            self.create_timer(1.0 / CTRL_HZ, self._control)
             self.get_logger().info(
                 f"go2_policy_gz запущен (ns={ns}, mode={self.mode}, "
-                f"vx={self.cmd[0]:.2f}, {CONTROL_HZ:.0f} Hz)"
+                f"vx={self.cmd[0]:.2f}, ctrl={CTRL_HZ:.0f} Hz, rl={RL_HZ:.0f} Hz)"
             )
 
         def _on_joints(self, msg: JointState) -> None:
@@ -261,16 +265,22 @@ def run_ros() -> int:
             # В порядок политики (FL, FR, RL, RR).
             q_p = self.q[PERM]
             dq_p = dq[PERM]
-            obs = build_obs(
-                self.quat, self.lin_vel, self.ang_vel, self.cmd, q_p, dq_p, self.last_action
-            )
-            try:
-                action = _run_policy(self.policy, obs)
-            except Exception as exc:  # noqa: BLE001
-                self.get_logger().error(f"policy error: {exc}")
-                return
-            self.last_action = action
-            target_p = DEFAULT_POS + ACTION_SCALE * action
+            self.tick += 1
+            # Политика обновляется раз в POLICY_DECIMATION такт (50 Гц),
+            # PD применяется каждый такт (200 Гц) — как в rl_sar.
+            if self.tick % POLICY_DECIMATION == 0:
+                obs = build_obs(
+                    self.quat, self.lin_vel, self.ang_vel, self.cmd, q_p, dq_p,
+                    self.last_action,
+                )
+                try:
+                    action = _run_policy(self.policy, obs)
+                except Exception as exc:  # noqa: BLE001
+                    self.get_logger().error(f"policy error: {exc}")
+                    return
+                self.last_action = action
+                self.target_p = DEFAULT_POS + ACTION_SCALE * action
+            target_p = self.target_p
             if self.mode == "effort":
                 tau_p = self.kp * (target_p - q_p) - self.kd * dq_p
                 upper = np.clip(
