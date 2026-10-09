@@ -8,6 +8,7 @@ IK/TROT-контроллера **в Gazebo** (gz-sim). MuJoCo и Isaac Sim ка�
 |---|---|
 | `plan.md` | полный план: стек, топики, вектор наблюдений, риски, этапы |
 | `run-log.md` | журнал прогонов и наблюдений (заполняется по ходу) |
+| `existing-solutions.md` | обзор готовых решений RL-локомоции в Gazebo |
 
 Прототип узла: `src/gazebo_sim/scripts/go2_policy_gz.py`.
 
