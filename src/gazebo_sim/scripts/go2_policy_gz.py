@@ -163,6 +163,7 @@ def run_ros() -> int:
             self.declare_parameter("wz", 0.0)
             self.declare_parameter("odom_topic", "")
             self.declare_parameter("joint_order", JOINT_ORDER)
+            self.declare_parameter("imu_invert", False)
 
             ns = self.get_parameter("namespace").value
             self.policy = load_policy()
@@ -211,7 +212,10 @@ def run_ros() -> int:
 
         def _on_imu(self, msg: Imu) -> None:
             o = msg.orientation
-            self.quat = np.array([o.w, o.x, o.y, o.z], dtype=np.float32)
+            q = np.array([o.w, o.x, o.y, o.z], dtype=np.float32)
+            if bool(self.get_parameter("imu_invert").value):
+                q = np.array([q[0], -q[1], -q[2], -q[3]], dtype=np.float32)
+            self.quat = q
             a = msg.angular_velocity
             self.ang_vel = np.array([a.x, a.y, a.z], dtype=np.float32)
 
