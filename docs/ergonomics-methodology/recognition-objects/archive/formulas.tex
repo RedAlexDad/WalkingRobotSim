@@ -1,0 +1,70 @@
+\documentclass[11pt]{article}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2cm]{geometry}
+
+\title{Формулы КР: расчёт информационной цепочки}
+\author{Папин А.В., ИУ5Ц-31М}
+\date{2026}
+
+\begin{document}
+\maketitle
+
+\section*{Цепочка}
+кадр $\rightarrow$ камера $\rightarrow$ детектор $\rightarrow$
+представление $\rightarrow$ оператор $\rightarrow$ решение
+
+Итоговая точность:
+\[
+A = \prod_{i=1}^{n} a_i
+\]
+
+Вклад звена в потерю:
+\[
+\ell_i = \frac{1 - a_i}{\sum_j (1 - a_j)}
+\]
+
+\section*{Калибровка уверенности}
+\[
+\mathrm{ECE} = \sum_{m=1}^{M} \frac{|B_m|}{n}\,\bigl|\,\mathrm{acc}(B_m)
+- \mathrm{conf}(B_m)\,\bigr|
+\]
+\[
+BS = \frac{1}{N}\sum_{i=1}^{N} (f_i - o_i)^2
+\]
+
+\section*{Теория обнаружения сигналов}
+\[
+d' = z(H) - z(F), \qquad c = -\tfrac{1}{2}\bigl(z(H) + z(F)\bigr)
+\]
+
+\section*{Восприятие и время}
+\[
+RT = a + b\,\log_2(n+1)
+\]
+\[
+MT = a + b\,\log_2(A/W + 1)
+\]
+
+\section*{Различимость}
+\[
+\Delta I / I = k
+\]
+\[
+\theta = 2\arctan\!\left(\frac{h}{2d}\right)
+\]
+\[
+\Delta E_{00}, \qquad \frac{L_1 + 0.05}{L_2 + 0.05}
+\]
+
+\section*{Свежесть и нагрузка}
+\[
+\Delta(t) = t - u(t), \qquad 7 \pm 2, \quad 4 \pm 1
+\]
+\[
+\mathrm{TLX} = \sum_k w_k R_k, \qquad A \propto S \cdot E_f \cdot E_x \cdot V
+\]
+
+\end{document}
