@@ -165,6 +165,44 @@ document.addEventListener("DOMContentLoaded", function () {
 </tr>
 </tbody>
 </table>
+<h3>4.2. Выбор модели (сравнение по пиксельным метрикам)</h3>
+<p>Стратегия: сравнить несколько моделей распознавания (детекторы и
+сегментаторы) на общем датасете и выбрать лучшую для звена <strong>детектор</strong>
+($a_2$). Кандидаты: YOLO-семейство, RT-DETR; сегментация — YOLO-seg,
+Mask R-CNN.</p>
+<table>
+<thead>
+<tr>
+<th>Метрика</th>
+<th>Формула</th>
+<th>Что показывает</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IoU / mask mAP</td>
+<td>$\mathrm{IoU} = \frac{\lvert A \cap B \rvert}{\lvert A \cup B \rvert}$</td>
+<td>совпадение масок/рамок</td>
+</tr>
+<tr>
+<td>Pixel Accuracy</td>
+<td>$PA = N_{correct}/N_{total}$</td>
+<td>доля верных пикселей</td>
+</tr>
+<tr>
+<td>Dice / pixel F1</td>
+<td>$\mathrm{Dice} = \frac{2\lvert A \cap B \rvert}{\lvert A \rvert + \lvert B \rvert}$</td>
+<td>перекрытие по классу</td>
+</tr>
+<tr>
+<td>Boundary F1</td>
+<td>$BF = \frac{2 P_b R_b}{P_b + R_b}$</td>
+<td>точность границ</td>
+</tr>
+</tbody>
+</table>
+<p>Плюс mAP@0.5, mAP@0.5:0.95, precision/recall/F1 и скорость (fps).
+Выбранная модель задаёт $a_2$; для КР это входной параметр.</p>
 <hr />
 <h2>5. Ядро модели (кратко)</h2>
 <p>Итоговая точность цепочки:</p>
