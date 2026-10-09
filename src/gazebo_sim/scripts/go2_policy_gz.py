@@ -47,23 +47,21 @@ JOINT_ORDER = [
     "lh_hip_joint", "lh_upper_leg_joint", "lh_lower_leg_joint",
 ]
 
-# Порядок ПОЛИТИКИ (IsaacLab/NVIDIA Go2): FL, FR, RL, RR x (hip, thigh, calf).
-# default_joint_pos в порядке политики:
-#   FL 0.1/0.8/-1.5, FR -0.1/0.8/-1.5, RL 0.1/1.0/-1.5, RR -0.1/1.0/-1.5.
+# Порядок ПОЛИТИКИ. Вариант A (rl_sar-совместимый): FR, FL, RR, RL —
+# совпадает с порядком контроллера Gazebo (rf, lf, rh, lh).
+# default_joint_pos: L-hip +0.1, R-hip -0.1; front thigh 0.8, rear 1.0.
 DEFAULT_POS = np.array(
     [
-        0.1, 0.8, -1.5,   # FL
         -0.1, 0.8, -1.5,  # FR
-        0.1, 1.0, -1.5,   # RL
+        0.1, 0.8, -1.5,   # FL
         -0.1, 1.0, -1.5,  # RR
+        0.1, 1.0, -1.5,   # RL
     ],
     dtype=np.float32,
 )
 
-# JOINT_ORDER (контроллер Gazebo) = rf(FR), lf(FL), rh(RR), lh(RL).
-# PERM[i] — индекс сустава в порядке политики для i-го сустава контроллера.
-# (Перестановка симметрична: одинаково переводит контроллер<->политику.)
-PERM = np.array([3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8], dtype=np.intp)
+# Перестановка не нужна (порядок политики == порядку контроллера).
+PERM = np.arange(12, dtype=np.intp)
 
 ACTION_SCALE = 0.25
 RL_HZ = 50.0          # частота политики (dt * decimation)
@@ -260,6 +258,8 @@ def run_ros() -> int:
 
         def _control(self) -> None:
             if self.q is None:
+                # Держим дефолтную стойку, пока нет данных о суставах.
+                self._publish_target(DEFAULT_POS[PERM])
                 return
             dq = self.dq if self.dq is not None else np.zeros(NUM_JOINTS, dtype=np.float32)
             # В порядок политики (FL, FR, RL, RR).
