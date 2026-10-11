@@ -18,7 +18,7 @@ from launch.actions import (
     IncludeLaunchDescription,
     TimerAction,
 )
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
@@ -36,6 +36,9 @@ def generate_launch_description():
     policy = LaunchConfiguration('policy')
     mode = LaunchConfiguration('mode')
     vx = LaunchConfiguration('vx')
+    gui = LaunchConfiguration('gui')
+    ld.add_action(DeclareLaunchArgument('gui', default_value='false',
+                                        description='Gazebo GUI (иначе headless)'))
     ld.add_action(DeclareLaunchArgument('world', default_value='flat.world'))
     ld.add_action(DeclareLaunchArgument('use_sim_time', default_value='true'))
     ld.add_action(DeclareLaunchArgument('policy', default_value='true',
@@ -46,14 +49,20 @@ def generate_launch_description():
 
     world_file = PathJoinSubstitution([pkg, 'world', world])
 
-    # ── Gazebo: server-only (-s), headless ──
-    gz_args = ['-s -r -v3 ', world_file]
-    gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(
-            get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')),
-        launch_arguments={'gz_args': gz_args, 'on_exit_shutdown': 'true'}.items(),
+    # ── Gazebo: headless (-s) или GUI ──
+    gz_launch = os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
+    gazebo_gui = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(gz_launch),
+        launch_arguments={'gz_args': ['-r -v3 ', world_file], 'on_exit_shutdown': 'true'}.items(),
+        condition=IfCondition(gui),
     )
-    ld.add_action(gazebo)
+    gazebo_headless = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(gz_launch),
+        launch_arguments={'gz_args': ['-s -r -v3 ', world_file], 'on_exit_shutdown': 'true'}.items(),
+        condition=UnlessCondition(gui),
+    )
+    ld.add_action(gazebo_gui)
+    ld.add_action(gazebo_headless)
 
     # ── clock (GZ→ROS) ──
     clock_bridge = Node(
