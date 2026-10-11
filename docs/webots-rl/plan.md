@@ -74,3 +74,31 @@ Webots — это **sim-to-sim** (PhysX → ODE). По нашему опыту �
 - `ROS2_Webots_DOG`: https://github.com/TuanLinh05/ROS2_Webots_DOG
 - `go2w-webots`: https://github.com/tuzhongyi1983/go2w-webots
 - `robopay-go2-tier1`: https://github.com/EslaM-X/robopay-go2-tier1
+
+---
+
+## 9. Есть ли готовая RL-политика для Go2 в Webots?
+
+**Нет.** Поиск не нашёл готовой обученной политики ходьбы Go2 для Webots.
+
+Что есть по RL в Webots (но не «готовая политика Go2»):
+
+| Проект | Что это |
+|---|---|
+| `aidudezzz/deepbots` | фреймворк RL для Webots (Python 3), обёртка «Webots ↔ gym-подобный env» |
+| `aidudezzz/deepworlds` | примеры на deepbots (cartpole и др.) |
+| `aniruddhkb/quadruped-webots-rl` | **свой** 8-DOF четвероног в Webots + «краткое RL для ходьбы» (не Go2) |
+| `DragonKorn1/dqn_ppo_avoid_webots`, `*-cartpole` | учебные примеры RL в Webots (обход, cartpole) |
+
+Готовые **Go2**-политики существуют для других сред:
+
+| Среда | Готовая политика Go2 |
+|---|---|
+| Gazebo Classic | **да** (`rl_sar`) |
+| Isaac Sim / Isaac Gym | да |
+| MuJoCo | да |
+| **Webots** | **нет** |
+
+**Вывод:** в Webots RL-политику придётся **обучать самому** (через
+`deepbots` или собственный harness) либо **переносить** (sim-to-sim).
+Готового «взял и запустил» для Go2 в Webots нет.
