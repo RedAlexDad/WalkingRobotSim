@@ -12,7 +12,9 @@ Math ($...$, $$...$$) is passed through to KaTeX; ```mermaid blocks become
 from __future__ import annotations
 
 import argparse
+import base64
 import html
+import mimetypes
 import pathlib
 import re
 import shutil
@@ -22,10 +24,10 @@ import sys
 import markdown
 
 CSS = """
-@page { size: A4 portrait; margin: 12mm; }
+@page { size: A4 portrait; margin: 11mm; }
 body { font-family: "PT Serif", Georgia, "Times New Roman", serif;
-       font-size: 10pt; line-height: 1.24; color: #1a1a1a;
-       max-width: 186mm; margin: 0 auto; }
+       font-size: 9.8pt; line-height: 1.18; color: #1a1a1a;
+       max-width: 188mm; margin: 0 auto; }
 h1 { font-size: 15pt; color: #14395c; border-bottom: 2px solid #2c5f8a;
      padding-bottom: 3px; }
 h2 { font-size: 12pt; color: #14395c; border-bottom: 1px solid #cfd8e3;
@@ -41,10 +43,12 @@ code { background: #eef1f4; padding: 0 3px; border-radius: 3px;
 blockquote { border-left: 3px solid #2c5f8a; margin: 5px 0; padding: 2px 9px;
              background: #f6f9fc; }
 .mermaid { text-align: center; margin: 6px 0; page-break-inside: avoid; }
-.mermaid svg { max-width: 78%; height: auto; }
+.mermaid svg { max-width: 62% !important; height: auto !important; }
+.mermaid.pie svg { max-width: 46% !important; }
 h2, h3 { page-break-after: avoid; }
 table, tr, li { page-break-inside: avoid; }
 .katex-display { margin: 4px 0; }
+img { max-width: 58%; height: auto; display: block; margin: 5px auto; }
 hr { border: none; border-top: 1px solid #cfd8e3; margin: 6px 0; }
 """
 
@@ -81,7 +85,24 @@ def extract(text: str, pattern: str, store: list[str], token: str,
     return re.sub(pattern, repl, text, flags=flags)
 
 
-def convert(md_text: str) -> str:
+def inline_images(html_text: str, md_dir: pathlib.Path) -> str:
+    """Embed local images (svg/png/...) as data URIs so PDF has no deps."""
+
+    def repl(m: re.Match) -> str:
+        pre, src, post = m.group(1), m.group(2), m.group(3)
+        if src.startswith(("http:", "https:", "data:", "file:")):
+            return m.group(0)
+        path = (md_dir / src)
+        if not path.exists():
+            return m.group(0)
+        mime = mimetypes.guess_type(str(path))[0] or "application/octet-stream"
+        data = base64.b64encode(path.read_bytes()).decode()
+        return f'<img{pre}src="data:{mime};base64,{data}"{post}>'
+
+    return re.sub(r'<img([^>]*?)src="([^"]+)"([^>]*?)>', repl, html_text)
+
+
+def convert(md_text: str, md_dir: pathlib.Path) -> str:
     mermaid: list[str] = []
     text = extract(md_text, r"```mermaid[ \t]*\n(.*?)```", mermaid, TOKEN_M,
                    re.S)
@@ -98,14 +119,15 @@ def convert(md_text: str) -> str:
     for i, block in enumerate(mermaid):
         inner = re.sub(r"^```mermaid[ \t]*\n", "", block)
         inner = re.sub(r"```\s*$", "", inner).strip()
-        div = f'<div class="mermaid">{inner}</div>'
+        cls = "mermaid pie" if inner.lstrip().startswith("pie") else "mermaid"
+        div = f'<div class="{cls}">{inner}</div>'
         body = body.replace(f"<p>{TOKEN_M.format(i)}</p>", div)
         body = body.replace(TOKEN_M.format(i), div)
-    return body
+    return inline_images(body, md_dir)
 
 
 def build(md_path: pathlib.Path, out_dir: pathlib.Path) -> pathlib.Path:
-    html_body = convert(md_path.read_text(encoding="utf-8"))
+    html_body = convert(md_path.read_text(encoding="utf-8"), md_path.parent)
     title = md_path.stem
     out_dir.mkdir(parents=True, exist_ok=True)
     html_path = out_dir / (md_path.stem + ".html")

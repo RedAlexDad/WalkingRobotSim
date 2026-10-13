@@ -1,8 +1,8 @@
 <!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>kr-plan-goryachkin</title><style>
-@page { size: A4 portrait; margin: 12mm; }
+@page { size: A4 portrait; margin: 11mm; }
 body { font-family: "PT Serif", Georgia, "Times New Roman", serif;
-       font-size: 10pt; line-height: 1.24; color: #1a1a1a;
-       max-width: 186mm; margin: 0 auto; }
+       font-size: 9.8pt; line-height: 1.18; color: #1a1a1a;
+       max-width: 188mm; margin: 0 auto; }
 h1 { font-size: 15pt; color: #14395c; border-bottom: 2px solid #2c5f8a;
      padding-bottom: 3px; }
 h2 { font-size: 12pt; color: #14395c; border-bottom: 1px solid #cfd8e3;
@@ -18,10 +18,12 @@ code { background: #eef1f4; padding: 0 3px; border-radius: 3px;
 blockquote { border-left: 3px solid #2c5f8a; margin: 5px 0; padding: 2px 9px;
              background: #f6f9fc; }
 .mermaid { text-align: center; margin: 6px 0; page-break-inside: avoid; }
-.mermaid svg { max-width: 78%; height: auto; }
+.mermaid svg { max-width: 62% !important; height: auto !important; }
+.mermaid.pie svg { max-width: 46% !important; }
 h2, h3 { page-break-after: avoid; }
 table, tr, li { page-break-inside: avoid; }
 .katex-display { margin: 4px 0; }
+img { max-width: 58%; height: auto; display: block; margin: 5px auto; }
 hr { border: none; border-top: 1px solid #cfd8e3; margin: 6px 0; }
 </style><script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script>mermaid.initialize({ startOnLoad: true, theme: "neutral" });</script>
@@ -58,8 +60,8 @@ document.addEventListener("DOMContentLoaded", function () {
 <tbody>
 <tr>
 <td>1</td>
-<td>Какую часть цепочки берём</td>
-<td>всю: кадр, камера, детектор, представление, оператор, решение</td>
+<td>Какие звенья берём</td>
+<td>захват, детектор, представление (оператор — адресат)</td>
 </tr>
 <tr>
 <td>2</td>
@@ -91,14 +93,14 @@ document.addEventListener("DOMContentLoaded", function () {
 <h2>3. Что анализируем</h2>
 <ol>
 <li><strong>Объект анализа</strong> — <strong>представление результата распознавания</strong>
-   (звено «Представление → Оператор»): как результат показан оператору и
-   как он его считывает.</li>
+   (последнее звено цепочки): как результат показан оператору.</li>
+<li><strong>Цепочка — из измеримых звеньев</strong>: захват → детектор → представление.
+   Все три считаются по данным/нормам, без людей.</li>
 <li><strong>Для расчёта берём разные модели распознавания</strong>, сравниваем их между
-   собой и выбираем <strong>лучшую</strong> — она задаёт звено «Детектор» ($a_2$).
-   Если одна модель лучше остальных, берём её и указываем, что по анализу
-   (метрикам) она лучше.</li>
-<li><strong>Оператора экспериментально не оцениваем</strong> (нет выборки): коэффициент
-   $a_4$ берётся из литературы.</li>
+   собой и выбираем <strong>лучшую</strong> — она задаёт звено «Детектор» ($a_2$).</li>
+<li><strong>Оператор — адресат, вне расчёта</strong>: экспериментально не оцениваем
+   (выборка слишком мала для адекватной оценки, литературы нет), поэтому
+   звенья «оператор» и «решение» в количественную модель не входят.</li>
 </ol>
 <h2>4. Проблема</h2>
 <p>Распознавание не идеально: часть объектов <strong>пропущена</strong>, часть распознана
@@ -130,19 +132,17 @@ document.addEventListener("DOMContentLoaded", function () {
 <div class="mermaid">graph LR
     A["1. Захват<br/>(камера, кадр)"] --> B["2. Детектор<br/>(что и где)"]
     B --> C["3. Представление<br/>(экран)"]
-    C --> D["4. Оператор<br/>(восприятие)"]
-    D --> E["5. Решение<br/>(действие)"]</div>
-<p>Звенья: <strong>захват → детектор → представление → оператор → решение</strong>.
-Каждому звену соответствует коэффициент $a_i$ — доля правильного
-результата.</p>
+    C -.-> D["Оператор<br/>(адресат, вне расчёта)"]</div>
+<p>Звенья расчёта: <strong>захват → детектор → представление</strong>. Каждому
+соответствует коэффициент $a_i$ — доля правильного результата.</p>
 <p>Итоговая надёжность цепочки (звенья независимы):</p>
-<p>$$A = \prod_{i=1}^{5} a_i = a_1 \cdot a_2 \cdot a_3 \cdot a_4 \cdot a_5$$</p>
+<p>$$A = \prod_{i=1}^{3} a_i = a_1 \cdot a_2 \cdot a_3$$</p>
 <p>Вклад звена в относительную потерю:</p>
-<p>$$\ell_i = \frac{1 - a_i}{\sum_{j=1}^{5} (1 - a_j)}$$</p>
-<p>Эргономика сосредоточена на звене <strong>«Представление → Оператор»</strong>, но её
-вклад виден только в общем расчёте цепочки.</p>
+<p>$$\ell_i = \frac{1 - a_i}{\sum_{j=1}^{3} (1 - a_j)}$$</p>
+<p>Эргономика — это звено <strong>«Представление»</strong> (последнее в цепочке); его
+вклад виден в общем расчёте.</p>
 <h2>6. Пример расчёта</h2>
-<p>Примем $a_1=0.98$, $a_2=0.80$, $a_3=0.90$, $a_4=0.95$, $a_5=0.95$.</p>
+<p>Примем $a_1=0.98$, $a_2=0.80$, $a_3=0.90$.</p>
 <table>
 <thead>
 <tr>
@@ -157,50 +157,43 @@ document.addEventListener("DOMContentLoaded", function () {
 <td>1. Захват</td>
 <td>0.98</td>
 <td>0.02</td>
-<td>5%</td>
+<td>6%</td>
 </tr>
 <tr>
 <td>2. Детектор</td>
 <td>0.80</td>
 <td>0.20</td>
-<td>47%</td>
+<td>63%</td>
 </tr>
 <tr>
 <td>3. Представление</td>
 <td>0.90</td>
 <td>0.10</td>
-<td>24%</td>
-</tr>
-<tr>
-<td>4. Оператор</td>
-<td>0.95</td>
-<td>0.05</td>
-<td>12%</td>
-</tr>
-<tr>
-<td>5. Решение</td>
-<td>0.95</td>
-<td>0.05</td>
-<td>12%</td>
+<td>31%</td>
 </tr>
 </tbody>
 </table>
-<p>$A \approx 0.64$. Потолок задаёт <strong>детектор</strong>, второе узкое место —
+<p>$A \approx 0.71$. Потолок задаёт <strong>детектор</strong>, второе узкое место —
 <strong>представление</strong>; значит, улучшение показа заметно повышает итог, а
 плохой показ «съедает» даже хороший детектор.</p>
-<div class="mermaid">pie title Вклад звеньев в потерю
-    "Детектор" : 47
-    "Представление" : 24
-    "Оператор" : 12
-    "Решение" : 12
-    "Захват" : 5</div>
-<h2>7. Как результат считывается оператором</h2>
-<p>Ниже — теоретическая схема считывания (экспериментально оператор не
-оценивается).</p>
+<div class="mermaid pie">pie title Вклад звеньев в потерю
+    "Детектор" : 63
+    "Представление" : 31
+    "Захват" : 6</div>
+<h2>7. Как результат доходит до оператора (теоретически)</h2>
+<p>Сначала <strong>считывается распознавание</strong> (звенья 1–3), затем результат
+<strong>попадает к оператору</strong>, и он <strong>оценивает, что это и насколько надёжно</strong>.</p>
 <div class="mermaid">graph LR
-    A["Заметил метку"] --> B["Оценил доверие"] --> C["Проверил<br/>(если сомнение)"] --> D["Действие"]</div>
-<p>Если уверенность не показана, шаг «оценил доверие» оператор выполняет
-приблизительно. Пример кадра:</p>
+    A["Захват"] --> B["Детектор"] --> C["Представление"]
+    C -->|считанный результат| O["Оператор"]
+    O --> E["Оценивает:<br/>ЧТО — что за объект<br/>КАК — насколько надёжно"]</div>
+<p><img alt="Оператор за пультом" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NjAgMjAwIiB3aWR0aD0iNDYwIiBoZWlnaHQ9IjIwMCI+CiAgPHN0eWxlPgogICAgLmxuIHsgc3Ryb2tlOiMxNDM5NWM7IHN0cm9rZS13aWR0aDoyLjY7IGZpbGw6bm9uZTsgc3Ryb2tlLWxpbmVjYXA6cm91bmQ7IHN0cm9rZS1saW5lam9pbjpyb3VuZDsgfQogICAgLmJvZHkgeyBmaWxsOiNlOGVlZjU7IHN0cm9rZTojMTQzOTVjOyBzdHJva2Utd2lkdGg6Mi42OyB9CiAgICAuYm94IHsgc3Ryb2tlOiNjMDM5MmI7IHN0cm9rZS13aWR0aDoyOyBmaWxsOm5vbmU7IH0KICAgIC5kYXNoIHsgc3Ryb2tlOiMyYzVmOGE7IHN0cm9rZS13aWR0aDoyOyBmaWxsOm5vbmU7IHN0cm9rZS1kYXNoYXJyYXk6NSA0OyB9CiAgICAudCB7IGZvbnQtZmFtaWx5Okdlb3JnaWEsIlRpbWVzIE5ldyBSb21hbiIsc2VyaWY7IGZvbnQtc2l6ZToxM3B4OyBmaWxsOiMxNDM5NWM7IH0KICAgIC5sayB7IGZvbnQtZmFtaWx5Okdlb3JnaWEsIlRpbWVzIE5ldyBSb21hbiIsc2VyaWY7IGZvbnQtc2l6ZToxMXB4OyBmaWxsOiNjMDM5MmI7IH0KICA8L3N0eWxlPgoKICA8IS0tINC80L7QvdC40YLQvtGAIC0tPgogIDxyZWN0IGNsYXNzPSJsbiIgeD0iMTgiIHk9IjI2IiB3aWR0aD0iMTI4IiBoZWlnaHQ9Ijg0IiByeD0iNSIvPgogIDxsaW5lIGNsYXNzPSJsbiIgeDE9IjgyIiB5MT0iMTEwIiB4Mj0iODIiIHkyPSIxMjgiLz4KICA8bGluZSBjbGFzcz0ibG4iIHgxPSI1OCIgeTE9IjEyOCIgeDI9IjEwNiIgeTI9IjEyOCIvPgoKICA8IS0tINGA0LXQt9GD0LvRjNGC0LDRgiDRgNCw0YHQv9C+0LfQvdCw0LLQsNC90LjRjyDQvdCwINGN0LrRgNCw0L3QtTog0YDQsNC80LrQsCArINC60LvQsNGB0YEgKyDRg9Cy0LXRgNC10L3QvdC+0YHRgtGMIC0tPgogIDxyZWN0IGNsYXNzPSJib3giIHg9IjQwIiB5PSI1MiIgd2lkdGg9IjQ2IiBoZWlnaHQ9IjQwIi8+CiAgPGxpbmUgY2xhc3M9ImJveCIgeDE9IjQwIiB5MT0iNTIiIHgyPSIzMCIgeTI9IjQyIi8+CiAgPHRleHQgY2xhc3M9ImxrIiB4PSIxOCIgeT0iMzgiPtGB0YLRg9C7IDAuNzE8L3RleHQ+CiAgPHRleHQgY2xhc3M9InQiIHg9Ijk2IiB5PSI3MCI+MC43MTwvdGV4dD4KCiAgPCEtLSDRgdGC0L7QuyAtLT4KICA8bGluZSBjbGFzcz0ibG4iIHgxPSI4IiB5MT0iMTU4IiB4Mj0iNDUyIiB5Mj0iMTU4Ii8+CgogIDwhLS0g0L7Qv9C10YDQsNGC0L7RgDog0LPQvtC70L7QstCwLCDQutC+0YDQv9GD0YEsINGA0YPQutC4IC0tPgogIDxjaXJjbGUgY2xhc3M9ImJvZHkiIGN4PSIzNjAiIGN5PSI1OCIgcj0iMTciLz4KICA8cGF0aCBjbGFzcz0ibG4iIGQ9Ik0zNjAgNzUgTDM2MCAxMjAiLz4KICA8cGF0aCBjbGFzcz0ibG4iIGQ9Ik0zNjAgOTAgTDMyNCAxMjIiLz4KICA8cGF0aCBjbGFzcz0ibG4iIGQ9Ik0zNjAgOTAgTDM5MCAxMTgiLz4KCiAgPCEtLSDQutC70LDQstC40LDRgtGD0YDQsCAtLT4KICA8cmVjdCBjbGFzcz0ibG4iIHg9IjMxMCIgeT0iMTMyIiB3aWR0aD0iNzYiIGhlaWdodD0iMTEiIHJ4PSIyIi8+CgogIDwhLS0g0YHRgtGA0LXQu9C60LAgwqvRgNC10LfRg9C70YzRgtCw0YIg4oaSINC+0L/QtdGA0LDRgtC+0YDCuyAtLT4KICA8cGF0aCBjbGFzcz0iZGFzaCIgZD0iTTE1MCA2OCBMMzMzIDY4Ii8+CiAgPHBhdGggY2xhc3M9ImRhc2giIGQ9Ik0zMzMgNjMgTDM0MCA2OCBMMzMzIDczIi8+CgogIDwhLS0g0L/QvtC00L/QuNGB0LggKNGA0LDQt9C90LXRgdC10L3RiykgLS0+CiAgPHRleHQgY2xhc3M9InQiIHg9IjIwIiB5PSIxOTAiPtCt0LrRgNCw0L06INGA0LXQt9GD0LvRjNGC0LDRgiDRgNCw0YHQv9C+0LfQvdCw0LLQsNC90LjRjzwvdGV4dD4KICA8dGV4dCBjbGFzcz0idCIgeD0iMzMwIiB5PSIxOTAiPtCe0L/QtdGA0LDRgtC+0YA8L3RleHQ+Cjwvc3ZnPgo=" /></p>
+<p><em>Рисунок 1 — Оператор за пультом: считывает результат распознавания и
+решает, что перед ним и насколько этому верить.</em></p>
+<p>Оператор проходит шаги: <strong>заметил метку → оценил доверие → при сомнении
+проверил → действовал</strong>. Экспериментально оператор не оценивается
+(выборка слишком мала для адекватной оценки, литературы нет).</p>
+<p>Пример кадра:</p>
 <table>
 <thead>
 <tr>
@@ -299,6 +292,11 @@ document.addEventListener("DOMContentLoaded", function () {
 </thead>
 <tbody>
 <tr>
+<td>1. Захват</td>
+<td>параметры сцены / нормы</td>
+<td>доля потерянных объектов</td>
+</tr>
+<tr>
 <td>2. Детектор</td>
 <td>F1, precision, recall</td>
 <td>качество обнаружения объектов</td>
@@ -308,20 +306,10 @@ document.addEventListener("DOMContentLoaded", function () {
 <td>ECE + различимость</td>
 <td>правдивость уверенности и заметность метки</td>
 </tr>
-<tr>
-<td>4. Оператор</td>
-<td>не оценивается</td>
-<td>$a_4$ берётся из литературы</td>
-</tr>
-<tr>
-<td>5. Решение</td>
-<td>доля верных решений</td>
-<td>итог</td>
-</tr>
 </tbody>
 </table>
-<p>F1 относится к <strong>детектору</strong>; для звена «Представление» используется своя
-метрика — <strong>ECE</strong> и <strong>различимость</strong>.</p>
+<p>Звенья «оператор» и «решение» не оцениваются (адресат и его решение — вне
+расчётной части).</p>
 <h2>10. Метрика звена «Представление»</h2>
 <h3>10.1. Калибровка уверенности (ECE)</h3>
 <p>Калибровка — совпадение уверенности с фактической долей верных ответов.</p>
@@ -384,7 +372,7 @@ document.addEventListener("DOMContentLoaded", function () {
 <p>Робот <strong>Go2</strong>, детектор <strong>YOLO</strong> (<code>quadropted_perception</code>). Курсовая —
 эргономическая часть: модель цепочки + сравнение моделей + рекомендации
 по представлению.</p>
-<h2>14. Обоснование числа звеньев (5)</h2>
+<h2>14. Обоснование числа звеньев (3)</h2>
 <h3>14.1. Варианты</h3>
 <table>
 <thead>
@@ -397,44 +385,42 @@ document.addEventListener("DOMContentLoaded", function () {
 </thead>
 <tbody>
 <tr>
-<td>6 звеньев</td>
-<td>кадр, камера, детектор, представление, оператор, решение</td>
-<td>полное соответствие постановке</td>
-<td>кадр и камера — одна стадия; трудно разделить числами</td>
-</tr>
-<tr>
-<td><strong>5 звеньев</strong></td>
-<td>захват, детектор, представление, оператор, решение</td>
-<td>каждая стадия различима и обоснуема</td>
-<td>«кадр + камера» объединены</td>
+<td><strong>3 звена</strong></td>
+<td>захват, детектор, представление</td>
+<td>все звенья измеримы; без допущений</td>
+<td>оператор — только адресат</td>
 </tr>
 <tr>
 <td>4 звена</td>
-<td>захват, детектор, представление, оператор + решение</td>
-<td>проще считать</td>
-<td>теряется отдельный этап «решение»</td>
+<td>+ оператор</td>
+<td>полнее описывает цепочку</td>
+<td>оператора оценить нечем (выборка мала, литературы нет)</td>
+</tr>
+<tr>
+<td>5 звеньев</td>
+<td>+ оператор, решение</td>
+<td>полная картина</td>
+<td>два звена без оценки</td>
 </tr>
 </tbody>
 </table>
-<h3>14.2. Рекомендация: 5 звеньев</h3>
+<h3>14.2. Рекомендация: 3 звена</h3>
 <ul>
-<li><strong>Захват</strong> (кадр + камера) — одна физическая стадия: сенсор →
-  изображение; разделять «кадр» и «камеру» нечем — это один акт захвата;</li>
-<li><strong>Детектор</strong> — метрики precision/recall/F1;</li>
-<li><strong>Представление</strong> — ECE + различимость (ядро эргономики);</li>
-<li><strong>Оператор</strong> — восприятие/понимание ($a_4$ из литературы);</li>
-<li><strong>Решение</strong> — итог.</li>
+<li><strong>Захват</strong> — параметры сцены / нормы;</li>
+<li><strong>Детектор</strong> — сравнение моделей на датасете (mAP, F1);</li>
+<li><strong>Представление</strong> — ECE + различимость (ядро эргономики).</li>
 </ul>
 <p><strong>Обоснование:</strong></p>
 <ol>
-<li><strong>Считаемость:</strong> у каждой стадии есть свой источник чисел (датасет,
-   нормы, литература); для «кадра» и «камеры» отдельные числа взять
-   негде.</li>
-<li><strong>Прозрачность вклада:</strong> 5 звеньев достаточно, чтобы показать, где
-   теряется точность.</li>
-<li><strong>Соответствие цели:</strong> эргономика сосредоточена на «представление →
-   оператор»; остальные звенья дают контекст и вклад.</li>
+<li><strong>Измеримость:</strong> у каждого из трёх звеньев есть источник чисел
+   (датасет, нормы, литература) — расчёт не опирается на допущения.</li>
+<li><strong>Прозрачность вклада:</strong> 3 звена достаточно, чтобы показать, где
+   теряется надёжность (детектор — потолок, представление — второе узкое
+   место).</li>
+<li><strong>Соответствие цели:</strong> эргономика — это звено «Представление»;
+   оператор — адресат и в расчёт не входит.</li>
 </ol>
-<p>Если потребуется <strong>6 звеньев</strong>, то просто разделим «захват» на «кадр» и
-«камера» ($a_1$, $a_2$).</p>
+<p>Если потребуется <strong>4–5 звеньев</strong> (с оператором и решением), добавим их, но
+для них нужен способ оценки (эксперимент с достаточной выборкой или
+литература).</p>
 </body></html>
