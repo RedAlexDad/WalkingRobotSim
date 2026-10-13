@@ -62,7 +62,7 @@ graph LR
 | Памятка по теме | `docs/ergonomics-methodology/recognition-objects/kr-brief.md` |
 | Полный план и модель | `docs/ergonomics-methodology/recognition-objects/kr-plan.md` |
 | Консультация с научруком | `.../consultation-2026-10-06.md` |
-| План статьи (эргономика) | `docs/AI_ASU_2026/plan-ergonomics.md` |
+| План статьи (эргономика) | `docs/AI_ASU_2026/plan.md` |
 | Требования и шаблон | `docs/AI_ASU_2026/requirements.md`, `template/` |
 
 ### 3.3. Задачи
@@ -107,6 +107,7 @@ TROT-контроллера для Go2 в Gazebo, с переносом и ме�
 | Материал | Где |
 |---|---|
 | Требования IEEE/шаблон | `docs/ieee-article/` |
+| План подачи REEPE | `docs/ieee-article/plan-reepe-2027.md` |
 | Черновики EN/RU | `docs/ieee-article/draft-article-en.md`, `draft-article-ru.md` |
 | Отчёты по переносу | `reports/gazebo-rl/`, `reports/rl-sar/` |
 | Данные RL vs TROT | `reports/rl-sar/data/`, `sim/mjrl_go2/results/` |
@@ -164,7 +165,8 @@ TROT-контроллера для Go2 в Gazebo, с переносом и ме�
 ## 7. Связанные материалы
 
 - `docs/AI_ASU_2026/` — рабочая папка статьи ИИАСУ (эргономика).
-- `docs/AI_ASU_2026/plan-ergonomics.md` — план написания статьи.
+- `docs/AI_ASU_2026/plan.md` — план написания статьи по эргономике.
+- `docs/ieee-article/plan-reepe-2027.md` — план подачи статьи в REEPE-2027.
 - `docs/ergonomics-methodology/recognition-objects/` — источник по эргономике.
 - `docs/ieee-article/` — источник и шаблон для REEPE.
 - `reports/gpu-rl-training/` — отчёты по RL и переносу.
