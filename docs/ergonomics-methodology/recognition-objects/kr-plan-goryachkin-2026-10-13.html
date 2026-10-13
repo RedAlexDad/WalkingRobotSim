@@ -1,0 +1,516 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>kr-plan-goryachkin-2026-10-13</title><style>
+@page { size: A4 portrait; margin: 11mm; }
+body { font-family: "PT Serif", Georgia, "Times New Roman", serif;
+       font-size: 9.8pt; line-height: 1.18; color: #1a1a1a;
+       max-width: 188mm; margin: 0 auto; }
+h1 { font-size: 15pt; color: #14395c; border-bottom: 2px solid #2c5f8a;
+     padding-bottom: 3px; }
+h2 { font-size: 12pt; color: #14395c; border-bottom: 1px solid #cfd8e3;
+     padding-bottom: 2px; margin: 10px 0 4px; }
+h3 { font-size: 10.5pt; color: #2c5f8a; margin: 7px 0 3px; }
+table { border-collapse: collapse; width: 100%; font-size: 8.6pt; margin: 5px 0; }
+th, td { border: 1px solid #b9c4d0; padding: 2px 5px; text-align: left;
+         vertical-align: top; }
+th { background: #e8eef5; }
+tr:nth-child(even) td { background: #f6f9fc; }
+code { background: #eef1f4; padding: 0 3px; border-radius: 3px;
+       font-family: Consolas, monospace; }
+blockquote { border-left: 3px solid #2c5f8a; margin: 5px 0; padding: 2px 9px;
+             background: #f6f9fc; }
+.mermaid { text-align: center; margin: 6px 0; page-break-inside: avoid; }
+.mermaid svg { max-width: 62% !important; height: auto !important; }
+.mermaid.pie svg { max-width: 46% !important; }
+h2, h3 { page-break-after: avoid; }
+table, tr, li { page-break-inside: avoid; }
+.katex-display { margin: 4px 0; }
+img { max-width: 58%; height: auto; display: block; margin: 5px auto; }
+hr { border: none; border-top: 1px solid #cfd8e3; margin: 6px 0; }
+</style><script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: "neutral" });</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  renderMathInElement(document.body, {
+    delimiters: [ { left: "$$", right: "$$", display: true },
+                  { left: "$", right: "$", display: false } ],
+    throwOnError: false });
+});
+</script></head><body>
+<h1>Курсовая: как результат распознавания доходит до оператора</h1>
+<p><strong>Тема:</strong> эргономическое обоснование представления результатов
+распознавания объектов оператору мобильного робота
+<strong>Для:</strong> Горячкин Б.С. · <strong>Дата:</strong> 2026-10-13</p>
+<hr />
+<h2>1. О чём работа</h2>
+<p>Робот распознаёт объекты (человек, стул, бутылка), результат показывается
+<strong>оператору на экран</strong>, оператор принимает решение. Задача работы —
+<strong>обосновать</strong>, как именно показывать результат распознавания, чтобы
+оператор не ошибался, и <strong>доказать</strong> это расчётом информационной цепочки.</p>
+<h2>2. Ключевые решения</h2>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Вопрос</th>
+<th>Решение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Какие звенья берём</td>
+<td>захват, детектор, представление (оператор — адресат)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Откуда числа</td>
+<td>литература / датасет</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Формализация представления</td>
+<td>% уверенности правильного ответа, F1-score и др. метрики</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Связь с ВКРМ</td>
+<td>прямая</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Эксперимент</td>
+<td>не предусмотрен (не входит в план курсовой)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Результат</td>
+<td>расчёт/модель + рекомендации по представлению</td>
+</tr>
+</tbody>
+</table>
+<h2>3. Что анализируем</h2>
+<ol>
+<li><strong>Объект анализа</strong> — <strong>представление результата распознавания</strong>
+   (последнее звено цепочки): как результат показан оператору.</li>
+<li><strong>Цепочка — из измеримых звеньев</strong>: захват → детектор → представление.
+   Все три считаются по данным/нормам, без людей.</li>
+<li><strong>Для расчёта берём разные модели распознавания</strong>, сравниваем их между
+   собой и выбираем <strong>лучшую</strong> — она задаёт звено «Детектор» ($a_2$).</li>
+<li><strong>Оператор — адресат, вне расчёта</strong>: экспериментально не оцениваем
+   (выборка слишком мала для адекватной оценки, литературы нет), поэтому
+   звенья «оператор» и «решение» в количественную модель не входят.</li>
+</ol>
+<h2>4. Проблема</h2>
+<p>Распознавание не идеально: часть объектов <strong>пропущена</strong>, часть распознана
+<strong>неверно</strong>. Если на экран выводить «рамка + название» без честной
+уверенности, оператор не знает, чему верить. Типовые ошибки:</p>
+<table>
+<thead>
+<tr>
+<th>Ошибка</th>
+<th>Следствие</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ложное доверие</td>
+<td>уверены в неверном ответе</td>
+</tr>
+<tr>
+<td>Пропуск</td>
+<td>объект не показан, оператор считает, что его нет</td>
+</tr>
+<tr>
+<td>Перегрузка</td>
+<td>слишком много меток сразу</td>
+</tr>
+</tbody>
+</table>
+<h2>5. Информационная цепочка</h2>
+<div class="mermaid">graph LR
+    A["1. Захват<br/>(камера, кадр)"] --> B["2. Детектор<br/>(что и где)"]
+    B --> C["3. Представление<br/>(экран)"]
+    C -.-> D["Оператор<br/>(адресат, вне расчёта)"]</div>
+<p>Звенья расчёта: <strong>захват → детектор → представление</strong>. Каждому
+соответствует коэффициент $a_i$ — доля правильного результата.</p>
+<p>Итоговая надёжность цепочки (звенья независимы):</p>
+<p>$$A = \prod_{i=1}^{3} a_i = a_1 \cdot a_2 \cdot a_3$$</p>
+<p>Вклад звена в относительную потерю:</p>
+<p>$$\ell_i = \frac{1 - a_i}{\sum_{j=1}^{3} (1 - a_j)}$$</p>
+<p>Эргономика — это звено <strong>«Представление»</strong> (последнее в цепочке); его
+вклад виден в общем расчёте.</p>
+<h2>6. Пример расчёта</h2>
+<p>Примем $a_1=0.98$, $a_2=0.80$, $a_3=0.90$.</p>
+<table>
+<thead>
+<tr>
+<th>Звено</th>
+<th>$a_i$</th>
+<th>Потеря $1-a_i$</th>
+<th>Вклад $\ell_i$</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Захват</td>
+<td>0.98</td>
+<td>0.02</td>
+<td>6%</td>
+</tr>
+<tr>
+<td>2. Детектор</td>
+<td>0.80</td>
+<td>0.20</td>
+<td>63%</td>
+</tr>
+<tr>
+<td>3. Представление</td>
+<td>0.90</td>
+<td>0.10</td>
+<td>31%</td>
+</tr>
+</tbody>
+</table>
+<p>$A \approx 0.71$. Потолок задаёт <strong>детектор</strong>, второе узкое место —
+<strong>представление</strong>; значит, улучшение показа заметно повышает итог, а
+плохой показ «съедает» даже хороший детектор.</p>
+<div class="mermaid pie">pie title Вклад звеньев в потерю
+    "Детектор" : 63
+    "Представление" : 31
+    "Захват" : 6</div>
+<h2>7. Как результат доходит до оператора (теоретически)</h2>
+<p>Сначала <strong>считывается распознавание</strong> (звенья 1–3), затем результат
+<strong>попадает к оператору</strong>, и он <strong>оценивает, что это и насколько надёжно</strong>.</p>
+<div class="mermaid">graph LR
+    A["Захват"] --> B["Детектор"] --> C["Представление"]
+    C -->|считанный результат| O["Оператор"]
+    O --> E["Оценивает:<br/>ЧТО — что за объект<br/>КАК — насколько надёжно"]</div>
+<p><img alt="Оператор за пультом" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NjAgMjAwIiB3aWR0aD0iNDYwIiBoZWlnaHQ9IjIwMCI+CiAgPHN0eWxlPgogICAgLmxuIHsgc3Ryb2tlOiMxNDM5NWM7IHN0cm9rZS13aWR0aDoyLjY7IGZpbGw6bm9uZTsgc3Ryb2tlLWxpbmVjYXA6cm91bmQ7IHN0cm9rZS1saW5lam9pbjpyb3VuZDsgfQogICAgLmJvZHkgeyBmaWxsOiNlOGVlZjU7IHN0cm9rZTojMTQzOTVjOyBzdHJva2Utd2lkdGg6Mi42OyB9CiAgICAuYm94IHsgc3Ryb2tlOiNjMDM5MmI7IHN0cm9rZS13aWR0aDoyOyBmaWxsOm5vbmU7IH0KICAgIC5kYXNoIHsgc3Ryb2tlOiMyYzVmOGE7IHN0cm9rZS13aWR0aDoyOyBmaWxsOm5vbmU7IHN0cm9rZS1kYXNoYXJyYXk6NSA0OyB9CiAgICAudCB7IGZvbnQtZmFtaWx5Okdlb3JnaWEsIlRpbWVzIE5ldyBSb21hbiIsc2VyaWY7IGZvbnQtc2l6ZToxM3B4OyBmaWxsOiMxNDM5NWM7IH0KICAgIC5sayB7IGZvbnQtZmFtaWx5Okdlb3JnaWEsIlRpbWVzIE5ldyBSb21hbiIsc2VyaWY7IGZvbnQtc2l6ZToxMXB4OyBmaWxsOiNjMDM5MmI7IH0KICA8L3N0eWxlPgoKICA8IS0tINC80L7QvdC40YLQvtGAIC0tPgogIDxyZWN0IGNsYXNzPSJsbiIgeD0iMTgiIHk9IjI2IiB3aWR0aD0iMTI4IiBoZWlnaHQ9Ijg0IiByeD0iNSIvPgogIDxsaW5lIGNsYXNzPSJsbiIgeDE9IjgyIiB5MT0iMTEwIiB4Mj0iODIiIHkyPSIxMjgiLz4KICA8bGluZSBjbGFzcz0ibG4iIHgxPSI1OCIgeTE9IjEyOCIgeDI9IjEwNiIgeTI9IjEyOCIvPgoKICA8IS0tINGA0LXQt9GD0LvRjNGC0LDRgiDRgNCw0YHQv9C+0LfQvdCw0LLQsNC90LjRjyDQvdCwINGN0LrRgNCw0L3QtTog0YDQsNC80LrQsCArINC60LvQsNGB0YEgKyDRg9Cy0LXRgNC10L3QvdC+0YHRgtGMIC0tPgogIDxyZWN0IGNsYXNzPSJib3giIHg9IjQwIiB5PSI1MiIgd2lkdGg9IjQ2IiBoZWlnaHQ9IjQwIi8+CiAgPGxpbmUgY2xhc3M9ImJveCIgeDE9IjQwIiB5MT0iNTIiIHgyPSIzMCIgeTI9IjQyIi8+CiAgPHRleHQgY2xhc3M9ImxrIiB4PSIxOCIgeT0iMzgiPtGB0YLRg9C7IDAuNzE8L3RleHQ+CiAgPHRleHQgY2xhc3M9InQiIHg9Ijk2IiB5PSI3MCI+MC43MTwvdGV4dD4KCiAgPCEtLSDRgdGC0L7QuyAtLT4KICA8bGluZSBjbGFzcz0ibG4iIHgxPSI4IiB5MT0iMTU4IiB4Mj0iNDUyIiB5Mj0iMTU4Ii8+CgogIDwhLS0g0L7Qv9C10YDQsNGC0L7RgDog0LPQvtC70L7QstCwLCDQutC+0YDQv9GD0YEsINGA0YPQutC4IC0tPgogIDxjaXJjbGUgY2xhc3M9ImJvZHkiIGN4PSIzNjAiIGN5PSI1OCIgcj0iMTciLz4KICA8cGF0aCBjbGFzcz0ibG4iIGQ9Ik0zNjAgNzUgTDM2MCAxMjAiLz4KICA8cGF0aCBjbGFzcz0ibG4iIGQ9Ik0zNjAgOTAgTDMyNCAxMjIiLz4KICA8cGF0aCBjbGFzcz0ibG4iIGQ9Ik0zNjAgOTAgTDM5MCAxMTgiLz4KCiAgPCEtLSDQutC70LDQstC40LDRgtGD0YDQsCAtLT4KICA8cmVjdCBjbGFzcz0ibG4iIHg9IjMxMCIgeT0iMTMyIiB3aWR0aD0iNzYiIGhlaWdodD0iMTEiIHJ4PSIyIi8+CgogIDwhLS0g0YHRgtGA0LXQu9C60LAgwqvRgNC10LfRg9C70YzRgtCw0YIg4oaSINC+0L/QtdGA0LDRgtC+0YDCuyAtLT4KICA8cGF0aCBjbGFzcz0iZGFzaCIgZD0iTTE1MCA2OCBMMzMzIDY4Ii8+CiAgPHBhdGggY2xhc3M9ImRhc2giIGQ9Ik0zMzMgNjMgTDM0MCA2OCBMMzMzIDczIi8+CgogIDwhLS0g0L/QvtC00L/QuNGB0LggKNGA0LDQt9C90LXRgdC10L3RiykgLS0+CiAgPHRleHQgY2xhc3M9InQiIHg9IjIwIiB5PSIxOTAiPtCt0LrRgNCw0L06INGA0LXQt9GD0LvRjNGC0LDRgiDRgNCw0YHQv9C+0LfQvdCw0LLQsNC90LjRjzwvdGV4dD4KICA8dGV4dCBjbGFzcz0idCIgeD0iMzMwIiB5PSIxOTAiPtCe0L/QtdGA0LDRgtC+0YA8L3RleHQ+Cjwvc3ZnPgo=" /></p>
+<p><em>Рисунок 1 — Оператор за пультом: считывает результат распознавания и
+решает, что перед ним и насколько этому верить.</em></p>
+<p>Оператор проходит шаги: <strong>заметил метку → оценил доверие → при сомнении
+проверил → действовал</strong>. Экспериментально оператор не оценивается
+(выборка слишком мала для адекватной оценки, литературы нет).</p>
+<p>Пример кадра:</p>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Класс</th>
+<th>Уверенность</th>
+<th>Позиция</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>человек</td>
+<td>0.92</td>
+<td>центр</td>
+</tr>
+<tr>
+<td>2</td>
+<td>стул</td>
+<td>0.71</td>
+<td>слева</td>
+</tr>
+<tr>
+<td>3</td>
+<td>бутылка</td>
+<td>0.55</td>
+<td>внизу</td>
+</tr>
+<tr>
+<td>4</td>
+<td>(бутылка)</td>
+<td>0.48</td>
+<td>ниже порога → не показано</td>
+</tr>
+</tbody>
+</table>
+<p>Если 0.55 показать так же, как 0.92, оператор ошибочно доверится; значит,
+уверенность нужно выражать явно.</p>
+<h2>8. Сравнение моделей распознавания</h2>
+<p>Для звена «Детектор» ($a_2$) берём несколько моделей и сравниваем на
+<strong>одном датасете</strong> с одинаковыми классами и порогом.</p>
+<table>
+<thead>
+<tr>
+<th>Модель</th>
+<th>Тип</th>
+<th>Что даёт</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>YOLOv8</td>
+<td>детекция</td>
+<td>рамки + класс + уверенность</td>
+</tr>
+<tr>
+<td>YOLOv11</td>
+<td>детекция</td>
+<td>то же, новее</td>
+</tr>
+<tr>
+<td>RT-DETR</td>
+<td>детекция</td>
+<td>рамки + класс</td>
+</tr>
+<tr>
+<td>YOLOv8-seg</td>
+<td>сегментация</td>
+<td>маски объектов</td>
+</tr>
+<tr>
+<td>Mask R-CNN</td>
+<td>сегментация</td>
+<td>маски объектов</td>
+</tr>
+</tbody>
+</table>
+<p>Метрики сравнения: mAP@0.5, mAP@0.5:0.95, precision, recall, F1; для
+сегментации — IoU, Dice, Pixel Accuracy; скорость (fps); отдельно — ECE.</p>
+<div class="mermaid">graph LR
+    M["Разные модели"] --> E["Метрики на одном датасете"]
+    E --> C["Сравнение"]
+    C --> B["Лучшая модель"]
+    B --> A2["Задаёт a2 (детектор)"]</div>
+<p>Выбор — по балансу «точность/скорость» и при приемлемой калибровке. Если
+одна модель лучше остальных, берём её (с числами), остальные отклоняем;
+она задаёт $a_2$.</p>
+<h2>9. Метрики по звеньям</h2>
+<table>
+<thead>
+<tr>
+<th>Звено</th>
+<th>Метрика</th>
+<th>Что показывает</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Захват</td>
+<td>параметры сцены / нормы</td>
+<td>доля потерянных объектов</td>
+</tr>
+<tr>
+<td>2. Детектор</td>
+<td>F1, precision, recall</td>
+<td>качество обнаружения объектов</td>
+</tr>
+<tr>
+<td>3. Представление</td>
+<td>ECE + различимость</td>
+<td>правдивость уверенности и заметность метки</td>
+</tr>
+</tbody>
+</table>
+<p>Звенья «оператор» и «решение» не оцениваются (адресат и его решение — вне
+расчётной части).</p>
+<h2>10. Метрика звена «Представление»</h2>
+<h3>10.1. Калибровка уверенности (ECE)</h3>
+<p>Калибровка — совпадение уверенности с фактической долей верных ответов.</p>
+<p>$$\mathrm{ECE} = \sum_{m} \frac{|B_m|}{n}\,\big|\mathrm{acc}(B_m) - \mathrm{conf}(B_m)\big|$$</p>
+<p>где $B_m$ — бин уверенности, $n$ — число объектов, $\mathrm{acc}$ —
+фактическая точность в бине, $\mathrm{conf}$ — средняя уверенность в бине.</p>
+<table>
+<thead>
+<tr>
+<th>Уверенность</th>
+<th>Фактически верно</th>
+<th>Разрыв</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.65</td>
+<td>0.58</td>
+<td>+0.07</td>
+</tr>
+<tr>
+<td>0.75</td>
+<td>0.66</td>
+<td>+0.09</td>
+</tr>
+<tr>
+<td>0.85</td>
+<td>0.78</td>
+<td>+0.07</td>
+</tr>
+<tr>
+<td>0.95</td>
+<td>0.93</td>
+<td>+0.02</td>
+</tr>
+</tbody>
+</table>
+<p>Если разрыв положителен — детектор переуверен, оператор доверяет
+ошибочно. ECE — средневзвешенный разрыв.</p>
+<h3>10.2. Различимость</h3>
+<ul>
+<li>цвет класса: $\Delta E_{00} \ge 10$;</li>
+<li>контраст текста: $\ge 4.5{:}1$ (WCAG);</li>
+<li>размер метки: $\ge 20$ угловых минут.</li>
+</ul>
+<h2>11. Параметры и характеристики представления</h2>
+<p><strong>Параметры — что показываем на экране:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Параметр</th>
+<th>Что означает</th>
+<th>Приоритет</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Класс объекта</td>
+<td>тип распознанного</td>
+<td>критичный</td>
+</tr>
+<tr>
+<td>Уверенность</td>
+<td>надёжность распознавания</td>
+<td>критичный</td>
+</tr>
+<tr>
+<td>Тип ошибки</td>
+<td>ложное / пропуск</td>
+<td>критичный</td>
+</tr>
+<tr>
+<td>Положение (bbox)</td>
+<td>где объект</td>
+<td>важный</td>
+</tr>
+<tr>
+<td>Число объектов</td>
+<td>сколько на кадре</td>
+<td>важный</td>
+</tr>
+<tr>
+<td>Свежесть данных</td>
+<td>задержка обновления</td>
+<td>фоновый</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Характеристики — качества, которых добиваемся:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Характеристика</th>
+<th>Что означает</th>
+<th>Приоритет</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Однозначность класса</td>
+<td>класс читается верно</td>
+<td>высокий</td>
+</tr>
+<tr>
+<td>Наглядность уверенности</td>
+<td>видно, насколько надёжно</td>
+<td>высокий</td>
+</tr>
+<tr>
+<td>Помехозащищённость</td>
+<td>«не распознан» ≠ «нет»</td>
+<td>высокий</td>
+</tr>
+<tr>
+<td>Калибровка доверия</td>
+<td>уверенность передана правдиво</td>
+<td>высокий</td>
+</tr>
+<tr>
+<td>Различимость объектов</td>
+<td>метки не сливаются</td>
+<td>средний</td>
+</tr>
+<tr>
+<td>Нагрузка на внимание</td>
+<td>минимум одновременно</td>
+<td>средний</td>
+</tr>
+<tr>
+<td>Цветовая различимость</td>
+<td>классы различаются цветом</td>
+<td>средний</td>
+</tr>
+</tbody>
+</table>
+<h2>12. Рекомендации по представлению</h2>
+<ul>
+<li>Цвет по уверенности: зелёный $\ge 0.8$, жёлтый $0.6$–$0.8$, красный
+  $< 0.6$.</li>
+<li>«Не распознано» показывать отдельно от «нет объекта».</li>
+<li>Ограничивать число одновременно показанных меток.</li>
+</ul>
+<h2>13. Результат</h2>
+<ol>
+<li>Числа по звеньям и вклады.</li>
+<li>Выбор лучшей модели распознавания с обоснованием по метрикам.</li>
+<li>Рекомендации по представлению (экран).</li>
+</ol>
+<h2>14. Связь с ВКРМ</h2>
+<p>Робот <strong>Go2</strong>, детектор <strong>YOLO</strong> (<code>quadropted_perception</code>). Курсовая —
+эргономическая часть: модель цепочки + сравнение моделей + рекомендации
+по представлению.</p>
+<h2>15. Обоснование числа звеньев (3)</h2>
+<h3>15.1. Варианты</h3>
+<table>
+<thead>
+<tr>
+<th>Вариант</th>
+<th>Звенья</th>
+<th>Плюсы</th>
+<th>Минусы</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>3 звена</strong></td>
+<td>захват, детектор, представление</td>
+<td>все звенья измеримы; без допущений</td>
+<td>оператор — только адресат</td>
+</tr>
+<tr>
+<td>4 звена</td>
+<td>+ оператор</td>
+<td>полнее описывает цепочку</td>
+<td>оператора оценить нечем (выборка мала, литературы нет)</td>
+</tr>
+<tr>
+<td>5 звеньев</td>
+<td>+ оператор, решение</td>
+<td>полная картина</td>
+<td>два звена без оценки</td>
+</tr>
+</tbody>
+</table>
+<h3>15.2. Рекомендация: 3 звена</h3>
+<ul>
+<li><strong>Захват</strong> — параметры сцены / нормы;</li>
+<li><strong>Детектор</strong> — сравнение моделей на датасете (mAP, F1);</li>
+<li><strong>Представление</strong> — ECE + различимость (ядро эргономики).</li>
+</ul>
+<p><strong>Обоснование:</strong></p>
+<ol>
+<li><strong>Измеримость:</strong> у каждого из трёх звеньев есть источник чисел
+   (датасет, нормы, литература) — расчёт не опирается на допущения.</li>
+<li><strong>Прозрачность вклада:</strong> 3 звена достаточно, чтобы показать, где
+   теряется надёжность (детектор — потолок, представление — второе узкое
+   место).</li>
+<li><strong>Соответствие цели:</strong> эргономика — это звено «Представление»;
+   оператор — адресат и в расчёт не входит.</li>
+</ol>
+<p>Если потребуется <strong>4–5 звеньев</strong> (с оператором и решением), добавим их, но
+для них нужен способ оценки (эксперимент с достаточной выборкой или
+литература).</p>
+</body></html>
