@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import pathlib
 import re
+import shlex
 import subprocess
 import sys
 
@@ -90,6 +91,12 @@ def main() -> None:
     ap.add_argument("--threads", type=int, default=16)
     ap.add_argument("--model", type=pathlib.Path, default=MODEL)
     ap.add_argument("--chunk-timeout", type=float, default=600.0)
+    ap.add_argument("--whisper-bin", type=pathlib.Path, default=WHISPER)
+    ap.add_argument("--lang", default="ru")
+    ap.add_argument("--beam", type=int, default=0)
+    ap.add_argument("--prompt", default=None)
+    ap.add_argument("--extra", default="",
+                    help="доп. аргументы whisper-cli (строка)")
     a = ap.parse_args()
 
     a.out_dir.mkdir(parents=True, exist_ok=True)
@@ -107,11 +114,17 @@ def main() -> None:
         offset = i * a.chunk_seconds
         base = a.out_dir / f"out_{i:03d}"
         log(f"[{i + 1}/{len(chunks)}] offset={offset}s -> {ch.name}")
-        rc = run([
-            str(WHISPER), "-m", str(a.model), "-l", "ru",
-            "-t", str(a.threads), "-f", str(ch),
-            "-otxt", "-osrt", "-of", str(base),
-        ], timeout=a.chunk_timeout, log=log)
+        cmd = [str(a.whisper_bin), "-m", str(a.model), "-l", a.lang,
+               "-f", str(ch), "-otxt", "-osrt", "-of", str(base)]
+        if a.threads:
+            cmd += ["-t", str(a.threads)]
+        if a.beam:
+            cmd += ["-bs", str(a.beam)]
+        if a.prompt:
+            cmd += ["--prompt", a.prompt]
+        if a.extra:
+            cmd += shlex.split(a.extra)
+        rc = run(cmd, timeout=a.chunk_timeout, log=log)
         if rc != 0:
             log(f"  chunk {i} rc={rc} (пропуск)")
             continue
