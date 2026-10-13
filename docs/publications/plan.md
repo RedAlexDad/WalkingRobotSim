@@ -167,6 +167,8 @@ TROT-контроллера для Go2 в Gazebo, с переносом и ме�
 - `docs/AI_ASU_2026/` — рабочая папка статьи ИИАСУ (эргономика).
 - `docs/AI_ASU_2026/plan.md` — план написания статьи по эргономике.
 - `docs/ieee-article/plan-reepe-2027.md` — план подачи статьи в REEPE-2027.
+- `docs/publications/export-control-process.md` — порядок получения
+  заключения о возможности открытого опубликования (НУК ИУ, бумажный).
 - `docs/ergonomics-methodology/recognition-objects/` — источник по эргономике.
 - `docs/ieee-article/` — источник и шаблон для REEPE.
 - `reports/gpu-rl-training/` — отчёты по RL и переносу.
