@@ -12,7 +12,7 @@
 
 > **Тема (2026-10-13).** Статья ИИАСУ посвящена **эргономике**. Материал
 > про **RL vs TROT** вынесен в отдельный трек **REEPE-2027**
-> (Scopus/IEEE) — `docs/ieee-article/plan-reepe-2027.md`. Общий план двух
+> (Scopus/IEEE) — `docs/publications/REEPE_2027/plan-reepe-2027.md`. Общий план двух
 > площадок — `docs/publications/plan.md`.
 
 ---
@@ -57,7 +57,7 @@
 - `docs/ergonomics-methodology/recognition-objects/` — конспект, план,
   консультация, схемы (источник статьи).
 - `docs/publications/plan.md` — общий план двух треков (ИИАСУ, REEPE).
-- `docs/ieee-article/plan-reepe-2027.md` — трек REEPE-2027 (RL vs TROT).
+- `docs/publications/REEPE_2027/plan-reepe-2027.md` — трек REEPE-2027 (RL vs TROT).
 - Контакты конференции: `iiasu.conference@yandex.ru`,
   `konf_rusengineer@bmstu.ru`.
 - ЦПР (для МГТУ): `conf.cpr@bmstu.ru`, Москва, Бригадирский пер. 13, В4,

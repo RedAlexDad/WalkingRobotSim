@@ -20,7 +20,7 @@
 Файлы скачаны скриптом `scripts/fetch_arxiv_refs.py` (из корня репозитория):
 
 ```bash
-python3 scripts/fetch_arxiv_refs.py --out docs/ieee-article/refs \
+python3 scripts/fetch_arxiv_refs.py --out docs/publications/REEPE_2027/refs \
   2501.16590 2108.10470 2606.14433 2607.18135
 ```
 

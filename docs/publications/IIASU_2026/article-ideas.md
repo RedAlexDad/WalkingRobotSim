@@ -33,7 +33,7 @@
 - **ИИАСУ-2026** — эргономика (тема №1): быстрый РИНЦ-трек, ближайший
   срок (до 31.10.2026).
 - **REEPE-2027** — робототехника (темы №2–3): Scopus/IEEE, срок статьи
-  до 09.11.2026.
+  до 02.11.2026.
 - Темы №4–5 — резерв на будущее.
 
 ---
@@ -42,8 +42,8 @@
 
 | Тема | Материалы |
 |---|---|
-| Эргономика (№1) | `docs/ergonomics-methodology/recognition-objects/`, `docs/AI_ASU_2026/plan.md` |
-| RL vs TROT (№2–3) | `docs/ieee-article/`, `reports/rl-sar/`, `reports/gazebo-rl/`, `sim/mjrl_go2/` |
+| Эргономика (№1) | `docs/ergonomics-methodology/recognition-objects/`, `docs/publications/IIASU_2026/plan.md` |
+| RL vs TROT (№2–3) | `docs/publications/REEPE_2027/`, `reports/rl-sar/`, `reports/gazebo-rl/`, `sim/mjrl_go2/` |
 | BC + RL (№4) | `reports/gpu-rl-training/` (Приложение R), `sim/mjrl_go2/` |
 
 Общий план по обеим площадкам — `docs/publications/plan.md`.

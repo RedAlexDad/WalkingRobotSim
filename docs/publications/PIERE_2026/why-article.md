@@ -2,7 +2,8 @@
 
 **Дата:** 2026-09-02
 **Ветка:** `feat/isaam-research`
-**Папка:** `docs/ieee-article/`
+**Папка:** `docs/publications/PIERE_2026/`
+**Материалы статьи:** `docs/publications/REEPE_2027/`
 
 ---
 
@@ -532,7 +533,7 @@ Isaac Sim и IsaacLab — фактический стандарт индустр
 ### 8.4. Локальные копии источников (работа без интернета)
 
 Полные тексты и аннотации ближайших работ скачаны в подпапку
-`docs/ieee-article/refs/`. К ним можно обращаться локально, без доступа
+`docs/publications/REEPE_2027/refs/`. К ним можно обращаться локально, без доступа
 к интернету. Ссылки на файлы — относительные (работают из этой папки и
 из репозитория).
 
@@ -559,7 +560,7 @@ Isaac Sim и IsaacLab — фактический стандарт индустр
 служебных элементов arXiv). Повторный запуск:
 
 ```bash
-python3 scripts/fetch_arxiv_refs.py --out docs/ieee-article/refs \
+python3 scripts/fetch_arxiv_refs.py --out docs/publications/REEPE_2027/refs \
   2501.16590 2108.10470 2606.14433 2607.18135
 ```
 
@@ -1167,7 +1168,7 @@ reproducible baseline for learned policies and for hardware deployment.
    работы (тип контроллера и среда симуляции).
 
 2. **Локальные копии источников** (раздел 8.4): скачаны полные тексты и
-   аннотации 4 ближайших работ в подпапку `docs/ieee-article/refs/`
+   аннотации 4 ближайших работ в подпапку `docs/publications/REEPE_2027/refs/`
    (работа без доступа к интернету). Создан скрипт
    `scripts/fetch_arxiv_refs.py` (HTML → Markdown, с ретраями, таймаутами
    и очисткой от служебных элементов arXiv).
@@ -1225,7 +1226,7 @@ GPU-обучения.
 **Дата:** 2026-09-07
 
 В процессе регистрации в личном кабинете PIERE уточнены два момента,
-которые зафиксированы в `docs/ieee-article/submission-form.md`:
+которые зафиксированы в `docs/publications/PIERE_2026/submission-form.md`:
 
 1. **Что такое Scopus и зачем публикация в нём** (раздел 1.1):
    - Scopus — крупнейшая международная база научных публикаций

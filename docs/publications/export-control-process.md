@@ -100,5 +100,5 @@ graph TB
 ## 7. Связь с планами
 
 - `docs/publications/plan.md` — общий план публикаций и сроки.
-- `docs/AI_ASU_2026/` — трек ИИАСУ-2026 (эргономика), §заключение.
-- `docs/ieee-article/plan-reepe-2027.md` — трек REEPE-2027.
+- `docs/publications/IIASU_2026/` — трек ИИАСУ-2026 (эргономика), §заключение.
+- `docs/publications/REEPE_2027/plan-reepe-2027.md` — трек REEPE-2027.

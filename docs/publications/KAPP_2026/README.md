@@ -26,7 +26,7 @@
 
 ## Исходные материалы
 
-- `../ergonomics-methodology/2026-10-13_model-selection.md` — полный отчёт.
-- `../ergonomics-methodology/2026-10-14_model-selection-summary.md` — выжимка.
-- `../ergonomics-methodology/model-selection/model-selection.py` — расчёт.
+- `../../ergonomics-methodology/2026-10-13_model-selection.md` — полный отчёт.
+- `../../ergonomics-methodology/2026-10-14_model-selection-summary.md` — выжимка.
+- `../../ergonomics-methodology/model-selection/model-selection.py` — расчёт.
 - `../publications/plan.md` — общий план публикаций.

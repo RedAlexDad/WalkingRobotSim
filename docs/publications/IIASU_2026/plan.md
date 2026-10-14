@@ -9,7 +9,7 @@
 
 > Тема статьи — **эргономика**. Прежний материал (RL vs TROT в
 > Isaac/Gazebo) вынесен в трек **REEPE-2027** —
-> `docs/ieee-article/plan-reepe-2027.md`.
+> `docs/publications/REEPE_2027/plan-reepe-2027.md`.
 
 ---
 

@@ -1,7 +1,7 @@
 # Ссылки статьи (источник истины) — PIERE 2026 / IEEE
 
 **Обновлено:** 2026-09-13
-**Связано с:** `docs/ieee-article/draft-article.md` (раздел References)
+**Связано с:** `docs/publications/REEPE_2027/draft-article.md` (раздел References)
 
 Ниже — все ссылки статьи с каноническими линками (arXiv / DOI / URL) и
 отметкой наличия локальной копии в этой папке.
@@ -39,7 +39,7 @@
 ## Как получить локальные копии
 
 ```bash
-python3 scripts/fetch_arxiv_refs.py --out docs/ieee-article/refs \
+python3 scripts/fetch_arxiv_refs.py --out docs/publications/REEPE_2027/refs \
   2108.10470 2501.16590 2606.14433 2607.18135
 ```
 

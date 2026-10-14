@@ -10,7 +10,7 @@ bulletlist, equation, figurecaption, references, tablehead/tablecopy.
 (OMML) через latex2mathml + mathml2omml.
 
 Зависимости: python-docx, latex2mathml, mathml2omml.
-Запуск: python3 docs/ieee-article/generate_docx.py
+Запуск: python3 docs/publications/REEPE_2027/generate_docx.py
 """
 
 import os
