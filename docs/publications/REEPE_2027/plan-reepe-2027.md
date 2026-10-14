@@ -93,7 +93,7 @@ Medical, Engineering Management, Water-Energy.
 | Рисунки | `docs/publications/REEPE_2027/figures/` |
 | Таблицы | `docs/publications/REEPE_2027/tables/` |
 | Телеметрия | `docs/publications/REEPE_2027/telemetry/` |
-| Требования/шаблон IEEE | `docs/publications/PIERE_2026/requirements.md`, `ieee-template-notes.md` |
+| Требования/шаблон IEEE | `docs/publications/PIERE_2026_DRAFT/requirements.md`, `ieee-template-notes.md` |
 | Отчёты по переносу | `reports/gazebo-rl/`, `reports/rl-sar/` |
 | Данные RL vs IK/TROT | `reports/rl-sar/data/`, `sim/mjrl_go2/results/` |
 

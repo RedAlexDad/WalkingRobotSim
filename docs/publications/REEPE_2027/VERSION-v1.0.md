@@ -2,7 +2,7 @@
 
 **Статус:** английская версия статьи готова; версия зафиксирована.
 **Площадка:** REEPE-2027 (IEEE Xplore / Scopus). Ранее статья готовилась
-под PIERE-2026 (архив — `../PIERE_2026/`).
+под PIERE-2026 (архив — `../PIERE_2026_DRAFT/`).
 
 ## Основные файлы
 
@@ -13,9 +13,9 @@
 | `plan-reepe-2027.md` | план подачи в REEPE-2027 |
 | `improvement-plan.md` | план усиления и статус |
 | `refs/references.md` | 15 ссылок с линками |
-| `../PIERE_2026/requirements.md` | требования PIERE (архив) |
-| `../PIERE_2026/ieee-template-notes.md` | правила оформления IEEE |
-| `../PIERE_2026/submission-form.md` | инструкция по подаче (PIERE) |
+| `../PIERE_2026_DRAFT/requirements.md` | требования PIERE (архив) |
+| `../PIERE_2026_DRAFT/ieee-template-notes.md` | правила оформления IEEE |
+| `../PIERE_2026_DRAFT/submission-form.md` | инструкция по подаче (PIERE) |
 
 ## Ключевые результаты (v1.0)
 

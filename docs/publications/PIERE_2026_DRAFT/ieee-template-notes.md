@@ -1,7 +1,7 @@
 # Требования к оформлению по шаблону IEEE (PIERE 2026)
 
 **Источник:** `PIERE2026__full_paper_template.docx`
-(загружен в `docs/publications/PIERE_2026/`, 2026-09-07)
+(загружен в `docs/publications/PIERE_2026_DRAFT/`, 2026-09-07)
 **Статус:** выжимка правил оформления из шаблона IEEE
 
 ---

@@ -2,7 +2,7 @@
 
 **Дата:** 2026-09-02
 **Ветка:** `feat/isaam-research`
-**Папка:** `docs/publications/PIERE_2026/`
+**Папка:** `docs/publications/PIERE_2026_DRAFT/`
 **Материалы статьи:** `docs/publications/REEPE_2027/`
 
 ---
@@ -1226,7 +1226,7 @@ GPU-обучения.
 **Дата:** 2026-09-07
 
 В процессе регистрации в личном кабинете PIERE уточнены два момента,
-которые зафиксированы в `docs/publications/PIERE_2026/submission-form.md`:
+которые зафиксированы в `docs/publications/PIERE_2026_DRAFT/submission-form.md`:
 
 1. **Что такое Scopus и зачем публикация в нём** (раздел 1.1):
    - Scopus — крупнейшая международная база научных публикаций

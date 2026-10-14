@@ -8,7 +8,7 @@ Electrical and Power Engineering (**REEPE 2027**), 07–09 апреля 2027
 для походки четвероногого робота (Unitree Go2) в Isaac Sim.
 **Язык:** английский · **Шаблон:** IEEE · **Объём:** 5–6 страниц.
 
-> Требования и шаблон PIERE-2026 (прошлая площадка) — в `../PIERE_2026/`.
+> Требования и шаблон PIERE-2026 (прошлая площадка) — в `../PIERE_2026_DRAFT/`.
 > План подачи — `plan-reepe-2027.md`.
 
 ## Содержимое
@@ -39,4 +39,4 @@ Electrical and Power Engineering (**REEPE 2027**), 07–09 апреля 2027
 - `../../gazebo-rl-vs-ik/`, `../../gpu-rl-training/` — RL/Go2.
 - `reports/gazebo-rl/`, `reports/rl-sar/` — отчёты и данные.
 - `sim/mjrl_go2/` — обучение и результаты.
-- `../PIERE_2026/` — прошлые требования/шаблон PIERE.
+- `../PIERE_2026_DRAFT/` — прошлые требования/шаблон PIERE.
