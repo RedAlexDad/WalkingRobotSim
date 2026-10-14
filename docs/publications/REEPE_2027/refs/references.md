@@ -1,4 +1,4 @@
-# Ссылки статьи (источник истины) — PIERE 2026 / IEEE
+# Ссылки статьи (источник истины) — REEPE 2027 / IEEE
 
 **Обновлено:** 2026-09-13
 **Связано с:** `docs/publications/REEPE_2027/draft-article.md` (раздел References)

@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Генерация .docx статьи PIERE 2026 из Markdown по шаблону PIERE.
+"""Генерация .docx статьи REEPE 2027 из Markdown по шаблону IEEE.
 
-Использует сам шаблон `PIERE2026_full_paper_template.docx` как основу,
-поэтому применяются его стили: papertitle, Author, Affiliation, Abstract,
-Keywords, heading 1 (style '1'), heading 2 (style '2'), Body Text ('a3'),
-bulletlist, equation, figurecaption, references, tablehead/tablecopy.
+Использует как основу шаблон PIERE (см. TEMPLATE): применяются его
+стили: papertitle, Author, Affiliation, Abstract, Keywords, heading 1
+(style '1'), heading 2 (style '2'), Body Text ('a3'), bulletlist,
+equation, figurecaption, references, tablehead/tablecopy.
+
+TODO: перейти на шаблон REEPE (`template/шаблон_одна_аффилиация.docx`)
+и сверить имена стилей.
 
 Формулы LaTeX ($...$ и $$...$$) конвертируются в нативные уравнения Word
 (OMML) через latex2mathml + mathml2omml.
@@ -28,8 +31,8 @@ import mathml2omml
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "draft-article-en.md")
-OUT = os.path.join(HERE, "PIERE2026_Papin_generated.docx")
-TEMPLATE = os.path.join(HERE, "PIERE2026_full_paper_template.docx")
+OUT = os.path.join(HERE, "REEPE2027_Papin_generated.docx")
+TEMPLATE = os.path.join(HERE, "..", "PIERE_2026", "PIERE2026_full_paper_template.docx")
 M_NS = "http://schemas.openxmlformats.org/officeDocument/2006/math"
 
 
