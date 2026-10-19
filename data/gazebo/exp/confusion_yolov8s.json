@@ -1,0 +1,21 @@
+{
+  "n_gt": 44,
+  "confusion": {
+    "chair -> traffic light": 3,
+    "dining table -> dining table": 2,
+    "bottle -> bottle": 1,
+    "bed -> bed": 1,
+    "couch -> bench": 1,
+    "chair -> MISS": 3,
+    "dining table -> MISS": 6,
+    "vase -> MISS": 6,
+    "refrigerator -> MISS": 1,
+    "dining table -> sink": 1,
+    "bottle -> MISS": 1,
+    "tv -> tv": 3,
+    "couch -> MISS": 5,
+    "sports ball -> MISS": 6,
+    "bed -> airplane": 2,
+    "refrigerator -> tv": 2
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "n_gt": 44,
+  "confusion": {
+    "chair -> chair": 1,
+    "dining table -> bench": 3,
+    "bottle -> MISS": 1,
+    "bed -> airplane": 3,
+    "couch -> bench": 3,
+    "chair -> boat": 1,
+    "dining table -> MISS": 1,
+    "vase -> bird": 3,
+    "refrigerator -> MISS": 2,
+    "dining table -> sink": 1,
+    "vase -> person": 1,
+    "bottle -> person": 1,
+    "tv -> MISS": 1,
+    "couch -> MISS": 3,
+    "sports ball -> mouse": 2,
+    "chair -> traffic light": 3,
+    "chair -> kite": 1,
+    "dining table -> airplane": 3,
+    "vase -> MISS": 2,
+    "refrigerator -> tv": 1,
+    "dining table -> boat": 1,
+    "tv -> tv": 2,
+    "sports ball -> sports ball": 4
+  }
+}
