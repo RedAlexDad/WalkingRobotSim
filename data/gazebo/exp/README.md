@@ -37,6 +37,30 @@
 фиксированном пороге 0.5 recall 0.02–0.17: уверенность на синтетических
 объектах смещена вниз, рабочий порог нужно подбирать под домен.
 
+### Сцены и агрегат
+
+| Сцена | Что меняется | GT |
+| --- | --- | --- |
+| showroom | базовый свет, 48 ракурсов | 88 |
+| warm_light | тёплый боковой свет, джиттер камеры | 88 |
+| cool_light | холодный свет, большой джиттер | 85 |
+| orbit_video | 30 кадров вращения камеры | 79 |
+
+Итого 340 GT-инстансов на четырёх сценах. Средние по сценам
+(bootstrap 95 % CI по сценам):
+
+| Модель | mAP@0.5 mean | std | 95 % CI | T, мс |
+| --- | --- | --- | --- | --- |
+| YOLO11n | 0.475 | 0.093 | 0.393–0.543 | 19.4 |
+| YOLOv8s | 0.406 | 0.088 | 0.320–0.478 | 53.3 |
+| YOLOv8n | 0.376 | 0.086 | 0.307–0.445 | 20.9 |
+| YOLOv9t | 0.332 | 0.147 | 0.187–0.418 | 28.6 |
+| YOLOv10n | 0.312 | 0.126 | 0.203–0.406 | 19.4 |
+
+Агрегат: `scene_results.csv`, `scene_aggregate.{csv,json}`,
+`aggregate.py`. Худшая сцена — `cool_light`: холодный свет и большой
+джиттер роняют mAP@0.5 у всех моделей, но порядок лидеров сохраняется.
+
 ### AP по классам (YOLO11n)
 
 | Класс | AP@0.5 | AP@0.5:0.95 | Объектов |
@@ -263,4 +287,5 @@ docker compose exec -T simulator bash -lc 'pkill -x ruby'
 `capture_views.py`, `benchmark.py`, `analyze.py`, `sweep.py`, `rss.py`,
 `benchmark_results.{json,csv}`, `confusion_*.json`, `sweep_*.json`,
 `rss.json`, `telemetry_*.{csv,json}`, `ros_telemetry.json`,
-`eda.py`, `eda/`.
+`eda.py`, `eda/`, `aggregate.py`, `scene_*.{csv,json}`,
+`variants.py`, `scene_v1.json`, `scene_v2.json`, `scene_video.json`.
