@@ -200,8 +200,8 @@ def main():
 
     # рисунок: 9 см по ширине, пропорционально
     for shape in doc.inline_shapes:
-        shape.width = Cm(9.0)
-        shape.height = Cm(9.0 * 1584 / 1128)
+        shape.width = Cm(16.0)
+        shape.height = Cm(16.0 * 3.2 / 7.16)
 
     # таблицы
     for table in doc.tables:
