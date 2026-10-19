@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Выбор модели МО — выжимка к консультации</title>
+<style>
+  @page { size: A4; margin: 1.7cm 2cm; }
+  body {
+    font-family: "Times New Roman", serif;
+    font-size: 12pt;
+    line-height: 1.5;
+    color: #000;
+    margin: 0;
+  }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .title { font-size: 16pt; font-weight: bold; text-align: center; margin: 0 0 2pt; }
+  .subtitle { font-size: 11pt; text-align: center; margin: 0 0 1pt; }
+  .author { font-size: 10pt; text-align: center; margin: 0 0 8pt; }
+  h2 { font-size: 13pt; margin: 7pt 0 2pt; }
+  p { margin: 0 0 3pt; text-align: justify; }
+  ul, ol { margin: 1pt 0 3pt 16pt; padding: 0; }
+  li { margin: 0 0 1pt; text-align: justify; }
+  table { width: 100%; border-collapse: collapse; font-size: 9.5pt; line-height: 1.2; margin: 2pt 0 4pt; }
+  th, td { border: 0.5pt solid #000; padding: 1.5pt 3pt; vertical-align: top; }
+  th { background: #eeeeee; font-weight: bold; text-align: center; }
+  td.c, th.c { text-align: center; }
+  .small { font-size: 8.4pt; }
+  .note { font-size: 9pt; }
+  .formula { font-size: 10pt; }
+  .tag { font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="title">Обоснование выбора модели машинного обучения</div>
+  <div class="subtitle">Выжимка к консультации · 19.10.2026</div>
+  <div class="author">Папин А.В., ИУ5Ц-31М · МГТУ им. Н.Э. Баумана, кафедра ИУ-5</div>
+
+  <h2>1. Постановка</h2>
+  <p><span class="tag">Дано:</span> несколько готовых моделей МО; обучать и прогонять их на датасете для выбора не требуется. <span class="tag">Найти:</span> одну лучшую модель и доказать выбор объективно.</p>
+  <p><span class="tag">Ограничения борта:</span> задержка <i>T</i> ≤ 0,1 с; память <i>M</i> ≤ 64 МБ; выход «рамка»; детерминизм; квантуемость. Сцена заранее неизвестна: рассматриваются 5, 20 и 50 объектов.</p>
+  <p><span class="tag">Принципы:</span> каждая характеристика — число с формулой и единицами; без весов, критерия Парето и экспертных оценок; сначала аналитический расчёт, эксперимент — только подтверждение.</p>
+
+  <h2>2. Кандидаты и фильтры</h2>
+  <p>Рассмотрены 9 моделей. После жёстких фильтров остаются три: <b>YOLO11n</b>, <b>YOLOv8n</b>, <b>CNN+LSTM</b>.</p>
+  <table>
+    <tr><th>Модель</th><th>Семейство</th><th class="c"><i>P</i>, млн</th><th class="c"><i>F</i>, Г</th><th class="c">mAP</th><th class="c"><i>T</i>, с</th><th class="c"><i>M</i>, МБ</th><th class="c">Выход</th><th class="c">Фильтр</th></tr>
+    <tr><td>YOLO11n</td><td>1-stage CNN</td><td class="c">2,62</td><td class="c">6,6</td><td class="c">39,5</td><td class="c">0,066</td><td class="c">10,5</td><td class="c">рамка</td><td class="c">проходит</td></tr>
+    <tr><td>YOLOv8n</td><td>1-stage CNN</td><td class="c">3,16</td><td class="c">8,9</td><td class="c">37,3</td><td class="c">0,089</td><td class="c">12,6</td><td class="c">рамка</td><td class="c">проходит</td></tr>
+    <tr><td>YOLO11s</td><td>1-stage CNN</td><td class="c">9,46</td><td class="c">21,7</td><td class="c">47,0</td><td class="c">0,217</td><td class="c">37,8</td><td class="c">рамка</td><td class="c">нет: <i>T</i></td></tr>
+    <tr><td>YOLOv8s</td><td>1-stage CNN</td><td class="c">11,17</td><td class="c">28,8</td><td class="c">44,9</td><td class="c">0,288</td><td class="c">44,7</td><td class="c">рамка</td><td class="c">нет: <i>T</i></td></tr>
+    <tr><td>RT-DETR-l</td><td>transformer</td><td class="c">32,0</td><td class="c">103,5</td><td class="c">53,0</td><td class="c">1,04</td><td class="c">128</td><td class="c">рамка</td><td class="c">нет: <i>T</i>, <i>M</i></td></tr>
+    <tr><td>Faster R-CNN</td><td>2-stage CNN</td><td class="c">41,5</td><td class="c">180</td><td class="c">37,4</td><td class="c">1,80</td><td class="c">166</td><td class="c">рамка</td><td class="c">нет: <i>T</i>, <i>M</i></td></tr>
+    <tr><td>Mask R-CNN</td><td>2-stage CNN</td><td class="c">44,2</td><td class="c">250</td><td class="c">—</td><td class="c">2,50</td><td class="c">177</td><td class="c">маска</td><td class="c">нет: <i>T</i>, выход</td></tr>
+    <tr><td>YOLO11n-seg</td><td>1-stage CNN</td><td class="c">2,9</td><td class="c">9,8</td><td class="c">—</td><td class="c">0,098</td><td class="c">11,6</td><td class="c">маска</td><td class="c">нет: выход</td></tr>
+    <tr><td>CNN+LSTM</td><td>CNN + рекурр.</td><td class="c">3,15</td><td class="c">6,61</td><td class="c">39,5</td><td class="c">0,070</td><td class="c">12,6</td><td class="c">рамка</td><td class="c">проходит</td></tr>
+  </table>
+  <p class="note">В расчётном скрипте — 7 моделей: Mask R-CNN и YOLO11n-seg отсеяны по типу выхода; RT-DETR и Faster R-CNN — по <i>T</i> и <i>M</i>.</p>
+</div>
+
+<div class="page">
+  <h2>3. Характеристики: формулы и единицы</h2>
+  <p><span class="tag">Ядро (по требованию научрука):</span> эффективность, читаемость, различимость, однозначность класса, наглядность. Все — числа с формулой и единицами.</p>
+  <table>
+    <tr><th>Характеристика</th><th>Формула</th><th class="c">Единицы</th><th>Смысл</th></tr>
+    <tr><td>Эффективность <i>E</i></td><td><i>E</i> = 1/<i>F</i></td><td class="c">1/Г</td><td>меньше вычислений на кадр — эффективнее</td></tr>
+    <tr><td>Читаемость <i>C</i></td><td><i>C</i> = τ / log<sub>2</sub>(<i>P</i>+1); τ=1 для CNN, 0,5 для transformer</td><td class="c">безразм.</td><td>проще структура — читаемее</td></tr>
+    <tr><td>Различимость <i>R</i></td><td><i>R</i> ≈ VCdim = <i>O</i>(<i>W L</i> log <i>W</i>)</td><td class="c">шт.</td><td>ёмкость разделения классов</td></tr>
+    <tr><td>Однозначность <i>O</i></td><td><i>O</i> = 1/<i>k</i></td><td class="c">безразм.</td><td><i>k</i> — число классов на выходе</td></tr>
+    <tr><td>Наглядность <i>H</i></td><td><i>H</i> = 1/log<sub>2</sub>(<i>k</i>+1)</td><td class="c">безразм.</td><td>насколько однозначно читается вывод</td></tr>
+  </table>
+  <p><span class="tag">Ресурсные характеристики:</span> <i>P</i> — параметры (млн); <i>F</i> — FLOPs (Г); <i>M</i> ≈ 4<i>P</i> — память весов float32 (МБ); <i>T</i> = <i>F</i>/Π — задержка (с); <i>f</i> = 1/<i>T</i> — частота (Гц). Принято Π = 100 Гоп./с.</p>
+  <p><span class="tag">Сведение без весов:</span> <i>z</i> = (δ<i>x</i> − min)/(max − min), где δ = +1 для «больше — лучше» и −1 для «меньше — лучше»; Φ = (1/<i>K</i>) Σ <i>z</i>; контроль — число Борда и средний ранг.</p>
+
+  <table>
+    <tr><th>Модель</th><th class="c"><i>P</i></th><th class="c"><i>F</i></th><th class="c"><i>M</i></th><th class="c"><i>T</i></th><th class="c"><i>f</i></th><th class="c"><i>E</i></th><th class="c"><i>C</i></th><th class="c">VCdim</th><th class="c"><i>O</i></th><th class="c"><i>H</i></th><th class="c">Φ</th></tr>
+    <tr><td>YOLO11n</td><td class="c">2,62</td><td class="c">6,6</td><td class="c">10,5</td><td class="c">0,066</td><td class="c">15,2</td><td class="c">0,152</td><td class="c">0,047</td><td class="c">10,1</td><td class="c">1</td><td class="c">0,157</td><td class="c"><b>0,875</b></td></tr>
+    <tr><td>YOLOv8n</td><td class="c">3,16</td><td class="c">8,9</td><td class="c">12,6</td><td class="c">0,089</td><td class="c">11,2</td><td class="c">0,112</td><td class="c">0,046</td><td class="c">8,8</td><td class="c">1</td><td class="c">0,157</td><td class="c">0,182</td></tr>
+    <tr><td>CNN+LSTM</td><td class="c">3,15</td><td class="c">6,61</td><td class="c">12,6</td><td class="c">0,070</td><td class="c">14,3</td><td class="c">0,151</td><td class="c">0,046</td><td class="c">12,3</td><td class="c">1</td><td class="c">0,157</td><td class="c">0,484</td></tr>
+  </table>
+  <p class="note">Однозначность <i>O</i> и наглядность <i>H</i> у всех трёх одинаковы и не различают модели; различают <i>E</i>, <i>C</i>, VCdim и ресурсные <i>P</i>, <i>F</i>, <i>M</i>, <i>T</i>, <i>f</i>.</p>
+  <p><span class="tag">Пример:</span> YOLO11n, сцена 5 объектов: <i>f</i> = 100 / (6,6 + 0,001·25) = 15,09 Гц; Φ = 0,875.</p>
+</div>
+
+<div class="page">
+  <h2>4. Критерии и итог</h2>
+  <p>Выигрыш модели в сцене: <i>f<sub>ij</sub></i> = Π / (<i>F<sub>i</sub></i> + α<i>N<sub>j</sub></i><sup>2</sup>), α = 10<sup>−3</sup> Г; сцены 5/20/50 объектов. Пять критериев не требуют вероятностей сцен.</p>
+  <table>
+    <tr><th>Критерий</th><th>Идея / формула</th><th class="c">YOLO11n</th><th class="c">YOLOv8n</th><th class="c">CNN+LSTM</th><th class="c">Лучший</th></tr>
+    <tr><td>Лаплас</td><td>среднее по сценам</td><td class="c">13,46</td><td class="c">10,24</td><td class="c">12,76</td><td class="c">YOLO11n</td></tr>
+    <tr><td>Оптимизм</td><td>максимум</td><td class="c">15,09</td><td class="c">11,20</td><td class="c">14,23</td><td class="c">YOLO11n</td></tr>
+    <tr><td>Вальд</td><td>максимин (худший случай)</td><td class="c">10,99</td><td class="c">8,77</td><td class="c">10,53</td><td class="c">YOLO11n</td></tr>
+    <tr><td>Сэвидж</td><td>минимум сожаления</td><td class="c">0,00</td><td class="c">3,89</td><td class="c">0,86</td><td class="c">YOLO11n</td></tr>
+    <tr><td>Гурвиц</td><td>α·max + (1−α)·min</td><td class="c">13,04</td><td class="c">9,99</td><td class="c">12,38</td><td class="c">YOLO11n</td></tr>
+  </table>
+
+  <p><span class="tag">Сведение 22 способов:</span> нормировка min–max, среднее Ψ, число Борда, средний ранг. Все три свёртки указывают на YOLO11n.</p>
+  <table>
+    <tr><th>Модель</th><th class="c">Ψ</th><th class="c">Борда</th><th class="c">Средний ранг</th></tr>
+    <tr><td><b>YOLO11n</b></td><td class="c"><b>0,955</b></td><td class="c"><b>64</b></td><td class="c"><b>1,045</b></td></tr>
+    <tr><td>CNN+LSTM</td><td class="c">0,735</td><td class="c">42</td><td class="c">2,000</td></tr>
+    <tr><td>YOLOv8n</td><td class="c">0,045</td><td class="c">23</td><td class="c">2,909</td></tr>
+  </table>
+  <p><span class="tag">Итог:</span> YOLO11n первая в 21 из 22 способов (исключение — SR, характеристика масштаба семейства). <i>P</i> = 2,62 млн; <i>F</i> = 6,6 Г; <i>M</i> = 10,48 МБ; <i>T</i> = 0,066 с; <i>f</i> = 15,15 Гц; <i>Q</i> = 0,66 Дж.</p>
+  <p><span class="tag">Из чего 22 способа:</span> 5 критериев (Лаплас, оптимизм, Вальд, Сэвидж, Гурвиц), балльный подсчёт, 7 ресурсных (η, EDP, ρ, BF, Q1–Q4), 4 комбинированных и 6 авторских (DF, AR, APM, FPG, SR, IDD).</p>
+  <p><span class="tag">Устойчивость:</span> 21/22 — YOLO11n; SR — YOLOv8n; Ψ, Борда и средний ранг согласованы. Вывод не зависит от способа сведения.</p>
+</div>
+
+<div class="page">
+  <h2>5. Эксперимент-подтверждение</h2>
+  <p>Проверка в Gazebo: 4 синтетические сцены (340 GT), текстурированное кафе (66 GT), реальный COCO128 (929 объектов).</p>
+  <table>
+    <tr><th>Домен</th><th class="c">YOLO11n</th><th class="c">YOLOv8s</th><th class="c">YOLOv8n</th><th>Вывод</th></tr>
+    <tr><td>4 сцены, mAP@0.5</td><td class="c">0,475</td><td class="c">0,406</td><td class="c">0,376</td><td>YOLO11n лучший</td></tr>
+    <tr><td>Кафе, mAP@0.5</td><td class="c">0,402</td><td class="c">0,435</td><td class="c">0,478</td><td>YOLOv8n лучший</td></tr>
+    <tr><td>COCO128, mAP@0.5</td><td class="c">0,671</td><td class="c">0,761</td><td class="c">0,607</td><td>YOLOv8s лучший</td></tr>
+  </table>
+  <p><span class="tag">Задержка:</span> YOLO11n — 19,7 мс; YOLOv8s — 51 мс натурно против 0,14 с по аналитической оценке. <span class="tag">Вывод:</span> выбор зависит от домена и бюджета: в рамках <i>T</i> ≤ 0,1 с и <i>M</i> ≤ 64 МБ — YOLO11n; на реальных данных YOLOv8s точнее, но в 2,5 раза медленнее и вчетверо больше; на кафе лучше YOLOv8n. Это ограничение методики, а не ошибка расчёта.</p>
+  <p><span class="tag">Ограничения:</span> часть характеристик — оценки «≈»; эксперимент покрывает 5 YOLO-моделей (RT-DETR, Faster R-CNN, CNN+LSTM — только аналитика); кафе — 66 GT; доменная зависимость и консервативность <i>T</i>. Для КР ядро — 5 характеристик + ресурсные, остальное — приложение.</p>
+
+  <h2>6. Вопросы к научруку</h2>
+  <ol>
+    <li>Ядро характеристик: <i>E</i>, <i>C</i>, <i>R</i>, <i>O</i>, <i>H</i> — достаточно? Как строго формализовать различимость: VCdim, число линейных областей или иначе?</li>
+    <li>Набор моделей: 7 (расчётный скрипт) или 9 (расширенная матрица)? Включать ли сегментаторы?</li>
+    <li>Фильтры: <i>T</i> ≤ 0,1 с, <i>M</i> ≤ 64 МБ, выход «рамка», детерминизм, квантуемость — согласовать.</li>
+    <li>Агрегация: Φ + 5 критериев + 22 способа — не слишком ли много для КР? Что оставить в приложении?</li>
+    <li>Эксперимент: 4 сцены + кафе + COCO128 достаточно? Нужны ли реальные кадры с робота?</li>
+    <li>Доменная зависимость и консервативность <i>T</i>: как трактовать YOLOv8s (51 мс против 0,14 с) и менять ли границу отсева?</li>
+    <li>Структура, объём и сроки КР.</li>
+  </ol>
+
+  <h2>7. Что дальше</h2>
+  <p>Зафиксировать ядро характеристик и набор моделей → согласовать фильтры и агрегацию → составить план КР и главы. После консультации — текст КР, расчётные таблицы и эксперимент.</p>
+  <p><span class="tag">План КР:</span> 1) введение; 2) обзор (MCDM, NAS, TinyML, YOLO); 3) методика; 4) аналитический расчёт; 5) эксперимент; 6) обсуждение; 7) заключение.</p>
+  <p><span class="tag">От консультации нужно:</span> согласовать ядро характеристик, набор моделей, фильтры и объём эксперимента.</p>
+</div>
+
+</body>
+</html>
