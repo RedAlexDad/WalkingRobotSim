@@ -5,7 +5,7 @@
 **Папин Алексей Владимирович¹**  papin.alexei2011@yandex.ru
 SPIN-код: ____-____ (будет присвоен)
 
-**Канев Антон Игоревич¹(\*)**  kanev@bmstu.ru
+**Канев Антон Игоревич¹(\*)**  aikanev@bmstu.ru
 
 ¹ МГТУ им. Н. Э. Баумана, кафедра ИУ-5 «Системы обработки информации
 и управления», Москва, Россия
@@ -31,7 +31,7 @@ SPIN-код: ____-____ (будет присвоен)
 ## Justification of the Choice of a Machine Learning Model for an Object Recognition System of a Mobile Robot
 
 **Papin Alexey Vladimirovich¹**  papin.alexei2011@yandex.ru
-**Kanev Anton Igorevich¹(\*)**  kanev@bmstu.ru
+**Kanev Anton Igorevich¹(\*)**  aikanev@bmstu.ru
 
 ¹ Bauman Moscow State Technical University, Department of Information
 Processing and Control Systems (IU-5), Moscow, Russia
