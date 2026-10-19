@@ -48,7 +48,7 @@ def main():
             f"timeout 40 python3 /root/ws/data/exp/capture.py 3 {out}"
         )
         c = run(inner)
-        if "total 3" not in c.stdout:
+        if "saved 1" not in c.stdout:
             print(f"[{i}] capture FAIL: {c.stdout.strip()[-120:]}")
             continue
         print(f"[{i + 1}/{len(views)}] {v['name']}", flush=True)
