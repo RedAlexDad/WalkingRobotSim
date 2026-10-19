@@ -61,6 +61,60 @@ def fmt(p, size=12, bold=None, align=WD_ALIGN_PARAGRAPH.JUSTIFY,
         set_font(r, size, bold)
 
 
+def reset_runs(p):
+    for r in list(p.runs):
+        r._element.getparent().remove(r._element)
+
+
+def add(p, text, bold=False, italic=False, sup=False, size=12):
+    r = p.add_run(text)
+    set_font(r, size, bold)
+    r.italic = italic
+    r.font.superscript = sup
+    return r
+
+
+def author_line(p, name, email, tab_cm):
+    reset_runs(p)
+    p.paragraph_format.tab_stops.clear_all()
+    p.paragraph_format.tab_stops.add_tab_stop(Cm(tab_cm))
+    add(p, name, bold=True)
+    add(p, "1", bold=True, sup=True)
+    add(p, "\t")
+    add(p, email)
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    pf = p.paragraph_format
+    pf.first_line_indent = Cm(0)
+    pf.line_spacing = 1.5
+    pf.space_before = Pt(0)
+    pf.space_after = Pt(0)
+
+
+def spin_line(p, text, tab_cm):
+    reset_runs(p)
+    p.paragraph_format.tab_stops.clear_all()
+    p.paragraph_format.tab_stops.add_tab_stop(Cm(tab_cm))
+    add(p, "\t" + text)
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    pf = p.paragraph_format
+    pf.first_line_indent = Cm(0)
+    pf.line_spacing = 1.5
+    pf.space_before = Pt(0)
+    pf.space_after = Pt(0)
+
+
+def affiliation(p, text):
+    reset_runs(p)
+    add(p, "1", italic=True, sup=True)
+    add(p, " " + text, italic=True)
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    pf = p.paragraph_format
+    pf.first_line_indent = Cm(0)
+    pf.line_spacing = 1.5
+    pf.space_before = Pt(0)
+    pf.space_after = Pt(0)
+
+
 def set_borders(table):
     tbl = table._tbl
     tblPr = tbl.tblPr
@@ -152,11 +206,16 @@ def main():
             fmt(p, 12, False, WD_ALIGN_PARAGRAPH.LEFT, 0, 0, 12)
         elif p._p is title._p:
             continue
-        elif text.startswith(("Папин Алексей", "Канев Антон",
-                              "Papin Alexey", "Kanev Anton")):
-            fmt(p, 12, True, WD_ALIGN_PARAGRAPH.LEFT, 0, 0, 0)
-        elif text.startswith("SPIN-код") or text.startswith("¹ "):
-            fmt(p, 12, None, WD_ALIGN_PARAGRAPH.LEFT, 0, 0, 6)
+        elif text.startswith("Папин Алексей"):
+            author_line(p, "Папин Алексей Владимирович",
+                        "papin.alexei2011@yandex.ru", 7.62)
+        elif text.startswith("SPIN-код"):
+            spin_line(p, "SPIN-код: XXXX-XXXX", 7.62)
+        elif text.startswith("Канев Антон"):
+            author_line(p, "Канев Антон Игоревич",
+                        "aikanev@bmstu.ru", 7.62)
+        elif text.startswith("¹ ") and "МГТУ" in text:
+            affiliation(p, "МГТУ им. Н.Э. Баумана, Москва, Россия")
         elif text.startswith("Аннотация."):
             fmt(p, 12, None, WD_ALIGN_PARAGRAPH.JUSTIFY, 0, 12, 12)
         elif text.startswith("Ключевые слова:"):
@@ -164,6 +223,16 @@ def main():
         elif text.startswith("Justification of the Choice"):
             p.style = doc.styles["Normal"]
             fmt(p, 12, True, WD_ALIGN_PARAGRAPH.LEFT, 0, 12, 18)
+        elif text.startswith("Papin Alexey"):
+            author_line(p, "Papin Alexey Vladimirovich",
+                        "papin.alexei2011@yandex.ru", 8.90)
+        elif text.startswith("SPIN-code"):
+            spin_line(p, "SPIN-code: XXXX-XXXX", 8.90)
+        elif text.startswith("Kanev Anton"):
+            author_line(p, "Kanev Anton Igorevich",
+                        "aikanev@bmstu.ru", 8.90)
+        elif text.startswith("¹ ") and "BMSTU" in text:
+            affiliation(p, "BMSTU, Moscow, Russia")
         elif text.startswith("Abstract."):
             fmt(p, 12, None, WD_ALIGN_PARAGRAPH.JUSTIFY, 0, 12, 12)
         elif text.startswith("Keywords:"):
@@ -219,6 +288,8 @@ def main():
                     for r in p.runs:
                         set_font(r, 10, True if ri == 0 else None)
 
+    if os.path.exists(OUT):
+        shutil.copy2(OUT, "/tmp/opencode/article_prev.docx")
     doc.core_properties.title = title.text
     doc.core_properties.author = "Папин А.В., Канев А.И."
     doc.save(OUT)

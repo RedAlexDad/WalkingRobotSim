@@ -4,12 +4,11 @@
 
 **Папин Алексей Владимирович¹**  papin.alexei2011@yandex.ru
 
-SPIN-код: ____-____ (будет присвоен)
+SPIN-код: XXXX-XXXX
 
-**Канев Антон Игоревич¹(\*)**  aikanev@bmstu.ru
+**Канев Антон Игоревич¹**  aikanev@bmstu.ru
 
-¹ МГТУ им. Н. Э. Баумана, кафедра ИУ-5 «Системы обработки информации
-и управления», Москва, Россия
+¹ МГТУ им. Н.Э. Баумана, Москва, Россия
 
 **Аннотация.** Работа посвящена выбору модели машинного обучения для
 системы распознавания объектов мобильного робота. Модели берутся
@@ -33,10 +32,11 @@ SPIN-код: ____-____ (будет присвоен)
 
 **Papin Alexey Vladimirovich¹**  papin.alexei2011@yandex.ru
 
-**Kanev Anton Igorevich¹(\*)**  aikanev@bmstu.ru
+SPIN-code: XXXX-XXXX
 
-¹ Bauman Moscow State Technical University, Department of Information
-Processing and Control Systems (IU-5), Moscow, Russia
+**Kanev Anton Igorevich¹**  aikanev@bmstu.ru
+
+¹ BMSTU, Moscow, Russia
 
 **Abstract.** The paper addresses the choice of a machine learning model
 for an object recognition system of a mobile robot. The models are taken
