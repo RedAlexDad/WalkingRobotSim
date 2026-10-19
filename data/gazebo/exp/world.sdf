@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <world name="exp">
+    <gravity>0 0 -9.8</gravity>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>0 1 -0.4</direction>
+    </light>
+
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <model name="ground">
+      <static>true</static>
+      <link name="link">
+        <collision name="c"><geometry><plane><normal>0 0 1</normal><size>30 30</size></plane></geometry></collision>
+        <visual name="v"><geometry><plane><normal>0 0 1</normal><size>30 30</size></plane></geometry>
+          <material><ambient>0.4 0.4 0.4 1</ambient><diffuse>0.4 0.4 0.4 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="camera">
+      <static>true</static>
+      <pose>0 -6 2.5 0 0.3948 1.5708</pose>
+      <link name="link">
+        <sensor name="cam" type="camera">
+          <update_rate>10</update_rate>
+          <camera>
+            <horizontal_fov>1.047</horizontal_fov>
+            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
+            <clip><near>0.1</near><far>100</far></clip>
+          </camera>
+          <always_on>1</always_on>
+          <visualize>0</visualize>
+          <topic>/camera/image</topic>
+        </sensor>
+      </link>
+    </model>
+
+    <include><uri>model://aws_robomaker_residential_ChairA_01</uri><name>chair1</name><pose>-3 0 0 0 0 1.5708</pose></include>
+    <include><uri>model://aws_robomaker_residential_ChairA_01</uri><name>chair2</name><pose>-1.5 0 0 0 0 1.5708</pose></include>
+    <include><uri>model://aws_robomaker_residential_ChairA_01</uri><name>chair3</name><pose>0 0 0 0 0 1.5708</pose></include>
+    <include><uri>model://aws_robomaker_residential_ChairA_01</uri><name>chair4</name><pose>1.5 0 0 0 0 1.5708</pose></include>
+    <include><uri>model://aws_robomaker_residential_ChairA_01</uri><name>chair5</name><pose>3 0 0 0 0 1.5708</pose></include>
+  </world>
+</sdf>
