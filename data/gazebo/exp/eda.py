@@ -92,6 +92,11 @@ def main():
     report.append("# EDA: Gazebo-бенчмарк YOLO\n")
     report.append(f"Сгенерировано: {datetime.now().isoformat(timespec='seconds')}\n")
     report.append(f"Каталог данных: `{base}`\n")
+    report.append("## Как читать метрики\n")
+    report.append("- **T, RSS, ECE, gap, FP/FN** — меньше лучше.\n")
+    report.append("- **mAP, AP, F1, recall, IoU, confidence TP** — больше лучше.\n")
+    report.append("- **Confusion**: диагональ — верные, вне диагонали — ошибки.\n")
+    report.append("- **Detections by view** — справочно, не метрика качества.\n")
 
     # ---------- 1. Обзор ----------
     report.append("## 1. Обзор данных\n")
@@ -134,11 +139,11 @@ def main():
     agg["fps"] = 1000.0 / agg["T_p50"]
     agg.to_csv(os.path.join(tables, "latency_resources.csv"), index=False)
     report.append(md(agg.round(3)))
-    report.append("")
+    report.append("T — меньше лучше; fps — больше лучше.\n")
 
     fig, ax = plt.subplots(figsize=(10, 5))
     sns.boxplot(data=frames, x="model", y="T_total_ms", ax=ax)
-    ax.set_title("T_total по моделям (48 кадров)")
+    ax.set_title("T_total по моделям (48 кадров)\nменьше — лучше")
     ax.set_xlabel("")
     ax.set_ylabel("T_total, мс")
     fig.tight_layout()
@@ -149,7 +154,7 @@ def main():
     m = agg.melt(id_vars="model", value_vars=["T_p50", "T_p95", "T_p99"],
                  var_name="percentile", value_name="ms")
     sns.barplot(data=m, x="model", y="ms", hue="percentile", ax=ax)
-    ax.set_title("Перцентили задержки")
+    ax.set_title("Перцентили задержки\nменьше — лучше")
     ax.set_xlabel("")
     fig.tight_layout()
     fig.savefig(os.path.join(plots, "latency_percentiles.png"))
@@ -159,7 +164,7 @@ def main():
     parts = agg.melt(id_vars="model", value_vars=["pre", "infer", "post"],
                      var_name="stage", value_name="ms")
     sns.barplot(data=parts, x="model", y="ms", hue="stage", ax=ax)
-    ax.set_title("Среднее время по стадиям")
+    ax.set_title("Среднее время по стадиям\nменьше — лучше")
     ax.set_xlabel("")
     fig.tight_layout()
     fig.savefig(os.path.join(plots, "latency_parts.png"))
@@ -167,7 +172,7 @@ def main():
 
     fig, ax = plt.subplots(figsize=(9, 5))
     sns.scatterplot(data=frames, x="cpu_pct", y="T_total_ms", hue="model", alpha=0.6, ax=ax)
-    ax.set_title("T_total vs загрузка CPU")
+    ax.set_title("T_total vs загрузка CPU\nT — меньше лучше; CPU — справочно")
     fig.tight_layout()
     fig.savefig(os.path.join(plots, "latency_vs_cpu.png"))
     plt.close(fig)
@@ -176,7 +181,7 @@ def main():
                                aggfunc="median", observed=True)
     fig, ax = plt.subplots(figsize=(8, 16))
     sns.heatmap(pivot, cmap="viridis", ax=ax, cbar_kws={"label": "T_total, мс"})
-    ax.set_title("Медиана T_total по ракурсам")
+    ax.set_title("Медиана T_total по ракурсам\nменьше — лучше")
     fig.tight_layout()
     fig.savefig(os.path.join(plots, "latency_by_view.png"))
     plt.close(fig)
@@ -212,13 +217,13 @@ def main():
         qual = pd.DataFrame(quality)
         qual.to_csv(os.path.join(tables, "quality.csv"), index=False)
         report.append(md(qual.round(3)))
-        report.append("")
+        report.append("TP — больше, FP/FN — меньше.\n")
 
         fig, ax = plt.subplots(figsize=(10, 5))
         qm = qual.melt(id_vars="model", value_vars=["tp", "fp", "fn"],
                        var_name="type", value_name="count")
         sns.barplot(data=qm, x="model", y="count", hue="type", ax=ax)
-        ax.set_title("TP / FP / FN при conf 0.05")
+        ax.set_title("TP / FP / FN при conf 0.05\nTP ↑, FP/FN ↓")
         ax.set_xlabel("")
         fig.tight_layout()
         fig.savefig(os.path.join(plots, "quality_tp_fp_fn.png"))
@@ -227,7 +232,7 @@ def main():
         fig, ax = plt.subplots(figsize=(10, 5))
         sns.histplot(data=dets[dets["tp"] == 1], x="conf", hue="model",
                      bins=20, element="step", fill=False, ax=ax)
-        ax.set_title("Уверенность истинных детекций")
+        ax.set_title("Уверенность истинных детекций\nбольше — лучше")
         fig.tight_layout()
         fig.savefig(os.path.join(plots, "confidence_tp.png"))
         plt.close(fig)
@@ -235,7 +240,7 @@ def main():
         fig, ax = plt.subplots(figsize=(10, 5))
         sns.histplot(data=dets, x="best_iou", hue="tp", bins=20,
                      element="step", fill=False, ax=ax)
-        ax.set_title("IoU лучшего GT для детекций")
+        ax.set_title("IoU лучшего GT для детекций\nбольше — лучше")
         fig.tight_layout()
         fig.savefig(os.path.join(plots, "iou_distribution.png"))
         plt.close(fig)
@@ -244,7 +249,7 @@ def main():
                                  aggfunc="count", observed=True, fill_value=0)
         fig, ax = plt.subplots(figsize=(8, 16))
         sns.heatmap(pivot, cmap="magma", ax=ax, cbar_kws={"label": "детекций"})
-        ax.set_title("Число детекций по ракурсам")
+        ax.set_title("Число детекций по ракурсам\nсправочно, больше ≠ лучше")
         fig.tight_layout()
         fig.savefig(os.path.join(plots, "detections_by_view.png"))
         plt.close(fig)
@@ -270,11 +275,11 @@ def main():
         pc.to_csv(os.path.join(tables, "per_class.csv"), index=False)
         report.append("### AP и детекции по классам\n")
         report.append(md(pc.round(3)))
-        report.append("")
+        report.append("AP — больше лучше.\n")
 
         fig, ax = plt.subplots(figsize=(14, 6))
         sns.barplot(data=pc, x="class", y="ap50", hue="model", ax=ax)
-        ax.set_title("AP@0.5 по классам")
+        ax.set_title("AP@0.5 по классам\nбольше — лучше")
         ax.set_xlabel("")
         ax.tick_params(axis="x", rotation=30)
         fig.tight_layout()
@@ -309,7 +314,7 @@ def main():
             best_rows.append({"model": model, "best_conf": df.loc[i, "conf"],
                               "best_f1": df.loc[i, "f1"], "p": df.loc[i, "precision"],
                               "r": df.loc[i, "recall"]})
-        ax.set_title("F1 vs confidence")
+        ax.set_title("F1 vs confidence\nбольше — лучше")
         ax.set_xlabel("confidence")
         ax.set_ylabel("F1")
         ax.legend()
@@ -319,7 +324,7 @@ def main():
         best_f1_df = pd.DataFrame(best_rows).sort_values("best_f1", ascending=False)
         best_f1_df.to_csv(os.path.join(tables, "f1_best.csv"), index=False)
         report.append(md(best_f1_df.round(3)))
-        report.append("")
+        report.append("F1 — больше лучше.\n")
 
     # ---------- 5. Confusion ----------
     conf_files = sorted(glob.glob(os.path.join(base, "confusion_*.json")))
@@ -338,7 +343,7 @@ def main():
         mat.to_csv(os.path.join(tables, f"confusion_{model}.csv"))
         fig, ax = plt.subplots(figsize=(10, 7))
         sns.heatmap(mat, annot=True, fmt="d", cmap="Blues", ax=ax)
-        ax.set_title(f"Confusion: {model} (GT → prediction)")
+        ax.set_title(f"Confusion: {model} (GT → prediction)\nдиагональ — верно, вне — ошибки")
         ax.set_xlabel("prediction")
         ax.set_ylabel("GT")
         fig.tight_layout()
@@ -355,9 +360,10 @@ def main():
         r.to_csv(os.path.join(tables, "rss.csv"), index=False)
         report.append("### Пиковый RSS\n")
         report.append(md(r.round(1)))
+        report.append("RSS — меньше лучше.\n")
         fig, ax = plt.subplots(figsize=(10, 5))
         sns.barplot(data=r, x="model", y="peak_mb", ax=ax)
-        ax.set_title("Пиковый RSS процесса")
+        ax.set_title("Пиковый RSS процесса\nменьше — лучше")
         ax.set_xlabel("")
         ax.set_ylabel("МБ")
         fig.tight_layout()
@@ -367,6 +373,7 @@ def main():
     if ros:
         report.append("### ROS\n")
         report.append(md(pd.DataFrame([ros])))
+        report.append("gap — меньше лучше; rate — больше лучше.\n")
         bag = ros.get("bag", "")
         if bag and not os.path.exists(bag):
             alt = os.path.join(base, "rosbag_det", os.path.basename(bag))
@@ -380,7 +387,7 @@ def main():
                     gaps = np.diff(ts) / 1e6  # ns -> ms
                     fig, ax = plt.subplots(figsize=(9, 5))
                     sns.histplot(gaps, bins=30, ax=ax)
-                    ax.set_title("Интервалы между /detections (bag)")
+                    ax.set_title("Интервалы между /detections (bag)\nменьше — лучше")
                     ax.set_xlabel("мс")
                     fig.tight_layout()
                     fig.savefig(os.path.join(plots, "ros_gaps.png"))

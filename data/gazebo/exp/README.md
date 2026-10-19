@@ -130,7 +130,10 @@ RAPL в контейнере недоступен (`energy_uj` не читает
 
 `eda.py` собирает телеметрию, бенчмарк, RSS, ROS, confusion и sweep в
 `eda/REPORT.md`, `eda/summary.json`, `eda/tables/*.csv` и
-`eda/plots/*.png` (18 графиков). Зависимости: pandas, seaborn, tabulate.
+`eda/plots/*.png` (18 графиков). На каждом графике подписано
+направление метрики («меньше — лучше» / «больше — лучше»); в confusion
+диагональ — верные ответы. В `REPORT.md` есть раздел «Как читать
+метрики». Зависимости: pandas, seaborn, tabulate.
 
 ```bash
 uv pip install --python .venv-lyrical/bin/python pandas seaborn tabulate

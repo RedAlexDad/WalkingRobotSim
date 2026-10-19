@@ -97,12 +97,15 @@ def sheet(model):
     views = sorted(f[:-4] for f in os.listdir(d) if f.endswith(".png"))
     cols, rows = 8, 6
     tw, th = 320, 240
-    canvas = np.full((rows * (th + 18), cols * tw, 3), 255, np.uint8)
+    canvas = np.full((rows * (th + 18) + 22, cols * tw, 3), 255, np.uint8)
+    cv2.putText(canvas,
+                "зелёный — детекция (класс, %); жёлтый — GT; TP = IoU>=0.5 и класс совпал",
+                (8, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 0), 1, cv2.LINE_AA)
     for i, v in enumerate(views):
         im = cv2.imread(os.path.join(d, v + ".png"))
         im = cv2.resize(im, (tw, th))
         r, c = divmod(i, cols)
-        y0, x0 = r * (th + 18), c * tw
+        y0, x0 = 22 + r * (th + 18), c * tw
         canvas[y0:y0 + th, x0:x0 + tw] = im
         cv2.putText(canvas, v, (x0 + 4, y0 + th + 13),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 0, 0), 1, cv2.LINE_AA)

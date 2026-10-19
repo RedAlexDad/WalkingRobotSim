@@ -325,6 +325,8 @@ def main():
             ax.grid(alpha=0.3)
         for ax in list(axes.flat)[len(n_gt_class):]:
             ax.axis("off")
+        fig.suptitle("PR-кривые: ближе к правому верхнему углу — лучше",
+                     fontsize=10, color="#555")
         plt.tight_layout()
         plt.savefig(os.path.join(FRAMES, f"pr_{tag}.png"), dpi=110)
         plt.close(fig)
