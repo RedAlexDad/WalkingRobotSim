@@ -31,19 +31,15 @@ def main():
                                for c, k, b in zip(r.boxes.conf, r.boxes.cls, r.boxes.xyxy)]
 
         rows = []
-        for conf in np.arange(0.05, 0.96, 0.05):
+        for conf in np.arange(0.01, 0.96, 0.01):
             tp = fp = fn = 0
             for v in views:
                 gts = gt[v["name"]]
                 d = [x for x in dets[v["name"]] if x[0] >= conf]
-                rec = B.match_view(d, gts, 0.5)
-                for cls, g in [(c, [x for x in gts if x["class"] == c])
-                               for c in {x["class"] for x in gts}]:
-                    rr = rec.get(cls, [])
-                    t = sum(1 for c, ok in rr if ok)
-                    tp += t
-                    fp += len(rr) - t
-                    fn += len(g) - t
+                a, b, c = B.match_all(d, gts, 0.5)
+                tp += a
+                fp += b
+                fn += c
             p = tp / max(tp + fp, 1)
             r = tp / max(tp + fn, 1)
             f1 = 2 * p * r / max(p + r, 1e-9)

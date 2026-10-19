@@ -130,6 +130,26 @@ def match_view(dets, gts, thr):
     return rec
 
 
+def match_all(dets, gts, thr=0.5):
+    """Глобальный class-aware матчинг: TP/FP/FN по всем детекциям."""
+    order = sorted(range(len(dets)), key=lambda i: -dets[i][0])
+    used = [False] * len(gts)
+    tp = 0
+    for i in order:
+        _, cls, box = dets[i]
+        best_j, best_iou = -1, 0.0
+        for j, g in enumerate(gts):
+            if used[j] or g["class"] != cls:
+                continue
+            v = iou(box, g["box"])
+            if v > best_iou:
+                best_j, best_iou = j, v
+        if best_iou >= thr:
+            used[best_j] = True
+            tp += 1
+    return tp, len(dets) - tp, len(gts) - tp
+
+
 def ap_from_records(records, n_gt):
     if n_gt == 0:
         return None
@@ -262,16 +282,16 @@ def main():
             per_class_coco[cls] = float(np.mean(aps))
             pr_curves[cls] = pr_points(recs50, n_gt_class[cls])
 
-            # P/R при conf 0.5
-            for v in views:
-                gts = gt_by_view[v["name"]]
-                g = [x for x in gts if x["class"] == cls]
-                d50 = [d for d in det_by_view[v["name"]]
-                       if d[1] == cls and d[0] >= 0.5]
-                rows = match_view(d50, gts, 0.5).get(cls, [])
-                tp += sum(1 for c, ok in rows if ok)
-                fp += sum(1 for c, ok in rows if not ok)
-                fn += len(g) - sum(1 for c, ok in rows if ok)
+        # глобальные TP/FP/FN при conf 0.5: учитываются все детекции,
+        # включая чужие классы (иначе precision завышается)
+        tp = fp = fn = 0
+        for v in views:
+            gts = gt_by_view[v["name"]]
+            d50 = [d for d in det_by_view[v["name"]] if d[0] >= 0.5]
+            a, b, c = match_all(d50, gts, 0.5)
+            tp += a
+            fp += b
+            fn += c
 
         mAP50 = float(np.mean([v for v in per_class_50.values() if v is not None]))
         mAP = float(np.mean([v for v in per_class_coco.values() if v is not None]))

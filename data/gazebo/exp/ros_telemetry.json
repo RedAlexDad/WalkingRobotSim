@@ -1,0 +1,10 @@
+{
+  "bag": "data/gazebo/exp/rosbag_det/rosbag_det_0.db3",
+  "messages": 1579,
+  "duration_s": 44.94,
+  "detections_rate_hz": 35.12,
+  "gap_p50_ms": 28.4,
+  "gap_max_ms": 52.9,
+  "camera_rate_hz": 39.809,
+  "note": "bag metadata не финализирована (SIGINT не сработал); БД sqlite корректна"
+}

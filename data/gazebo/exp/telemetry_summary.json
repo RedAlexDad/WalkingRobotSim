@@ -1,0 +1,676 @@
+{
+  "generated_at": "2026-10-19T16:12:52",
+  "scene": "showroom",
+  "models": {
+    "yolov8n": {
+      "T_p50_ms": 21.721,
+      "T_p95_ms": 25.38,
+      "T_p99_ms": 30.568,
+      "T_mean_ms": 22.115,
+      "T_std_ms": 2.721,
+      "fps": 46.04,
+      "rss_mb": 867.4,
+      "cpu_pct": 693.8,
+      "energy_available": false,
+      "energy_per_frame_mj": null,
+      "power_w": null,
+      "conf_thr": 0.05,
+      "n_frames": 48,
+      "n_gt": 88,
+      "tp": 28,
+      "fp": 107,
+      "fn": 60,
+      "precision": 0.2074,
+      "recall": 0.3182,
+      "f1": 0.2511,
+      "per_class": {
+        "airplane": {
+          "tp": 0,
+          "fp": 27,
+          "fn": 0
+        },
+        "bed": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 4
+        },
+        "bench": {
+          "tp": 0,
+          "fp": 12,
+          "fn": 0
+        },
+        "bird": {
+          "tp": 0,
+          "fp": 12,
+          "fn": 0
+        },
+        "boat": {
+          "tp": 0,
+          "fp": 3,
+          "fn": 0
+        },
+        "bottle": {
+          "tp": 3,
+          "fp": 1,
+          "fn": 5
+        },
+        "cake": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "chair": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 6
+        },
+        "clock": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "couch": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 10
+        },
+        "dining table": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 17
+        },
+        "frisbee": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "kite": {
+          "tp": 0,
+          "fp": 3,
+          "fn": 0
+        },
+        "mouse": {
+          "tp": 0,
+          "fp": 2,
+          "fn": 0
+        },
+        "person": {
+          "tp": 0,
+          "fp": 11,
+          "fn": 0
+        },
+        "refrigerator": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 5
+        },
+        "sink": {
+          "tp": 0,
+          "fp": 3,
+          "fn": 0
+        },
+        "sports ball": {
+          "tp": 12,
+          "fp": 0,
+          "fn": 0
+        },
+        "traffic light": {
+          "tp": 0,
+          "fp": 24,
+          "fn": 0
+        },
+        "truck": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "tv": {
+          "tp": 4,
+          "fp": 1,
+          "fn": 2
+        },
+        "umbrella": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "vase": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 11
+        }
+      }
+    },
+    "yolov8s": {
+      "T_p50_ms": 46.789,
+      "T_p95_ms": 57.646,
+      "T_p99_ms": 61.405,
+      "T_mean_ms": 48.521,
+      "T_std_ms": 4.336,
+      "fps": 21.37,
+      "rss_mb": 964.4,
+      "cpu_pct": 744.9,
+      "energy_available": false,
+      "energy_per_frame_mj": null,
+      "power_w": null,
+      "conf_thr": 0.05,
+      "n_frames": 48,
+      "n_gt": 88,
+      "tp": 27,
+      "fp": 38,
+      "fn": 61,
+      "precision": 0.4154,
+      "recall": 0.3068,
+      "f1": 0.3529,
+      "per_class": {
+        "airplane": {
+          "tp": 0,
+          "fp": 5,
+          "fn": 0
+        },
+        "bed": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 2
+        },
+        "bench": {
+          "tp": 0,
+          "fp": 6,
+          "fn": 0
+        },
+        "bird": {
+          "tp": 0,
+          "fp": 2,
+          "fn": 0
+        },
+        "book": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "bottle": {
+          "tp": 5,
+          "fp": 1,
+          "fn": 3
+        },
+        "chair": {
+          "tp": 5,
+          "fp": 3,
+          "fn": 7
+        },
+        "couch": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 10
+        },
+        "dining table": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 15
+        },
+        "person": {
+          "tp": 0,
+          "fp": 4,
+          "fn": 0
+        },
+        "refrigerator": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 6
+        },
+        "sink": {
+          "tp": 0,
+          "fp": 5,
+          "fn": 0
+        },
+        "skateboard": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "sports ball": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 6
+        },
+        "surfboard": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "traffic light": {
+          "tp": 0,
+          "fp": 3,
+          "fn": 0
+        },
+        "tv": {
+          "tp": 6,
+          "fp": 2,
+          "fn": 0
+        },
+        "vase": {
+          "tp": 0,
+          "fp": 4,
+          "fn": 12
+        }
+      }
+    },
+    "yolov10n": {
+      "T_p50_ms": 19.88,
+      "T_p95_ms": 23.402,
+      "T_p99_ms": 24.159,
+      "T_mean_ms": 20.062,
+      "T_std_ms": 1.355,
+      "fps": 50.3,
+      "rss_mb": 937.5,
+      "cpu_pct": 694.9,
+      "energy_available": false,
+      "energy_per_frame_mj": null,
+      "power_w": null,
+      "conf_thr": 0.05,
+      "n_frames": 48,
+      "n_gt": 88,
+      "tp": 19,
+      "fp": 59,
+      "fn": 69,
+      "precision": 0.2436,
+      "recall": 0.2159,
+      "f1": 0.2289,
+      "per_class": {
+        "airplane": {
+          "tp": 0,
+          "fp": 21,
+          "fn": 0
+        },
+        "bed": {
+          "tp": 3,
+          "fp": 1,
+          "fn": 1
+        },
+        "bench": {
+          "tp": 0,
+          "fp": 8,
+          "fn": 0
+        },
+        "bird": {
+          "tp": 0,
+          "fp": 3,
+          "fn": 0
+        },
+        "book": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "bottle": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 6
+        },
+        "chair": {
+          "tp": 6,
+          "fp": 4,
+          "fn": 6
+        },
+        "clock": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "couch": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 10
+        },
+        "dining table": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 17
+        },
+        "kite": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "mouse": {
+          "tp": 0,
+          "fp": 2,
+          "fn": 0
+        },
+        "person": {
+          "tp": 0,
+          "fp": 3,
+          "fn": 0
+        },
+        "refrigerator": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 6
+        },
+        "skateboard": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "sports ball": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 11
+        },
+        "suitcase": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "teddy bear": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "traffic light": {
+          "tp": 0,
+          "fp": 7,
+          "fn": 0
+        },
+        "truck": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "tv": {
+          "tp": 5,
+          "fp": 1,
+          "fn": 1
+        },
+        "vase": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 11
+        }
+      }
+    },
+    "yolov9t": {
+      "T_p50_ms": 29.288,
+      "T_p95_ms": 31.328,
+      "T_p99_ms": 32.687,
+      "T_mean_ms": 29.355,
+      "T_std_ms": 1.19,
+      "fps": 34.14,
+      "rss_mb": 943.7,
+      "cpu_pct": 722.8,
+      "energy_available": false,
+      "energy_per_frame_mj": null,
+      "power_w": null,
+      "conf_thr": 0.05,
+      "n_frames": 48,
+      "n_gt": 88,
+      "tp": 27,
+      "fp": 77,
+      "fn": 61,
+      "precision": 0.2596,
+      "recall": 0.3068,
+      "f1": 0.2812,
+      "per_class": {
+        "airplane": {
+          "tp": 0,
+          "fp": 15,
+          "fn": 0
+        },
+        "bed": {
+          "tp": 1,
+          "fp": 2,
+          "fn": 3
+        },
+        "bench": {
+          "tp": 0,
+          "fp": 7,
+          "fn": 0
+        },
+        "bird": {
+          "tp": 0,
+          "fp": 5,
+          "fn": 0
+        },
+        "boat": {
+          "tp": 0,
+          "fp": 3,
+          "fn": 0
+        },
+        "book": {
+          "tp": 0,
+          "fp": 3,
+          "fn": 0
+        },
+        "bottle": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 5
+        },
+        "cake": {
+          "tp": 0,
+          "fp": 3,
+          "fn": 0
+        },
+        "chair": {
+          "tp": 6,
+          "fp": 1,
+          "fn": 6
+        },
+        "clock": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "couch": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 10
+        },
+        "dining table": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 17
+        },
+        "frisbee": {
+          "tp": 0,
+          "fp": 4,
+          "fn": 0
+        },
+        "kite": {
+          "tp": 0,
+          "fp": 2,
+          "fn": 0
+        },
+        "knife": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "microwave": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "person": {
+          "tp": 0,
+          "fp": 9,
+          "fn": 0
+        },
+        "refrigerator": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 6
+        },
+        "sink": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "sports ball": {
+          "tp": 9,
+          "fp": 0,
+          "fn": 3
+        },
+        "stop sign": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "teddy bear": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "toilet": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "traffic light": {
+          "tp": 0,
+          "fp": 13,
+          "fn": 0
+        },
+        "tv": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 0
+        },
+        "vase": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 11
+        },
+        "wine glass": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        }
+      }
+    },
+    "yolo11n": {
+      "T_p50_ms": 20.635,
+      "T_p95_ms": 24.537,
+      "T_p99_ms": 25.564,
+      "T_mean_ms": 20.976,
+      "T_std_ms": 1.45,
+      "fps": 48.46,
+      "rss_mb": 943.8,
+      "cpu_pct": 699.2,
+      "energy_available": false,
+      "energy_per_frame_mj": null,
+      "power_w": null,
+      "conf_thr": 0.05,
+      "n_frames": 48,
+      "n_gt": 88,
+      "tp": 40,
+      "fp": 85,
+      "fn": 48,
+      "precision": 0.32,
+      "recall": 0.4545,
+      "f1": 0.3756,
+      "per_class": {
+        "airplane": {
+          "tp": 0,
+          "fp": 20,
+          "fn": 0
+        },
+        "banana": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "bed": {
+          "tp": 2,
+          "fp": 4,
+          "fn": 2
+        },
+        "bench": {
+          "tp": 0,
+          "fp": 16,
+          "fn": 0
+        },
+        "bird": {
+          "tp": 0,
+          "fp": 7,
+          "fn": 0
+        },
+        "boat": {
+          "tp": 0,
+          "fp": 2,
+          "fn": 0
+        },
+        "book": {
+          "tp": 0,
+          "fp": 2,
+          "fn": 0
+        },
+        "bottle": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 2
+        },
+        "chair": {
+          "tp": 10,
+          "fp": 7,
+          "fn": 2
+        },
+        "couch": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 10
+        },
+        "dining table": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 16
+        },
+        "person": {
+          "tp": 0,
+          "fp": 14,
+          "fn": 0
+        },
+        "refrigerator": {
+          "tp": 2,
+          "fp": 1,
+          "fn": 4
+        },
+        "skateboard": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "sports ball": {
+          "tp": 12,
+          "fp": 0,
+          "fn": 0
+        },
+        "toilet": {
+          "tp": 0,
+          "fp": 2,
+          "fn": 0
+        },
+        "traffic light": {
+          "tp": 0,
+          "fp": 6,
+          "fn": 0
+        },
+        "tv": {
+          "tp": 6,
+          "fp": 1,
+          "fn": 0
+        },
+        "umbrella": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "vase": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 12
+        }
+      }
+    }
+  }
+}

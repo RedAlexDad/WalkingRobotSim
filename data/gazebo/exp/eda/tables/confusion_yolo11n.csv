@@ -1,0 +1,10 @@
+,MISS,airplane,bed,bench,bird,boat,bottle,chair,dining table,person,refrigerator,sports ball,traffic light,tv
+bed,0,2,2,0,0,0,0,0,0,0,0,0,0,0
+bottle,0,0,0,0,2,0,5,0,0,1,0,0,0,0
+chair,1,0,0,0,0,0,0,9,0,0,0,0,2,0
+couch,2,2,0,6,0,0,0,0,0,0,0,0,0,0
+dining table,7,3,0,6,0,1,0,0,1,0,0,0,0,0
+refrigerator,2,1,0,0,0,0,0,0,0,0,2,0,0,1
+sports ball,0,0,0,0,0,0,0,0,0,4,0,8,0,0
+tv,0,0,0,0,0,0,0,0,0,0,0,0,0,6
+vase,8,1,0,0,2,0,0,0,0,1,0,0,0,0

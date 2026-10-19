@@ -26,16 +26,16 @@
 
 | Модель | T, мс | f, Гц | mAP@0.5 | mAP@0.5:0.95 | F1 max (conf) | Параметры, млн | Размер, МБ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| YOLOv8n | 20.4 | 49.0 | 0.403 | 0.260 | 0.479 (0.05) | 3.16 | 6.55 |
-| YOLOv8s | 51.4 | 19.5 | 0.499 | 0.294 | 0.439 (0.05) | 11.17 | 22.59 |
-| YOLOv10n | 19.5 | 51.4 | 0.427 | 0.278 | 0.345 (0.05) | 2.78 | 5.86 |
-| YOLOv9t | 29.7 | 33.7 | 0.408 | 0.236 | 0.458 (0.05) | 2.13 | 4.97 |
-| YOLO11n | 19.7 | 50.8 | 0.551 | 0.322 | 0.597 (0.05) | 2.62 | 5.61 |
+| YOLOv8n | 18.9 | 52.9 | 0.403 | 0.260 | 0.281 (0.32) | 3.16 | 6.55 |
+| YOLOv8s | 48.4 | 20.7 | 0.499 | 0.294 | 0.366 (0.04) | 11.17 | 22.59 |
+| YOLOv10n | 19.0 | 52.7 | 0.427 | 0.278 | 0.260 (0.02) | 2.78 | 5.86 |
+| YOLOv9t | 29.4 | 34.0 | 0.408 | 0.236 | 0.286 (0.07) | 2.13 | 4.97 |
+| YOLO11n | 19.7 | 50.7 | 0.551 | 0.322 | 0.405 (0.16) | 2.62 | 5.61 |
 
-`F1 max` — максимум по порогам 0.05…0.95 при IoU 0.5 и class-aware
-сопоставлении. При фиксированном пороге 0.5 все модели показывают
-низкий recall (0.02–0.17): уверенность на синтетических объектах
-смещена вниз, рабочий порог нужно подбирать под домен.
+`F1 max` — максимум по порогам 0.01…0.95 при IoU 0.5; учитываются все
+детекции, включая чужие классы (иначе precision завышается). При
+фиксированном пороге 0.5 recall 0.02–0.17: уверенность на синтетических
+объектах смещена вниз, рабочий порог нужно подбирать под домен.
 
 ### AP по классам (YOLO11n)
 
@@ -80,7 +80,40 @@ Confusion (GT → лучший предсказанный класс при IoU 
 с материалами/контекстом, а не с ошибкой оценки. Полный AP по кафе
 не считался: GT тонких ножек и столешниц требует ручной разметки.
 
-## Память и ROS-пайплайн
+## Телеметрия, память и ROS
+
+### Построчная телеметрия
+
+`telemetry.py` пишет `telemetry_frames.csv` (строка на кадр/модель),
+`telemetry_detections.csv` (строка на детекцию) и
+`telemetry_summary.json`. В кадрах — `T_pre`, `T_infer`, `T_post`,
+`T_total`, RSS, CPU, TP/FP/FN и флаг `dropped`.
+
+| Модель | T p50, мс | T p95, мс | T p99, мс | f, Гц | RSS, МБ | CPU, % |
+| --- | --- | --- | --- | --- | --- | --- |
+| YOLOv8n | 21.7 | 25.4 | 30.6 | 46.0 | 867 | 700 |
+| YOLOv8s | 46.8 | 57.7 | 61.4 | 21.4 | 964 | 729 |
+| YOLOv10n | 19.9 | 23.4 | 24.2 | 50.3 | 938 | 704 |
+| YOLOv9t | 29.3 | 31.3 | 32.7 | 34.1 | 944 | 718 |
+| YOLO11n | 20.6 | 24.5 | 25.6 | 48.5 | 944 | 700 |
+
+RSS здесь накопительный по процессу (все модели подряд), поэтому для
+сравнения моделей используйте peak RSS из отдельного процесса ниже.
+RAPL в контейнере недоступен (`energy_uj` не читается), поэтому
+`energy_per_frame` = `null`; это зафиксировано как ограничение.
+
+### EDA
+
+`eda.py` собирает телеметрию, бенчмарк, RSS, ROS, confusion и sweep в
+`eda/REPORT.md`, `eda/summary.json`, `eda/tables/*.csv` и
+`eda/plots/*.png` (18 графиков). Зависимости: pandas, seaborn, tabulate.
+
+```bash
+uv pip install --python .venv-lyrical/bin/python pandas seaborn tabulate
+.venv-lyrical/bin/python data/gazebo/exp/eda.py
+```
+
+### Пиковая память
 
 Пиковый RSS отдельного процесса (baseline torch+ultralytics — 529 МБ):
 
@@ -100,10 +133,13 @@ RSS включает PyTorch и активации, а не только вес�
 PyTorch; PyPI-колесо не совпало по ABI с torch 2.14.1+cpu):
 
 - камера 10 Гц → `/detections` 9.97 Гц (ограничение камеры);
-- камера 60 Гц → камера 37.7 Гц, `/detections` 36.0 Гц
-  (ограничение headless-рендеринга Gazebo, не инференса).
+- камера 60 Гц → камера 39.8 Гц, `/detections` 35.1 Гц
+  (ограничение headless-рендеринга Gazebo, не инференса);
+- bag: 1579 сообщений за 44.9 с, gap p50 28.4 мс, max 52.9 мс
+  (`ros_telemetry.json`).
 
-CSV-лог детекций: `/tmp/yolo_ros.csv`, `/tmp/yolo_ros_fast.csv`.
+Метаданные bag не финализированы (SIGINT не сработал), но SQLite-БД
+корректна. CSV-лог детекций: `/tmp/yolo_ros.csv`, `/tmp/yolo_ros_fast.csv`.
 
 ## Визуализация и чтение аннотаций
 
@@ -220,9 +256,11 @@ docker compose exec -T simulator bash -lc 'pkill -x ruby'
 .venv-lyrical/bin/python data/gazebo/exp/analyze.py
 .venv-lyrical/bin/python data/gazebo/exp/sweep.py
 .venv-lyrical/bin/python data/gazebo/exp/rss.py
+.venv-lyrical/bin/python data/gazebo/exp/telemetry.py
 ```
 
 Файлы: `build_scene.py`, `scene.json`, `world.sdf`, `capture.py`,
 `capture_views.py`, `benchmark.py`, `analyze.py`, `sweep.py`, `rss.py`,
 `benchmark_results.{json,csv}`, `confusion_*.json`, `sweep_*.json`,
-`rss.json`.
+`rss.json`, `telemetry_*.{csv,json}`, `ros_telemetry.json`,
+`eda.py`, `eda/`.
