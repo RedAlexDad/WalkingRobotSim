@@ -1,111 +1,102 @@
-"""Рис. 1: схема методики выбора модели.
+"""Рис. 1: академическая блок-схема методики выбора модели.
 
-Формат IEEE/REEPE:
-- основной вариант: 3.76 × 5.28 in (как figures/bw в REEPE), 300 dpi;
-- дополнительный: 7.16 × 3.2 in (double column);
-- Times New Roman 8 pt, ч/б, подпись под рисунком 8 pt TNR.
+IEEE/REEPE:
+- 3.76 × 5.28 in (как figures/bw в REEPE), 300 dpi;
+- Times New Roman 8 pt, ч/б, тонкие линии 0.6 pt;
+- прямоугольные блоки, нумерация этапов, ортогональные связи, формулы;
+- подпись под рисунком 8 pt TNR.
 """
 import os
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+from matplotlib.patches import FancyArrowPatch, Rectangle
 
 plt.rcParams.update({
     "font.family": "Times New Roman",
     "font.size": 8,
+    "mathtext.fontset": "stix",
     "pdf.fonttype": 42,
     "ps.fonttype": 42,
 })
 
 OUT = os.path.dirname(os.path.abspath(__file__))
+W, H = 3.76, 5.28
+
+fig = plt.figure(figsize=(W, H))
+ax = fig.add_axes([0, 0, 1, 1])
+ax.set_xlim(0, W)
+ax.set_ylim(0, H)
+ax.axis("off")
 
 
-def new_fig(w, h):
-    fig = plt.figure(figsize=(w, h))
-    ax = fig.add_axes([0, 0, 1, 1])
-    ax.set_xlim(0, w)
-    ax.set_ylim(0, h)
-    ax.axis("off")
-    return fig, ax
-
-
-def box(ax, x, y, w, h, text, fs=8):
-    ax.add_patch(FancyBboxPatch(
-        (x, y), w, h,
-        boxstyle="round,pad=0.02,rounding_size=0.04",
-        linewidth=0.8, edgecolor="black", facecolor="white",
+def box(x, y, w, h, text, fs=8, dashed=False):
+    ax.add_patch(Rectangle(
+        (x, y), w, h, fill=False, edgecolor="black", linewidth=0.6,
+        linestyle=(0, (3, 2)) if dashed else "solid",
     ))
     ax.text(x + w / 2, y + h / 2, text, ha="center", va="center",
-            fontsize=fs, linespacing=1.15)
+            fontsize=fs, linespacing=1.12)
 
 
-def arrow(ax, x1, y1, x2, y2):
+def ortho(points, dashed=False):
+    xs = [p[0] for p in points]
+    ys = [p[1] for p in points]
+    style = (0, (2, 2)) if dashed else "solid"
+    ax.plot(xs[:-1], ys[:-1], color="black", linewidth=0.6,
+            linestyle=style, solid_capstyle="butt")
     ax.add_patch(FancyArrowPatch(
-        (x1, y1), (x2, y2), arrowstyle="-|>", mutation_scale=7,
-        linewidth=0.8, color="black", shrinkA=0, shrinkB=0,
+        points[-2], points[-1], arrowstyle="-|>", mutation_scale=6,
+        linewidth=0.6, color="black", linestyle=style,
+        shrinkA=0, shrinkB=0,
     ))
 
 
-def save(fig, name):
-    for ext in ("pdf", "png", "tif", "eps"):
-        path = os.path.join(OUT, f"{name}.{ext}")
-        fig.savefig(path, dpi=300, facecolor="white")
-        print("saved", path)
-    plt.close(fig)
+# этапная линейка
+ax.plot([0.20, 0.20], [0.32, 5.00], color="black", linewidth=0.5)
+for y, n in [(4.775, "1"), (3.975, "2"), (2.72, "3"),
+             (1.275, "4"), (0.575, "5")]:
+    ax.text(0.11, y, n, ha="center", va="center",
+            fontsize=8, fontweight="bold")
 
+# блоки
+box(0.42, 4.55, 3.18, 0.45, "Кандидаты: 7 моделей")
+box(0.42, 3.70, 3.18, 0.55, "Отсев по требованиям борта\nT ≤ 0,1 с; M ≤ 64 МБ")
+box(0.42, 2.80, 3.18, 0.55, "Характеристики архитектуры\nP, F, mAP, M, T")
 
-def single_column():
-    w, h = 3.76, 5.28
-    fig, ax = new_fig(w, h)
-    box(ax, 0.13, 4.55, 3.50, 0.50, "Модели-кандидаты (7)")
-    box(ax, 0.13, 3.75, 3.50, 0.55, "Фильтры борта:\nT ≤ 0,1 с; M ≤ 64 МБ")
-    box(ax, 0.13, 3.00, 3.50, 0.55,
-        "Характеристики архитектуры:\nP, F, mAP, M, T")
-    box(ax, 0.13, 2.15, 1.65, 0.60, "Критерии\nнеопределённости")
-    box(ax, 1.98, 2.15, 1.65, 0.60, "Авторские\nметрики")
-    box(ax, 0.13, 1.30, 3.50, 0.55,
-        "Итоговое сведение:\nΨ, Борда, средний ранг")
-    box(ax, 0.13, 0.65, 3.50, 0.45, "Выбор: YOLO11n")
-    box(ax, 0.13, 0.05, 3.50, 0.45,
-        "Проверка: Gazebo, кафе, COCO128")
+box(0.42, 1.85, 1.52, 0.80,
+    "Критерии\nнеопределённости\nWald, Savage,\nHurwicz")
+box(2.08, 1.85, 1.52, 0.80,
+    "Авторские\nметрики\nQ4, BF, DF,\nAR, APM")
 
-    arrow(ax, 1.88, 4.55, 1.88, 4.30)
-    arrow(ax, 1.88, 3.75, 1.88, 3.55)
-    arrow(ax, 1.88, 3.00, 0.955, 2.75)
-    arrow(ax, 1.88, 3.00, 2.805, 2.75)
-    arrow(ax, 0.955, 2.15, 1.88, 1.85)
-    arrow(ax, 2.805, 2.15, 1.88, 1.85)
-    arrow(ax, 1.88, 1.30, 1.88, 1.10)
-    arrow(ax, 1.88, 0.65, 1.88, 0.50)
-    save(fig, "fig1-methodology")
+box(0.42, 0.95, 3.18, 0.65, "")
+ax.text(2.01, 1.48, "Свёртка критериев", ha="center", va="center", fontsize=8)
+ax.text(2.01, 1.27,
+        r"$\Psi_i=\frac{1}{K}\sum_{k=1}^{K}z_i^{(k)}$",
+        ha="center", va="center", fontsize=8)
+ax.text(2.01, 1.09,
+        r"$B_i$ (Борда), $\bar r_i$ (средний ранг)",
+        ha="center", va="center", fontsize=8)
 
+box(0.42, 0.40, 3.18, 0.35, "Решение: YOLO11n")
+box(0.42, 0.05, 3.18, 0.25,
+    "Верификация: Gazebo, кафе, COCO128", dashed=True)
 
-def wide():
-    w, h = 7.16, 3.2
-    fig, ax = new_fig(w, h)
-    box(ax, 0.05, 1.55, 1.15, 0.75, "Модели-\nкандидаты\n(7)")
-    box(ax, 1.45, 1.55, 1.25, 0.75, "Фильтры борта:\nT ≤ 0,1 с\nM ≤ 64 МБ")
-    box(ax, 2.95, 1.55, 1.45, 0.75,
-        "Характеристики\nархитектуры:\nP, F, mAP, M, T")
-    box(ax, 4.65, 2.15, 1.35, 0.65, "Критерии\nнеопределённости")
-    box(ax, 4.65, 1.05, 1.35, 0.65, "Авторские\nметрики")
-    box(ax, 6.15, 1.55, 0.95, 0.75, "Сведение:\nΨ, Борда,\nсредний ранг")
-    box(ax, 6.15, 0.75, 0.95, 0.55, "Выбор:\nYOLO11n")
-    box(ax, 6.15, 0.05, 0.95, 0.50, "Проверка:\nGazebo, кафе,\nCOCO128")
+# связи
+ortho([(2.01, 4.55), (2.01, 4.25)])
+ortho([(2.01, 3.70), (2.01, 3.35)])
+ortho([(2.01, 2.80), (2.01, 2.72)])
+ortho([(2.01, 2.72), (1.18, 2.72), (1.18, 2.65)])
+ortho([(2.01, 2.72), (2.84, 2.72), (2.84, 2.65)])
+ortho([(1.18, 1.85), (1.18, 1.75), (2.01, 1.75)])
+ortho([(2.84, 1.85), (2.84, 1.75), (2.01, 1.75)])
+ortho([(2.01, 1.75), (2.01, 1.60)])
+ortho([(2.01, 0.95), (2.01, 0.75)])
+ortho([(2.01, 0.40), (2.01, 0.30)], dashed=True)
 
-    arrow(ax, 1.20, 1.925, 1.45, 1.925)
-    arrow(ax, 2.70, 1.925, 2.95, 1.925)
-    arrow(ax, 4.40, 2.10, 4.65, 2.40)
-    arrow(ax, 4.40, 1.80, 4.65, 1.45)
-    arrow(ax, 6.00, 2.40, 6.15, 2.10)
-    arrow(ax, 6.00, 1.45, 6.15, 1.80)
-    arrow(ax, 6.625, 1.55, 6.625, 1.30)
-    arrow(ax, 6.625, 0.75, 6.625, 0.55)
-    save(fig, "fig1-methodology-wide")
-
-
-if __name__ == "__main__":
-    single_column()
-    wide()
+for ext in ("pdf", "png", "tif", "eps"):
+    path = os.path.join(OUT, f"fig1-methodology.{ext}")
+    fig.savefig(path, dpi=300, facecolor="white")
+    print("saved", path)
+plt.close(fig)
