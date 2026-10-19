@@ -5,6 +5,7 @@
   telemetry_detections.csv  — строка на детекцию
   telemetry_summary.json    — перцентили, TP/FP/FN, per-class
 """
+import argparse
 import csv
 import json
 import os
@@ -73,13 +74,28 @@ def match_detections(dets, gts, thr=0.5):
 
 
 def main():
+    global BASE, FRAMES, OUT_FRAMES, OUT_DETS, OUT_SUMMARY
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--scene", default=os.path.join(BASE, "scene.json"))
+    ap.add_argument("--frames", default=FRAMES)
+    ap.add_argument("--out", default=BASE)
+    ap.add_argument("--label", default="showroom")
+    args = ap.parse_args()
+
+    BASE, FRAMES = args.out, args.frames
+    OUT_FRAMES = os.path.join(BASE, "telemetry_frames.csv")
+    OUT_DETS = os.path.join(BASE, "telemetry_detections.csv")
+    OUT_SUMMARY = os.path.join(BASE, "telemetry_summary.json")
+    os.makedirs(BASE, exist_ok=True)
+    B.SCENE, B.FRAMES = args.scene, args.frames
+
     scene = B.load_scene()
     views, objects = scene["views"], scene["objects"]
     gt_by_view = {v["name"]: B.gt_for_view(v, objects) for v in views}
 
     frame_rows, det_rows = [], []
     summary = {"generated_at": datetime.now().isoformat(timespec="seconds"),
-               "scene": "showroom", "models": {}}
+               "scene": args.label, "models": {}}
 
     proc = psutil.Process()
     proc.cpu_percent(None)
@@ -123,7 +139,7 @@ def main():
             stamp = datetime.now().isoformat(timespec="milliseconds")
             row = {
                 "timestamp": stamp,
-                "scene": "showroom",
+                "scene": args.label,
                 "view": v["name"],
                 "model": tag,
                 "conf_thr": CONF_THR,
@@ -149,7 +165,7 @@ def main():
                 box = m["box"]
                 dets_model.append({
                     "timestamp": stamp,
-                    "scene": "showroom",
+                    "scene": args.label,
                     "view": v["name"],
                     "model": tag,
                     "conf_thr": CONF_THR,

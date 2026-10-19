@@ -1,0 +1,43 @@
+{
+  "images": 48,
+  "annotations": 88,
+  "classes": {
+    "chair": 12,
+    "dining table": 18,
+    "bed": 4,
+    "couch": 10,
+    "vase": 12,
+    "bottle": 8,
+    "refrigerator": 6,
+    "tv": 6,
+    "sports ball": 12
+  },
+  "visibility_mean": 0.907,
+  "visibility_lt_05": 4,
+  "tp_iou": {
+    "yolo11n": {
+      "tp": 40,
+      "mean_iou": 0.7762224999999999
+    },
+    "yolov10n": {
+      "tp": 19,
+      "mean_iou": 0.8219736842105262
+    },
+    "yolov8n": {
+      "tp": 28,
+      "mean_iou": 0.7904464285714285
+    },
+    "yolov8s": {
+      "tp": 27,
+      "mean_iou": 0.8047777777777777
+    },
+    "yolov9t": {
+      "tp": 27,
+      "mean_iou": 0.8052333333333335
+    }
+  },
+  "manual_frames": 10,
+  "manual_sheet": "data/gazebo/exp/coco/gt_check_sheet.png",
+  "manual_issues": 0,
+  "note": "GT — аналитическая проекция 3D-AABB; полигоны обрезаны по кадру"
+}

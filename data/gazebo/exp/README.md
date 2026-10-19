@@ -165,6 +165,43 @@ PyTorch; PyPI-колесо не совпало по ABI с torch 2.14.1+cpu):
 Метаданные bag не финализированы (SIGINT не сработал), но SQLite-БД
 корректна. CSV-лог детекций: `/tmp/yolo_ros.csv`, `/tmp/yolo_ros_fast.csv`.
 
+### Разметка и GT
+
+`gt_tools.py` экспортирует GT в COCO (`coco/annotations.json`):
+48 изображений, 88 аннотаций, 9 классов; для каждой — bbox,
+segmentation-полигон (проекция 8 углов 3D-AABB, обрезанная по кадру)
+и visibility. `gt_quality.json`: средняя видимость 0.907, 4 аннотации
+< 0.5; средний IoU истинных детекций 0.78–0.82. Ручная проверка —
+10 кадров (`coco/gt_check_sheet.png`), грубых расхождений нет.
+
+### Метрики надёжности
+
+| Модель | F1@0.05 | 95 % CI | ECE | T p95, мс |
+| --- | --- | --- | --- | --- |
+| YOLO11n | 0.376 | 0.287–0.469 | 0.091 | 24.5 |
+| YOLOv8s | 0.353 | 0.245–0.461 | 0.192 | 57.6 |
+| YOLOv9t | 0.281 | 0.188–0.372 | 0.088 | 31.3 |
+| YOLOv8n | 0.251 | 0.173–0.336 | 0.134 | 25.4 |
+| YOLOv10n | 0.229 | 0.147–0.311 | 0.169 | 23.4 |
+
+F1 — при conf 0.05, CI — bootstrap по 48 ракурсам (4000 выборок);
+ECE — калибровка уверенности детекций. Энергия на кадр не измерена:
+RAPL в контейнере недоступен, поле `null`.
+
+### Runtime
+
+| Вариант | T p50, мс | fps | Размер |
+| --- | --- | --- | --- |
+| PyTorch, 8 потоков | 21.0 | 47.6 | — |
+| PyTorch, 4 CPU affinity | 23.6 | 42.4 | — |
+| ONNX FP32 | 52.2 | 19.2 | 10.7 МБ |
+| OpenVINO FP32 | 13.0 | 77.1 | 10.9 МБ |
+| OpenVINO FP16 | 13.8 | 72.6 | 5.7 МБ |
+
+Потоки: 1 — 24.7 мс, 2 — 34.5, 4 — 25.4, 8 — 21.0 (разброс из-за
+частоты CPU). INT8 не запускался: нужна NNCF-калибровка. OpenVINO
+даёт ≈1.6× ускорение против PyTorch при том же mAP.
+
 ## Визуализация и чтение аннотаций
 
 - `frames/annotated/<model>/<view>.png` — кадр с детекциями и GT.
@@ -264,28 +301,35 @@ torch и закрепление CPU — это ближе к бортовому 
 
 ## Воспроизведение
 
+Базовая сцена одной командой:
+
 ```bash
-# 1. Собрать сцену и поднять Gazebo
-.venv-lyrical/bin/python data/gazebo/exp/build_scene.py
-docker compose exec -T simulator bash -lc \
-  'pkill -x ruby; source /opt/ros/jazzy/setup.bash; \
-   nohup gz sim -s -r /root/ws/data/exp/world.sdf > /tmp/gz.log 2>&1 &'
-
-# 2. Снять 48 ракурсов
-.venv-lyrical/bin/python data/gazebo/exp/capture_views.py
-
-# 3. Бенчмарк и анализ (Gazebo лучше остановить — чище замер T)
-docker compose exec -T simulator bash -lc 'pkill -x ruby'
-.venv-lyrical/bin/python data/gazebo/exp/benchmark.py
-.venv-lyrical/bin/python data/gazebo/exp/analyze.py
-.venv-lyrical/bin/python data/gazebo/exp/sweep.py
-.venv-lyrical/bin/python data/gazebo/exp/rss.py
-.venv-lyrical/bin/python data/gazebo/exp/telemetry.py
+uv pip install --python .venv-lyrical/bin/python \
+  -r data/gazebo/exp/requirements-benchmark.txt
+./data/gazebo/exp/run_benchmark.sh
 ```
 
-Файлы: `build_scene.py`, `scene.json`, `world.sdf`, `capture.py`,
-`capture_views.py`, `benchmark.py`, `analyze.py`, `sweep.py`, `rss.py`,
-`benchmark_results.{json,csv}`, `confusion_*.json`, `sweep_*.json`,
-`rss.json`, `telemetry_*.{csv,json}`, `ros_telemetry.json`,
-`eda.py`, `eda/`, `aggregate.py`, `scene_*.{csv,json}`,
-`variants.py`, `scene_v1.json`, `scene_v2.json`, `scene_video.json`.
+Скрипт собирает сцену, поднимает Gazebo, снимает 48 ракурсов,
+останавливает симулятор, считает бенчмарк, телеметрию, ECE/CI, runtime,
+GT и EDA.
+
+Варианты света и видео-облёт:
+
+```bash
+.venv-lyrical/bin/python data/gazebo/exp/variants.py
+.venv-lyrical/bin/python data/gazebo/exp/capture_views.py \
+  --scene data/gazebo/exp/scene_v1.json \
+  --frames /root/ws/data/exp/frames_v1
+.venv-lyrical/bin/python data/gazebo/exp/benchmark.py \
+  --scene data/gazebo/exp/scene_v1.json \
+  --frames data/gazebo/exp/frames_v1 \
+  --out data/gazebo/exp/results_v1
+.venv-lyrical/bin/python data/gazebo/exp/aggregate.py
+```
+
+Файлы: `build_scene.py`, `variants.py`, `scene*.json`, `world*.sdf`,
+`capture.py`, `capture_views.py`, `benchmark.py`, `analyze.py`,
+`sweep.py`, `rss.py`, `telemetry.py`, `gt_tools.py`, `metrics.py`,
+`runtime.py`, `eda.py`, `aggregate.py`, `run_benchmark.sh`,
+`requirements-benchmark.txt`, `coco/`, `eda/`, `benchmark_results.*`,
+`telemetry_*`, `metrics.*`, `runtime.json`, `scene_*`, `confusion_*`.

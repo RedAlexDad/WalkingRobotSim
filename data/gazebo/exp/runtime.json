@@ -1,0 +1,48 @@
+{
+  "model": "yolo11n.pt",
+  "image": "data/gazebo/exp/frames/station_00/frame.png",
+  "threads": {
+    "1": {
+      "T_p50_ms": 24.654,
+      "fps": 40.56
+    },
+    "2": {
+      "T_p50_ms": 34.453,
+      "fps": 29.03
+    },
+    "4": {
+      "T_p50_ms": 25.415,
+      "fps": 39.35
+    },
+    "8": {
+      "T_p50_ms": 21.01,
+      "fps": 47.6
+    }
+  },
+  "affinity_4cpu": {
+    "cpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "T_p50_ms": 23.596,
+    "fps": 42.38
+  },
+  "onnx_fp32": {
+    "T_p50_ms": 52.206,
+    "fps": 19.15,
+    "size_mb": 10.74
+  },
+  "openvino_fp32": {
+    "T_p50_ms": 12.971,
+    "fps": 77.1,
+    "size_mb": 10.88
+  },
+  "openvino_fp16": {
+    "T_p50_ms": 13.774,
+    "fps": 72.6,
+    "size_mb": 5.7
+  },
+  "int8": "not run: требует NNCF-калибровку"
+}

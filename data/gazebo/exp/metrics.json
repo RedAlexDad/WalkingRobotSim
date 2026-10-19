@@ -1,0 +1,60 @@
+{
+  "rows": [
+    {
+      "model": "yolo11n",
+      "T_p50_ms": 20.63495,
+      "T_p95_ms": 24.53656,
+      "T_p99_ms": 25.56382,
+      "F1_conf005": 0.37559,
+      "F1_ci95_lo": 0.28708,
+      "F1_ci95_hi": 0.46848,
+      "ECE": 0.09087,
+      "energy_per_frame_mj": null
+    },
+    {
+      "model": "yolov8s",
+      "T_p50_ms": 46.78935,
+      "T_p95_ms": 57.64617,
+      "T_p99_ms": 61.40516,
+      "F1_conf005": 0.35294,
+      "F1_ci95_lo": 0.24539,
+      "F1_ci95_hi": 0.46053,
+      "ECE": 0.19235,
+      "energy_per_frame_mj": null
+    },
+    {
+      "model": "yolov9t",
+      "T_p50_ms": 29.2876,
+      "T_p95_ms": 31.32835,
+      "T_p99_ms": 32.6871,
+      "F1_conf005": 0.28125,
+      "F1_ci95_lo": 0.18785,
+      "F1_ci95_hi": 0.37235,
+      "ECE": 0.08827,
+      "energy_per_frame_mj": null
+    },
+    {
+      "model": "yolov8n",
+      "T_p50_ms": 21.7207,
+      "T_p95_ms": 25.38017,
+      "T_p99_ms": 30.56806,
+      "F1_conf005": 0.25112,
+      "F1_ci95_lo": 0.17284,
+      "F1_ci95_hi": 0.33613,
+      "ECE": 0.13424,
+      "energy_per_frame_mj": null
+    },
+    {
+      "model": "yolov10n",
+      "T_p50_ms": 19.8804,
+      "T_p95_ms": 23.40194,
+      "T_p99_ms": 24.15913,
+      "F1_conf005": 0.22892,
+      "F1_ci95_lo": 0.14689,
+      "F1_ci95_hi": 0.31138,
+      "ECE": 0.16908,
+      "energy_per_frame_mj": null
+    }
+  ],
+  "energy_available": false
+}

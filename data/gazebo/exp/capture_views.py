@@ -1,4 +1,5 @@
 """Съёмка всех ракурсов бенчмарка через /world/exp/set_pose."""
+import argparse
 import json
 import math
 import subprocess
@@ -21,6 +22,13 @@ def run(inner):
 
 
 def main():
+    global SCENE, FRAMES
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--scene", default=SCENE)
+    ap.add_argument("--frames", default=FRAMES)
+    args = ap.parse_args()
+    SCENE, FRAMES = args.scene, args.frames
+
     with open(SCENE, encoding="utf-8") as f:
         scene = json.load(f)
     views = scene["views"]

@@ -213,9 +213,16 @@ def draw(im, dets, gts, names):
 
 
 def main():
+    global SCENE, FRAMES, BASE
     ap = argparse.ArgumentParser()
     ap.add_argument("--gt-only", action="store_true")
+    ap.add_argument("--scene", default=SCENE)
+    ap.add_argument("--frames", default=FRAMES)
+    ap.add_argument("--out", default=BASE)
     args = ap.parse_args()
+
+    SCENE, FRAMES, BASE = args.scene, args.frames, args.out
+    os.makedirs(BASE, exist_ok=True)
 
     scene = load_scene()
     views, objects = scene["views"], scene["objects"]

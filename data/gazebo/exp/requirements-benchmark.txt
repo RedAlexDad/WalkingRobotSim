@@ -1,0 +1,12 @@
+# Хост-окружение бенчмарка (venv .venv-lyrical).
+# torch/torchvision ставятся отдельно с CPU-индекса PyTorch:
+#   uv pip install --python .venv-lyrical/bin/python \
+#     --index-url https://download.pytorch.org/whl/cpu torch torchvision
+ultralytics==8.4.182
+pandas==3.0.6
+matplotlib==3.11.2
+seaborn==0.13.2
+tabulate==0.10.0
+onnx==1.23.2
+onnxruntime==1.31.0
+openvino==2026.4.1

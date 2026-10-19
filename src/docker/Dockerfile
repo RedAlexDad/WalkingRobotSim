@@ -190,6 +190,8 @@ ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
 RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed \
     torch --index-url ${TORCH_INDEX_URL} \
     && pip3 install --no-cache-dir --break-system-packages --ignore-installed \
+    torchvision --index-url ${TORCH_INDEX_URL} \
+    && pip3 install --no-cache-dir --break-system-packages --ignore-installed \
     ultralytics --no-deps \
     && pip3 install --no-cache-dir --break-system-packages \
     opencv-python-headless 'numpy<2'
