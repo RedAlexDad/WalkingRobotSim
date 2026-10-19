@@ -95,7 +95,7 @@ def best_frame(v):
 def sheet(model):
     d = os.path.join(FRAMES, "annotated", model)
     views = sorted(f[:-4] for f in os.listdir(d) if f.endswith(".png"))
-    cols, rows = 6, 4
+    cols, rows = 8, 6
     tw, th = 320, 240
     canvas = np.full((rows * (th + 18), cols * tw, 3), 255, np.uint8)
     for i, v in enumerate(views):

@@ -7,6 +7,10 @@ import argparse
 import csv
 import json
 import os
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 import statistics
 import time
 
@@ -144,6 +148,15 @@ def ap_from_records(records, n_gt):
     return float(np.sum((mrec[idx + 1] - mrec[idx]) * mpre[idx + 1]))
 
 
+def pr_points(records, n_gt):
+    records = sorted(records, key=lambda r: -r[0])
+    tp = np.cumsum([1 if r[1] else 0 for r in records])
+    fp = np.cumsum([0 if r[1] else 1 for r in records])
+    rec = tp / max(n_gt, 1)
+    prec = tp / np.maximum(tp + fp, 1)
+    return {"recall": rec.tolist(), "precision": prec.tolist()}
+
+
 def best_frame(view_name):
     d = os.path.join(FRAMES, view_name)
     files = sorted(f for f in os.listdir(d) if f.endswith(".png"))
@@ -231,7 +244,7 @@ def main():
                     for c, k, b in zip(r.boxes.conf, r.boxes.cls, r.boxes.xyxy)]
             det_by_view[v["name"]] = dets
 
-        per_class_50, per_class_coco = {}, {}
+        per_class_50, per_class_coco, pr_curves = {}, {}, {}
         tp = fp = fn = 0
         thresholds = np.arange(0.5, 1.0, 0.05)
         for cls in n_gt_class:
@@ -243,8 +256,11 @@ def main():
                     dets = [d for d in det_by_view[v["name"]] if d[1] == cls]
                     recs += match_view(dets, gts, float(thr)).get(cls, [])
                 aps.append(ap_from_records(recs, n_gt_class[cls]))
+                if abs(float(thr) - 0.5) < 1e-9:
+                    recs50 = recs
             per_class_50[cls] = aps[0]
             per_class_coco[cls] = float(np.mean(aps))
+            pr_curves[cls] = pr_points(recs50, n_gt_class[cls])
 
             # P/R при conf 0.5
             for v in views:
@@ -272,6 +288,20 @@ def main():
             out = draw(im, dets, gt_by_view[v["name"]], names)
             cv2.imwrite(os.path.join(outdir, v["name"] + ".png"), out)
 
+        fig, axes = plt.subplots(3, 3, figsize=(10, 9))
+        for ax, cls in zip(axes.flat, n_gt_class):
+            pr = pr_curves.get(cls, {"recall": [], "precision": []})
+            ax.plot(pr["recall"], pr["precision"], color="C0")
+            ax.set_title(f"{cls}: AP50={per_class_50[cls]:.2f}")
+            ax.set_xlim(0, 1)
+            ax.set_ylim(0, 1.05)
+            ax.grid(alpha=0.3)
+        for ax in list(axes.flat)[len(n_gt_class):]:
+            ax.axis("off")
+        plt.tight_layout()
+        plt.savefig(os.path.join(FRAMES, f"pr_{tag}.png"), dpi=110)
+        plt.close(fig)
+
         res = {
             "model": tag,
             "T_median_ms": statistics.median(times) * 1000,
@@ -285,6 +315,8 @@ def main():
             "params_m": sum(p.numel() for p in model.model.parameters()) / 1e6,
             "size_mb": os.path.getsize(path) / 1e6,
             "ap50_per_class": per_class_50,
+            "ap50_95_per_class": per_class_coco,
+            "pr_curves": pr_curves,
         }
         results.append(res)
         print(json.dumps(res, ensure_ascii=False))

@@ -1,0 +1,147 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <world name="exp">
+    <gravity>0 0 -9.8</gravity>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>0 0.3 -0.9</direction>
+    </light>
+
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+
+    <model name="ground">
+      <static>true</static>
+      <link name="link">
+        <collision name="c"><geometry><plane><normal>0 0 1</normal><size>40 40</size></plane></geometry></collision>
+        <visual name="v"><geometry><plane><normal>0 0 1</normal><size>40 40</size></plane></geometry>
+          <material><ambient>0.45 0.45 0.45 1</ambient><diffuse>0.45 0.45 0.45 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="camera">
+      <static>false</static>
+      <pose>0 0 1.4 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <sensor name="cam" type="camera">
+          <update_rate>60</update_rate>
+          <camera>
+            <horizontal_fov>1.047</horizontal_fov>
+            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
+            <clip><near>0.1</near><far>100</far></clip>
+          </camera>
+          <always_on>1</always_on>
+          <visualize>0</visualize>
+          <topic>/camera/image</topic>
+        </sensor>
+      </link>
+    </model>
+
+    <include>
+      <uri>model://aws_robomaker_residential_ChairA_01</uri>
+      <name>chair_0_0</name>
+      <static>true</static>
+      <pose>6.5000 0.0000 0.0000 0.0 0.0 3.1416</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_residential_KitchenTable_01</uri>
+      <name>dining_table_1_1</name>
+      <static>true</static>
+      <pose>5.6292 3.2500 0.0000 0.0 0.0 3.6652</pose>
+    </include>
+    <include>
+      <uri>model://mustard_bottle</uri>
+      <name>bottle_1_2</name>
+      <static>true</static>
+      <pose>5.6292 3.2500 0.8040 0.0 0.0 3.6652</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_residential_Bed_01</uri>
+      <name>bed_2_3</name>
+      <static>true</static>
+      <pose>3.2500 5.6292 0.0000 0.0 0.0 4.1888</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_residential_Sofa_01</uri>
+      <name>couch_3_4</name>
+      <static>true</static>
+      <pose>0.0000 6.5000 0.0000 0.0 0.0 4.7124</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_residential_ChairD_01</uri>
+      <name>chair_4_5</name>
+      <static>true</static>
+      <pose>-3.2500 5.6292 0.0000 0.0 0.0 5.2360</pose>
+    </include>
+    <include>
+      <uri>model://cafe_table</uri>
+      <name>dining_table_5_6</name>
+      <static>true</static>
+      <pose>-5.6292 3.2500 0.0000 0.0 0.0 5.7596</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_residential_Vase_01</uri>
+      <name>vase_5_7</name>
+      <static>true</static>
+      <pose>-5.6292 3.2500 0.7750 0.0 0.0 5.7596</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_residential_Refrigerator_01</uri>
+      <name>refrigerator_6_8</name>
+      <static>true</static>
+      <pose>-6.5000 0.0000 0.0000 0.0 0.0 6.2832</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_residential_CoffeeTable_01</uri>
+      <name>dining_table_7_9</name>
+      <static>true</static>
+      <pose>-5.6292 -3.2500 0.0000 0.0 0.0 8.3776</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_residential_Vase_01</uri>
+      <name>vase_7_10</name>
+      <static>true</static>
+      <pose>-5.5042 -3.4665 0.3220 0.0 0.0 6.8068</pose>
+    </include>
+    <include>
+      <uri>model://mustard_bottle</uri>
+      <name>bottle_7_11</name>
+      <static>true</static>
+      <pose>-5.7542 -3.0335 0.3250 0.0 0.0 6.8068</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_residential_TV_01</uri>
+      <name>tv_8_12</name>
+      <static>true</static>
+      <pose>-3.2500 -5.6292 0.0000 0.0 0.0 7.3304</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_residential_SofaB_01</uri>
+      <name>couch_9_13</name>
+      <static>true</static>
+      <pose>-0.0000 -6.5000 0.0000 0.0 0.0 7.8540</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_residential_Ball_01</uri>
+      <name>sports_ball_10_14</name>
+      <static>true</static>
+      <pose>3.2500 -5.6292 0.3100 0.0 0.0 8.3776</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_residential_Ball_01</uri>
+      <name>sports_ball_11_15</name>
+      <static>true</static>
+      <pose>5.6292 -3.2500 0.3100 0.0 0.0 8.9012</pose>
+    </include>
+  </world>
+</sdf>

@@ -1,0 +1,25 @@
+{
+  "baseline_mb": 528.96484375,
+  "models": {
+    "yolov8n": {
+      "peak_mb": 801.43359375,
+      "delta_mb": 272.46875
+    },
+    "yolov8s": {
+      "peak_mb": 877.890625,
+      "delta_mb": 348.92578125
+    },
+    "yolov10n": {
+      "peak_mb": 798.15625,
+      "delta_mb": 269.19140625
+    },
+    "yolov9t": {
+      "peak_mb": 796.09765625,
+      "delta_mb": 267.1328125
+    },
+    "yolo11n": {
+      "peak_mb": 797.38671875,
+      "delta_mb": 268.421875
+    }
+  }
+}

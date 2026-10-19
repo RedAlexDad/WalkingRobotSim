@@ -151,6 +151,28 @@ def build():
             "pose": [0.0, 0.0, 1.8, 0.0, 0.12, theta],
         })
 
+    # дополнительные 24 ракурса: крупнее и ближе к станциям
+    for st, (d, h) in enumerate(STATION_CAM):
+        theta = STATIONS[st][1]
+        d2 = max(d * 0.65, 1.5)
+        cam_r = R - d2
+        cx, cy = cam_r * math.cos(theta), cam_r * math.sin(theta)
+        anchor = anchors[st]
+        lo, hi = AABB[anchor]
+        target_h = (lo[2] + hi[2]) / 2.0
+        h2 = h + 0.2
+        pitch = math.atan2(h2 - target_h, d2)
+        views.append({
+            "name": f"close_{st:02d}",
+            "pose": [cx, cy, h2, 0.0, pitch, theta],
+        })
+    for i in range(12):
+        theta = math.radians(i * 30 + 15)
+        views.append({
+            "name": f"near_{i:02d}",
+            "pose": [3.0 * math.cos(theta), 3.0 * math.sin(theta), 1.8, 0.0, 0.12, theta],
+        })
+
     os.makedirs(OUT, exist_ok=True)
     with open(os.path.join(OUT, "scene.json"), "w", encoding="utf-8") as f:
         json.dump({"objects": objs, "views": views, "radius": R}, f,
