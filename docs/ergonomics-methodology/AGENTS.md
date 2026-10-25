@@ -452,6 +452,7 @@ The following are automatic failures:
 | Artifact | Status | Use |
 | --- | --- | --- |
 | `reaction-time/` | Current topic: response-time reduction methods | Concept and analytical report; KR basis |
+| `reaction-time/2026-10-25_decision-stage-ergonomic.md` | Strengthened ergonomic frame for the decision stage | Links to IM and lectures |
 | `2026-10-25_topic-selection.md` | Fallback line: anomaly detection | Not the current topic |
 | `2026-10-25_formal-model.md` | Fallback line: anomaly formal model | Not the current topic |
 | `neurostimulation/` | Alternative line: neurostimulation and throughput | Not the current topic |
