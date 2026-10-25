@@ -485,6 +485,9 @@ The following are automatic failures:
 | `reaction-time/` | Thematic folder for the ergonomics KR | Concept and analytical reports; KR basis |
 | `reaction-time/2026-10-25_decision-stage-kp.md` | Variant A KR without AI: IM requirements | Consultation material and KR basis |
 | `reaction-time/2026-10-25_adaptive-recommender-kp.md` | Variant B KR with AI: adaptive recommender | Consultation material and KR basis |
+| `reaction-time/2026-10-25_decision-stage-kp.html` | Printable version of Variant A | HTML for consultation |
+| `reaction-time/2026-10-25_adaptive-recommender-kp.html` | Printable version of Variant B | HTML for consultation |
+| `build_kp_html.py` | Printable HTML build | Reproducible layout |
 | `reaction-time/2026-10-25_decision-stage-ergonomic.md` | Strengthened ergonomic frame for the decision stage | Links to IM and lectures |
 | `reaction-time/2026-10-25_decision-stage-ai.md` | AI component in the decision frame | Extension of the ergonomic frame |
 | `reaction-time/2026-10-25_adaptive-recommender-narrowing.md` | Adaptive neural recommender | Narrowing of the AI decision branch |
