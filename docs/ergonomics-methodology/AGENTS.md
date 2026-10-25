@@ -8,9 +8,46 @@
 
 ---
 
-## 0. One-sentence verdict
+## 0. Working mode (2026-10-25)
 
-The existing model-selection report is a **technical study**, not an ergonomics KR. It may be reused only as a technical basis after the ergonomic object, title, and characteristics are approved. Renaming it “ergonomic” is forbidden.
+- Work **autonomously, without the advisor**. Consultation transcripts are historical context and design input, not blocking approval.
+- The agent selects the topic, object, characteristics, and assumptions; decisions are recorded in `2026-10-25_topic-selection.md`.
+- After each completed stage, **commit only that stage’s files**, without separate user approval. Do not push.
+- Do not include unrelated working-tree changes in a commit.
+
+---
+
+## 0.1. One-sentence verdict
+
+The existing model-selection report is a **technical study**, not an ergonomics KR. It remains a technical layer and data source, not the KR core. Renaming it “ergonomic” is forbidden.
+
+---
+
+## 0.2. Current working topic (2026-10-25)
+
+**Working title:**
+
+> **Ergonomic Support of Operator Activity in Detecting Anomalies of a Walking Robot**  
+> «Эргономическое обеспечение деятельности оператора при обнаружении аномалий шагающего робота».
+
+**Status:** selected autonomously; recorded in `2026-10-25_topic-selection.md`; no external approval required.
+
+**Object:** the system “operator — information model of anomalies — walking robot”.
+
+**Ergonomic core:** the joint activity of the operator and the technical subsystem in detecting an anomaly, assessing the situation, and deciding on a response. The information model must provide sufficient evidence for detection and action without false alarms or overload.
+
+**KR path:** 1 — engineering/analytical.
+
+**Working characteristics:**
+
+1. Detection probability `P_det = 1 - Φ((λ - μ_S) / σ)`; acceptance `P_det ≥ P_req`.
+2. False-alarm probability `P_fa = 1 - Φ((λ - μ_N) / σ)`; acceptance `P_fa ≤ α`.
+3. Detection/response time `T_det = T_lat + T_search + T_dec + T_act`; acceptance `T_det ≤ T_req`.
+4. Operator workload `K_load = (N_anom * T_det + N_fa * T_check) / T_shift`; acceptance `K_load ≤ K_req`.
+
+**Selection rule:** all four constraints must hold; among admissible variants, maximize `P_det`, then minimize `T_det`, then minimize `P_fa`. Weights, expert scores, and Pareto are forbidden.
+
+**Old report:** technical layer — `P_D`, `P_FA`, latency, confidence calibration, frames and scenes. It does not define the ergonomic characteristics.
 
 ---
 
@@ -19,9 +56,9 @@ The existing model-selection report is a **technical study**, not an ergonomics 
 - The discipline is **“Ergonomics Analysis”** (эргономический анализ).
 - The course project is a **course project in ergonomics**, not a course project in computer vision, machine learning, or model benchmarking.
 - The advisor has explicitly rejected the substitution of technical model-selection metrics for ergonomic analysis.
-- The advisor has explicitly rejected attempts to attach ergonomics through a screen, a user interface, human hands, vision, or anthropometry unless the topic is deliberately changed to operator–interface ergonomics and approved.
-- The advisor allows changing the topic. The agent MUST NOT force the current topic if it cannot be made genuinely ergonomic.
-- The advisor is skeptical of vague, high-level reasoning. The agent MUST decompose claims to formulas, units, data, and measurable effects.
+- The advisor historically rejected attaching ergonomics through a screen, interface, hands, vision, or anthropometry. This is treated as a wording constraint, not as a blocking approval.
+- The agent MUST NOT force the old topic if it cannot be made genuinely ergonomic.
+- The agent MUST decompose claims to formulas, units, data, and measurable effects.
 
 Key advisor formulations (cleaned from the 20.10.2026 transcript):
 
@@ -57,14 +94,14 @@ The course has a body of authoritative ergonomics materials. Before proposing a 
 
 **Authority hierarchy:**
 
-1. The advisor’s latest written/consultation feedback (currently 20.10.2026).
+1. The current user instruction: autonomous work and stage commits.
 2. The KR methodology PDF and the approved topics DOCX.
 3. The lecture materials.
-4. The technical model-selection report/article.
+4. Advisor consultations and the technical report — historical context, data, and constraints, not blocking approval.
 
-The technical report/article MUST NOT override the methodology or the advisor.
+The technical report/article MUST NOT override the methodology or the current topic decision.
 
-**Approved AI/robotics-adjacent topics from the themes file** (candidates, not an automatic choice; confirm with the advisor):
+**Approved AI/robotics-adjacent topics from the themes file** (candidates; the choice is recorded in the concept):
 
 - «Место подсистем ИИ в контуре управления АСОИУ».
 - «Подсистемы и звенья искусственного интеллекта, ориентированные на человека».
@@ -75,6 +112,8 @@ The technical report/article MUST NOT override the methodology or the advisor.
 - «Системный анализ методов распределения функций между человеком и машиной».
 
 These topics are evidence that the course accepts AI/robotics subjects only when they are framed through human activity, ergonomic support, information models, or operator interaction. They are not permission to submit a purely technical model comparison.
+
+**Selected working topic (2026-10-25):** “Ergonomic Support of Operator Activity in Detecting Anomalies of a Walking Robot.” It concretizes approved topics #1 “Development of operator activity algorithms in the control loop,” #4 “Search and evaluation of new criteria and indicators of ergonomic support,” and #18 “The place of AI subsystems in the control loop.” Status: selected autonomously and recorded in the concept.
 
 **Formal KR requirements from the methodology:**
 
@@ -101,13 +140,15 @@ Ergonomics is the study of a **human–machine–environment system**: human act
 
 ### 2.2. Object of analysis
 
-The object MUST be one of the following, explicitly approved:
+The object MUST be one of the following and explicitly recorded in the concept:
 
 1. **Operator–model–robot system**: the model is a component that changes the operator’s or robot’s activity.
-2. **Operator–interface system**: the object is the interaction with detection results, alerts, or displays. This is allowed only if the topic is explicitly changed to operator-interface ergonomics and approved.
+2. **Operator–interface system**: the object is the interaction with detection results, alerts, or displays. This is allowed if the topic is explicitly framed as ergonomics of operator activity, not as ergonomics of the model.
 3. **A narrowly defined model property that has a demonstrated human or robot effect** (for example, response tempo or reliability), with the mechanism stated explicitly.
 
 The object “the model by itself, without a human or robot effect” is NOT a valid ergonomic object.
+
+An “operator–information model–robot” system is treated as a concrete form of the operator–interface system; the topic must be explicitly named and justified in the concept.
 
 ### 2.3. Ergonomic characteristic
 
@@ -132,7 +173,7 @@ If any item is missing, the characteristic is not ready for the KR.
 - The title MUST contain an explicit ergonomic framing, for example:
   - “Эргономическое обоснование выбора модели машинного обучения…”
   - “Эргономические требования к модели обнаружения объектов…”
-- The title MUST be approved by the advisor before large-scale writing.
+- The title MUST be ergonomically explicit and recorded in the concept before large-scale writing.
 - The agent MUST NOT simply add the word “эргономическое” to the existing technical title without changing the content.
 - The agent MUST NOT present the current technical report as the KR.
 
@@ -147,7 +188,7 @@ The following MUST NOT be presented as ergonomic characteristics of the model:
 - model weight or file size as “performance”;
 - expert scores, subjective weights, pairwise preference scores, or Pareto frontiers.
 
-These may be used only as **technical constraints, inputs, or proxies**, and only when the ergonomic mechanism is separately defined and approved.
+These may be used only as **technical constraints, inputs, or proxies**, and only when the ergonomic mechanism is separately defined and justified in the concept.
 
 ### 3.3. Required separation of layers
 
@@ -155,7 +196,7 @@ The KR MUST keep three layers separate:
 
 1. **Technical layer** — architecture, FLOPs, parameters, memory, latency, mAP/F1, model constraints.
 2. **Ergonomic layer** — human/robot effect, tempo, workload, reliability, decision certainty, safety, trust.
-3. **Selection/decision layer** — the rule that converts the approved characteristics into one choice.
+3. **Selection/decision layer** — the rule that converts the recorded characteristics into one choice.
 
 The technical layer MUST NOT be used as a substitute for the ergonomic layer. The decision layer MUST NOT use subjective weights, expert scores, or Pareto frontiers.
 
@@ -171,7 +212,7 @@ The technical layer MUST NOT be used as a substitute for the ergonomic layer. Th
 - Weights are forbidden.
 - Pareto is forbidden as the selection method.
 - Expert scores are forbidden.
-- A deterministic rule with equal treatment of approved characteristics is required.
+- A deterministic rule with equal treatment of the recorded characteristics is required.
 - If a criterion cannot be justified without subjective weights, it MUST be removed or reformulated.
 
 ### 3.6. Scope discipline
@@ -185,7 +226,7 @@ The technical layer MUST NOT be used as a substitute for the ergonomic layer. Th
 
 ## 4. Mandatory pre-writing gate
 
-Before writing KR chapters, the agent MUST produce a **one-page concept** and obtain explicit approval.
+Before writing KR chapters, the agent MUST produce a concept and pass the self-check in this section. No external approval is required.
 
 The one-page concept MUST contain:
 
@@ -196,9 +237,9 @@ The one-page concept MUST contain:
 5. For each candidate: definition, formula, units, direction, data source, and why it is ergonomic.
 6. The proposed selection rule without weights/Pareto.
 7. The proposed experiment/validation.
-8. Open questions for the advisor.
+8. Open questions, assumptions, and how they will be checked.
 
-The agent MUST NOT proceed to full chapters until the advisor approves the object and characteristics.
+The agent MUST NOT proceed to full chapters until the concept passes the self-check and is recorded in a commit.
 
 ### 4.1. One-page concept template
 
@@ -217,6 +258,10 @@ Analytical calculation:
 Experiment/validation:
 Open questions:
 ```
+
+### 4.2. Concept self-check
+
+Before chapters, verify: the object is human–machine; each characteristic has a formula, units, direction, criterion, and effect; no weights/Pareto/expert scores; analytical calculation comes first; technical metrics are separated; the old report is not presented as the KR. Record the result in the concept and commit it.
 
 ---
 
@@ -350,14 +395,14 @@ Current experimental facts that MUST be respected:
 
 ## 9. Topic decision gates
 
-The agent MUST NOT assume the current topic is approved. Use this decision tree:
+The topic is checked against the gates; the decision is recorded in the concept. No external approval is required.
 
 ### Gate 1 — Object
 
 - If the object is “the model alone”, STOP: there is no ergonomic property without a human/robot relation.
-- If the object is “operator–model–robot”, proceed to Gate 2.
-- If the object is “operator–interface”, STOP and require an explicit topic change and approval.
-- If the object cannot be defined, STOP and ask the human.
+- If the object is “operator–model–robot” or “operator–information model–robot”, proceed to Gate 2.
+- If the object is “operator–interface”, it is allowed if the topic is explicitly framed as ergonomics of operator activity, not as ergonomics of the model.
+- If the object is unclear, narrow it independently and record the assumption in the concept.
 
 ### Gate 2 — Characteristics
 
@@ -372,13 +417,14 @@ The agent MUST NOT assume the current topic is approved. Use this decision tree:
 
 ### Gate 4 — Experiment
 
-- If the experiment does not test the approved characteristics, label it as “technical validation” only.
+- If the experiment does not test the recorded characteristics, label it as “technical validation” only.
 - If the experiment covers only 16-object scenes, do not claim 5/20/50 validation.
 
 ### Gate 5 — Text
 
-- Do not write full chapters before Gates 1–3 are approved.
-- The advisor’s approval MUST be recorded in the project notes.
+- Do not write full chapters before Gates 1–3 are passed.
+- Record decisions and assumptions in the concept; commit the stage.
+- No external approval is required.
 
 ---
 
@@ -389,13 +435,13 @@ The following are automatic failures:
 - Calling the current technical model-selection report an ergonomics KR.
 - Adding “эргономическое” to the title without changing the content.
 - Calling mAP/F1/FLOPs/Φ “ergonomic characteristics”.
-- Using screen/UI/readability/anthropometry as model ergonomics without an approved topic change.
+- Using screen/UI/readability/anthropometry as model ergonomics without an explicit topic change recorded in the concept.
 - Using “model weight” as performance.
 - Using subjective weights, expert scores, or Pareto.
 - Claiming “the experiment fully confirmed the analysis”.
 - Claiming 5/20/50 scenarios were tested when they were not.
 - Hiding overlapping confidence intervals or domain reversals.
-- Inventing numbers, sources, or advisor approvals.
+- Inventing numbers, sources, or facts.
 - Publishing private audio/transcripts.
 
 ---
@@ -404,12 +450,13 @@ The following are automatic failures:
 
 | Artifact | Status | Use |
 | --- | --- | --- |
-| `2026-10-13_model-selection.md` | Technical report; not a KR | Technical basis, calculations, constraints |
-| `2026-10-13_model-selection.html` | Printable technical report | Technical basis only |
+| `2026-10-25_topic-selection.md` | Working topic, ergonomic core, and concept | KR basis; selected autonomously |
+| `2026-10-13_model-selection.md` | Technical report; not a KR | Technical appendix and source of IM frames |
+| `2026-10-13_model-selection.html` | Printable technical report | Technical appendix only |
 | `2026-10-19_consultation-brief.*` | Technical summary | Not an ergonomics plan |
 | `docs/publications/IIASU_2026/article.*` | Technical article | Separate publication; not the KR |
 | `2026-10-13_consultation-goryachkin.md` | Prior consultation summary with a 20.10 correction note | Context |
-| `2026-10-20_consultation-goryachkin.md` | Current consultation analysis | Binding interpretation of the advisor’s feedback |
+| `2026-10-20_consultation-goryachkin.md` | Consultation analysis | Historical context and requirements |
 | `private/2026-10-20/` | Audio and raw transcripts | Evidence; do not publish |
 
 ---
@@ -418,8 +465,8 @@ The following are automatic failures:
 
 The KR is not done until all of the following are true:
 
-- [ ] The advisor approved the title and object.
-- [ ] The ergonomic characteristics (3–5) are approved with formulas and units.
+- [ ] The topic, object, and characteristics are recorded in the concept and pass the self-check.
+- [ ] The ergonomic characteristics (3–5) have formulas, units, and criteria.
 - [ ] The analytical calculation is present and reproducible.
 - [ ] The selection rule contains no weights, expert scores, or Pareto.
 - [ ] The experiment is described as validation, not as the basis.
@@ -427,21 +474,33 @@ The KR is not done until all of the following are true:
 - [ ] The text states what was confirmed, what was not, and what was not tested.
 - [ ] Technical metrics are clearly separated from ergonomic characteristics.
 - [ ] No prohibited pattern from §10 is present.
-- [ ] The advisor’s latest feedback is addressed in the text or in a recorded open question.
+- [ ] Historical advisor feedback is addressed or explicitly rejected with a rationale.
 
 ---
 
-## 13. Stop conditions
+## 13. Stop conditions and procedure
 
-The agent MUST stop and ask the human if any of the following occurs:
+If any of the following occurs, the agent does NOT wait for external approval:
 
-- The advisor says the work is “technical, not ergonomic”.
-- The only proposed characteristics are technical metrics.
-- The object of analysis is unclear.
-- The topic must be changed.
-- The available data cannot support the claimed ergonomic effect.
-- The agent is asked to “just rename” the technical report.
-- The agent is asked to use weights/Pareto/expert scores.
-- The agent cannot distinguish measured, calculated, and assumed values.
+- the only proposed characteristics are technical metrics;
+- the object of analysis is unclear;
+- the topic must be changed;
+- the available data cannot support the claimed ergonomic effect;
+- the agent is asked to “just rename” the technical report;
+- the agent is asked to use weights/Pareto/expert scores;
+- the agent cannot distinguish measured, calculated, and assumed values.
 
-Stopping is correct behavior. Inventing an ergonomic rationale is worse than stopping.
+Procedure: stop, record the problem in the concept, narrow the object or choose a conservative solution, add a validation experiment if needed, and commit the stage. Inventing an ergonomic rationale is forbidden.
+
+---
+
+## 14. Stage commits
+
+After each completed stage:
+
+1. Verify that only files for this stage are changed.
+2. Commit them without separate user approval, following the project commit rules.
+3. Do not push without a separate instruction.
+4. Do not include unrelated working-tree changes.
+
+Stages: topic and core → formal model and characteristics → calculation/experiment → KR text → final check and defense.
