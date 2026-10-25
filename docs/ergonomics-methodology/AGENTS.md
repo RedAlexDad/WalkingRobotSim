@@ -27,27 +27,28 @@ The existing model-selection report is a **technical study**, not an ergonomics 
 
 **Working title:**
 
-> **Ergonomic Support of Operator Activity in Detecting Anomalies of a Walking Robot**  
-> «Эргономическое обеспечение деятельности оператора при обнаружении аномалий шагающего робота».
+> **Ergonomic Requirements for Methods of Reducing Operator Response Time under High Information Flow**  
+> «Эргономические требования к методам снижения времени реакции оператора при высоком потоке информации».
 
-**Status:** selected autonomously; recorded in `2026-10-25_topic-selection.md`; formal model in `2026-10-25_formal-model.md`; no external approval required.
+**Status:** selected autonomously; concept in `reaction-time/2026-10-25_concept.md`; analytical report in `reaction-time/2026-10-25_topic-narrowing.md`; no external approval required.
 
-**Object:** the system “operator — information model of anomalies — walking robot”.
+**Object:** the system “operator — information flow — interface — task — environment”.
 
-**Ergonomic core:** the joint activity of the operator and the technical subsystem in detecting an anomaly, assessing the situation, and deciding on a response. The information model must provide sufficient evidence for detection and action without false alarms or overload.
+**Ergonomic core:** matching the information rate `R` to human capacity `C` and reducing response time `T_R` without increasing errors `P_err` or workload `K_load`. This is not “brain acceleration” and not a “speed-up chip”; it is ergonomics of information interaction.
 
-**KR path:** 1 — engineering/analytical.
+**KR path:** 2 — system analysis and article preparation.
 
 **Working characteristics:**
 
-1. Detection probability `P_det = 1 - Φ((λ - μ_S) / σ)`; acceptance `P_det ≥ P_req`.
-2. False-alarm probability `P_fa = 1 - Φ((λ - μ_N) / σ)`; acceptance `P_fa ≤ α`.
-3. Detection/response time `T_det = T_lat + T_search + T_dec + T_act`; acceptance `T_det ≤ T_req`.
-4. Operator workload `K_load = (N_anom * T_det + N_fa * T_check) / T_shift`; acceptance `K_load ≤ K_req`.
+1. Response time `T_R = T_sens + T_trans + T_central + T_motor`; acceptance `T_R ≤ T_req`.
+2. Error probability `P_err = N_err / N_trials`; acceptance `P_err ≤ P_req`.
+3. Channel load `rho = R / C`; acceptance `rho ≤ rho_req`.
+4. Throughput `C = H / T`; acceptance `C ≥ C_req`.
+5. Operator workload `K_load = T_busy / T_total`; acceptance `K_load ≤ K_req`.
 
-**Selection rule:** all four constraints must hold; among admissible variants, maximize `P_det`, then minimize `T_det`, then minimize `P_fa`. Weights, expert scores, and Pareto are forbidden.
+**Selection rule:** all constraints must hold; among admissible methods, maximize `ΔT_R`, then minimize `ΔP_err`, then minimize `ΔK_load`. Weights, expert scores, and Pareto are forbidden.
 
-**Old report:** technical layer — `P_D`, `P_FA`, latency, confidence calibration, frames and scenes. It does not define the ergonomic characteristics.
+**Fallback lines:** anomaly detection (`2026-10-25_topic-selection.md`, `2026-10-25_formal-model.md`) and neurostimulation (`neurostimulation/`) are retained as alternatives, not the current topic.
 
 ---
 
@@ -113,7 +114,7 @@ The technical report/article MUST NOT override the methodology or the current to
 
 These topics are evidence that the course accepts AI/robotics subjects only when they are framed through human activity, ergonomic support, information models, or operator interaction. They are not permission to submit a purely technical model comparison.
 
-**Selected working topic (2026-10-25):** “Ergonomic Support of Operator Activity in Detecting Anomalies of a Walking Robot.” It concretizes approved topics #1 “Development of operator activity algorithms in the control loop,” #4 “Search and evaluation of new criteria and indicators of ergonomic support,” and #18 “The place of AI subsystems in the control loop.” Status: selected autonomously and recorded in the concept.
+**Selected working topic (2026-10-25):** “Ergonomic Requirements for Methods of Reducing Operator Response Time under High Information Flow.” It concretizes approved topics #4 “Search and evaluation of new criteria and indicators of ergonomic support” and #9 “Development of new methods and tools for ergonomic evaluation.” Status: selected autonomously and recorded in the concept.
 
 **Formal KR requirements from the methodology:**
 
@@ -450,11 +451,11 @@ The following are automatic failures:
 
 | Artifact | Status | Use |
 | --- | --- | --- |
-| `2026-10-25_topic-selection.md` | Working topic, ergonomic core, and concept | KR basis; selected autonomously |
-| `2026-10-25_formal-model.md` | Formal core model and characteristics | Stage 2; calculation basis |
-| `neurostimulation/` | Alternative line: neurostimulation and throughput | Not the main KR; idea source |
-| `reaction-time/` | Alternative line: response-time reduction methods | Not the main KR; idea source |
-| `ergonomic-core/` | Analytical model and tests | Stage 3; analytical core |
+| `reaction-time/` | Current topic: response-time reduction methods | Concept and analytical report; KR basis |
+| `2026-10-25_topic-selection.md` | Fallback line: anomaly detection | Not the current topic |
+| `2026-10-25_formal-model.md` | Fallback line: anomaly formal model | Not the current topic |
+| `neurostimulation/` | Alternative line: neurostimulation and throughput | Not the current topic |
+| `ergonomic-core/` | Analytical model for the anomaly fallback | Not the current topic |
 | `2026-10-13_model-selection.md` | Technical report; not a KR | Technical appendix and source of IM frames |
 | `2026-10-13_model-selection.html` | Printable technical report | Technical appendix only |
 | `2026-10-19_consultation-brief.*` | Technical summary | Not an ergonomics plan |
