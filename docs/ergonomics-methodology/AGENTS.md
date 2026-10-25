@@ -40,7 +40,7 @@ The final choice is made after consultation; both variants are ergonomic, not ML
 
 **Ergonomic core:** the IM must give the operator prioritized, unambiguous, and timely features for choosing an action so that decision time and errors stay within acceptable limits and workload does not exceed the norm.
 
-**KR path:** 1 — engineering-analytical: calculation, IM mockups, expertise/certificate.
+**KR path:** 2 — system analysis and article preparation; no experiment is designed.
 
 **Characteristics:**
 
@@ -377,6 +377,8 @@ The agent MUST reject a characteristic if the “Why this is ergonomic” field 
 
 ## 7. Experiment rules
 
+The current KR (path 2) does not design an experiment; this section applies only if an experiment is added separately.
+
 - The experiment MUST have a pre-stated hypothesis and an analytical baseline.
 - The sample size, ground truth, and selection criteria MUST be reported.
 - Report medians and p95/p99 for latency, not only the mean.
@@ -395,7 +397,7 @@ The agent MUST reject a characteristic if the “Why this is ergonomic” field 
   - “not confirmed”;
   - “domain-dependent”.
 
-Current experimental facts that MUST be respected:
+Historical technical-appendix facts (not the current KR); use them only if the technical layer is used as a data source:
 
 - The Gazebo experiment covers 4 synthetic scenes with 16 objects each, 340 GT total.
 - The 5/20/50 object scenarios were **not** run; the corresponding criteria remain analytical.
@@ -509,8 +511,8 @@ The KR is not done until all of the following are true:
 - [ ] The ergonomic characteristics (3–5) have formulas, units, and criteria.
 - [ ] The analytical calculation is present and reproducible.
 - [ ] The selection rule contains no weights, expert scores, or Pareto.
-- [ ] The experiment is described as validation, not as the basis.
-- [ ] The experiment’s limitations and domain dependence are explicit.
+- [ ] If no experiment is designed, this is explicit; the calculation is described as analytical.
+- [ ] The analytical model’s limitations and domain dependence are explicit.
 - [ ] The text states what was confirmed, what was not, and what was not tested.
 - [ ] Technical metrics are clearly separated from ergonomic characteristics.
 - [ ] No prohibited pattern from §10 is present.
