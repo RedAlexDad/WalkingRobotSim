@@ -23,30 +23,59 @@ The existing model-selection report is a **technical study**, not an ergonomics 
 
 ---
 
-## 0.2. Current working topic (2026-10-25)
+## 0.2. Two KR variants for consultation (2026-10-25)
+
+The final choice is made after consultation; both variants are ergonomic, not ML reviews.
+
+### Variant A. Without an AI recommender
 
 **Working title:**
 
-> **Ergonomic Requirements for Methods of Reducing Operator Response Time under High Information Flow**  
-> «Эргономические требования к методам снижения времени реакции оператора при высоком потоке информации».
+> **Ergonomic Requirements for an Operator's Information Model to Accelerate Decision-Making under High Information Flow**  
+> «Эргономические требования к информационной модели оператора для ускорения принятия решений при высоком потоке информации».
 
-**Status:** selected autonomously; concept in `reaction-time/2026-10-25_concept.md`; analytical report in `reaction-time/2026-10-25_topic-narrowing.md`; no external approval required.
+**Material:** `reaction-time/2026-10-25_decision-stage-kp.md`.
 
-**Object:** the system “operator — information flow — interface — task — environment”.
+**Object:** the ergatic system “operator — information model — controlled object — environment”.
 
-**Ergonomic core:** matching the information rate `R` to human capacity `C` and reducing response time `T_R` without increasing errors `P_err` or workload `K_load`. This is not “brain acceleration” and not a “speed-up chip”; it is ergonomics of information interaction.
+**Ergonomic core:** the IM must give the operator prioritized, unambiguous, and timely features for choosing an action so that decision time and errors stay within acceptable limits and workload does not exceed the norm.
+
+**KR path:** 1 — engineering-analytical: calculation, IM mockups, expertise/certificate.
+
+**Characteristics:**
+
+1. Decision time `T_реш`; acceptance `T_реш ≤ T_доп`.
+2. Error probability `P_ош`; acceptance `P_ош ≤ P_доп`.
+3. Workload `K_загр = T_зан / T_цикла`; acceptance `K_загр ≤ K_доп`.
+4. Information search time `t_ип`; acceptance `t_ип ≤ t_доп`.
+5. Information saturation `I`; acceptance `I ≤ I_доп`.
+
+### Variant B. With an AI recommender
+
+**Working title:**
+
+> **Ergonomic Requirements for an Adaptive Neural-Network Recommendation System for an Operator**  
+> «Эргономические требования к адаптивной нейросетевой системе рекомендаций для оператора».
+
+**Material:** `reaction-time/2026-10-25_adaptive-recommender-kp.md`.
+
+**Object:** “operator — adaptive neural-network recommender — information model — controlled object — environment”.
+
+**Ergonomic core:** support is adapted, not the human; the recommender changes the IM according to the operator's ergonomic state, while decision and control remain with the human.
 
 **KR path:** 2 — system analysis and article preparation.
 
-**Working characteristics:**
+**Characteristics:**
 
-1. Response time `T_R = T_sens + T_trans + T_central + T_motor`; acceptance `T_R ≤ T_req`.
-2. Error probability `P_err = N_err / N_trials`; acceptance `P_err ≤ P_req`.
-3. Channel load `rho = R / C`; acceptance `rho ≤ rho_req`.
-4. Throughput `C = H / T`; acceptance `C ≥ C_req`.
-5. Operator workload `K_load = T_busy / T_total`; acceptance `K_load ≤ K_req`.
+1. Decision time `T_реш`; acceptance `T_реш ≤ T_доп`.
+2. Error `P_ош`, including accepting an erroneous recommendation and rejecting a correct one; acceptance `P_ош ≤ P_доп`.
+3. Workload `K_загр = T_зан / T_цикла`; acceptance `K_загр ≤ K_доп`.
+4. Information search time `t_ип`; acceptance `t_ип ≤ t_доп`.
+5. Information saturation `I`; acceptance `I ≤ I_доп`.
+6. Adaptation time `T_адапт`; acceptance `T_адапт ≤ T_адапт,доп`.
+7. Stability `P_уст = N_стаб / N_циклов`; acceptance `P_уст ≥ P_уст,доп`.
 
-**Selection rule:** all constraints must hold; among admissible methods, maximize `ΔT_R`, then minimize `ΔP_err`, then minimize `ΔK_load`. Weights, expert scores, and Pareto are forbidden.
+**Selection rule:** all constraints must hold; no weights, expert scores, or Pareto. If a variant fails at least one criterion, it is not recommended.
 
 **Fallback lines:** anomaly detection (`2026-10-25_topic-selection.md`, `2026-10-25_formal-model.md`) and neurostimulation (`neurostimulation/`) are retained as alternatives, not the current topic.
 
@@ -451,7 +480,9 @@ The following are automatic failures:
 
 | Artifact | Status | Use |
 | --- | --- | --- |
-| `reaction-time/` | Current topic: response-time reduction methods | Concept and analytical report; KR basis |
+| `reaction-time/` | Thematic folder for the ergonomics KR | Concept and analytical reports; KR basis |
+| `reaction-time/2026-10-25_decision-stage-kp.md` | Variant A KR without AI: IM requirements | Consultation material and KR basis |
+| `reaction-time/2026-10-25_adaptive-recommender-kp.md` | Variant B KR with AI: adaptive recommender | Consultation material and KR basis |
 | `reaction-time/2026-10-25_decision-stage-ergonomic.md` | Strengthened ergonomic frame for the decision stage | Links to IM and lectures |
 | `reaction-time/2026-10-25_decision-stage-ai.md` | AI component in the decision frame | Extension of the ergonomic frame |
 | `reaction-time/2026-10-25_adaptive-recommender-narrowing.md` | Adaptive neural recommender | Narrowing of the AI decision branch |
