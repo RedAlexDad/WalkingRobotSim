@@ -158,6 +158,133 @@ def _figure_html(png: Path, caption: str, *, landscape: bool) -> str:
     return f"\n\n{block}\n\n"
 
 
+
+def _adapter_svg() -> str:
+    """Return a large-format vector scheme for the AI recommender figure.
+
+    Mermaid's automatic LR layout is too wide for an A4 landscape page: its
+    labels become small after scaling.  This hand-laid-out SVG keeps the same
+    blocks and connections but uses a compact two-row composition and large
+    bold labels.
+    """
+    width, height = 1600, 900
+    font = "Times New Roman, Liberation Serif, serif"
+    parts: list[str] = []
+
+    def add(value: str) -> None:
+        parts.append(value)
+
+    def esc(value: str) -> str:
+        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    def box(x: int, y: int, w: int, h: int, lines: list[str], size: int = 26) -> None:
+        add(
+            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="5" '
+            'fill="#fff" stroke="#111" stroke-width="4"/>'
+        )
+        line_height = size * 1.18
+        total = (len(lines) - 1) * line_height
+        center_y = y + h / 2
+        for index, line in enumerate(lines):
+            ty = center_y - total / 2 + index * line_height + size * 0.35
+            add(
+                f'<text x="{x + w / 2}" y="{ty:.1f}" font-family="{font}" '
+                f'font-size="{size}" font-weight="bold" text-anchor="middle" '
+                f'fill="#111">{esc(line)}</text>'
+            )
+
+    def cluster(x: int, y: int, w: int, h: int, label: str) -> None:
+        add(
+            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="14" '
+            'fill="#f8f9fa" stroke="#4d6bfe" stroke-width="3" '
+            'stroke-dasharray="10 7"/>'
+        )
+        add(
+            f'<text x="{x + w / 2}" y="{y + 30}" font-family="{font}" '
+            f'font-size="24" font-weight="bold" text-anchor="middle" '
+            f'fill="#111">{esc(label)}</text>'
+        )
+
+    def edge(d: str, *, dashed: bool = False) -> None:
+        dash = ' stroke-dasharray="10 8"' if dashed else ""
+        add(
+            f'<path d="{d}" fill="none" stroke="#111" stroke-width="3.6"'
+            f'{dash} marker-end="url(#arrow)"/>'
+        )
+
+    add(
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" '
+        f'width="{width}" height="{height}">'
+    )
+    add(
+        r"""<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto-start-reverse">
+  <path d="M 0 0 L 10 5 L 0 10 z" fill="#111"/>
+</marker>
+</defs>"""
+    )
+    add(f'<rect x="0" y="0" width="{width}" height="{height}" fill="#fff"/>')
+
+    cluster(20, 60, 480, 500, "Подсистема «Человек»")
+    cluster(540, 30, 900, 560, "Подсистема «Нейросетевой адаптер»")
+    cluster(520, 650, 920, 220, "Подсистема «Машина»")
+
+    box(40, 130, 240, 90, ["Восприятие и", "переработка"])
+    box(180, 280, 300, 100, ["Решение", "(человек-оператор)"])
+    box(40, 410, 240, 90, ["Управляющие", "воздействия"])
+
+    box(560, 100, 280, 100, ["Оценка состояния", "оператора"])
+    box(560, 390, 280, 100, ["Оценка состояния", "объекта"])
+    box(880, 245, 260, 100, ["Нейросетевой", "рекомендатель"])
+    box(1180, 100, 220, 80, ["Адаптация ИМ"])
+    box(1180, 390, 220, 80, ["Рекомендация"])
+
+    box(560, 720, 200, 90, ["Органы", "управления"])
+    box(800, 720, 300, 100, ["Машина", "(объект управления)"])
+    box(1120, 720, 300, 100, ["Средства отображения", "(ИМ)"])
+
+    edge("M 160 220 C 160 250, 190 260, 230 280")
+    edge("M 300 380 C 280 395, 240 400, 220 410")
+
+    edge("M 840 150 C 860 170, 860 210, 900 245")
+    edge("M 840 440 C 860 420, 860 380, 900 345")
+    edge("M 1140 280 C 1155 260, 1165 190, 1180 150")
+    edge("M 1140 310 C 1155 330, 1165 380, 1180 420")
+
+    edge("M 760 765 L 800 765")
+    edge("M 1120 765 L 1100 765")
+    edge("M 1100 795 L 1120 795")
+
+    edge("M 1420 770 L 1540 770 L 1540 20 L 530 20 L 530 175 L 280 175")
+    edge("M 160 500 L 160 630 L 550 630 L 550 765 L 560 765")
+    edge("M 1400 140 L 1490 140 L 1490 700 L 1380 700 L 1380 720")
+    edge("M 1300 470 L 1300 600 L 510 600 L 510 330 L 480 330")
+    edge("M 450 280 C 490 250, 520 220, 560 200", dashed=True)
+    edge("M 820 720 L 820 610 L 700 610 L 700 490")
+
+    add('<rect x="600" y="215" width="210" height="32" fill="#fff" opacity="0.95"/>')
+    add(
+        f'<text x="705" y="239" font-family="{font}" font-size="18" '
+        'text-anchor="middle" fill="#111">T_реш, P_ош, K_загр</text>'
+    )
+    add("</svg>")
+    return "\n".join(parts)
+
+
+def _svg_figure_html(svg: str, caption: str, *, landscape: bool) -> str:
+    data = base64.b64encode(svg.encode("utf-8")).decode("ascii")
+    alt = html.escape(caption, quote=True)
+    cap = html.escape(caption)
+    figure = (
+        '<figure class="diagram">\n'
+        f'<img src="data:image/svg+xml;base64,{data}" alt="{alt}">\n'
+        f"<figcaption>{cap}</figcaption>\n"
+        "</figure>"
+    )
+    block = f'<div class="landscape-page">\n{figure}\n</div>' if landscape else figure
+    return f"\n\n{block}\n\n"
+
+
 DOCS = [
     {
         "source": REACTION / "2026-10-25_adaptive-recommender-kp.md",
@@ -170,10 +297,8 @@ DOCS = [
                 "caption": "Рис. 1. Структурная схема эргатической системы «Человек — Машина» (лекция 2).",
             },
             {
-                "orientation": "LR",
-                "font_size": 28,
+                "custom": "adapter",
                 "landscape": True,
-                "wide": True,
                 "caption": "Рис. 2. Эргатическая система с адаптивным нейросетевым рекомендателем.",
             },
             {
@@ -376,7 +501,7 @@ figure.diagram figcaption {
   page: landscape;
   break-before: page;
   break-after: page;
-  padding-top: 45mm;
+  padding-top: 10mm;
 }
 .landscape-page figure.diagram {
   margin: 0;
@@ -418,25 +543,28 @@ def build(spec: dict) -> None:
         workdir = Path(td)
         replacements: list[tuple[re.Match, str]] = []
         for index, (match, figure) in enumerate(zip(matches, figures), start=1):
-            code = match.group(1)
-            png = _render_mermaid(
-                code,
-                orientation=figure["orientation"],
-                font_size=figure["font_size"],
-                wide=figure.get("wide", False),
-                workdir=workdir,
-                name=f"fig{index}",
-            )
-            replacements.append(
-                (
-                    match,
-                    _figure_html(
-                        png,
-                        figure["caption"],
-                        landscape=figure.get("landscape", False),
-                    ),
+            if figure.get("custom") == "adapter":
+                replacement = _svg_figure_html(
+                    _adapter_svg(),
+                    figure["caption"],
+                    landscape=figure.get("landscape", False),
                 )
-            )
+            else:
+                code = match.group(1)
+                png = _render_mermaid(
+                    code,
+                    orientation=figure["orientation"],
+                    font_size=figure["font_size"],
+                    wide=figure.get("wide", False),
+                    workdir=workdir,
+                    name=f"fig{index}",
+                )
+                replacement = _figure_html(
+                    png,
+                    figure["caption"],
+                    landscape=figure.get("landscape", False),
+                )
+            replacements.append((match, replacement))
 
         # Replace from the end so earlier offsets remain valid.
         prepared = markdown
