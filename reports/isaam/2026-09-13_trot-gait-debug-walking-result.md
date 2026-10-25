@@ -118,7 +118,7 @@ P-регулятор курса `gait_cmd[2] += -0.5·(imu_yaw − desired_yaw)`
 - Инструменты: `src/isaac/telemetry.py`,
   `src/isaac/run_sim_telemetry.py`, `src/isaac/analyze_telemetry.py`,
   `src/isaac/run_isaaclab.sh`.
-- Обоснование/журнал: `docs/publications/REEPE_2027/data-collection.md`.
+- Обоснование/журнал: `/home/redalexdad/GitHub/BMSTU/Публикации/REEPE_2027/data-collection.md`.
 
 ## 7. Воспроизведение
 
@@ -271,7 +271,7 @@ ros2 topic pub -1 /robot1/push std_msgs/msg/Float64 '{data: 60.0}'
 ## 15. План улучшений и статус
 
 Полный план с приоритетами и статусами выполнения —
-`docs/publications/REEPE_2027/improvement-plan.md` (§0 — таблица статусов).
+`/home/redalexdad/GitHub/BMSTU/Публикации/REEPE_2027/improvement-plan.md` (§0 — таблица статусов).
 
 ## 16. Схема телеметрии (125 колонок)
 

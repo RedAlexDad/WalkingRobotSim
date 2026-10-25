@@ -15,7 +15,7 @@ IK/TROT-контроллера **в Gazebo** (gz-sim). MuJoCo и Isaac Sim ка�
 
 Связанные материалы:
 
-- `docs/publications/REEPE_2027/` — статья, метрики, телеметрия, рисунки (REEPE, ранее PIERE).
+- `/home/redalexdad/GitHub/BMSTU/Публикации/REEPE_2027/` — статья, метрики, телеметрия, рисунки (REEPE, ранее PIERE; соседний репозиторий BMSTU).
 - `src/mujoco/go2_policy_mj.py` — рецепт наблюдений/действий (только как
   спецификация).
 - `src/gazebo_sim/launch/launch.launch.py` — запуск Gazebo с контроллером.

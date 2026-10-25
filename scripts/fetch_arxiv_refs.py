@@ -19,9 +19,9 @@ fetch_arxiv_refs.py — продвинутый загрузчик arXiv-рефе
   - контроль размера, чтобы не скачивать «капчу» и не мусорить.
 
 Использование:
-  python3 scripts/fetch_arxiv_refs.py --out docs/publications/REEPE_2027/refs 2501.16590 2108.10470
-  python3 scripts/fetch_arxiv_refs.py --out docs/publications/REEPE_2027/refs --list refs.txt
-  python3 scripts/fetch_arxiv_refs.py --out docs/publications/REEPE_2027/refs --force 2501.16590
+  python3 scripts/fetch_arxiv_refs.py --out ../BMSTU/Публикации/REEPE_2027/refs 2501.16590 2108.10470
+  python3 scripts/fetch_arxiv_refs.py --out ../BMSTU/Публикации/REEPE_2027/refs --list refs.txt
+  python3 scripts/fetch_arxiv_refs.py --out ../BMSTU/Публикации/REEPE_2027/refs --force 2501.16590
 
 Ожидаемые файлы на каждый arXiv ID:
   <id>.abs.md          — метаданные + аннотация (светов, ~страница)
