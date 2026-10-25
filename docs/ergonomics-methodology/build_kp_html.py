@@ -88,12 +88,50 @@ def _mermaid_config(font_size: int, *, wide: bool = False) -> dict:
     return cfg
 
 
+def _adaptive_config(font_size: int) -> dict:
+    """Mermaid theme for the wide adaptive-recommender scheme."""
+    return {
+        "theme": "base",
+        "securityLevel": "loose",
+        "themeVariables": {
+            "fontFamily": "Times New Roman, Liberation Serif, serif",
+            "fontSize": f"{font_size}px",
+            "primaryColor": "#ececff",
+            "primaryBorderColor": "#8f8f80",
+            "primaryTextColor": "#111111",
+            "secondaryColor": "#ececff",
+            "tertiaryColor": "#ffffde",
+            "clusterBkg": "#ffffde",
+            "clusterBorder": "#9a9a6a",
+            "lineColor": "#444444",
+            "edgeLabelBackground": "#ffffff",
+            "textColor": "#111111",
+        },
+        "flowchart": {
+            "htmlLabels": True,
+            "curve": "linear",
+            "nodeSpacing": 60,
+            "rankSpacing": 75,
+            "padding": 12,
+        },
+        "themeCSS": (
+            ".label, .nodeLabel, .cluster-label { font-weight: bold !important; } .cluster-label text { font-size: 24px !important; } "
+            ".node rect, .node polygon, .node circle { stroke-width: 3px !important; } "
+            ".cluster rect { stroke-width: 2.5px !important; } "
+            ".edgePath .path { stroke-width: 3.2px !important; } "
+            ".marker { stroke-width: 3.2px !important; }"
+        ),
+    }
+
+
 def _render_mermaid(
     code: str,
     *,
     orientation: str,
     font_size: int,
     wide: bool = False,
+    adaptive: bool = False,
+    width: int | None = None,
     workdir: Path,
     name: str,
 ) -> Path:
@@ -110,10 +148,12 @@ def _render_mermaid(
     cfg_path = workdir / f"{name}.config.json"
     pup_path = workdir / "puppeteer.json"
     mmd.write_text(code, encoding="utf-8")
-    cfg_path.write_text(
-        json.dumps(_mermaid_config(font_size, wide=wide), ensure_ascii=False),
-        encoding="utf-8",
+    cfg = (
+        _adaptive_config(font_size)
+        if adaptive
+        else _mermaid_config(font_size, wide=wide)
     )
+    cfg_path.write_text(json.dumps(cfg, ensure_ascii=False), encoding="utf-8")
     pup_path.write_text(
         json.dumps({"args": ["--no-sandbox", "--disable-setuid-sandbox"]}),
         encoding="utf-8",
@@ -130,16 +170,18 @@ def _render_mermaid(
         str(pup_path),
         "-b",
         "white",
-        "-s",
-        "2",
     ]
+    if width is not None:
+        cmd += ["-w", str(width)]
+    else:
+        cmd += ["-s", "2"]
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)
     if result.returncode != 0:
         raise RuntimeError(f"Mermaid failed for {name}:\n{result.stderr}")
     return png
 
 
-def _figure_html(png: Path, caption: str, *, landscape: bool) -> str:
+def _figure_html(png: Path, caption: str, *, separate_page: bool, landscape: bool = False) -> str:
     data = base64.b64encode(png.read_bytes()).decode("ascii")
     alt = html.escape(caption, quote=True)
     cap = html.escape(caption)
@@ -151,6 +193,8 @@ def _figure_html(png: Path, caption: str, *, landscape: bool) -> str:
     )
     if landscape:
         block = f'<div class="landscape-page">\n{figure}\n</div>'
+    elif separate_page:
+        block = f'<div class="diagram-page">\n{figure}\n</div>'
     else:
         block = figure
     # Surround the raw HTML with blank lines so Pandoc closes the raw block
@@ -162,12 +206,12 @@ def _figure_html(png: Path, caption: str, *, landscape: bool) -> str:
 def _adapter_svg() -> str:
     """Return a large-format vector scheme for the AI recommender figure.
 
-    Mermaid's automatic LR layout is too wide for an A4 landscape page: its
-    labels become small after scaling.  This hand-laid-out SVG keeps the same
-    blocks and connections but uses a compact two-row composition and large
-    bold labels.
+    The composition follows the most readable variant: the human subsystem is
+    on the left, the neural adapter is above the machine subsystem on the
+    right, and the machine occupies the lower band.  Labels stay horizontal;
+    the figure is sized for a portrait A4 page.
     """
-    width, height = 1600, 900
+    width, height = 1200, 1500
     font = "Times New Roman, Liberation Serif, serif"
     parts: list[str] = []
 
@@ -193,14 +237,17 @@ def _adapter_svg() -> str:
                 f'fill="#111">{esc(line)}</text>'
             )
 
-    def cluster(x: int, y: int, w: int, h: int, label: str) -> None:
+    def cluster(
+        x: int, y: int, w: int, h: int, label: str, *, label_top: bool = True
+    ) -> None:
         add(
             f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="14" '
             'fill="#f8f9fa" stroke="#4d6bfe" stroke-width="3" '
             'stroke-dasharray="10 7"/>'
         )
+        label_y = y + 30 if label_top else y + h - 14
         add(
-            f'<text x="{x + w / 2}" y="{y + 30}" font-family="{font}" '
+            f'<text x="{x + w / 2}" y="{label_y}" font-family="{font}" '
             f'font-size="24" font-weight="bold" text-anchor="middle" '
             f'fill="#111">{esc(label)}</text>'
         )
@@ -218,60 +265,58 @@ def _adapter_svg() -> str:
     )
     add(
         r"""<defs>
-<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" orient="auto-start-reverse">
-  <path d="M 0 0 L 10 5 L 0 10 z" fill="#111"/>
+<marker id="arrow" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+  <path d="M 0 0 L 12 6 L 0 12 z" fill="#111"/>
 </marker>
 </defs>"""
     )
     add(f'<rect x="0" y="0" width="{width}" height="{height}" fill="#fff"/>')
 
-    cluster(20, 60, 480, 500, "Подсистема «Человек»")
-    cluster(540, 30, 900, 560, "Подсистема «Нейросетевой адаптер»")
-    cluster(520, 650, 920, 220, "Подсистема «Машина»")
+    cluster(20, 40, 500, 680, "Подсистема «Человек»")
+    cluster(580, 40, 600, 680, "Подсистема «Нейросетевой адаптер»")
+    cluster(20, 1000, 1160, 400, "Подсистема «Машина»", label_top=False)
 
-    box(40, 130, 240, 90, ["Восприятие и", "переработка"])
-    box(180, 280, 300, 100, ["Решение", "(человек-оператор)"])
-    box(40, 410, 240, 90, ["Управляющие", "воздействия"])
+    box(60, 140, 260, 90, ["Восприятие и", "переработка"])
+    box(60, 340, 300, 100, ["Решение", "(человек-оператор)"])
+    box(60, 560, 260, 90, ["Управляющие", "воздействия"])
 
-    box(560, 100, 280, 100, ["Оценка состояния", "оператора"])
-    box(560, 390, 280, 100, ["Оценка состояния", "объекта"])
-    box(880, 245, 260, 100, ["Нейросетевой", "рекомендатель"])
-    box(1180, 100, 220, 80, ["Адаптация ИМ"])
-    box(1180, 390, 220, 80, ["Рекомендация"])
+    box(620, 120, 280, 100, ["Оценка состояния", "оператора"])
+    box(620, 540, 280, 100, ["Оценка состояния", "объекта"])
+    box(880, 330, 260, 100, ["Нейросетевой", "рекомендатель"])
+    box(920, 120, 220, 80, ["Адаптация ИМ"])
+    box(620, 330, 220, 80, ["Рекомендация"])
 
-    box(560, 720, 200, 90, ["Органы", "управления"])
-    box(800, 720, 300, 100, ["Машина", "(объект управления)"])
-    box(1120, 720, 300, 100, ["Средства отображения", "(ИМ)"])
+    box(80, 1100, 240, 90, ["Органы", "управления"])
+    box(420, 1100, 320, 100, ["Машина", "(объект управления)"])
+    box(820, 1100, 320, 100, ["Средства отображения", "(ИМ)"])
 
-    edge("M 160 220 C 160 250, 190 260, 230 280")
-    edge("M 300 380 C 280 395, 240 400, 220 410")
+    edge("M 190 230 L 190 340")
+    edge("M 190 440 L 190 560")
+    edge("M 900 220 C 920 260, 940 300, 960 330")
+    edge("M 900 540 C 920 500, 940 460, 960 430")
+    edge("M 1010 330 C 1000 280, 1000 240, 1000 200")
+    edge("M 880 380 L 840 380")
+    edge("M 320 1145 L 420 1145")
+    edge("M 820 1130 L 740 1130")
+    edge("M 740 1170 L 820 1170")
 
-    edge("M 840 150 C 860 170, 860 210, 900 245")
-    edge("M 840 440 C 860 420, 860 380, 900 345")
-    edge("M 1140 280 C 1155 260, 1165 190, 1180 150")
-    edge("M 1140 310 C 1155 330, 1165 380, 1180 420")
+    edge("M 360 390 C 450 300, 540 220, 620 170", dashed=True)
+    edge("M 620 370 C 560 380, 480 390, 360 390")
+    edge("M 1120 160 C 1170 400, 1170 900, 1100 1100")
+    edge("M 190 650 C 190 850, 190 950, 200 1100")
+    edge("M 820 1100 C 780 900, 0 900, 0 400 L 0 230 L 60 230")
+    edge("M 580 1100 C 650 950, 700 800, 760 640")
 
-    edge("M 760 765 L 800 765")
-    edge("M 1120 765 L 1100 765")
-    edge("M 1100 795 L 1120 795")
-
-    edge("M 1420 770 L 1540 770 L 1540 20 L 530 20 L 530 175 L 280 175")
-    edge("M 160 500 L 160 630 L 550 630 L 550 765 L 560 765")
-    edge("M 1400 140 L 1490 140 L 1490 700 L 1380 700 L 1380 720")
-    edge("M 1300 470 L 1300 600 L 510 600 L 510 330 L 480 330")
-    edge("M 450 280 C 490 250, 520 220, 560 200", dashed=True)
-    edge("M 820 720 L 820 610 L 700 610 L 700 490")
-
-    add('<rect x="600" y="215" width="210" height="32" fill="#fff" opacity="0.95"/>')
+    add('<rect x="455" y="285" width="210" height="32" fill="#fff" opacity="0.95"/>')
     add(
-        f'<text x="705" y="239" font-family="{font}" font-size="18" '
+        f'<text x="560" y="309" font-family="{font}" font-size="18" '
         'text-anchor="middle" fill="#111">T_реш, P_ош, K_загр</text>'
     )
     add("</svg>")
     return "\n".join(parts)
 
 
-def _svg_figure_html(svg: str, caption: str, *, landscape: bool) -> str:
+def _svg_figure_html(svg: str, caption: str, *, separate_page: bool) -> str:
     data = base64.b64encode(svg.encode("utf-8")).decode("ascii")
     alt = html.escape(caption, quote=True)
     cap = html.escape(caption)
@@ -281,7 +326,7 @@ def _svg_figure_html(svg: str, caption: str, *, landscape: bool) -> str:
         f"<figcaption>{cap}</figcaption>\n"
         "</figure>"
     )
-    block = f'<div class="landscape-page">\n{figure}\n</div>' if landscape else figure
+    block = f'<div class="diagram-page">\n{figure}\n</div>' if separate_page else figure
     return f"\n\n{block}\n\n"
 
 
@@ -297,8 +342,11 @@ DOCS = [
                 "caption": "Рис. 1. Структурная схема эргатической системы «Человек — Машина» (лекция 2).",
             },
             {
-                "custom": "adapter",
+                "orientation": "LR",
+                "font_size": 34,
+                "adaptive": True,
                 "landscape": True,
+                "width": 3600,
                 "caption": "Рис. 2. Эргатическая система с адаптивным нейросетевым рекомендателем.",
             },
             {
@@ -354,10 +402,6 @@ CSS = r"""
 }
 @page :first {
   @bottom-center { content: none; }
-}
-@page landscape {
-  size: A4 landscape;
-  margin: 12mm 14mm 12mm 14mm;
 }
 * { box-sizing: border-box; }
 html { font-size: 11pt; }
@@ -497,11 +541,15 @@ figure.diagram figcaption {
   line-height: 1.25;
   text-align: center;
 }
+@page landscape {
+  size: A4 landscape;
+  margin: 10mm 12mm 10mm 12mm;
+}
 .landscape-page {
   page: landscape;
   break-before: page;
   break-after: page;
-  padding-top: 10mm;
+  padding-top: 26mm;
 }
 .landscape-page figure.diagram {
   margin: 0;
@@ -512,6 +560,23 @@ figure.diagram figcaption {
   object-fit: contain;
 }
 .landscape-page figure.diagram figcaption {
+  font-size: 10pt;
+  margin-top: 6pt;
+}
+.diagram-page {
+  break-before: page;
+  break-after: page;
+  padding-top: 5mm;
+}
+.diagram-page figure.diagram {
+  margin: 0;
+}
+.diagram-page figure.diagram img {
+  width: 100%;
+  max-height: 220mm;
+  object-fit: contain;
+}
+.diagram-page figure.diagram figcaption {
   font-size: 10pt;
   margin-top: 6pt;
 }
@@ -547,7 +612,7 @@ def build(spec: dict) -> None:
                 replacement = _svg_figure_html(
                     _adapter_svg(),
                     figure["caption"],
-                    landscape=figure.get("landscape", False),
+                    separate_page=figure.get("separate_page", False),
                 )
             else:
                 code = match.group(1)
@@ -556,12 +621,15 @@ def build(spec: dict) -> None:
                     orientation=figure["orientation"],
                     font_size=figure["font_size"],
                     wide=figure.get("wide", False),
+                    adaptive=figure.get("adaptive", False),
+                    width=figure.get("width"),
                     workdir=workdir,
                     name=f"fig{index}",
                 )
                 replacement = _figure_html(
                     png,
                     figure["caption"],
+                    separate_page=figure.get("separate_page", False),
                     landscape=figure.get("landscape", False),
                 )
             replacements.append((match, replacement))
@@ -576,7 +644,7 @@ def build(spec: dict) -> None:
     # preceding h3 inside that page so the section title is not left orphaned
     # at the bottom of the portrait page.
     body = re.sub(
-        r'(<h3[^>]*>[^<]*</h3>)\s*(<div class="landscape-page">)',
+        r'(<h3[^>]*>[^<]*</h3>)\s*(<div class="(?:landscape-page|diagram-page)">)',
         r'\2\n\1',
         body,
         count=1,

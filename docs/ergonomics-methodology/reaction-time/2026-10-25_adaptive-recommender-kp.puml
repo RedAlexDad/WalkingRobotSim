@@ -1,0 +1,65 @@
+@startuml
+' Схема эргатической системы с адаптивным нейросетевым рекомендателем.
+' Источник для редактирования в PlantUML. Авто-раскладка PlantUML
+' может отличаться от печатного образца; при необходимости меняйте
+' порядок пакетов и связей.
+
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 18
+skinparam defaultFontStyle bold
+skinparam shadowing false
+skinparam linetype polyline
+skinparam nodesep 60
+skinparam ranksep 80
+skinparam packageStyle rectangle
+skinparam packageBackgroundColor #FFFFDE
+skinparam packageBorderColor #9A9A6A
+skinparam packageBorderThickness 2
+skinparam rectangleBackgroundColor #ECECFF
+skinparam rectangleBorderColor #8F8F80
+skinparam rectangleBorderThickness 2
+skinparam arrowColor #333333
+skinparam arrowThickness 2
+skinparam arrowFontSize 14
+skinparam arrowFontStyle bold
+hide stereotype
+
+package "Подсистема «Человек»" as H {
+  rectangle "Восприятие и переработка информации" as H1
+  rectangle "Решение\n(человек-оператор)" as H2
+  rectangle "Управляющие воздействия" as H3
+  H1 --> H2
+  H2 --> H3
+}
+
+package "Подсистема «Нейросетевой адаптер»" as AI {
+  rectangle "Оценка состояния оператора" as A1
+  rectangle "Оценка состояния объекта" as A3
+  rectangle "Нейросетевой рекомендатель" as A2
+  rectangle "Адаптация ИМ" as A4
+  rectangle "Рекомендация" as A5
+  A1 --> A2
+  A3 --> A2
+  A2 --> A4
+  A2 --> A5
+}
+
+package "Подсистема «Машина»" as M {
+  rectangle "Средства отображения (ИМ)" as M1
+  rectangle "Машина\n(объект управления)" as M2
+  rectangle "Органы управления" as M3
+  M1 --> M2
+  M3 --> M2
+}
+
+M1 --> H1
+A4 --> M1
+A5 --> H2
+H2 .> A1 : T_реш, P_ош,\nK_загр
+H3 --> M3
+M2 --> A3
+M2 --> M1
+
+@enduml

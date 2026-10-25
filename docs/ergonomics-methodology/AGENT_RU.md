@@ -487,6 +487,7 @@
 | `reaction-time/2026-10-25_adaptive-recommender-kp.md` | Вариант B КР с ИИ: адаптивный рекомендатель | Материал к консультации и основа КР |
 | `reaction-time/2026-10-25_decision-stage-kp.html` | Печатная версия варианта A | HTML для консультации |
 | `reaction-time/2026-10-25_adaptive-recommender-kp.html` | Печатная версия варианта B | HTML для консультации |
+| `reaction-time/2026-10-25_adaptive-recommender-kp.puml` | PlantUML-исходник схемы | Редактирование и повторная сборка |
 | `build_kp_html.py` | Сборка печатных HTML | Воспроизводимость вёрстки |
 | `reaction-time/2026-10-25_decision-stage-ergonomic.md` | Усиленная эргономическая рамка этапа решения | Связка с ИМ и лекциями |
 | `reaction-time/2026-10-25_decision-stage-ai.md` | ИИ-компонент в рамке решения | Расширение эргономической рамки |

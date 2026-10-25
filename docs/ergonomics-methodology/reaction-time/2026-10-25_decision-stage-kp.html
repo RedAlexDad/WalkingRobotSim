@@ -21,10 +21,6 @@
 @page :first {
   @bottom-center { content: none; }
 }
-@page landscape {
-  size: A4 landscape;
-  margin: 12mm 14mm 12mm 14mm;
-}
 * { box-sizing: border-box; }
 html { font-size: 11pt; }
 body {
@@ -163,11 +159,15 @@ figure.diagram figcaption {
   line-height: 1.25;
   text-align: center;
 }
+@page landscape {
+  size: A4 landscape;
+  margin: 10mm 12mm 10mm 12mm;
+}
 .landscape-page {
   page: landscape;
   break-before: page;
   break-after: page;
-  padding-top: 10mm;
+  padding-top: 26mm;
 }
 .landscape-page figure.diagram {
   margin: 0;
@@ -178,6 +178,23 @@ figure.diagram figcaption {
   object-fit: contain;
 }
 .landscape-page figure.diagram figcaption {
+  font-size: 10pt;
+  margin-top: 6pt;
+}
+.diagram-page {
+  break-before: page;
+  break-after: page;
+  padding-top: 5mm;
+}
+.diagram-page figure.diagram {
+  margin: 0;
+}
+.diagram-page figure.diagram img {
+  width: 100%;
+  max-height: 220mm;
+  object-fit: contain;
+}
+.diagram-page figure.diagram figcaption {
   font-size: 10pt;
   margin-top: 6pt;
 }

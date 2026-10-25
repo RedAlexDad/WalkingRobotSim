@@ -487,6 +487,7 @@ The following are automatic failures:
 | `reaction-time/2026-10-25_adaptive-recommender-kp.md` | Variant B KR with AI: adaptive recommender | Consultation material and KR basis |
 | `reaction-time/2026-10-25_decision-stage-kp.html` | Printable version of Variant A | HTML for consultation |
 | `reaction-time/2026-10-25_adaptive-recommender-kp.html` | Printable version of Variant B | HTML for consultation |
+| `reaction-time/2026-10-25_adaptive-recommender-kp.puml` | PlantUML source of the scheme | Editing and rebuild |
 | `build_kp_html.py` | Printable HTML build | Reproducible layout |
 | `reaction-time/2026-10-25_decision-stage-ergonomic.md` | Strengthened ergonomic frame for the decision stage | Links to IM and lectures |
 | `reaction-time/2026-10-25_decision-stage-ai.md` | AI component in the decision frame | Extension of the ergonomic frame |
