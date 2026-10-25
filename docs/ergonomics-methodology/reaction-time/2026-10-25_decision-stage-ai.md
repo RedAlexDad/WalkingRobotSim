@@ -763,6 +763,7 @@ flowchart LR
 |---|---|
 | `2026-10-25_decision-stage-ergonomic.md` | Усиленная рамка решения |
 | `2026-10-25_decision-stage-narrowing.md` | Первая версия решения |
+| `2026-10-25_adaptive-recommender-narrowing.md` | Адаптивный рекомендатель |
 | `2026-10-25_concept.md` | Концепция текущей темы |
 | `../ai-ergonomics/2026-10-25_ai-ml-dl-ergonomics.md` | Общий разбор AI-эргономики |
 | `../2026-10-25_topic-selection.md` | Резервная линия аномалий |

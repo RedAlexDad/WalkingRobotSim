@@ -454,6 +454,7 @@ The following are automatic failures:
 | `reaction-time/` | Current topic: response-time reduction methods | Concept and analytical report; KR basis |
 | `reaction-time/2026-10-25_decision-stage-ergonomic.md` | Strengthened ergonomic frame for the decision stage | Links to IM and lectures |
 | `reaction-time/2026-10-25_decision-stage-ai.md` | AI component in the decision frame | Extension of the ergonomic frame |
+| `reaction-time/2026-10-25_adaptive-recommender-narrowing.md` | Adaptive neural recommender | Narrowing of the AI decision branch |
 | `ai-ergonomics/` | Alternative line: AI/ML/DL ergonomics | Not the current topic; idea source |
 | `2026-10-25_topic-selection.md` | Fallback line: anomaly detection | Not the current topic |
 | `2026-10-25_formal-model.md` | Fallback line: anomaly formal model | Not the current topic |
