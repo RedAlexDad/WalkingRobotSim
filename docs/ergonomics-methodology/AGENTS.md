@@ -452,6 +452,7 @@ The following are automatic failures:
 | --- | --- | --- |
 | `2026-10-25_topic-selection.md` | Working topic, ergonomic core, and concept | KR basis; selected autonomously |
 | `2026-10-25_formal-model.md` | Formal core model and characteristics | Stage 2; calculation basis |
+| `ergonomic-core/` | Analytical model and tests | Stage 3; analytical core |
 | `2026-10-13_model-selection.md` | Technical report; not a KR | Technical appendix and source of IM frames |
 | `2026-10-13_model-selection.html` | Printable technical report | Technical appendix only |
 | `2026-10-19_consultation-brief.*` | Technical summary | Not an ergonomics plan |
