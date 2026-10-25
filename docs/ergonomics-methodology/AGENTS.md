@@ -30,7 +30,7 @@ The existing model-selection report is a **technical study**, not an ergonomics 
 > **Ergonomic Support of Operator Activity in Detecting Anomalies of a Walking Robot**  
 > «Эргономическое обеспечение деятельности оператора при обнаружении аномалий шагающего робота».
 
-**Status:** selected autonomously; recorded in `2026-10-25_topic-selection.md`; no external approval required.
+**Status:** selected autonomously; recorded in `2026-10-25_topic-selection.md`; formal model in `2026-10-25_formal-model.md`; no external approval required.
 
 **Object:** the system “operator — information model of anomalies — walking robot”.
 
@@ -451,6 +451,7 @@ The following are automatic failures:
 | Artifact | Status | Use |
 | --- | --- | --- |
 | `2026-10-25_topic-selection.md` | Working topic, ergonomic core, and concept | KR basis; selected autonomously |
+| `2026-10-25_formal-model.md` | Formal core model and characteristics | Stage 2; calculation basis |
 | `2026-10-13_model-selection.md` | Technical report; not a KR | Technical appendix and source of IM frames |
 | `2026-10-13_model-selection.html` | Printable technical report | Technical appendix only |
 | `2026-10-19_consultation-brief.*` | Technical summary | Not an ergonomics plan |
