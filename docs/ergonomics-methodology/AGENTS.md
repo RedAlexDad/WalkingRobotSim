@@ -453,6 +453,7 @@ The following are automatic failures:
 | `2026-10-25_topic-selection.md` | Working topic, ergonomic core, and concept | KR basis; selected autonomously |
 | `2026-10-25_formal-model.md` | Formal core model and characteristics | Stage 2; calculation basis |
 | `neurostimulation/` | Alternative line: neurostimulation and throughput | Not the main KR; idea source |
+| `reaction-time/` | Alternative line: response-time reduction methods | Not the main KR; idea source |
 | `ergonomic-core/` | Analytical model and tests | Stage 3; analytical core |
 | `2026-10-13_model-selection.md` | Technical report; not a KR | Technical appendix and source of IM frames |
 | `2026-10-13_model-selection.html` | Printable technical report | Technical appendix only |
