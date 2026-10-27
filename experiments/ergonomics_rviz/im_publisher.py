@@ -339,13 +339,17 @@ class IMPublisher(Node):
         self.declare_parameter("scan_topic", "/robot1/scan")
         self.declare_parameter("obstacle_range", 6.0)
         self.declare_parameter("obstacle_gap", 0.25)
+        self.declare_parameter("filter_static", True)
         self.scan_topic = str(self.get_parameter("scan_topic").value)
         self.obstacle_range = float(self.get_parameter("obstacle_range").value)
         self.obstacle_gap = float(self.get_parameter("obstacle_gap").value)
+        self.filter_static = bool(self.get_parameter("filter_static").value)
         self.obstacle_pub = self.create_publisher(MarkerArray, "/im_obstacles", qos)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.obstacles: list[list[tuple[float, float]]] = []
+        self.last_wp_count = MAX_WP
+        self.last_obs_count = MAX_OBS
         self.scan_warned = False
         self.last_scan_time = 0.0
         self.create_subscription(LaserScan, self.scan_topic, self.on_scan, 10)
@@ -408,6 +412,10 @@ class IMPublisher(Node):
         points = [
             (px + x * cy2 - y * sy2, py + x * sy2 + y * cy2) for x, y in base_points
         ]
+        if self.filter_static:
+            # Static walls are already on the map. Drawing them again turns the
+            # IM into a red scribble, so keep only what the map does not know.
+            points = [p for p in points if not self.map_occupied(*p)]
 
         clusters: list[list[tuple[float, float]]] = []
         current: list[tuple[float, float]] = []
@@ -438,6 +446,21 @@ class IMPublisher(Node):
         self.obstacles = hulls
         self.publish_obstacles()
 
+    def map_occupied(self, x: float, y: float) -> bool:
+        info = self.map.info
+        mx = int((x - info.origin.position.x) / info.resolution)
+        my = int((y - info.origin.position.y) / info.resolution)
+        data = self.map.data
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                cx = mx + dx
+                cy = my + dy
+                if cx < 0 or cy < 0 or cx >= info.width or cy >= info.height:
+                    continue
+                if data[cy * info.width + cx] >= 50:
+                    return True
+        return False
+
     @staticmethod
     def _convex_hull(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
         pts = sorted(set(points))
@@ -461,7 +484,8 @@ class IMPublisher(Node):
 
     def publish_obstacles(self) -> None:
         arr = MarkerArray()
-        for i in range(MAX_OBS):
+        first = 1 if self.last_obs_count == MAX_OBS else len(self.obstacles) + 1
+        for i in range(first, self.last_obs_count + 1):
             dead = marker("map", "im_obstacle_scan", i, Marker.LINE_STRIP)
             dead.action = Marker.DELETE
             arr.markers.append(dead)
@@ -476,6 +500,7 @@ class IMPublisher(Node):
             for x, y in list(hull) + [hull[0]]:
                 m.points.append(Point(x=x, y=y, z=0.05))
             arr.markers.append(m)
+        self.last_obs_count = len(self.obstacles)
         self.obstacle_pub.publish(arr)
 
     def on_waypoints(self, msg: String) -> None:
@@ -594,8 +619,11 @@ class IMPublisher(Node):
         self.path_pub.publish(path)
     def publish_waypoints(self) -> None:
         arr = MarkerArray()
-        # Clear every possible id: the collector list can shrink or vanish.
-        for i in range(1, MAX_WP + 1):
+        items = self.wp_items()
+        # Delete only ids that are no longer used. Deleting every id each
+        # cycle makes the whole layer blink at the publish rate.
+        first = 1 if self.last_wp_count == MAX_WP else len(items) + 1
+        for i in range(first, self.last_wp_count + 1):
             for ns, mid, mtype in (
                 ("im_waypoints", i, Marker.SPHERE),
                 ("im_waypoint_labels", 100 + i, Marker.TEXT_VIEW_FACING),
@@ -633,6 +661,7 @@ class IMPublisher(Node):
                 scale,
                 COLOR_LABEL,
             )
+        self.last_wp_count = len(items)
         self.wp_pub.publish(arr)
     def publish_robot(self) -> None:
         arr = MarkerArray()
