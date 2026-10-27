@@ -9,7 +9,7 @@ from geometry_msgs.msg import PoseStamped, PoseArray, Pose
 from visualization_msgs.msg import Marker, MarkerArray
 from nav2_msgs.action import FollowWaypoints
 from nav2_simple_commander.robot_navigator import BasicNavigator
-from std_msgs.msg import ColorRGBA
+from std_msgs.msg import ColorRGBA, String
 from std_srvs.srv import Trigger
 from quadropted_msgs.srv import WaypointNavigate, LoadWaypoints, GetWaypoints
 from quadropted_msgs.msg import Waypoint
@@ -49,6 +49,7 @@ def _get_waypoints_dir():
 class WaypointCollector(Node):
     def __init__(self):
         super().__init__("waypoint_collector")
+        self.declare_parameter("localizer", "slam_toolbox")
         self.waypoints = []
         ns = self.get_namespace().lstrip("/")
         self.navigator = BasicNavigator(namespace=ns)
@@ -76,6 +77,9 @@ class WaypointCollector(Node):
         self.marker_publisher = self.create_publisher(
             MarkerArray, "/waypoint_markers", 10
         )
+        # Единый источник правды для внешних ИМ: список, флаг навигации и
+        # текущий индекс. Без него интерфейс вынужден угадывать состояние.
+        self.status_publisher = self.create_publisher(String, "/waypoint_state", 10)
 
         self.clear_service = self.create_service(
             Trigger, "/clear_waypoints", self.clear_waypoints_callback
@@ -108,6 +112,7 @@ class WaypointCollector(Node):
         )
 
         self.timer = self.create_timer(0.1, self.check_navigation)
+        self.create_timer(0.5, self.publish_state)
 
         self.nav2_ready = False
         self._start_nav2_wait_thread()
@@ -174,6 +179,30 @@ class WaypointCollector(Node):
         pose_array.header.stamp = self.get_clock().now().to_msg()
         pose_array.poses = [wp.pose for wp in self.waypoints]
         self.waypoint_publisher.publish(pose_array)
+
+    def publish_state(self):
+        payload = {
+            "count": len(self.waypoints),
+            "active": bool(self.navigation_active),
+            "current": int(self._current_waypoint_index),
+            "waypoints": [],
+        }
+        for wp in self.waypoints:
+            q = wp.pose.orientation
+            yaw = math.atan2(
+                2.0 * (q.w * q.z + q.x * q.y),
+                1.0 - 2.0 * (q.y * q.y + q.z * q.z),
+            )
+            payload["waypoints"].append(
+                {
+                    "x": round(wp.pose.position.x, 4),
+                    "y": round(wp.pose.position.y, 4),
+                    "yaw": round(yaw, 4),
+                }
+            )
+        msg = String()
+        msg.data = json.dumps(payload)
+        self.status_publisher.publish(msg)
 
     def clear_waypoints_callback(self, request, response):
         try:
@@ -545,7 +574,9 @@ class WaypointCollector(Node):
     def _wait_for_nav2(self):
         try:
             self.get_logger().info("Waiting for Nav2 to become active...")
-            self.navigator.waitUntilNav2Active()
+            self.navigator.waitUntilNav2Active(
+                localizer=self.get_parameter("localizer").value
+            )
             self.nav2_ready = True
             self.get_logger().info("Nav2 is active")
         except Exception as e:
