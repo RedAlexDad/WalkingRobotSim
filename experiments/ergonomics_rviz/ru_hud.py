@@ -107,8 +107,9 @@ class Panel(QWidget):
     def __init__(self, bridge: RosBridge, geometry: tuple[int, int, int, int]) -> None:
         super().__init__()
         self.bridge = bridge
+        self.setWindowTitle("RU panel")
         self.setWindowFlags(
-            Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
+            Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
         )
         self.setAttribute(Qt.WA_TranslucentBackground, False)
         self.setAttribute(Qt.WA_ShowWithoutActivating, True)
