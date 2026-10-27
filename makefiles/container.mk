@@ -111,14 +111,16 @@ define start-custom-rviz
 		fi; \
 		docker exec $(CONTAINER_NAME) pkill -f "/tmp/wrs_rviz.rviz" 2>/dev/null || true; \
 		docker exec $(CONTAINER_NAME) pkill -f "/tmp/im_publisher.py" 2>/dev/null || true; \
+		docker exec $(CONTAINER_NAME) pkill -f "waypoint_collector.py" 2>/dev/null || true; \
 		sleep 1; \
 		if [ -n "$(RVIZ_ERGO)" ]; then \
 			docker cp "$(PROJECT_ROOT)/experiments/ergonomics_rviz/im_publisher.py" $(CONTAINER_NAME):/tmp/im_publisher.py >/dev/null || exit 1; \
-			docker exec -d $(CONTAINER_NAME) bash -lc "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; python3 /tmp/im_publisher.py --ros-args -p use_sim_time:=true -p text_scale:=0.76 -p state:=normal > /tmp/im_pub.log 2>&1"; \
+			docker exec -d $(CONTAINER_NAME) bash -lc "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; python3 /tmp/im_publisher.py --ros-args -p use_sim_time:=true -p text_scale:=0.76 -p state:=normal -r /tf:=/robot1/tf -r /tf_static:=/robot1/tf_static > /tmp/im_pub.log 2>&1"; \
+			docker exec -d $(CONTAINER_NAME) bash -lc "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; ros2 run gazebo_sim waypoint_collector.py --ros-args -r __ns:=/robot1 -p localizer:=slam_toolbox > /tmp/wpc.log 2>&1"; \
 			sleep 2; \
 			docker exec $(CONTAINER_NAME) bash -lc 'tail -2 /tmp/im_pub.log' || true; \
 		fi; \
-		docker exec -d $(CONTAINER_NAME) bash -lc "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; export DISPLAY=$(DISPLAY); export QT_QPA_PLATFORM=xcb; rviz2 $(RVIZ_FULLSCREEN) -d /tmp/wrs_rviz.rviz --ros-args -p use_sim_time:=true -r __ns:=/robot1 -r /tf:=tf -r /tf_static:=tf_static > /tmp/wrs_rviz.log 2>&1"; \
+		docker exec -d $(CONTAINER_NAME) bash -lc "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; export DISPLAY=$(DISPLAY); export QT_QPA_PLATFORM=xcb; export LIBGL_ALWAYS_SOFTWARE=1; rviz2 $(RVIZ_FULLSCREEN) -d /tmp/wrs_rviz.rviz --ros-args -p use_sim_time:=true -r __ns:=/robot1 -r /tf:=tf -r /tf_static:=tf_static > /tmp/wrs_rviz.log 2>&1"; \
 		printf "$(OK)RViz запущен: /tmp/wrs_rviz.rviz${NC}\n"; \
 	fi
 endef
@@ -127,6 +129,7 @@ define stop-custom-rviz
 	@if [ -n "$(RVIZ_FILE)" ]; then \
 		docker exec $(CONTAINER_NAME) pkill -f "/tmp/wrs_rviz.rviz" 2>/dev/null || true; \
 		docker exec $(CONTAINER_NAME) pkill -f "/tmp/im_publisher.py" 2>/dev/null || true; \
+		docker exec $(CONTAINER_NAME) pkill -f "waypoint_collector.py" 2>/dev/null || true; \
 	fi
 endef
 
