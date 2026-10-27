@@ -110,6 +110,8 @@ define start-custom-rviz
 			exit 1; \
 		fi; \
 		if [ -f /tmp/wrs_rviz.pid ]; then kill $$(cat /tmp/wrs_rviz.pid) 2>/dev/null || true; rm -f /tmp/wrs_rviz.pid; fi; \
+		for p in $$(pgrep -x rviz2 || true); do kill -9 $$p 2>/dev/null || true; done; \
+		docker exec $(CONTAINER_NAME) pkill -9 -x rviz2 2>/dev/null || true; \
 		docker exec $(CONTAINER_NAME) pkill -f "/tmp/im_publisher.py" 2>/dev/null || true; \
 		docker exec $(CONTAINER_NAME) pkill -f "waypoint_collector.py" 2>/dev/null || true; \
 		sleep 1; \
@@ -131,6 +133,8 @@ endef
 define stop-custom-rviz
 	@if [ -n "$(RVIZ_FILE)" ]; then \
 		if [ -f /tmp/wrs_rviz.pid ]; then kill $$(cat /tmp/wrs_rviz.pid) 2>/dev/null || true; rm -f /tmp/wrs_rviz.pid; fi; \
+		for p in $$(pgrep -x rviz2 || true); do kill -9 $$p 2>/dev/null || true; done; \
+		docker exec $(CONTAINER_NAME) pkill -9 -x rviz2 2>/dev/null || true; \
 		docker exec $(CONTAINER_NAME) pkill -f "/tmp/im_publisher.py" 2>/dev/null || true; \
 		docker exec $(CONTAINER_NAME) pkill -f "waypoint_collector.py" 2>/dev/null || true; \
 	fi
