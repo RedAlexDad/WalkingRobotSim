@@ -1,7 +1,7 @@
 # makefiles/simulation.mk
 
 .PHONY: gazebo gazebo-rust gazebo-cpp teleop teleop-simple set-pose reset-pose kill-ros exec test-aliases save-logs \
-        mujoco mujoco-viewer mujoco-lite mujoco-kill rviz-kill
+        mujoco mujoco-viewer mujoco-lite mujoco-kill rviz-kill flicker-check
 
 # ════ MuJoCo ════
 MUJOCO_DIR    := $(PROJECT_ROOT)/src/mujoco
@@ -21,6 +21,7 @@ RVIZ_ERGO     := $(filter ergonomic,$(RVIZ_ARG))
 RVIZ_CUSTOM   := $(if $(RVIZ_OFF)$(RVIZ_STD),,$(RVIZ_ARG))
 RVIZ_FILE     := $(if $(RVIZ_ERGO),$(PROJECT_ROOT)/experiments/ergonomics_rviz/rviz/im_operator_sim.rviz,$(if $(RVIZ_CUSTOM),$(abspath $(RVIZ_CUSTOM))))
 RVIZ_FULLSCREEN := $(if $(RVIZ_ERGO),--fullscreen)
+RVIZ_HOST_DISTRO ?= lyrical
 RVIZ_LAUNCH_ARGS := enable_rviz:=$(if $(RVIZ_CUSTOM),false,$(if $(RVIZ_OFF),false,true))
 
 # ════ Gazebo: аргументы launch ════
@@ -135,6 +136,11 @@ reset-pose:
 	@printf "$(INFO)Сброс положения робота в начало...${NC}\n"
 	@$(call gz-set-pose,0,0,0.5,0)
 	@printf "$(OK)Положение сброшено${NC}\n"
+
+##! Проверить окно RViz на мерцание (жёсткий порог 0,5 % пикселей)
+flicker-check:
+	@python3 $(PROJECT_ROOT)/scripts/check_flicker.py \
+		--title "$$(basename $(if $(RVIZ_FILE),$(RVIZ_FILE),im_operator))"
 
 ##! Остановить внешний RViz и издатель ИМ (режимы RVIZ=ergonomic|<путь>)
 rviz-kill:
