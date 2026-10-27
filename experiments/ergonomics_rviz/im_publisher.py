@@ -30,9 +30,12 @@ import yaml
 from PIL import Image
 from geometry_msgs.msg import Point, PoseStamped
 from nav_msgs.msg import OccupancyGrid, Odometry, Path
+from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String
+from tf2_ros import Buffer, TransformListener
 from visualization_msgs.msg import Marker, MarkerArray
 
 try:
@@ -63,6 +66,7 @@ COLOR_CANCEL = (0.45, 0.0, 0.0, 0.98)
 COLOR_WHITE = (1.0, 1.0, 1.0, 1.0)
 COLOR_BORDER = (0.75, 0.75, 0.75, 1.0)
 MAX_WP = 64
+MAX_OBS = 32
 COLOR_LEGEND = (0.08, 0.08, 0.08, 0.97)
 COLOR_OBS_FILL = (0.62, 0.05, 0.05, 0.92)
 COLOR_OBS_EDGE = (0.05, 0.05, 0.05, 1.0)
@@ -329,6 +333,23 @@ class IMPublisher(Node):
         if self.source == "ros":
             self.create_subscription(String, "/waypoint_state", self.on_waypoints, 10)
 
+        # Dynamic obstacles come from the lidar, not from the costmap image:
+        # cluster returns and draw their contours, so the operator sees shape
+        # and clearance instead of a cloud of points.
+        self.declare_parameter("scan_topic", "/robot1/scan")
+        self.declare_parameter("obstacle_range", 6.0)
+        self.declare_parameter("obstacle_gap", 0.25)
+        self.scan_topic = str(self.get_parameter("scan_topic").value)
+        self.obstacle_range = float(self.get_parameter("obstacle_range").value)
+        self.obstacle_gap = float(self.get_parameter("obstacle_gap").value)
+        self.obstacle_pub = self.create_publisher(MarkerArray, "/im_obstacles", qos)
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.obstacles: list[list[tuple[float, float]]] = []
+        self.scan_warned = False
+        self.last_scan_time = 0.0
+        self.create_subscription(LaserScan, self.scan_topic, self.on_scan, 10)
+
         self.active_current = self.current_id
         self.active_next = self.next_id
         self.publish_map()
@@ -342,6 +363,120 @@ class IMPublisher(Node):
             f"current={self.current_id}, next={self.next_id}, "
             f"text_scale={self.text_scale}"
         )
+
+    def on_scan(self, msg: LaserScan) -> None:
+        now = self.get_clock().now().nanoseconds * 1e-9
+        if now - self.last_scan_time < 0.2:
+            return
+        self.last_scan_time = now
+        try:
+            tf = self.tf_buffer.lookup_transform(
+                "base_link",
+                msg.header.frame_id,
+                msg.header.stamp,
+                timeout=Duration(seconds=0.05),
+            )
+        except Exception as exc:  # noqa: BLE001 - TF can fail in many ways
+            if not self.scan_warned:
+                self.get_logger().warning(
+                    f"scan transform base_link <- {msg.header.frame_id}: {exc}; "
+                    "pass -r /tf:=/robot1/tf -r /tf_static:=/robot1/tf_static"
+                )
+                self.scan_warned = True
+            return
+        q = tf.transform.rotation
+        t = tf.transform.translation
+        yaw = math.atan2(
+            2.0 * (q.w * q.z + q.x * q.y),
+            1.0 - 2.0 * (q.y * q.y + q.z * q.z),
+        )
+        cy, sy = math.cos(yaw), math.sin(yaw)
+        limit = min(self.obstacle_range, msg.range_max)
+        base_points: list[tuple[float, float]] = []
+        angle = msg.angle_min
+        for r in msg.ranges:
+            a = angle
+            angle += msg.angle_increment
+            if not (msg.range_min < r < limit):
+                continue
+            lx = r * math.cos(a)
+            ly = r * math.sin(a)
+            base_points.append((t.x + lx * cy - ly * sy, t.y + lx * sy + ly * cy))
+
+        px, py, pyaw = self.robot_pose()
+        cy2, sy2 = math.cos(pyaw), math.sin(pyaw)
+        points = [
+            (px + x * cy2 - y * sy2, py + x * sy2 + y * cy2) for x, y in base_points
+        ]
+
+        clusters: list[list[tuple[float, float]]] = []
+        current: list[tuple[float, float]] = []
+        for point in points:
+            if current:
+                dx = point[0] - current[-1][0]
+                dy = point[1] - current[-1][1]
+                if dx * dx + dy * dy > self.obstacle_gap**2:
+                    clusters.append(current)
+                    current = []
+            current.append(point)
+        if current:
+            clusters.append(current)
+
+        hulls = []
+        for cluster in clusters:
+            if len(cluster) < 4:
+                continue
+            hull = self._convex_hull(cluster)
+            if len(hull) == 2:
+                # Straight wall segment: collinear points collapse to a line.
+                dx = hull[1][0] - hull[0][0]
+                dy = hull[1][1] - hull[0][1]
+                if math.hypot(dx, dy) < 0.15:
+                    continue
+            if len(hull) >= 2:
+                hulls.append(hull)
+        self.obstacles = hulls
+        self.publish_obstacles()
+
+    @staticmethod
+    def _convex_hull(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
+        pts = sorted(set(points))
+        if len(pts) <= 2:
+            return pts
+
+        def cross(o, a, b):
+            return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+        lower = []
+        for p in pts:
+            while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
+                lower.pop()
+            lower.append(p)
+        upper = []
+        for p in reversed(pts):
+            while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
+                upper.pop()
+            upper.append(p)
+        return lower[:-1] + upper[:-1]
+
+    def publish_obstacles(self) -> None:
+        arr = MarkerArray()
+        for i in range(MAX_OBS):
+            dead = marker("map", "im_obstacle_scan", i, Marker.LINE_STRIP)
+            dead.action = Marker.DELETE
+            arr.markers.append(dead)
+        for i, hull in enumerate(self.obstacles[:MAX_OBS]):
+            m = marker("map", "im_obstacle_scan", i, Marker.LINE_STRIP)
+            m.pose.position.z = 0.05
+            m.scale.x = 0.06
+            m.color.r = COLOR_OBS_FILL[0]
+            m.color.g = COLOR_OBS_FILL[1]
+            m.color.b = COLOR_OBS_FILL[2]
+            m.color.a = COLOR_OBS_FILL[3]
+            for x, y in list(hull) + [hull[0]]:
+                m.points.append(Point(x=x, y=y, z=0.05))
+            arr.markers.append(m)
+        self.obstacle_pub.publish(arr)
 
     def on_waypoints(self, msg: String) -> None:
         try:
@@ -618,7 +753,7 @@ class IMPublisher(Node):
                 self.text_scale,
                 COLOR_WHITE,
             )
-        if cfg["obstacle"]:
+        if cfg["obstacle"] and self.source == "demo":
             # Obstacles are drawn as their contour, never as a point: a dot has
             # zero area and cannot convey clearance for a 0.73 x 0.36 m robot.
             # Demo object is an L-shaped cart (0.90 x 0.55 m overall).

@@ -53,6 +53,17 @@ Visualization Manager:
     Unreliable: false
     Value: true
   - Class: rviz_default_plugins/MarkerArray
+    Name: Obstacles
+    Enabled: true
+    Namespaces: {}
+    Topic:
+      Depth: 5
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /im_obstacles
+    Value: true
+  - Class: rviz_default_plugins/MarkerArray
     Name: Waypoints
     Enabled: true
     Namespaces: {}

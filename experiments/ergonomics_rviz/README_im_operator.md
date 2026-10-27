@@ -17,6 +17,7 @@
 - событие `/im_event`: тип, причина, действие, дедлайн;
 - подтверждение `/im_confirm`: кнопки `CONFIRM` / `CANCEL` (только в `confirm` и `stuck`);
 - препятствие: L-образный контур 0,90×0,55 м, а не точка;
+- препятствия: контуры кластеров `/robot1/scan` в радиусе 6 м (`/im_obstacles`), не точки costmap;
 - легенда: CURRENT / NEXT / OTHER / PATH / OBSTACLE;
 - waypoints и текущая цель — из `/waypoint_state` коллектора, а не из файла: пока список пуст, ИМ не рисует точки и показывает `WP: NONE`.
 
@@ -75,7 +76,8 @@ source /root/ws/install/setup.bash
 python3 /tmp/im_publisher.py \
   --map-yaml /root/ws/install/gazebo_sim/share/gazebo_sim/maps/cafe_world_map.yaml \
   --waypoints-yaml /root/ws/install/gazebo_sim/share/gazebo_sim/config/waypoints/default.yaml \
-  --ros-args -p use_sim_time:=true -p text_scale:=0.76 &
+  --ros-args -p use_sim_time:=true -p text_scale:=0.76 \
+  -r /tf:=/robot1/tf -r /tf_static:=/robot1/tf_static &
 
 rviz2 --fullscreen -d /tmp/im_operator_sim.rviz --ros-args \
   -p use_sim_time:=true \
