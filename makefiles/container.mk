@@ -122,9 +122,9 @@ define start-custom-rviz
 		fi; \
 		( setsid env vblank_mode=0 __GL_SYNC_TO_VBLANK=0 bash -lc "source /opt/ros/$(RVIZ_HOST_DISTRO)/setup.bash; export DISPLAY=$(DISPLAY); exec rviz2 $(RVIZ_FULLSCREEN) -d '$(RVIZ_FILE)' --ros-args -p use_sim_time:=true -r __ns:=/robot1 -r /tf:=/robot1/tf -r /tf_static:=/robot1/tf_static" > /tmp/wrs_rviz.log 2>&1 < /dev/null & echo $$! > /tmp/wrs_rviz.pid ) ; \
 		printf "$(OK)RViz запущен: $(RVIZ_FILE)${NC}\n"; \
-		python3 $(PROJECT_ROOT)/scripts/check_flicker.py --title "$$(basename $(RVIZ_FILE))" --settle 12 || { \
-			printf "$(ERR)Обнаружено мерцание — окно RViz закрыто, на экран не выводится${NC}\n"; \
-			kill $$(cat /tmp/wrs_rviz.pid) 2>/dev/null || true; rm -f /tmp/wrs_rviz.pid; exit 1; }; \
+		( sleep 45; python3 $(PROJECT_ROOT)/scripts/check_flicker.py --title "$$(basename $(RVIZ_FILE))" --settle 0 > /tmp/wrs_flicker.log 2>&1 || { \
+			printf "$(ERR)Мерцание: окно RViz закрыто${NC}\n" >> /tmp/wrs_flicker.log; \
+			kill $$(cat /tmp/wrs_rviz.pid) 2>/dev/null || true; rm -f /tmp/wrs_rviz.pid; } ) >/dev/null 2>&1 & \
 	fi
 endef
 

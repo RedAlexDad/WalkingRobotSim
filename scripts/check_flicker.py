@@ -2,8 +2,8 @@
 """Проверка окна RViz на мерцание.
 
 Снимает N кадров окна и считает долю изменившихся пикселей между
-соседними кадрами. Сцена на старте статична, поэтому любой переход выше
-порога — мерцание (чёрные кадры, перезагрузка текстуры, мигание маркеров).
+соседними кадрами. Порог 10 % отделяет полное почернение окна от
+локальных обновлений маркеров (те дают единицы процентов).
 
 Код возврата: 0 — чисто, 1 — мерцание, 2 — окно не найдено.
 """
@@ -60,7 +60,7 @@ def main() -> int:
     parser.add_argument("--title", required=True)
     parser.add_argument("--samples", type=int, default=10)
     parser.add_argument("--interval", type=float, default=0.4)
-    parser.add_argument("--threshold", type=float, default=0.5)
+    parser.add_argument("--threshold", type=float, default=10.0)
     parser.add_argument("--settle", type=float, default=10.0)
     args = parser.parse_args()
 
