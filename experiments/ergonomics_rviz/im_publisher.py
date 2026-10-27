@@ -348,6 +348,8 @@ class IMPublisher(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.obstacles: list[list[tuple[float, float]]] = []
+        self.last_ui_sig = None
+        self.last_state_json = None
         self.last_wp_count = MAX_WP
         self.last_obs_count = MAX_OBS
         self.scan_warned = False
@@ -443,6 +445,8 @@ class IMPublisher(Node):
                     continue
             if len(hull) >= 2:
                 hulls.append(hull)
+        if self.same_obstacles(hulls):
+            return
         self.obstacles = hulls
         self.publish_obstacles()
 
@@ -460,6 +464,17 @@ class IMPublisher(Node):
                 if data[cy * info.width + cx] >= 50:
                     return True
         return False
+
+    def same_obstacles(self, hulls: list[list[tuple[float, float]]]) -> bool:
+        if len(hulls) != len(self.obstacles):
+            return False
+        for new, old in zip(hulls, self.obstacles):
+            if len(new) != len(old):
+                return False
+            for (nx, ny), (ox, oy) in zip(new, old):
+                if math.hypot(nx - ox, ny - oy) > 0.05:
+                    return False
+        return True
 
     @staticmethod
     def _convex_hull(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
@@ -504,6 +519,9 @@ class IMPublisher(Node):
         self.obstacle_pub.publish(arr)
 
     def on_waypoints(self, msg: String) -> None:
+        if msg.data == self.last_state_json:
+            return
+        self.last_state_json = msg.data
         try:
             data = json.loads(msg.data)
         except json.JSONDecodeError:
@@ -511,6 +529,7 @@ class IMPublisher(Node):
             return
         if isinstance(data, dict):
             self.live = data
+            self.publish_all(force=True)
 
     def on_odom(self, msg: Odometry) -> None:
         q = msg.pose.pose.orientation
@@ -544,7 +563,7 @@ class IMPublisher(Node):
             return
         self.state = state
         self.get_logger().info(f"state -> {state}")
-        self.publish_all()
+        self.publish_all(force=True)
 
     def point(self, one_based_id: int) -> tuple[float, float]:
         for i, x, y in self.wp_items():
@@ -582,8 +601,22 @@ class IMPublisher(Node):
         self.map.header.stamp = self.get_clock().now().to_msg()
         self.map_pub.publish(self.map)
 
-    def publish_all(self) -> None:
+    def publish_all(self, force: bool = False) -> None:
         self.refresh_targets()
+        items = self.wp_items()
+        x, y, yaw = self.robot_pose()
+        sig = (
+            self.state,
+            self.active_current,
+            self.active_next,
+            len(items),
+            round(x, 2),
+            round(y, 2),
+            round(yaw, 2),
+        )
+        if not force and sig == self.last_ui_sig:
+            return
+        self.last_ui_sig = sig
         stamp = self.get_clock().now().to_msg()
         self.publish_path(stamp)
         self.publish_waypoints()
