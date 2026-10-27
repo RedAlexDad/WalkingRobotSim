@@ -1,18 +1,33 @@
 # makefiles/simulation.mk
 
 .PHONY: gazebo gazebo-rust gazebo-cpp teleop teleop-simple set-pose reset-pose kill-ros exec test-aliases save-logs \
-        mujoco mujoco-viewer mujoco-lite mujoco-kill
+        mujoco mujoco-viewer mujoco-lite mujoco-kill rviz-kill
 
 # ════ MuJoCo ════
 MUJOCO_DIR    := $(PROJECT_ROOT)/src/mujoco
 MUJOCO_VENV   := $(PROJECT_ROOT)/.venv-mujoco
 MUJOCO_BRIDGE := $(MUJOCO_DIR)/mujoco_ros_bridge.py
 
+# ════ RViz: режим ════
+# RVIZ=default|true      — штатный конфиг из launch (по умолчанию)
+# RVIZ=false|none|off|0  — без RViz
+# RVIZ=ergonomic         — ИМ оператора: полноэкранный RViz + издатель ИМ
+# RVIZ=<путь.rviz>       — любой конфиг; RViz стартует отдельно от launch
+# RVZ=false — устаревший алиас, оставлен для совместимости.
+RVIZ_ARG      := $(strip $(if $(RVIZ),$(RVIZ),$(if $(RVZ),$(RVZ),default)))
+RVIZ_OFF      := $(filter false none off 0 no,$(RVIZ_ARG))
+RVIZ_STD      := $(filter default true yes on,$(RVIZ_ARG))
+RVIZ_ERGO     := $(filter ergonomic,$(RVIZ_ARG))
+RVIZ_CUSTOM   := $(if $(RVIZ_OFF)$(RVIZ_STD),,$(RVIZ_ARG))
+RVIZ_FILE     := $(if $(RVIZ_ERGO),$(PROJECT_ROOT)/experiments/ergonomics_rviz/rviz/im_operator_sim.rviz,$(if $(RVIZ_CUSTOM),$(abspath $(RVIZ_CUSTOM))))
+RVIZ_FULLSCREEN := $(if $(RVIZ_ERGO),--fullscreen)
+RVIZ_LAUNCH_ARGS := enable_rviz:=$(if $(RVIZ_CUSTOM),false,$(if $(RVIZ_OFF),false,true))
+
 # ════ Gazebo: аргументы launch ════
 # В переменных, а не в $(call) — make делит аргументы call по запятым,
 # а внутри $(if ...) они есть.
 GAZEBO_COMMON_ARGS := use_sim_time:=true gui:=true
-GAZEBO_RUST_ARGS   := $(GAZEBO_COMMON_ARGS) $(if $(WORLD),world:=${WORLD}) $(if $(FPS),camera_fps:=${FPS}) $(if $(RVZ),enable_rviz:=${RVZ}) $(if $(ELEVATION),use_elevation:=${ELEVATION})
+GAZEBO_RUST_ARGS   := $(GAZEBO_COMMON_ARGS) $(if $(WORLD),world:=${WORLD}) $(if $(FPS),camera_fps:=${FPS}) $(RVIZ_LAUNCH_ARGS) $(if $(SLAM),slam:=${SLAM}) $(if $(ELEVATION),use_elevation:=${ELEVATION})
 GAZEBO_LITE_ARGS   := $(GAZEBO_COMMON_ARGS) camera_fps:=5 enable_rviz:=false $(if $(WORLD),world:=${WORLD}) $(if $(ELEVATION),use_elevation:=${ELEVATION})
 GAZEBO_CPP_ARGS    := $(GAZEBO_COMMON_ARGS) $(if $(FPS),camera_fps:=${FPS}) $(if $(ELEVATION),use_elevation:=${ELEVATION})
 
@@ -53,13 +68,17 @@ mujoco-kill:
 gazebo: gazebo-rust
 
 ##! Запуск Gazebo симуляции с Rust контроллером (контроллер + одометрия)
-## Опции: WORLD=terrain.world (по умолчанию cafe.world), FPS=5 camera_fps,
-##         RVZ=false — без RViz (лёгкий режим)
+## Опции: WORLD=terrain.world (по умолчанию cafe.world), FPS=5 camera_fps;
+##        RVIZ=default|false|ergonomic|<путь.rviz> — какой RViz запускать;
+##        SLAM=False — AMCL по готовой карте вместо slam_toolbox.
 gazebo-rust: rust-build
 	$(require-container)
 	$(check-x11)
+	$(prepare-rviz-config)
 	@printf "$(INFO)Запуск Gazebo симуляции с Rust контроллером...${NC}\n"
+	$(start-custom-rviz)
 	$(call gazebo-launch,launch.launch.py,$(GAZEBO_RUST_ARGS))
+	$(stop-custom-rviz)
 	@printf "$(INFO)Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 
@@ -116,6 +135,13 @@ reset-pose:
 	@printf "$(INFO)Сброс положения робота в начало...${NC}\n"
 	@$(call gz-set-pose,0,0,0.5,0)
 	@printf "$(OK)Положение сброшено${NC}\n"
+
+##! Остановить внешний RViz и издатель ИМ (режимы RVIZ=ergonomic|<путь>)
+rviz-kill:
+	$(require-container)
+	@docker exec $(CONTAINER_NAME) pkill -f "/tmp/wrs_rviz.rviz" 2>/dev/null || true
+	@docker exec $(CONTAINER_NAME) pkill -f "/tmp/im_publisher.py" 2>/dev/null || true
+	@printf "$(OK)Внешний RViz и издатель ИМ остановлены${NC}\n"
 
 ## Выполнение команды в контейнере
 exec:

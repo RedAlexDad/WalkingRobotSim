@@ -88,6 +88,48 @@ define wait-controller
 	@docker exec $(CONTAINER_NAME) bash -c "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; for i in \$$(seq 1 20); do n=\$$(ros2 topic info /robot1/joint_group_controller/commands 2>/dev/null | awk '/Publisher count/{print \$$3}'); [ \"\$$n\" = 1 ] && break; sleep 0.5; done"
 endef
 
+# ════ RViz: внешний конфиг (RVIZ=<path>|ergonomic) ════
+# RVIZ_FILE пуст — используется штатный RViz из launch; иначе конфиг
+# копируется в контейнер и RViz стартует отдельно (полный контроль над
+# окном, конфигом и издателем ИМ).
+define prepare-rviz-config
+	@if [ -n "$(RVIZ_FILE)" ]; then \
+		if [ ! -f "$(RVIZ_FILE)" ]; then \
+			printf "$(ERR)RViz-конфиг не найден: $(RVIZ_FILE)${NC}\n"; \
+			exit 1; \
+		fi; \
+		docker cp "$(RVIZ_FILE)" $(CONTAINER_NAME):/tmp/wrs_rviz.rviz >/dev/null || exit 1; \
+		printf "$(OK)RViz-конфиг: $(RVIZ_FILE)${NC}\n"; \
+	fi
+endef
+
+define start-custom-rviz
+	@if [ -n "$(RVIZ_FILE)" ]; then \
+		if [ -z "$(DISPLAY)" ]; then \
+			printf "$(ERR)DISPLAY не задан — внешний RViz не запустить${NC}\n"; \
+			exit 1; \
+		fi; \
+		docker exec $(CONTAINER_NAME) pkill -f "/tmp/wrs_rviz.rviz" 2>/dev/null || true; \
+		docker exec $(CONTAINER_NAME) pkill -f "/tmp/im_publisher.py" 2>/dev/null || true; \
+		sleep 1; \
+		if [ -n "$(RVIZ_ERGO)" ]; then \
+			docker cp "$(PROJECT_ROOT)/experiments/ergonomics_rviz/im_publisher.py" $(CONTAINER_NAME):/tmp/im_publisher.py >/dev/null || exit 1; \
+			docker exec -d $(CONTAINER_NAME) bash -lc "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; python3 /tmp/im_publisher.py --ros-args -p use_sim_time:=true -p text_scale:=0.76 -p state:=normal > /tmp/im_pub.log 2>&1"; \
+			sleep 2; \
+			docker exec $(CONTAINER_NAME) bash -lc 'tail -2 /tmp/im_pub.log' || true; \
+		fi; \
+		docker exec -d $(CONTAINER_NAME) bash -lc "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; export DISPLAY=$(DISPLAY); export QT_QPA_PLATFORM=xcb; rviz2 $(RVIZ_FULLSCREEN) -d /tmp/wrs_rviz.rviz --ros-args -p use_sim_time:=true -r __ns:=/robot1 -r /tf:=tf -r /tf_static:=tf_static > /tmp/wrs_rviz.log 2>&1"; \
+		printf "$(OK)RViz запущен: /tmp/wrs_rviz.rviz${NC}\n"; \
+	fi
+endef
+
+define stop-custom-rviz
+	@if [ -n "$(RVIZ_FILE)" ]; then \
+		docker exec $(CONTAINER_NAME) pkill -f "/tmp/wrs_rviz.rviz" 2>/dev/null || true; \
+		docker exec $(CONTAINER_NAME) pkill -f "/tmp/im_publisher.py" 2>/dev/null || true; \
+	fi
+endef
+
 # Запуск Gazebo с указанным launch-файлом и аргументами.
 # Аргументы передавайте переменной (напр. $(GAZEBO_RUST_ARGS)) — внутри
 # $(call) не должно быть литеральных запятых.
