@@ -109,7 +109,6 @@ define start-custom-rviz
 			printf "$(ERR)DISPLAY не задан — внешний RViz не запустить${NC}\n"; \
 			exit 1; \
 		fi; \
-		if [ -f /tmp/wrs_rviz.pid ]; then kill $$(cat /tmp/wrs_rviz.pid) 2>/dev/null || true; rm -f /tmp/wrs_rviz.pid; fi; \
 		for p in $$(pgrep -x rviz2 || true); do kill -9 $$p 2>/dev/null || true; done; \
 		docker exec $(CONTAINER_NAME) pkill -9 -x rviz2 2>/dev/null || true; \
 		docker exec $(CONTAINER_NAME) pkill -f "/tmp/im_publisher.py" 2>/dev/null || true; \
@@ -122,17 +121,16 @@ define start-custom-rviz
 			sleep 2; \
 			docker exec $(CONTAINER_NAME) bash -lc 'tail -2 /tmp/im_pub.log' || true; \
 		fi; \
-		( setsid env vblank_mode=0 __GL_SYNC_TO_VBLANK=0 bash -lc "source /opt/ros/$(RVIZ_HOST_DISTRO)/setup.bash; export DISPLAY=$(DISPLAY); exec rviz2 $(RVIZ_FULLSCREEN) -d '$(RVIZ_FILE)' --ros-args -p use_sim_time:=true -r __ns:=/robot1 -r /tf:=/robot1/tf -r /tf_static:=/robot1/tf_static" > /tmp/wrs_rviz.log 2>&1 < /dev/null & echo $$! > /tmp/wrs_rviz.pid ) ; \
-		printf "$(OK)RViz запущен: $(RVIZ_FILE)${NC}\n"; \
-		( sleep 45; python3 $(PROJECT_ROOT)/scripts/check_flicker.py --title "$$(basename $(RVIZ_FILE))" --settle 0 > /tmp/wrs_flicker.log 2>&1 || { \
+		docker exec -d $(CONTAINER_NAME) bash -lc "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; export DISPLAY=$(DISPLAY); export QT_QPA_PLATFORM=xcb; rviz2 $(RVIZ_FULLSCREEN) -d /tmp/wrs_rviz.rviz --ros-args -p use_sim_time:=true -r __ns:=/robot1 -r /tf:=tf -r /tf_static:=tf_static > /tmp/wrs_rviz.log 2>&1"; \
+		printf "$(OK)RViz запущен в контейнере: /tmp/wrs_rviz.rviz${NC}\n"; \
+		( sleep 45; python3 $(PROJECT_ROOT)/scripts/check_flicker.py --title "wrs_rviz.rviz" --settle 0 > /tmp/wrs_flicker.log 2>&1 || { \
 			printf "$(ERR)Мерцание: окно RViz закрыто${NC}\n" >> /tmp/wrs_flicker.log; \
-			kill $$(cat /tmp/wrs_rviz.pid) 2>/dev/null || true; rm -f /tmp/wrs_rviz.pid; } ) >/dev/null 2>&1 & \
+			docker exec $(CONTAINER_NAME) pkill -9 -x rviz2 2>/dev/null || true; } ) >/dev/null 2>&1 & \
 	fi
 endef
 
 define stop-custom-rviz
 	@if [ -n "$(RVIZ_FILE)" ]; then \
-		if [ -f /tmp/wrs_rviz.pid ]; then kill $$(cat /tmp/wrs_rviz.pid) 2>/dev/null || true; rm -f /tmp/wrs_rviz.pid; fi; \
 		for p in $$(pgrep -x rviz2 || true); do kill -9 $$p 2>/dev/null || true; done; \
 		docker exec $(CONTAINER_NAME) pkill -9 -x rviz2 2>/dev/null || true; \
 		docker exec $(CONTAINER_NAME) pkill -f "/tmp/im_publisher.py" 2>/dev/null || true; \
