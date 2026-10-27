@@ -127,7 +127,7 @@ def render(state: str, out: Path) -> None:
 
     # легенда
     box(draw, PANEL_LEFT, PANEL_TOP, PANEL_RIGHT, 1.8, BG)
-    text(draw, 10.8, 6.25, "ЛЕГЕНДА", size_title)
+    text(draw, 10.8, 6.25, "УСЛОВНЫЕ ОБОЗНАЧЕНИЯ", size_title)
     items = [
         ("ТЕКУЩАЯ", COL_CURRENT, 5.2),
         ("СЛЕДУЮЩАЯ", COL_NEXT, 4.42),
