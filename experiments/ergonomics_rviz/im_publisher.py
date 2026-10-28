@@ -349,6 +349,7 @@ class IMPublisher(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.obstacles: list[list[tuple[float, float]]] = []
         self.last_ui_sig = None
+        self.last_content_sig = None
         self.last_state_json = None
         self.last_wp_count = MAX_WP
         self.last_obs_count = MAX_OBS
@@ -605,15 +606,13 @@ class IMPublisher(Node):
         self.refresh_targets()
         items = self.wp_items()
         x, y, yaw = self.robot_pose()
-        sig = (
+        content_sig = (
             self.state,
             self.active_current,
             self.active_next,
             len(items),
-            round(x, 2),
-            round(y, 2),
-            round(yaw, 2),
         )
+        sig = content_sig + (round(x, 2), round(y, 2), round(yaw, 2))
         if not force and sig == self.last_ui_sig:
             return
         self.last_ui_sig = sig
@@ -621,9 +620,13 @@ class IMPublisher(Node):
         self.publish_path(stamp)
         self.publish_waypoints()
         self.publish_robot()
-        self.publish_status()
-        self.publish_event()
-        self.publish_confirm()
+        # Текстовые панели пересобираются только при смене содержания:
+        # их перепубликация на каждое движение даёт мерцание (текстуры шрифта).
+        if force or content_sig != self.last_content_sig:
+            self.last_content_sig = content_sig
+            self.publish_status()
+            self.publish_event()
+            self.publish_confirm()
 
     def publish_path(self, stamp) -> None:
         path = Path()
