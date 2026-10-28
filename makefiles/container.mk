@@ -114,7 +114,7 @@ define start-custom-rviz
 		docker exec $(CONTAINER_NAME) pkill -f "/tmp/im_publisher.py" 2>/dev/null || true; \
 		docker exec $(CONTAINER_NAME) pkill -f "waypoint_collector.py" 2>/dev/null || true; \
 		sleep 1; \
-		if [ -n "$(RVIZ_ERGO)" ]; then \
+		if [ -n "$(RVIZ_ERGO_ANY)" ]; then \
 			docker cp "$(PROJECT_ROOT)/experiments/ergonomics_rviz/im_publisher.py" $(CONTAINER_NAME):/tmp/im_publisher.py >/dev/null || exit 1; \
 			docker exec -d $(CONTAINER_NAME) bash -lc "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; python3 /tmp/im_publisher.py --ros-args -p use_sim_time:=true -p text_scale:=0.76 -p state:=normal -r /tf:=/robot1/tf -r /tf_static:=/robot1/tf_static > /tmp/im_pub.log 2>&1"; \
 			docker exec -d $(CONTAINER_NAME) bash -lc "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; ros2 run gazebo_sim waypoint_collector.py --ros-args -r __ns:=/robot1 -p localizer:=slam_toolbox > /tmp/wpc.log 2>&1"; \
@@ -123,6 +123,12 @@ define start-custom-rviz
 		fi; \
 		docker exec -d $(CONTAINER_NAME) bash -lc "source /opt/ros/$(ROS_DISTRO)/setup.bash; source /root/ws/install/setup.bash 2>/dev/null || true; export DISPLAY=$(DISPLAY); export QT_QPA_PLATFORM=xcb; rviz2 $(RVIZ_FULLSCREEN) -d /tmp/wrs_rviz.rviz --ros-args -p use_sim_time:=true -r __ns:=/robot1 -r /tf:=tf -r /tf_static:=tf_static > /tmp/wrs_rviz.log 2>&1"; \
 		printf "$(OK)RViz запущен в контейнере: /tmp/wrs_rviz.rviz${NC}\n"; \
+		if [ -n "$(RVIZ_ERGO)" ]; then \
+			docker cp "$(PROJECT_ROOT)/experiments/ergonomics_rviz/ru_hud.py" $(CONTAINER_NAME):/tmp/ru_hud.py >/dev/null || true; \
+			docker exec -d $(CONTAINER_NAME) bash -lc "source /opt/ros/$(ROS_DISTRO)/setup.bash; export DISPLAY=$(DISPLAY); export QT_QPA_PLATFORM=xcb; python3 /tmp/ru_hud.py --bypass-wm --x 1908 --y 732 > /tmp/ru_hud.log 2>&1"; \
+			sleep 3; \
+			docker exec $(CONTAINER_NAME) bash -lc 'grep -m1 winid /tmp/ru_hud.log' || true; \
+		fi; \
 		( sleep 45; python3 $(PROJECT_ROOT)/scripts/check_flicker.py --title "wrs_rviz.rviz" --settle 0 > /tmp/wrs_flicker.log 2>&1 || { \
 			printf "$(ERR)Мерцание: окно RViz закрыто${NC}\n" >> /tmp/wrs_flicker.log; \
 			docker exec $(CONTAINER_NAME) pkill -9 -x rviz2 2>/dev/null || true; } ) >/dev/null 2>&1 & \
@@ -135,6 +141,7 @@ define stop-custom-rviz
 		docker exec $(CONTAINER_NAME) pkill -9 -x rviz2 2>/dev/null || true; \
 		docker exec $(CONTAINER_NAME) pkill -f "/tmp/im_publisher.py" 2>/dev/null || true; \
 		docker exec $(CONTAINER_NAME) pkill -f "waypoint_collector.py" 2>/dev/null || true; \
+		docker exec $(CONTAINER_NAME) pkill -f "ru_hud.py" 2>/dev/null || true; \
 	fi
 endef
 

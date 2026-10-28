@@ -11,15 +11,19 @@ MUJOCO_BRIDGE := $(MUJOCO_DIR)/mujoco_ros_bridge.py
 # ════ RViz: режим ════
 # RVIZ=default|true      — штатный конфиг из launch (по умолчанию)
 # RVIZ=false|none|off|0  — без RViz
-# RVIZ=ergonomic         — ИМ оператора: полноэкранный RViz + издатель ИМ
+# RVIZ=ergonomic         — ИМ оператора по-русски (Qt-панель поверх RViz)
+# RVIZ=ergonomic_en      — ИМ оператора с английскими панелями в RViz
 # RVIZ=<путь.rviz>       — любой конфиг; RViz стартует отдельно от launch
 # RVZ=false — устаревший алиас, оставлен для совместимости.
 RVIZ_ARG      := $(strip $(if $(RVIZ),$(RVIZ),$(if $(RVZ),$(RVZ),default)))
 RVIZ_OFF      := $(filter false none off 0 no,$(RVIZ_ARG))
 RVIZ_STD      := $(filter default true yes on,$(RVIZ_ARG))
 RVIZ_ERGO     := $(filter ergonomic,$(RVIZ_ARG))
+RVIZ_ERGO_EN  := $(filter ergonomic_en,$(RVIZ_ARG))
+RVIZ_ERGO_ANY := $(if $(RVIZ_ERGO)$(RVIZ_ERGO_EN),1)
 RVIZ_CUSTOM   := $(if $(RVIZ_OFF)$(RVIZ_STD),,$(RVIZ_ARG))
-RVIZ_FILE     := $(if $(RVIZ_ERGO),$(PROJECT_ROOT)/experiments/ergonomics_rviz/rviz/im_operator_sim.rviz,$(if $(RVIZ_CUSTOM),$(abspath $(RVIZ_CUSTOM))))
+RVIZ_RU_DIR   := $(PROJECT_ROOT)/experiments/ergonomics_rviz/rviz
+RVIZ_FILE     := $(if $(RVIZ_ERGO),$(RVIZ_RU_DIR)/im_operator_ru.rviz,$(if $(RVIZ_ERGO_EN),$(RVIZ_RU_DIR)/im_operator_sim.rviz,$(if $(RVIZ_CUSTOM),$(abspath $(RVIZ_CUSTOM)))))
 RVIZ_FULLSCREEN := $(if $(RVIZ_ERGO),--fullscreen)
 RVIZ_HOST_DISTRO ?= lyrical
 RVIZ_LAUNCH_ARGS := enable_rviz:=$(if $(RVIZ_CUSTOM),false,$(if $(RVIZ_OFF),false,true))

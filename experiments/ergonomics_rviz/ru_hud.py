@@ -190,6 +190,7 @@ def main() -> None:
     parser.add_argument("--y", type=int, default=732)
     parser.add_argument("--w", type=int, default=PANEL_W)
     parser.add_argument("--h", type=int, default=PANEL_H)
+    parser.add_argument("--bypass-wm", action="store_true")
     args = parser.parse_args()
 
     bridge = RosBridge()
@@ -197,7 +198,10 @@ def main() -> None:
 
     app = QApplication([])
     panel = Panel(bridge, (args.x, args.y, args.w, args.h))
+    if args.bypass_wm:
+        panel.setWindowFlag(Qt.X11BypassWindowManagerHint, True)
     panel.show()
+    print(f"winid={int(panel.winId())}", flush=True)
     app.exec_()
 
 
