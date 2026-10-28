@@ -69,7 +69,10 @@ MAX_WP = 64
 MAX_OBS = 32
 COLOR_LEGEND = (0.08, 0.08, 0.08, 0.97)
 COLOR_OBS_FILL = (0.62, 0.05, 0.05, 0.92)
-COLOR_OBS_EDGE = (0.05, 0.05, 0.05, 1.0)
+COLOR_OBS_HATCH = (0.62, 0.05, 0.05, 0.55)
+COLOR_OBS_EDGE = (0.45, 0.02, 0.02, 1.0)
+COLOR_OBS_DANGER_HATCH = (0.90, 0.06, 0.02, 0.70)
+COLOR_OBS_DANGER_EDGE = (0.55, 0.0, 0.0, 1.0)
 
 STATE_CONFIG = {
     "normal": {
@@ -339,10 +342,12 @@ class IMPublisher(Node):
         self.declare_parameter("scan_topic", "/robot1/scan")
         self.declare_parameter("obstacle_range", 6.0)
         self.declare_parameter("obstacle_gap", 0.25)
+        self.declare_parameter("warn_distance", 0.9)
         self.declare_parameter("filter_static", True)
         self.scan_topic = str(self.get_parameter("scan_topic").value)
         self.obstacle_range = float(self.get_parameter("obstacle_range").value)
         self.obstacle_gap = float(self.get_parameter("obstacle_gap").value)
+        self.warn_distance = float(self.get_parameter("warn_distance").value)
         self.filter_static = bool(self.get_parameter("filter_static").value)
         self.obstacle_pub = self.create_publisher(MarkerArray, "/im_obstacles", qos)
         self.tf_buffer = Buffer()
@@ -354,6 +359,7 @@ class IMPublisher(Node):
         self.last_state_json = None
         self.last_wp_count = MAX_WP
         self.last_obs_count = MAX_OBS
+        self.legacy_cleared = False
         self.scan_warned = False
         self.last_scan_time = 0.0
         self.create_subscription(LaserScan, self.scan_topic, self.on_scan, 10)
@@ -417,6 +423,9 @@ class IMPublisher(Node):
         points = [
             (px + x * cy2 - y * sy2, py + x * sy2 + y * cy2) for x, y in base_points
         ]
+        # Outside the map there is no free-space reference; lidar sees the
+        # far walls and they would be drawn as black shapes over the border.
+        points = [p for p in points if self.map_contains(*p)]
         if self.filter_static:
             # Static walls are already on the map. Drawing them again turns the
             # IM into a red scribble, so keep only what the map does not know.
@@ -453,13 +462,22 @@ class IMPublisher(Node):
         self.obstacles = hulls
         self.publish_obstacles()
 
+    def map_contains(self, x: float, y: float, margin: float = 0.0) -> bool:
+        info = self.map.info
+        x0 = info.origin.position.x - margin
+        y0 = info.origin.position.y - margin
+        x1 = x0 + info.width * info.resolution + 2.0 * margin
+        y1 = y0 + info.height * info.resolution + 2.0 * margin
+        return x0 <= x <= x1 and y0 <= y <= y1
+
     def map_occupied(self, x: float, y: float) -> bool:
         info = self.map.info
         mx = int((x - info.origin.position.x) / info.resolution)
         my = int((y - info.origin.position.y) / info.resolution)
         data = self.map.data
-        for dx in (-1, 0, 1):
-            for dy in (-1, 0, 1):
+        radius = max(1, int(0.30 / info.resolution))
+        for dx in range(-radius, radius + 1):
+            for dy in range(-radius, radius + 1):
                 cx = mx + dx
                 cy = my + dy
                 if cx < 0 or cy < 0 or cx >= info.width or cy >= info.height:
@@ -500,24 +518,128 @@ class IMPublisher(Node):
             upper.append(p)
         return lower[:-1] + upper[:-1]
 
+    @staticmethod
+    def _point_segment_distance(
+        px: float, py: float, ax: float, ay: float, bx: float, by: float
+    ) -> tuple[float, float, float]:
+        dx = bx - ax
+        dy = by - ay
+        length2 = dx * dx + dy * dy
+        if length2 <= 1e-12:
+            return math.hypot(px - ax, py - ay), ax, ay
+        t = ((px - ax) * dx + (py - ay) * dy) / length2
+        t = max(0.0, min(1.0, t))
+        qx = ax + t * dx
+        qy = ay + t * dy
+        return math.hypot(px - qx, py - qy), qx, qy
+
+    @classmethod
+    def _hull_distance(
+        cls, px: float, py: float, hull: list[tuple[float, float]]
+    ) -> tuple[float, float, float]:
+        best = None
+        for j in range(len(hull)):
+            ax, ay = hull[j]
+            bx, by = hull[(j + 1) % len(hull)]
+            d, qx, qy = cls._point_segment_distance(px, py, ax, ay, bx, by)
+            if best is None or d < best[0]:
+                best = (d, qx, qy)
+        return best if best is not None else (float("inf"), px, py)
+
+    @staticmethod
+    def _hatch_segments(
+        hull: list[tuple[float, float]],
+        spacing: float = 0.18,
+        angle: float = math.pi / 4.0,
+    ) -> list[tuple[float, float, float, float]]:
+        if len(hull) < 3:
+            return []
+        dx, dy = math.cos(angle), math.sin(angle)
+        nx, ny = -dy, dx
+        offsets = [x * nx + y * ny for x, y in hull]
+        lo, hi = min(offsets), max(offsets)
+        segments: list[tuple[float, float, float, float]] = []
+        offset = lo + spacing * 0.5
+        while offset < hi:
+            ox, oy = offset * nx, offset * ny
+            hits: list[float] = []
+            for j in range(len(hull)):
+                ax, ay = hull[j]
+                bx, by = hull[(j + 1) % len(hull)]
+                ex, ey = bx - ax, by - ay
+                denom = ex * dy - ey * dx
+                if abs(denom) < 1e-9:
+                    continue
+                s = -((ax - ox) * dy - (ay - oy) * dx) / denom
+                if -1e-9 <= s <= 1.0 + 1e-9:
+                    ix = ax + s * ex
+                    iy = ay + s * ey
+                    hits.append((ix - ox) * dx + (iy - oy) * dy)
+            if len(hits) >= 2:
+                hits.sort()
+                for k in range(0, len(hits) - 1, 2):
+                    t0, t1 = hits[k], hits[k + 1]
+                    if t1 - t0 < 0.05:
+                        continue
+                    segments.append(
+                        (
+                            ox + t0 * dx,
+                            oy + t0 * dy,
+                            ox + t1 * dx,
+                            oy + t1 * dy,
+                        )
+                    )
+            offset += spacing
+        return segments
+
     def publish_obstacles(self) -> None:
         arr = MarkerArray()
+        if not self.legacy_cleared:
+            self.legacy_cleared = True
+            for ns, mtype in (
+                ("im_obstacle_leader", Marker.LINE_LIST),
+                ("im_obstacle_distance", Marker.TEXT_VIEW_FACING),
+                ("im_obstacle_label_bg", Marker.CUBE),
+                ("im_obstacle_fill", Marker.TRIANGLE_LIST),
+                ("im_obstacle_scan", Marker.LINE_STRIP),
+            ):
+                for mid in range(0, MAX_OBS + 1):
+                    dead = marker("map", ns, mid, mtype)
+                    dead.action = Marker.DELETE
+                    arr.markers.append(dead)
         first = 1 if self.last_obs_count == MAX_OBS else len(self.obstacles) + 1
         for i in range(first, self.last_obs_count + 1):
-            dead = marker("map", "im_obstacle_scan", i, Marker.LINE_STRIP)
-            dead.action = Marker.DELETE
-            arr.markers.append(dead)
+            for ns, mtype in (
+                ("im_obstacle_hatch", Marker.LINE_LIST),
+                ("im_obstacle_edge", Marker.LINE_STRIP),
+            ):
+                dead = marker("map", ns, i, mtype)
+                dead.action = Marker.DELETE
+                arr.markers.append(dead)
+        px, py, _ = self.robot_pose()
         for i, hull in enumerate(self.obstacles[:MAX_OBS]):
-            m = marker("map", "im_obstacle_scan", i, Marker.LINE_STRIP)
-            m.pose.position.z = 0.05
-            m.scale.x = 0.06
-            m.color.r = COLOR_OBS_FILL[0]
-            m.color.g = COLOR_OBS_FILL[1]
-            m.color.b = COLOR_OBS_FILL[2]
-            m.color.a = COLOR_OBS_FILL[3]
+            if len(hull) < 2:
+                continue
+            d, _, _ = self._hull_distance(px, py, hull)
+            danger = d < self.warn_distance
+            hatch_color = COLOR_OBS_DANGER_HATCH if danger else COLOR_OBS_HATCH
+            edge_color = COLOR_OBS_DANGER_EDGE if danger else COLOR_OBS_EDGE
+            hatch = marker("map", "im_obstacle_hatch", i, Marker.LINE_LIST)
+            hatch.pose.position.z = 0.04
+            hatch.scale.x = 0.025
+            hatch.color.r, hatch.color.g, hatch.color.b, hatch.color.a = hatch_color
+            for x0, y0, x1, y1 in self._hatch_segments(hull):
+                hatch.points.append(Point(x=x0, y=y0, z=0.04))
+                hatch.points.append(Point(x=x1, y=y1, z=0.04))
+            if hatch.points:
+                arr.markers.append(hatch)
+            edge = marker("map", "im_obstacle_edge", i, Marker.LINE_STRIP)
+            edge.pose.position.z = 0.06
+            edge.scale.x = 0.07
+            edge.color.r, edge.color.g, edge.color.b, edge.color.a = edge_color
             for x, y in list(hull) + [hull[0]]:
-                m.points.append(Point(x=x, y=y, z=0.05))
-            arr.markers.append(m)
+                edge.points.append(Point(x=x, y=y, z=0.06))
+            arr.markers.append(edge)
         self.last_obs_count = len(self.obstacles)
         self.obstacle_pub.publish(arr)
 
