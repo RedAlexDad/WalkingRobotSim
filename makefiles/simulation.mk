@@ -146,12 +146,18 @@ flicker-check:
 	@python3 $(PROJECT_ROOT)/scripts/check_flicker.py \
 		--title "$(if $(WINDOW_TITLE),$(WINDOW_TITLE),wrs_rviz.rviz)"
 
-##! Остановить внешний RViz и издатель ИМ (режимы RVIZ=ergonomic|<путь>)
+##! Остановить внешний RViz, панель и издатель ИМ (режимы RVIZ=ergonomic|<путь>)
 rviz-kill:
-	$(require-container)
-	@docker exec $(CONTAINER_NAME) pkill -f "/tmp/wrs_rviz.rviz" 2>/dev/null || true
-	@docker exec $(CONTAINER_NAME) pkill -f "/tmp/im_publisher.py" 2>/dev/null || true
-	@printf "$(OK)Внешний RViz и издатель ИМ остановлены${NC}\n"
+	@pkill -9 -x rviz2 2>/dev/null || true
+	@pkill -9 -f "ru_hud[.]py" 2>/dev/null || true
+	@pkill -9 -f "im_publishe[r].py" 2>/dev/null || true
+	@if docker ps --format '{{.Names}}' | grep -q $(CONTAINER_NAME); then \
+		docker exec $(CONTAINER_NAME) pkill -9 -x rviz2 2>/dev/null || true; \
+		docker exec $(CONTAINER_NAME) pkill -9 -f "wrs_rviz[.]rviz" 2>/dev/null || true; \
+		docker exec $(CONTAINER_NAME) pkill -9 -f "ru_hud[.]py" 2>/dev/null || true; \
+		docker exec $(CONTAINER_NAME) pkill -9 -f "im_publishe[r].py" 2>/dev/null || true; \
+	fi
+	@printf "$(OK)Внешний RViz, панель и издатель ИМ остановлены${NC}\n"
 
 ## Выполнение команды в контейнере
 exec:

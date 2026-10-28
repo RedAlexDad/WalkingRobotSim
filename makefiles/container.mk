@@ -104,6 +104,8 @@ define prepare-rviz-config
 endef
 
 define start-custom-rviz
+	@pkill -9 -f "ru_hud[.]py" 2>/dev/null || true
+	@pkill -9 -f "im_publishe[r].py" 2>/dev/null || true
 	@if [ -n "$(RVIZ_FILE)" ]; then \
 		if [ -z "$(DISPLAY)" ]; then \
 			printf "$(ERR)DISPLAY не задан — внешний RViz не запустить${NC}\n"; \
@@ -111,8 +113,9 @@ define start-custom-rviz
 		fi; \
 		for p in $$(pgrep -x rviz2 || true); do kill -9 $$p 2>/dev/null || true; done; \
 		docker exec $(CONTAINER_NAME) pkill -9 -x rviz2 2>/dev/null || true; \
-		docker exec $(CONTAINER_NAME) pkill -f "/tmp/im_publisher.py" 2>/dev/null || true; \
-		docker exec $(CONTAINER_NAME) pkill -f "waypoint_collector.py" 2>/dev/null || true; \
+		docker exec $(CONTAINER_NAME) pkill -9 -f "im_publishe[r].py" 2>/dev/null || true; \
+		docker exec $(CONTAINER_NAME) pkill -9 -f "waypoint_collecto[r].py" 2>/dev/null || true; \
+		docker exec $(CONTAINER_NAME) pkill -9 -f "ru_hud[.]py" 2>/dev/null || true; \
 		sleep 1; \
 		if [ -n "$(RVIZ_ERGO_ANY)" ]; then \
 			docker cp "$(PROJECT_ROOT)/experiments/ergonomics_rviz/im_publisher.py" $(CONTAINER_NAME):/tmp/im_publisher.py >/dev/null || exit 1; \
@@ -138,10 +141,12 @@ endef
 define stop-custom-rviz
 	@if [ -n "$(RVIZ_FILE)" ]; then \
 		for p in $$(pgrep -x rviz2 || true); do kill -9 $$p 2>/dev/null || true; done; \
+		pkill -9 -f "ru_hud[.]py" 2>/dev/null || true; \
+		pkill -9 -f "im_publishe[r].py" 2>/dev/null || true; \
 		docker exec $(CONTAINER_NAME) pkill -9 -x rviz2 2>/dev/null || true; \
-		docker exec $(CONTAINER_NAME) pkill -f "/tmp/im_publisher.py" 2>/dev/null || true; \
-		docker exec $(CONTAINER_NAME) pkill -f "waypoint_collector.py" 2>/dev/null || true; \
-		docker exec $(CONTAINER_NAME) pkill -f "ru_hud.py" 2>/dev/null || true; \
+		docker exec $(CONTAINER_NAME) pkill -9 -f "im_publishe[r].py" 2>/dev/null || true; \
+		docker exec $(CONTAINER_NAME) pkill -9 -f "waypoint_collecto[r].py" 2>/dev/null || true; \
+		docker exec $(CONTAINER_NAME) pkill -9 -f "ru_hud[.]py" 2>/dev/null || true; \
 	fi
 endef
 
