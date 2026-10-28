@@ -14,7 +14,7 @@
 define require-container
 	@if ! docker ps --format '{{.Names}}' | grep -q $(CONTAINER_NAME); then \
 		printf "$(ERR)Контейнер $(CONTAINER_NAME) не запущен.${NC}\n" >&2; \
-		printf "$(WARN)Запустите: make deploy${NC}\n" >&2; \
+		printf "$(WARN)Запустите: make up (если образа нет — make deploy)${NC}\n" >&2; \
 		exit 1; \
 	fi
 endef

@@ -141,10 +141,10 @@ reset-pose:
 	@$(call gz-set-pose,0,0,0.5,0)
 	@printf "$(OK)Положение сброшено${NC}\n"
 
-##! Проверить окно RViz на мерцание (жёсткий порог 0,5 % пикселей)
+##! Проверить окно RViz на мерцание (порог 10 % пикселей)
 flicker-check:
 	@python3 $(PROJECT_ROOT)/scripts/check_flicker.py \
-		--title "$$(basename $(if $(RVIZ_FILE),$(RVIZ_FILE),im_operator))"
+		--title "$(if $(WINDOW_TITLE),$(WINDOW_TITLE),wrs_rviz.rviz)"
 
 ##! Остановить внешний RViz и издатель ИМ (режимы RVIZ=ergonomic|<путь>)
 rviz-kill:
@@ -254,8 +254,12 @@ save-logs:
 			echo "Контейнер: $(CONTAINER_NAME)"; \
 		} > "$$backup_folder/session_info.log"; \
 		if [ -d "$$gazebo_folder" ]; then \
-			printf "$(INFO)Очистка папки gazebo...${NC}\n"; \
-			docker run --rm -v "$$gazebo_folder":/tmp/clean alpine sh -c "rm -rf /tmp/clean/*" 2>/dev/null || true; \
+			if docker exec $(CONTAINER_NAME) pgrep -f "ros2 launch gazebo_si[m]" >/dev/null 2>&1; then \
+				printf "$(WARN)Launch активен — очистка logs/gazebo пропущена${NC}\n"; \
+			else \
+				printf "$(INFO)Очистка папки gazebo...${NC}\n"; \
+				docker run --rm -v "$$gazebo_folder":/tmp/clean alpine sh -c "rm -rf /tmp/clean/*" 2>/dev/null || true; \
+			fi; \
 		fi; \
 		mkdir -p "$$gazebo_folder"; \
 		file_count=$$(find "$$backup_folder" -type f 2>/dev/null | wc -l); \
