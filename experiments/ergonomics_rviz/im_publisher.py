@@ -350,6 +350,7 @@ class IMPublisher(Node):
         self.obstacles: list[list[tuple[float, float]]] = []
         self.last_ui_sig = None
         self.last_content_sig = None
+        self.last_robot_pose = None
         self.last_state_json = None
         self.last_wp_count = MAX_WP
         self.last_obs_count = MAX_OBS
@@ -365,6 +366,7 @@ class IMPublisher(Node):
         # Re-publishing it every few seconds makes RViz reload the texture
         # and can look like flicker, especially with software GL.
         self.create_timer(1.0, self.publish_all)
+        self.create_timer(0.1, self.publish_robot_if_moved)
         self.get_logger().info(
             f"IM publisher: {len(self.points)} waypoints, state={self.state}, "
             f"current={self.current_id}, next={self.next_id}, "
@@ -619,7 +621,6 @@ class IMPublisher(Node):
         stamp = self.get_clock().now().to_msg()
         self.publish_path(stamp)
         self.publish_waypoints()
-        self.publish_robot()
         # Текстовые панели пересобираются только при смене содержания:
         # их перепубликация на каждое движение даёт мерцание (текстуры шрифта).
         if force or content_sig != self.last_content_sig:
@@ -699,6 +700,17 @@ class IMPublisher(Node):
             )
         self.last_wp_count = len(items)
         self.wp_pub.publish(arr)
+    def publish_robot_if_moved(self) -> None:
+        x, y, yaw = self.robot_pose()
+        last = self.last_robot_pose
+        if last is not None:
+            dx = x - last[0]
+            dy = y - last[1]
+            if dx * dx + dy * dy < 0.0001 and abs(yaw - last[2]) < 0.02:
+                return
+        self.last_robot_pose = (x, y, yaw)
+        self.publish_robot()
+
     def publish_robot(self) -> None:
         arr = MarkerArray()
         x, y, yaw = self.robot_pose()
