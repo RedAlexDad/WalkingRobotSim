@@ -399,8 +399,8 @@ jobs:
               echo "Simulation ready at ~$((i * 2))s"
               docker compose exec -T simulator bash -c \
                 "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && ros2 node list" \
-                > ros_nodes.txt 2>&1
-              cat ros_nodes.txt
+                > "$RUNNER_TEMP/ros_nodes.txt" 2>&1
+              cat "$RUNNER_TEMP/ros_nodes.txt"
               exit 0
             fi
             sleep 2
@@ -419,8 +419,7 @@ jobs:
       - name: Check critical nodes
         continue-on-error: true
         run: |
-          cd ${{ env.DOCKER_DIR }}
-          nodes=$(cat ros_nodes.txt)
+          nodes=$(cat "$RUNNER_TEMP/ros_nodes.txt")
           for pattern in "robot_controller" "odometry" "cmd_vel"; do
             if echo "$nodes" | grep -qi "$pattern"; then
               echo "✓ Found node: $pattern"
@@ -437,10 +436,10 @@ jobs:
             source /opt/ros/jazzy/setup.bash
             source /root/ws/install/setup.bash
             ros2 topic list
-          " > topics.txt 2>&1
-          cat topics.txt
+          " > "$RUNNER_TEMP/topics.txt" 2>&1
+          cat "$RUNNER_TEMP/topics.txt"
           for topic in "/robot1/joint_states" "/robot1/odom" "/robot1/imu" "/robot1/robot_mode"; do
-            if grep -q "$topic" topics.txt; then
+            if grep -q "$topic" "$RUNNER_TEMP/topics.txt"; then
               echo "✓ Topic: $topic"
             else
               echo "✗ Missing topic: $topic"
@@ -486,8 +485,8 @@ jobs:
         with:
           name: smoke-results
           path: |
-            src/docker/ros_nodes.txt
-            src/docker/topics.txt
+            ${{ runner.temp }}/ros_nodes.txt
+            ${{ runner.temp }}/topics.txt
           retention-days: 3
 
   # ════════════════════════════════════════════════════════════
