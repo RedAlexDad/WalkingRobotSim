@@ -29,10 +29,11 @@ slam_toolbox:
     # Рендер карты
     render_trajectories: true
     interpolation_mode: 0
-    # Сохранение карты
-    map_file_name: /root/ws/maps/rust_slam_map
-    map_start_pose: [0.0, 0.0, 0.0]
-    map_start_at_dock: true
+    # Загрузка сериализованной карты: в режиме mapping её нет, иначе slam_toolbox
+    # на старте пишет ERROR «Failed to open requested file: …rust_slam_map»
+    # и lifecycle-менеджер считает bringup проваленным. Пустое значение — старт
+    # с чистой карты; для продолжения сессии задайте путь к существующему файлу.
+    map_file_name: ""
     debug_logging: false
 
 amcl:
