@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7-labs
 # ============================================================
 # ЭТАП 1: Базовый образ с системными зависимостями
 # ============================================================
@@ -146,9 +147,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 FROM base-system AS package-xmls
 
 WORKDIR /tmp
-COPY src/ /tmp/src/
-RUN find src/ -type f ! -name 'package.xml' -delete && \
-    find src/ -type d -empty -delete 2>/dev/null; true
+# Копируем только манифесты: правки исходников в src/ не инвалидируют
+# этот слой, а значит и дорогой ros-deps (apt + rosdep + pip/torch).
+COPY --parents src/*/package.xml /tmp/
 
 # ============================================================
 # ЭТАП 3: ROS зависимости через rosdep + Python пакеты
@@ -163,6 +164,7 @@ COPY --from=package-xmls /tmp/src/ /root/ws/src/
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    --mount=type=cache,target=/root/.ros,sharing=locked \
     apt-get update && \
     # rclrs 0.7 (crates.io) линкуется с test_msgs__rosidl_* — нужен в этапе workspace
     # rosbridge-server — для ROS MCP (см. makefiles/mcp.mk)
@@ -174,7 +176,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/*
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip3 install --no-cache-dir --break-system-packages \
+    pip3 install --break-system-packages \
     git+https://github.com/ruffsl/colcon-cache.git \
     'numpy<2' \
     scipy \
@@ -187,13 +189,14 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Установка PyTorch CPU + YOLO (для quadropted_perception)
 ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
-RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip3 install --break-system-packages --ignore-installed \
     torch --index-url ${TORCH_INDEX_URL} \
-    && pip3 install --no-cache-dir --break-system-packages --ignore-installed \
+    && pip3 install --break-system-packages --ignore-installed \
     torchvision --index-url ${TORCH_INDEX_URL} \
-    && pip3 install --no-cache-dir --break-system-packages --ignore-installed \
+    && pip3 install --break-system-packages --ignore-installed \
     ultralytics --no-deps \
-    && pip3 install --no-cache-dir --break-system-packages \
+    && pip3 install --break-system-packages \
     opencv-python-headless 'numpy<2'
 
 # ============================================================
@@ -208,6 +211,8 @@ WORKDIR /root/ws
 COPY src/ /root/ws/src/
 
 RUN --mount=type=cache,target=/root/.ccache \
+    --mount=type=cache,target=/root/.cargo/registry \
+    --mount=type=cache,target=/root/.cargo/git \
     bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && colcon cache lock 2>/dev/null; ccache colcon build --symlink-install --mixin ccache"
 
 # ============================================================

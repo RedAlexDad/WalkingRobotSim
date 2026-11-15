@@ -1,6 +1,6 @@
 # makefiles/docker.mk
 
-.PHONY: deploy smart-deploy build up up-bg up-foreground down restart clean status logs shell deploy-no-cache build-stage build-stage-list
+.PHONY: deploy smart-deploy build build-no-cache build-fresh prune-build-cache up up-bg up-foreground down restart clean status logs shell deploy-no-cache build-stage build-stage-list
 
 ## Умная сборка и запуск: пересобирает только если есть C++/Docker изменения
 deploy smart-deploy:
@@ -8,9 +8,10 @@ deploy smart-deploy:
 	@bash scripts/smart-deploy.bash
 
 ## Сборка Docker образа
+##! Параметры: NO_CACHE=1 — пересобрать без слоёв кэша, PULL=1 — обновить базовый образ
 build:
-	@printf "$(INFO)Сборка Docker образа$(if $(NO_CACHE), БЕЗ кэширования,) ...${NC}\n"
-	@$(COMPOSE) --progress=auto build $(if $(NO_CACHE),--no-cache,)
+	@printf "$(INFO)Сборка Docker образа$(if $(NO_CACHE), БЕЗ кэширования,)$(if $(PULL), с обновлением базы,) ...${NC}\n"
+	@$(COMPOSE) --progress=auto build $(if $(NO_CACHE),--no-cache )$(if $(or $(NO_CACHE),$(PULL)),--pull,)
 	@printf "$(OK)Образ собран${NC}\n"
 
 ##! Сборка и запуск контейнера без кэша (make deploy-no-cache)
@@ -19,6 +20,15 @@ deploy-no-cache: build-no-cache up
 ##! Сборка образа без кэша (make build NO_CACHE=1)
 build-no-cache:
 	@$(MAKE) --no-print-directory build NO_CACHE=1
+
+##! Полностью чистая пересборка: чистка BuildKit-кэша + сборка без кэша (make build-fresh)
+build-fresh: prune-build-cache build-no-cache
+
+##! Удалить кэш сборки BuildKit (buildx prune -af; ВНИМАНИЕ: затронет все проекты)
+prune-build-cache:
+	@printf "$(WARN)Чистка кэша BuildKit (buildx prune -af)...${NC}\n"
+	@docker buildx prune -af >/dev/null
+	@printf "$(OK)Кэш сборки очищен${NC}\n"
 
 ## Запуск контейнера
 up:

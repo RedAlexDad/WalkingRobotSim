@@ -1,0 +1,27 @@
+# Контекст сборки образа. Dockerfile использует только ./src,
+# поэтому всё остальное в контекст не тащим (быстрее и меньше).
+.git
+.github
+.gitignore
+.dockerignore
+.vscode
+.idea
+build/
+install/
+log/
+logs/
+target/
+reports/
+docs/
+exercise/
+.Knowledge/
+.task/
+.dsh/
+node_modules/
+elevation_mapping_cupy/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+.venv*/
+venv/
+coverage/
