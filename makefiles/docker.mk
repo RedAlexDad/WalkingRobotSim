@@ -2,13 +2,12 @@
 
 .PHONY: deploy smart-deploy build build-no-cache build-fresh prune-build-cache up up-bg up-foreground down restart clean status logs shell deploy-no-cache build-stage build-stage-list
 
-## Умная сборка и запуск: пересобирает только если есть C++/Docker изменения
+## Умная сборка и запуск (deploy, smart-deploy): пересобирает только при C++/Docker изменениях
 deploy smart-deploy:
 	$(require-docker)
 	@bash scripts/smart-deploy.bash
 
 ## Сборка Docker образа
-##! Параметры: NO_CACHE=1 — пересобрать без слоёв кэша, PULL=1 — обновить базовый образ
 build:
 	@printf "$(INFO)Сборка Docker образа$(if $(NO_CACHE), БЕЗ кэширования,)$(if $(PULL), с обновлением базы,) ...${NC}\n"
 	@$(COMPOSE) --progress=auto build $(if $(NO_CACHE),--no-cache )$(if $(or $(NO_CACHE),$(PULL)),--pull,)

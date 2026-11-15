@@ -17,8 +17,9 @@ ROOT = Path(__file__).resolve().parent.parent
 SECTIONS: list[tuple[str, list[str], str | None]] = [
     ("Основные команды", ["Makefile"], None),
     ("Docker / контейнер", ["makefiles/docker.mk"],
-     "Аргументы: NO_CACHE=1 — сборка без кэша (build); BG=1 — запуск в фоне "
-     "без ожидания ROS (up); STAGE=<этап> — этап сборки (build-stage)"),
+     "Аргументы: NO_CACHE=1 — сборка без кэша, PULL=1 — обновить базу (build); "
+     "build-fresh — полная очистка кэша; BG=1 — запуск в фоне без ожидания ROS (up); "
+     "STAGE=<этап> — этап сборки (build-stage)"),
     ("Диагностика", ["makefiles/safety.mk"], None),
     ("ROS MCP", ["makefiles/mcp.mk"], None),
     ("Микросервисы Docker", ["makefiles/microservices.mk"],
@@ -42,7 +43,7 @@ SECTIONS: list[tuple[str, list[str], str | None]] = [
 ]
 
 GREEN, GREY, BOLD, NC = "\033[0;32m", "\033[0;90m", "\033[1m", "\033[0m"
-TARGET_RE = re.compile(r"^([A-Za-z0-9_-]+):")
+TARGET_RE = re.compile(r"^((?:[A-Za-z0-9_-]+(?:[ \t]+[A-Za-z0-9_-]+)*)):")
 
 
 def entries(path: Path) -> list[tuple[str, str]]:
@@ -59,7 +60,8 @@ def entries(path: Path) -> list[tuple[str, str]]:
         else:
             m = TARGET_RE.match(line)
             if m and desc and not hidden:
-                out.append((m.group(1), desc))
+                # несколько имён цели (`deploy smart-deploy:`) — в справку первое
+                out.append((m.group(1).split()[0], desc))
             desc, hidden = None, False
     return out
 
