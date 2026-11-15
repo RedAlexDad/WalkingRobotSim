@@ -339,30 +339,34 @@ jobs:
           cd ${{ env.DOCKER_DIR }}
           docker compose up -d
 
-      - name: Verify Rust nodes in container
-        # Страховка от неполного named volume/образа: install/ содержит
-        # symlink'и на /root/ws/src/.../target/release. Если их целей нет,
-        # пересобираем Rust в контейнере — launch не упадёт с "not found".
+      - name: Ensure workspace volume is complete
+        # В CI named volume иногда создаётся неполным (без target/ и Cargo.lock),
+        # из-за чего symlink'и install/ на /root/ws/src/.../target/release
+        # висят, и ros2 launch падает с "executable ... not found".
+        # Если target отсутствует — докопируем /root/ws/src из образа в volume.
         run: |
           cd ${{ env.DOCKER_DIR }}
+          if docker compose exec -T simulator bash -lc 'test -f /root/ws/src/quadropted_controller_rust/target/release/robot_controller_node'; then
+            echo "Workspace volume: target уже на месте"
+          else
+            VOL=$(docker inspect walking_robot_sim \
+              --format '{{range .Mounts}}{{if eq .Destination "/root/ws/src"}}{{.Name}}{{end}}{{end}}')
+            echo "Workspace volume: $VOL неполный — копируем /root/ws/src из образа"
+            docker compose exec -T simulator bash -lc \
+              'ls -la /root/ws/src/quadropted_controller_rust/ || true'
+            docker run --rm -v "${VOL}:/dst" walking_robot_sim:latest \
+              bash -c 'cp -a /root/ws/src/. /dst/'
+            echo "Workspace volume: содержимое образа скопировано"
+          fi
           NODE=/root/ws/install/quadropted_controller_rust/lib/quadropted_controller_rust/robot_controller_node
           if docker compose exec -T simulator bash -lc "test -x $NODE"; then
             echo "Rust nodes: OK"
           else
-            echo "Rust nodes: MISSING — диагностика и пересборка"
+            echo "Rust nodes: всё ещё MISSING"
             docker compose exec -T simulator bash -lc \
               "ls -l /root/ws/install/quadropted_controller_rust/lib/quadropted_controller_rust/ || true; \
                ls /root/ws/src/quadropted_controller_rust/ || true"
-            docker compose exec -T simulator bash -lc '
-              source /root/.cargo/env
-              cd /root/ws/src/quadropted_controller_rust
-              cargo build --release'
-            if docker compose exec -T simulator bash -lc "test -x $NODE"; then
-              echo "Rust nodes: rebuilt OK"
-            else
-              echo "Rust nodes: still missing"
-              exit 1
-            fi
+            exit 1
           fi
 
       - name: Launch simulation (headless, flat world)
