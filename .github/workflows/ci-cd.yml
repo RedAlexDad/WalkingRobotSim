@@ -1,8 +1,10 @@
 name: CI/CD
 
-# Пайплайн: lint → автотесты Rust + покрытие → публикация образа в GHCR
-# (только main) → GitHub Release (только main). Публикация и релиз
-# выполняются строго после успешных автотестов.
+# Пайплайн: changes → lint → build-image (один раз) → tests / coverage /
+# smoke (параллельно, образ из артефакта) → publish в GHCR (только main)
+# → GitHub Release (только main).
+# Образ собирается ровно один раз: остальные job'ы скачивают tar-артефакт,
+# поэтому публикация не пересобирает 16 ГБ заново.
 on:
   push:
     branches:
@@ -25,11 +27,39 @@ env:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   # ════════════════════════════════════════════════════════════
-  # 1. LINT — быстрый статический анализ (2-3 min, не блокирует пайплайн)
+  # 0. CHANGES — не гоняем 16-ГБ сборку на правках документации
+  # ════════════════════════════════════════════════════════════
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Filter changed paths
+        id: filter
+        run: |
+          BASE="${{ github.event.before }}"
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            BASE="HEAD~1"
+          fi
+          CHANGED=$(git diff --name-only "$BASE" HEAD 2>/dev/null || echo "")
+          echo "changed files:"; echo "$CHANGED"
+          if echo "$CHANGED" | grep -qE '^(src/|scripts/|makefiles/|compose\.yml|compose\.[a-z]+\.yml|Makefile|\.github/workflows/)'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ════════════════════════════════════════════════════════════
+  # 1. LINT — быстрый статический анализ (advisory, не блокирует)
   # ════════════════════════════════════════════════════════════
   lint:
     name: Lint & Static Analysis
@@ -49,7 +79,7 @@ jobs:
       - name: Install lint tools
         run: pip install yamllint ruff
 
-      - name: YAML lint
+      - name: YAML lint (workflows + compose)
         run: |
           echo "=== Checking .github/workflows ==="
           yamllint -c .yamllint .github/workflows/
@@ -59,27 +89,84 @@ jobs:
       - name: Python lint (ruff)
         run: ruff check src/
 
+      - name: Dockerfile lint (hadolint)
+        continue-on-error: true
+        run: docker run --rm -i hadolint/hadolint < src/docker/Dockerfile
+
+      - name: Shell lint (shellcheck)
+        continue-on-error: true
+        run: shellcheck scripts/*.sh
+
   # ════════════════════════════════════════════════════════════
-  # 2. AUTO-TESTS — Rust unit + golden cross-val + integration
-  #    + покрытие llvm-cov (порог 90% строк), один общий образ
+  # 2. BUILD-IMAGE — единственная сборка образа; образ уходит артефактом
   # ════════════════════════════════════════════════════════════
-  tests:
-    name: Rust Tests + Coverage (≥ 90%)
+  build-image:
+    name: Build image (once)
     runs-on: ubuntu-latest
-    timeout-minutes: 90
-    needs: [lint]
+    timeout-minutes: 120
+    needs: [changes]
+    if: needs.changes.outputs.code == 'true'
     steps:
       - uses: actions/checkout@v4
 
       - name: Free disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc "/usr/local/share/boost"
-          sudo apt-get clean
-          docker system prune -a -f
-          df -h
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Build Docker image
-        run: docker build -f src/docker/Dockerfile -t walking_robot_sim:ci .
+        run: docker build -f src/docker/Dockerfile -t walking_robot_sim:latest .
+
+      - name: Save image archive (zstd)
+        run: make image-save SAVE_IMAGE=1
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: |
+            images/walking_robot_sim-latest-*.tar.zst
+            images/walking_robot_sim-latest-*.tar.zst.sha256
+          retention-days: 3
+          compression-level: 0
+
+  # ════════════════════════════════════════════════════════════
+  # 3. TESTS — Rust unit + golden cross-val + integration
+  # ════════════════════════════════════════════════════════════
+  tests:
+    name: Rust Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: [build-image]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: false
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: images
+
+      - name: Load image
+        run: make image-load
 
       - name: Start container
         run: |
@@ -118,6 +205,60 @@ jobs:
             cd /root/ws/src/quadropted_controller_rust
             cargo test --workspace"
 
+      - name: Cleanup
+        if: always()
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose down -v --remove-orphans
+
+  # ════════════════════════════════════════════════════════════
+  # 4. COVERAGE — llvm-cov, порог 90% строк, отчёт артефактом
+  # ════════════════════════════════════════════════════════════
+  coverage:
+    name: Coverage (≥ 90%)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: [build-image]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: false
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: images
+
+      - name: Load image
+        run: make image-load
+
+      - name: Start container
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose up -d
+
+      - name: Wait for workspace
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          for i in $(seq 1 30); do
+            if docker compose exec -T simulator bash -c \
+              "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && ros2 node list" 2>/dev/null | grep -q .; then
+              echo "Workspace ready at ${i}s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "WARNING: Workspace not ready, continuing anyway"
+
       - name: Install llvm-tools-preview and cargo-llvm-cov
         run: |
           cd ${{ env.DOCKER_DIR }}
@@ -140,16 +281,6 @@ jobs:
             cargo llvm-cov report --html --output-dir /tmp/wrs-coverage/html
             cargo llvm-cov report --cobertura --output-path /tmp/wrs-coverage/cobertura.xml
             cargo llvm-cov report --summary-only --fail-under-lines 90 | tee /tmp/wrs-coverage/summary.txt"
-
-      - name: Smoke test ROS nodes/topics (advisory)
-        continue-on-error: true
-        run: |
-          cd ${{ env.DOCKER_DIR }}
-          docker compose exec -T simulator bash -c "
-            source /opt/ros/jazzy/setup.bash
-            source /root/ws/install/setup.bash
-            echo '=== nodes ==='; ros2 node list
-            echo '=== topics ==='; ros2 topic list | head -40"
 
       - name: Extract coverage report
         if: always()
@@ -174,17 +305,13 @@ jobs:
           docker compose down -v --remove-orphans
 
   # ════════════════════════════════════════════════════════════
-  # 3. PUBLISH — сборка и публикация образа в GitHub Packages (только main)
+  # 5. SMOKE — запуск симуляции: узлы, топики, режимы, скорость
   # ════════════════════════════════════════════════════════════
-  publish:
-    name: Publish image to GHCR (main)
+  smoke:
+    name: Docker Smoke Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 180
-    needs: [tests]
-    if: github.ref == 'refs/heads/main'
-    outputs:
-      image: ${{ steps.vars.outputs.image }}
-      digest: ${{ steps.build.outputs.digest }}
+    timeout-minutes: 30
+    needs: [build-image]
     steps:
       - uses: actions/checkout@v4
 
@@ -198,8 +325,151 @@ jobs:
           large-packages: true
           swap-storage: false
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: images
+
+      - name: Load image
+        run: make image-load
+
+      - name: Start container
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose up -d
+
+      - name: Wait for ROS nodes (poll-based)
+        id: wait_ros
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          echo "Waiting for ROS nodes (max 90s)..."
+          for i in $(seq 1 45); do
+            if docker compose exec -T simulator bash -c \
+              "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && ros2 node list" 2>/dev/null | grep -q .; then
+              echo "ROS ready at ${i}s"
+              docker compose exec -T simulator bash -c \
+                "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && ros2 node list" \
+                > ros_nodes.txt 2>&1
+              cat ros_nodes.txt
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "ROS nodes not ready after 90s"
+          docker compose logs --tail=50 simulator || true
+          exit 1
+
+      - name: Check critical nodes
+        continue-on-error: true
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          nodes=$(cat ros_nodes.txt)
+          for pattern in "robot_controller" "odometry" "cmd_vel"; do
+            if echo "$nodes" | grep -qi "$pattern"; then
+              echo "✓ Found node: $pattern"
+            else
+              echo "✗ Missing node: $pattern"
+            fi
+          done
+
+      - name: Check critical topics
+        continue-on-error: true
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose exec -T simulator bash -c "
+            source /opt/ros/jazzy/setup.bash
+            source /root/ws/install/setup.bash
+            ros2 topic list
+          " > topics.txt 2>&1
+          cat topics.txt
+          for topic in "/robot1/joint_states" "/robot1/odom" "/robot1/imu" "/robot1/robot_mode"; do
+            if grep -q "$topic" topics.txt; then
+              echo "✓ Topic: $topic"
+            else
+              echo "✗ Missing topic: $topic"
+            fi
+          done
+
+      - name: Test behavior state switching
+        continue-on-error: true
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose exec -T simulator bash -c "
+            source /opt/ros/jazzy/setup.bash
+            source /root/ws/install/setup.bash
+            for mode in TROT CRAWL STAND REST; do
+              echo \"=== Test: robot_mode → $mode ===\"
+              ros2 topic pub --once /robot1/robot_mode quadropted_msgs/msg/RobotModeCommand \"{mode: $mode, robot_id: 1}\"
+              sleep 1
+            done
+            echo 'All behavior state switches completed'"
+
+      - name: Test velocity command
+        continue-on-error: true
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose exec -T simulator bash -c "
+            source /opt/ros/jazzy/setup.bash
+            source /root/ws/install/setup.bash
+            timeout 5s ros2 topic pub /robot1/cmd_vel geometry_msgs/msg/Twist \
+              '{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}' || true
+            sleep 1
+            timeout 5s ros2 topic echo /robot1/robot_velocity --once || echo 'robot_velocity topic timeout'"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose down -v --remove-orphans
+          docker system prune -f
+
+      - name: Upload smoke results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-results
+          path: |
+            src/docker/ros_nodes.txt
+            src/docker/topics.txt
+          retention-days: 3
+
+  # ════════════════════════════════════════════════════════════
+  # 6. PUBLISH — публикация уже собранного образа в GHCR (только main)
+  # ════════════════════════════════════════════════════════════
+  publish:
+    name: Publish image to GHCR (main)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    needs: [tests, coverage, smoke]
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.vars.outputs.image }}
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: false
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: images
+
+      - name: Load image
+        run: make image-load
 
       - name: Compute image name (lowercase)
         id: vars
@@ -213,27 +483,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: src/docker/Dockerfile
-          target: final
-          push: true
-          tags: |
-            ${{ steps.vars.outputs.image }}:latest
-            ${{ steps.vars.outputs.image }}:${{ github.sha }}
-            ${{ steps.vars.outputs.image }}:v0.1.${{ github.run_number }}
-          cache-from: type=registry,ref=${{ steps.vars.outputs.image }}:buildcache
-          cache-to: type=registry,ref=${{ steps.vars.outputs.image }}:buildcache,mode=max
-          labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=v0.1.${{ github.run_number }}
+      - name: Tag and push
+        id: push
+        run: |
+          IMAGE="${{ steps.vars.outputs.image }}"
+          VERSION="v0.1.${{ github.run_number }}"
+          for tag in latest "${GITHUB_SHA}" "${VERSION}"; do
+            docker tag walking_robot_sim:latest "${IMAGE}:${tag}"
+            docker push "${IMAGE}:${tag}"
+          done
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE}:latest")
+          echo "digest=${DIGEST#*@}" >> "$GITHUB_OUTPUT"
+          echo "Опубликовано: ${IMAGE}:latest, ${IMAGE}:${GITHUB_SHA}, ${IMAGE}:${VERSION}"
 
   # ════════════════════════════════════════════════════════════
-  # 4. RELEASE — GitHub Release после публикации образа (только main)
+  # 7. RELEASE — GitHub Release после публикации (только main)
   # ════════════════════════════════════════════════════════════
   release:
     name: GitHub Release (main)
