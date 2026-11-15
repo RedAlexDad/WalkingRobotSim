@@ -12,14 +12,13 @@ Launch файлы, миры Gazebo, конфигурация waypoints и нас
 
 | Параметр | Значение по умолчанию | Описание |
 |----------|----------------------|----------|
-| `use_python_controller` | `false` | Python или C++ контроллер |
+| `use_python_controller` | — | не используется: контроллер на Rust |
 | `world` | `src/gazebo_sim/worlds/empty.sdf` | Мир Gazebo |
 | `rviz_config` | `src/gazebo_sim/config/robot_view.rviz` | Конфиг RViz |
 
 Запуск через Makefile:
 ```bash
-make gazebo-py    # Python контроллер
-make gazebo-cpp   # C++ контроллер
+make gazebo       # Rust контроллер
 ```
 
 ### `gazebo_multi_nav2_world.launch.py` — мультироботный запуск с Nav2

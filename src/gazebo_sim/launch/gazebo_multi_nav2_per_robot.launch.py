@@ -1,3 +1,13 @@
+"""Мультироботный запуск через per_robot_bringup на каждого робота.
+
+Читает список роботов из `config/robots.yaml` и поднимает для каждого
+свой `per_robot_bringup.launch.py` (Rust-контроллер, Rust-одометрия,
+Rust cmd_vel_pub, Nav2 и EKF в собственном namespace).
+
+Gazebo при этом запускается отдельно (`gazebo_multi_nav2_rust.launch.py`
+или `launch.launch.py`); здесь поднимается только bridge и роботы.
+"""
+
 import os
 
 import yaml

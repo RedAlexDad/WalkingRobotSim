@@ -5,7 +5,7 @@ Docker-контейнеризацией, Nav2 навигацией и CI/CD па
 
 Возможности:
 - Физическая симуляция в Gazebo Sim с динамикой четырёхногого робота
-- Две реализации контроллера ходьбы: **Python** и **C++** (53.5x быстрее)
+- Контроллер ходьбы на **Rust** (порт прежних Python/C++ реализаций)
 - [Навигация по waypoints](docs/navigation.md) через Nav2 + кастомный RViz инструмент
 - Одометрия на основе кинематики ног, EKF фильтрация с IMU
 - Мультироботная симуляция с изолированными namespace
@@ -41,10 +41,10 @@ WalkingRobotSim/
 │   ├── go1_description/         # URDF описание робота Unitree Go1
 │   ├── go2_description/         # URDF описание робота Unitree Go2
 │   ├── quadrapted_perception/   # YOLO детектор + визуализация RViz
-│   ├── quadropted_controller_cpp/   # C++ контроллер (RobotController, одометрия, 53.5x ускорение)
+│   ├── quadropted_controller_rust/  # Rust контроллер (ходьба, одометрия, cmd_vel_pub)
 │   ├── quadropted_msgs/         # ROS 2 сообщения (Waypoint, RobotVelocity и др.)
 │   ├── rviz_waypoint_tool/      # Кастомный RViz инструмент для waypoints
-│   └── tests/                   # Интеграционные тесты Python vs C++
+│   └── tests/                   # Интеграционные тесты
 ├── docs/                        # Документация
 ├── reports/                     # Отчёты и анализ
 └── .github/workflows/           # GitHub Actions CI/CD
@@ -71,11 +71,8 @@ cd WalkingRobotSim
 # Сборка + запуск контейнера
 make deploy
 
-# Python контроллер (основной режим)
-make gazebo-py
-
-# C++ контроллер (производительный режим)
-make gazebo-cpp
+# Симуляция с Rust-контроллером (единственный режим)
+make gazebo
 ```
 
 [Docker окружение](src/docker/README.md)
@@ -96,9 +93,7 @@ make gazebo-cpp
 | `make down` | Остановка контейнера |
 | `make shell` | Вход в bash контейнера |
 | `make logs` | Логи контейнера |
-| `make gazebo` | Запуск симуляции (дефолтный контроллер) |
-| `make gazebo-py` | Запуск с Python контроллером |
-| `make gazebo-cpp` | Запуск с C++ контроллером |
+| `make gazebo` | Запуск симуляции с Rust-контроллером |
 | `make yolo-detector`    | YOLO распознавание объектов (лог в терминал) |
 | `make yolo-visualizer`  | RViz split-screen: камера + детекции |
 | `make teleop` | Управление с клавиатуры |
@@ -201,21 +196,21 @@ make crawl
 make stand
 ```
 
-#### Контроллеры: Rust (по умолчанию) и C++
-Проект содержит две реализации контроллера:
+#### Контроллер: Rust
+Контроллер ходьбы реализован на Rust (`quadropted_controller_rust`)
+и запускается по умолчанию (`make gazebo`). В пакет входят узлы:
 
-- **Rust** (`quadropted_controller_rust`) — основной контроллер, запускается по умолчанию (`make gazebo`). Включает Rust-версию Odometry Node (`/robot1/odom`, 50 Гц).
-- **C++** (`quadropted_controller_cpp`) — сохранён для сравнения (`make gazebo-cpp`).
+- `robot_controller_node` — REST/TROT/CRAWL/STAND, IK, `cmd_vel` → `robot_velocity`;
+- `odometry_node` — одометрия по кинематике ног (`/robot1/odom`, 50 Гц);
+- `cmd_vel_pub` — `geometry_msgs/Twist` → `quadropted_msgs/RobotVelocity`.
 
 ```bash
-# Rust контроллер (по умолчанию)
+# Симуляция с Rust-контроллером
 make gazebo          # или: make gazebo-rust
-
-# C++ контроллер (для сравнения)
-make gazebo-cpp
 ```
 
-Обе реализации используют одни и те же топики (`/robot1/robot_mode`, `/robot1/robot_velocity`, `/robot1/joint_group_controller/commands`), поэтому взаимозаменяемы.
+Узлы используют топики `/robot1/robot_mode`, `/robot1/robot_velocity`,
+`/robot1/joint_group_controller/commands`.
 
 ### Управление движением
 
@@ -238,7 +233,11 @@ ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehavi
 
 ## Python vs C++
 
-Контроллер реализован на двух языках:
+> Исторический раздел: реализации на Python и C++ удалены в ходе миграции
+> на Rust (2026-11). Цифры ниже относятся к прежнему бенчмарку и оставлены
+> как история; актуальный контроллер — `quadropted_controller_rust`.
+
+Контроллер был реализован на двух языках:
 
 | Характеристика | Python | C++ |
 |----------------|--------|-----|
@@ -267,13 +266,13 @@ ros2 service call /robot1/robot_behavior_command quadropted_msgs/srv/RobotBehavi
 
 | Workflow | Описание | Время |
 |----------|----------|-------|
-| **CI** | Docker build, линтинг (Python/C++/YAML), C++ unit тесты | 5-10 мин |
+| **CI** | Docker build, линтинг (Python/YAML), Rust unit + golden-кросс-валидация | 5-10 мин |
 | **Simulation Test** | Интеграционные тесты в контейнере | 15-20 мин |
 
 Локальные проверки:
 ```bash
-make ci-lint       # Линтинг всех языков
-make ci-test-cpp   # C++ unit тесты
+make ci-lint       # YAML + Python линтеры
+make test-rust     # Rust unit + golden-кросс-валидация + интеграционные
 ```
 
 ### Что проверяет скрипт:
@@ -296,8 +295,8 @@ cd src/quadropted_controller_rust
 cargo test --workspace                       # юнит-тесты (все пакеты)
 cargo test -p quadropted-core                # тесты core (включая интеграционные)
 
-# Кросс-валидация Rust vs C++: запускает реальный C++-бинарник
-# (cpp_xval_harness) и сравнивает JSON с Rust-вычислениями.
+# Кросс-валидация Rust против golden-данных C++-эталона
+# (tests/golden/mod.rs, сняты с cpp_xval_harness до его удаления).
 # 21 тест: математика < 1e-12, FK/контроллеры < 1e-9, IK < 2e-3 (fast_atan2),
 # CRAWL runtime = C++ step_crawl, Odometry < 1e-9.
 ./scripts/test_cross_validation.sh
@@ -308,7 +307,7 @@ cargo tarpaulin -p quadropted-core --tests --out Html
 
 Интеграционные тесты (headless, без GUI):
 - `test_crawl_no_saturation` — 30-секундная симуляция CRAWL (1800 тактов @ 60 Гц): ни один угол не выходит за URDF-пределы (hip ±1.0472, upper −1.5708..3.4907, lower −2.7227..−0.83776) более чем на 1% времени; Rust-путь бит-в-бит совпадает с C++ рантайм-путём.
-- `test_odometry_cross_validation` — тестовый маршрут 10 с: расхождение одометрии с C++-эталоном < 1e-9.
+- `test_odometry_cross_validation` — тестовый маршрут 10 с: расхождение одометрии с эталонным C++-алгоритмом < 1e-9.
 
 ---
 

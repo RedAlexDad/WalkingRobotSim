@@ -1,5 +1,5 @@
-//! Odometry Node — Rust implementation of `quadropted_controller_cpp`'s
-//! `odometry_node.cpp`.
+//! Odometry Node — Rust-порт `odometry_node.cpp` из удалённого
+//! C++-контроллера.
 //!
 //! Publishes `/robot1/odom` (nav_msgs/Odometry) at 50 Hz and optionally TF
 //! (odom → base_link) via tf2_msgs/TFMessage, driven by:

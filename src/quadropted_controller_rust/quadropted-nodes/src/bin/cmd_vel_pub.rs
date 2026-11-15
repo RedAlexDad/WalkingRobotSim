@@ -1,4 +1,4 @@
-//! CmdVelPub — Rust-порт `cmd_vel_pub.cpp` из `quadropted_controller_cpp`.
+//! CmdVelPub — Rust-порт `cmd_vel_pub.cpp` из удалённого C++-контроллера.
 //!
 //! Узел-мост между Nav2/teleop и контроллером: подписывается на
 //! `geometry_msgs/msg/Twist` (`cmd_vel`) и публикует

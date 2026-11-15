@@ -73,7 +73,7 @@ ros2 interface show quadropted_msgs/msg/DetectionArray
 
 ```bash
 cd WalkingRobotSim
-make gazebo-cpp
+make gazebo
 ```
 
 Дождитесь полной загрузки (30-60 секунд).

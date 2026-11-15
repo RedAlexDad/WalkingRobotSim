@@ -1,8 +1,7 @@
 """
-Запуск Gazebo симуляции с Rust контроллером (по умолчанию).
-Для C++ контроллера используйте launch_cpp.launch.py (цель make gazebo-cpp).
+Запуск Gazebo симуляции с Rust контроллером (единственный режим).
 
-Поддерживает аргументы как launch_cpp.launch.py:
+Поддерживаемые аргументы:
   use_sim_time:=true  camera_fps:=10  use_elevation:=true
 """
 import os
@@ -61,8 +60,8 @@ def generate_launch_description():
 
     # По умолчанию — Rust контроллер (+ Rust odometry node)
     # NOTE: elevation costmap (use_elevation) — отдельная функциональность
-    # elevation_mapping_cupy, не связана с контроллером; для неё используйте
-    # launch_cpp.launch.py / make gazebo-cpp ELEVATION=true.
+    # elevation_mapping_cupy, не связана с контроллером; запускается
+    # отдельным профилем compose (make elevation).
     multi_nav2_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_path, 'launch', 'gazebo_multi_nav2_rust.launch.py')

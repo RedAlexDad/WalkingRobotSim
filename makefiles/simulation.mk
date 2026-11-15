@@ -1,6 +1,6 @@
 # makefiles/simulation.mk
 
-.PHONY: gazebo gazebo-rust gazebo-cpp teleop teleop-simple set-pose reset-pose kill-ros exec test-aliases save-logs \
+.PHONY: gazebo gazebo-rust teleop teleop-simple set-pose reset-pose kill-ros exec test-aliases save-logs \
         mujoco mujoco-viewer mujoco-lite mujoco-kill rviz-kill flicker-check
 
 # ════ MuJoCo ════
@@ -34,7 +34,6 @@ RVIZ_LAUNCH_ARGS := enable_rviz:=$(if $(RVIZ_CUSTOM),false,$(if $(RVIZ_OFF),fals
 GAZEBO_COMMON_ARGS := use_sim_time:=true gui:=true
 GAZEBO_RUST_ARGS   := $(GAZEBO_COMMON_ARGS) $(if $(WORLD),world:=${WORLD}) $(if $(FPS),camera_fps:=${FPS}) $(RVIZ_LAUNCH_ARGS) $(if $(SLAM),slam:=${SLAM}) $(if $(ELEVATION),use_elevation:=${ELEVATION})
 GAZEBO_LITE_ARGS   := $(GAZEBO_COMMON_ARGS) camera_fps:=5 enable_rviz:=false $(if $(WORLD),world:=${WORLD}) $(if $(ELEVATION),use_elevation:=${ELEVATION})
-GAZEBO_CPP_ARGS    := $(GAZEBO_COMMON_ARGS) $(if $(FPS),camera_fps:=${FPS}) $(if $(ELEVATION),use_elevation:=${ELEVATION})
 
 ##! Запуск MuJoCo симуляции (Rust контроллер — по умолчанию, с окном)
 mujoco: mujoco-viewer
@@ -94,15 +93,6 @@ gazebo-lite: rust-build
 	$(check-x11)
 	@printf "$(INFO)Запуск Gazebo (Rust) в лёгком режиме: RViz выключен, камера 5 FPS...${NC}\n"
 	$(call gazebo-launch,launch.launch.py,$(GAZEBO_LITE_ARGS))
-	@printf "$(INFO)Симуляция завершена, сохранение логов...${NC}\n"
-	@$(MAKE) save-logs
-
-##! Запуск Gazebo симуляции с C++ контроллером
-gazebo-cpp:
-	$(require-container)
-	$(check-x11)
-	@printf "$(INFO)Запуск Gazebo симуляции с C++ контроллером...${NC}\n"
-	$(call gazebo-launch,launch_cpp.launch.py,$(GAZEBO_CPP_ARGS))
 	@printf "$(INFO)Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 

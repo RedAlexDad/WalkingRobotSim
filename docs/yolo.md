@@ -15,7 +15,7 @@ Gazebo Camera ──→ /robot1/color/image_raw ──→ yolo_detector ──�
 ### 1. Симуляция
 
 ```bash
-make gazebo-py    # или make gazebo-cpp
+make gazebo
 ```
 
 ### 2. YOLO детектор

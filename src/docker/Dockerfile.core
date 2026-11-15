@@ -33,7 +33,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 WORKDIR ${WORKSPACE_DIR}
 
-# Пакеты ядра (сообщения + Rust-контроллер + C++ cmd_vel_pub + описания робота + launch/config)
+# Пакеты ядра (сообщения + Rust-контроллер и cmd_vel_pub + описания робота + launch/config)
 COPY src/geometry_msgs_rs        src/geometry_msgs_rs
 COPY src/std_msgs_rs             src/std_msgs_rs
 COPY src/sensor_msgs_rs          src/sensor_msgs_rs
@@ -43,7 +43,6 @@ COPY src/visualization_msgs_rs   src/visualization_msgs_rs
 COPY src/quadropted_msgs         src/quadropted_msgs
 COPY src/quadropted_msgs_rs      src/quadropted_msgs_rs
 COPY src/quadropted_controller_rust src/quadropted_controller_rust
-COPY src/quadropted_controller_cpp  src/quadropted_controller_cpp
 COPY src/walking_robot_utils     src/walking_robot_utils
 COPY src/gazebo_sim              src/gazebo_sim
 COPY src/go1_description         src/go1_description

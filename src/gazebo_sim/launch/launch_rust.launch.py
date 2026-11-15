@@ -1,6 +1,6 @@
 """
 Запуск Gazebo симуляции с Rust контроллером (quadropted_controller_rust).
-Аналог launch_cpp.launch.py, но использует Rust узлы.
+Тот же стек, что и launch.launch.py; оставлен как явный Rust-алиас.
 """
 import os
 

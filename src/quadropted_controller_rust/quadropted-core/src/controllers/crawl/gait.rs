@@ -1,7 +1,7 @@
 //! Crawl Gait Controller — Orchestrates crawl stance and swing
 //!
 //! Direct translation from the active C++ runtime path
-//! (`quadropted_controller_cpp/src/nodes/robot_controller_node.cpp::step_crawl`),
+//! (`robot_controller_node.cpp::step_crawl` из удалённого C++-контроллера),
 //! NOT the C++ library `CrawlGaitController::step` (which the node never calls).
 
 use super::stance::CrawlStanceController;

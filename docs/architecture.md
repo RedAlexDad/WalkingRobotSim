@@ -20,12 +20,11 @@
        │ joint_states               │ /tf, /tf_static
        ▼                            ▼
 ┌────────────────────────────────────────────────────┐
-│           quadropted_controller_cpp               │
-│  (или quadropted_controller_cpp)                   │
+│          quadropted_controller_rust (rclrs)        │
 │                                                    │
-│  GaitManager → GaitController (Trot/Crawl/Rest)    │
-│  ForwardKinematics → OdometryPublisher             │
-│  RobotController (cmd_vel → IK → joint commands)   │
+│  robot_controller_node: REST/TROT/CRAWL/STAND      │
+│  odometry_node: FK ног → одометрия (50 Гц)         │
+│  cmd_vel_pub: Twist → RobotVelocity                │
 └──────┬─────────────────────────────────┬───────────┘
        │ /joint_commands                 │ /odom
        ▼                                 ▼
@@ -40,14 +39,16 @@
 
 ## Пакеты
 
-### quadropted_controller_cpp
+### quadropted_controller_rust
 
-C++ контроллер ходьбы, 53.5x быстрее Python. Полная кросс-валидация.
+Контроллер ходьбы на Rust (rclrs): единственная актуальная реализация.
 
-- `TrotGaitController`, `CrawlGaitController`, `RestController`, `StandController`
-- Eigen3 для кинематики
-- Одометрия с O(1) скользящим средним
-- PID контроллер
+- `quadropted-core` — без ROS: `TrotGaitController`, `CrawlGaitController`,
+  `RestController`, `StandController`, FK/IK, одометрия, PID
+- `quadropted-nodes` — ROS 2 узлы: `robot_controller_node`, `odometry_node`,
+  `cmd_vel_pub`
+- Golden-кросс-валидация против данных прежнего C++-эталона
+  (`tests/golden/mod.rs`)
 
 ### quadropted_perception (YOLO Object Detection)
 
@@ -124,21 +125,19 @@ URDF модели: линки, джойнты, инерциальные пара
 
 ---
 
-# Контроллеры и одометрия: Rust (основной) и C++ (опция)
+# Контроллер и одометрия: Rust
 
 > Раздел ниже добавлен в рамках миграции контроллера на Rust
-> (`feat/rust-migration`).
+> (`feat/rust-migration`); C++-реализация удалена в 2026-11.
 
 ## Обзор
 
 Робот (Unitree Go2) управляется контроллером ходьбы с 12 степенями свободы.
-Проект содержит **две реализации контроллера**, которые используют одни и те же
-топики и сообщения и потому взаимозаменяемы:
+Контроллер реализован на Rust:
 
-| Реализация | Пакет | Статус |
+| Реализация | Пакет | Запуск |
 |---|---|---|
-| **Rust** (основная) | `quadropted_controller_rust` | По умолчанию (`make gazebo`) |
-| C++ (для сравнения) | `quadropted_controller_cpp` | `make gazebo-cpp` |
+| **Rust** | `quadropted_controller_rust` | `make gazebo` |
 
 ## Rust пакеты
 
@@ -170,11 +169,11 @@ src/quadropted_controller_rust/
 `geometry_msgs_rs`, `sensor_msgs_rs`, `std_msgs_rs`, `quadropted_msgs_rs`,
 `nav_msgs_rs` (Odometry), `tf2_msgs_rs` (TFMessage).
 
-## CRAWL: выравнивание с активным C++ рантайм-путём
+## CRAWL: выравнивание с эталонным C++ рантайм-путём
 
 Rust `CrawlGaitController::step` повторяет **активный C++ рантайм-путь**
-(`quadropted_controller_cpp/src/nodes/robot_controller_node.cpp::step_crawl`),
-а не библиотечный `CrawlGaitController::step` (C++ нода его не вызывает):
+(`robot_controller_node.cpp::step_crawl` из удалённого C++-пакета), а не
+библиотечный `CrawlGaitController::step` (C++ нода его не вызывала):
 
 1. **Нулевая команда** → плавное возвращение к default stance (alpha = 0.1).
 2. **Stance-фаза** → `CrawlStanceController::next_foot_location` с
@@ -219,8 +218,7 @@ Rust `odometry_node.rs` — замена C++ `odometry_node.cpp`:
 ## Запуск
 
 ```bash
-make gazebo        # Rust контроллер + Rust Odometry (по умолчанию)
-make gazebo-cpp    # C++ контроллер + C++ Odometry (для сравнения)
+make gazebo        # Rust контроллер + Rust Odometry
 make crawl         # переключение в режим CRAWL
 make test-rust     # все тесты Rust (юнит + кросс-валидация + интеграционные)
 ```
@@ -228,9 +226,9 @@ make test-rust     # все тесты Rust (юнит + кросс-валида�
 ## Тестирование
 
 - `cargo test --workspace` — юнит-тесты всех пакетов.
-- `scripts/test_cross_validation.sh` — C++ unit + Rust unit + кросс-валидация
-  формул (< 1e-10) + интеграционные тесты.
+- `scripts/test_cross_validation.sh` — Rust unit + golden-кросс-валидация
+  (1e-12/1e-9, IK 2e-3) + интеграционные тесты.
 - Интеграционные (headless):
   - `test_crawl_no_saturation` — 30 с CRAWL (1800 тактов @ 60 Гц), углы не
-    выходят за URDF-пределы более чем на 1% времени; Rust бит-в-бит = C++.
+    выходят за URDF-пределы более чем на 1% времени; Rust бит-в-бит = эталон.
   - `test_odometry_cross_validation` — маршрут 10 с, расхождение < 1e-9.

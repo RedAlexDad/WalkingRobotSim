@@ -1,57 +1,42 @@
 # CI/CD
 
-Непрерывная интеграция через GitHub Actions. Два workflow: CI (быстрая проверка качества) и Simulation Test (полная интеграция).
+Непрерывная интеграция через GitHub Actions: workflow `CI` — линтеры,
+Rust-тесты, сборка Docker-образа и smoke-тесты в контейнере.
 
 ---
 
 ## Workflow: CI
 
-Триггеры: `push` в `main`/`jazzy`, `pull_request` в `main`/`jazzy`.
+Триггеры: `push` в `main`, `jazzy_cpp`, `feat/rust-*`; `pull_request`
+в `main`; ручной `workflow_dispatch`.
 
-Шаги:
-
-| Шаг | Описание |
+| Job | Описание |
 |-----|----------|
-| **Docker build** | Сборка образа (с кэшем между запусками) |
-| **YAML lint** | yamllint всех `.yaml`/`.yml` файлов |
-| **Python lint** | flake8 + pylint контроллеров и скриптов |
-| **C++ lint** | clang-tidy C++ контроллера |
-| **C++ unit tests** | gtest (27 тестов) |
+| **lint** | yamllint (`workflow-файлы`, `src/docker/*.yml`) + ruff для `src/` |
+| **rust-tests** | `cargo test --workspace`: юнит + golden-кросс-валидация + интеграционные (в контейнере) |
+| **docker-build** | Сборка образа `walking_robot_sim:ci` |
+| **smoke-tests** | Запуск контейнера, проверка узлов и топиков, переключение режимов |
 
-Время выполнения: 5-10 минут.
-
----
-
-## Workflow: Simulation Test
-
-Триггеры: `push` в `main`/`jazzy`, `pull_request` в `main`/`jazzy`.
-
-Интеграционные тесты внутри контейнера:
-
-| Тест | Что проверяет |
-|------|---------------|
-| **Container up** | Контейнер стартует и работает |
-| **ROS 2 topics** | Ожидаемые топики публикуются (joint_states, odom, tf) |
-| **Gazebo ready** | Gazebo Sim загружен и публикует /clock |
-| **Controller test** | Контроллер реагирует на команды |
+Rust-тесты выполняются внутри контейнера: там ROS-окружение и собранный
+`rclrs`. Golden-данные C++-эталона завендорены в
+`src/quadropted_controller_rust/quadropted-core/tests/golden/mod.rs`,
+поэтому C++-пакет для прогона не нужен.
 
 ---
 
 ## Локальные проверки
 
-Те же проверки можно запустить локально:
-
 ```bash
-# Линтинг всех языков
+# Линтинг
 make ci-lint
-
-# Линтинг отдельно
 make ci-lint-yaml
 make ci-lint-python
-make ci-lint-cpp
 
-# C++ unit тесты
-make ci-test-cpp
+# Rust-тесты (юнит + golden-кросс-валидация + интеграционные)
+make test-rust
+
+# Скрипт напрямую (в контейнере; --host — локально)
+./scripts/test_cross_validation.sh
 ```
 
 ---
@@ -59,10 +44,9 @@ make ci-test-cpp
 ## Конфигурация
 
 - `.github/workflows/ci.yml` — CI workflow
-- `.github/workflows/simulation-test.yml` — Simulation Test workflow
 - `.yamllint` — конфиг yamllint
-- `.clang-tidy` — конфиг clang-tidy
-- `setup.cfg` — конфиг flake8 / pylint
+- `makefiles/ci.mk` — локальные линт-цели
+- `makefiles/test.mk` — локальные тест-цели
 
 ---
 
@@ -70,9 +54,9 @@ make ci-test-cpp
 
 Для добавления нового шага в CI:
 1. Отредактировать `.github/workflows/ci.yml`
-2. Убедиться, что шаг выполняется внутри собранного Docker контейнера
-3. Проверить локально через `make ci-*`
+2. Убедиться, что шаг выполняется внутри собранного Docker-контейнера
+3. Проверить локально через `make ci-*` или `make test-*`
 
 Для добавления интеграционного теста:
-1. Добавить скрипт в `src/tests/`
-2. Добавить шаг в `.github/workflows/simulation-test.yml`
+1. Добавить тест в `src/quadropted_controller_rust` или скрипт в `src/tests/`
+2. Добавить шаг в `.github/workflows/ci.yml` (job `rust-tests` или `smoke-tests`)

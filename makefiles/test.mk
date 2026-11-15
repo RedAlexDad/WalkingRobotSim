@@ -2,7 +2,7 @@
 
 .PHONY: test check benchmark setup backup
 .PHONY: test-rust test-coverage test-build test-container test-clean check-deps check-structure test-yaml check-x11
-.PHONY: test-correctness test-benchmark benchmark-cpp test-sim
+.PHONY: test-correctness test-benchmark test-sim
 
 ## Полный цикл тестирования
 test:
@@ -29,12 +29,11 @@ check:
 		*) printf "$(ERR)WHAT=$(WHAT): deps|structure|yaml|x11${NC}\n" >&2; exit 1 ;; \
 	esac
 
-## Бенчмарк
+## Бенчмарк (Python-скрипт src/tests/benchmark_performance.py)
 benchmark:
 	@case "$(WHAT)" in \
-		python)  $(MAKE) --no-print-directory test-benchmark ;; \
-		cpp|"")  $(MAKE) --no-print-directory benchmark-cpp ;; \
-		*) printf "$(ERR)WHAT=$(WHAT): cpp|python${NC}\n" >&2; exit 1 ;; \
+		python|"") $(MAKE) --no-print-directory test-benchmark ;; \
+		*) printf "$(ERR)WHAT=$(WHAT): python${NC}\n" >&2; exit 1 ;; \
 	esac
 
 ## Начальная настройка проекта
@@ -94,18 +93,11 @@ test-coverage:
 	cargo tarpaulin --package quadropted-core --tests --out Stdout 2>&1 | tail -30
 	@printf "$(OK)Покрытие измерено (цель 90%%)${NC}\n"
 
-##! Все автоматические тесты Rust (юнит + кросс-валидация + интеграционные)
+##! Все автоматические тесты Rust (юнит + golden-кросс-валидация + интеграционные)
 test-rust:
 	$(require-container)
-	@printf "$(INFO)Запуск всех Rust тестов (юнит + кросс-валидация + интеграционные)...${NC}\n"
-	@$(call ros-exec,set -o pipefail; cd /root/ws/src/quadropted_controller_rust && cargo test --workspace 2>&1 | tail -40)
-	@printf "$(INFO)Запуск скрипта кросс-валидации (на хосте, C++ харнесс + Rust)...${NC}\n"
-	@set -o pipefail; log=$$(mktemp); \
-	bash scripts/test_cross_validation.sh 2>&1 | tee "$$log" | tail -40 || { \
-		printf "$(ERR)Кросс-валидация провалена. Полный лог: $$log${NC}\n" >&2; \
-		exit 1; \
-	}; \
-	rm -f "$$log"
+	@printf "$(INFO)Запуск всех Rust тестов (юнит + golden-кросс-валидация + интеграционные)...${NC}\n"
+	@bash scripts/test_cross_validation.sh
 	@printf "$(OK)Rust тесты завершены${NC}\n"
 
 ##! Интеграционные тесты против ЖИВОЙ симуляции (нужен запущенный make gazebo)
@@ -236,9 +228,3 @@ test-benchmark:
 	@cd $(PROJECT_ROOT) && python3 src/tests/benchmark_performance.py
 	@echo ""
 	@printf "$(OK)Benchmark завершён${NC}\n"
-
-##! Запуск C++ бенчмарка
-benchmark-cpp:
-	$(require-container)
-	@printf "$(INFO)Запуск C++ бенчмарка...${NC}\n"
-	@$(call ros-exec,/root/ws/build/quadropted_controller_cpp/benchmark)

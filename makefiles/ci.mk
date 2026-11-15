@@ -2,18 +2,22 @@
 #
 # CI-проверки: по умолчанию запускаются все. Выбор одной — аргументом:
 #   make ci-lint LINT=yaml            # только YAML
-#   make ci-test TEST=cpp            # только C++
+#   make ci-lint LINT=python          # только Python
 
-.PHONY: ci-lint ci-test ci-lint-yaml ci-lint-python ci-lint-cpp ci-test-cpp
+.PHONY: ci-lint ci-lint-yaml ci-lint-python
 
-## Полный CI lint (YAML + Python + C++)
+# GNU make определяет встроенную переменную LINT=lint (для правила .c.lint),
+# из-за чего `make ci-lint` без аргумента попадал в ветку ошибки. Отбрасываем
+# это значение, сохраняя явные LINT=yaml / LINT=python.
+LINT := $(filter-out lint,$(LINT))
+
+## Полный CI lint (YAML + Python)
 ci-lint:
 	@case "$(LINT)" in \
 		yaml)   $(MAKE) --no-print-directory ci-lint-yaml ;; \
 		python) $(MAKE) --no-print-directory ci-lint-python ;; \
-		cpp)    $(MAKE) --no-print-directory ci-lint-cpp ;; \
-		"")     $(MAKE) --no-print-directory ci-lint-yaml ci-lint-python ci-lint-cpp ;; \
-		*) printf "$(ERR)Неизвестный LINT=$(LINT) (yaml|python|cpp)${NC}\n" >&2; exit 1 ;; \
+		"")     $(MAKE) --no-print-directory ci-lint-yaml ci-lint-python ;; \
+		*) printf "$(ERR)Неизвестный LINT=$(LINT) (yaml|python)${NC}\n" >&2; exit 1 ;; \
 	esac
 	@printf "$(OK)CI lint пройден${NC}\n"
 
@@ -42,34 +46,3 @@ ci-lint-python:
 		ruff check src/ && \
 		printf "$(OK)Python lint OK${NC}\n"; \
 	fi
-
-##! C++ format check (clang-format)
-ci-lint-cpp:
-	@printf "$(INFO)C++ format check (clang-format)...${NC}\n"
-	@if command -v clang-format &> /dev/null; then \
-		find src/quadropted_controller_cpp -name '*.hpp' -o -name '*.cpp' | \
-			xargs clang-format --dry-run --Werror && \
-		printf "$(OK)C++ format OK${NC}\n"; \
-	else \
-		printf "$(WARN)clang-format не установлен, пропускаем${NC}\n"; \
-	fi
-
-## Локальные CI тесты
-ci-test:
-	@case "$(TEST)" in \
-		cpp|"") $(MAKE) --no-print-directory ci-test-cpp ;; \
-		*) printf "$(ERR)Неизвестный TEST=$(TEST)${NC}\n" >&2; exit 1 ;; \
-	esac
-	@printf "$(OK)CI тесты пройдены${NC}\n"
-
-##! C++ unit tests через Docker
-ci-test-cpp:
-	$(require-container)
-	@printf "$(INFO)Запуск C++ unit тестов...${NC}\n"
-	@docker exec $(CONTAINER_NAME) bash -c "\
-		source /opt/ros/$(ROS_DISTRO)/setup.bash && \
-		source /root/ws/install/setup.bash && \
-		cd /root/ws && \
-		colcon test --packages-select quadropted_controller_cpp && \
-		colcon test-result --verbose"
-	@printf "$(OK)C++ tests OK${NC}\n"

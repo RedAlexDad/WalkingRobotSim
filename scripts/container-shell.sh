@@ -14,7 +14,7 @@ if [ -f ~/.bashrc ]; then
 fi
 
 cat > ~/.wrs_aliases <<'EOF'
-alias sim='ros2 launch gazebo_sim launch_cpp.launch.py use_sim_time:=true gui:=true'
+alias sim='ros2 launch gazebo_sim launch.launch.py use_sim_time:=true gui:=true'
 alias teleop='ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/robot1/cmd_vel'
 alias topics='ros2 topic list'
 alias nodes='ros2 node list'
