@@ -342,13 +342,18 @@ jobs:
       - name: Launch simulation (headless, flat world)
         # flat.world не требует загрузки моделей из Fuel — smoke-тест
         # не зависит от внешней сети и стартует за десятки секунд.
+        # На github-раннере нет GPU: включаем софтверный GL для Gazebo,
+        # а весь вывод launch пишем в файл для диагностики.
         run: |
           cd ${{ env.DOCKER_DIR }}
           docker compose exec -d simulator bash -lc '
             source /opt/ros/jazzy/setup.bash
             source /root/ws/install/setup.bash
+            export LIBGL_ALWAYS_SOFTWARE=1
+            export GALLIUM_DRIVER=llvmpipe
             ros2 launch gazebo_sim launch.launch.py \
-              use_sim_time:=true gui:=false enable_rviz:=false world:=flat.world'
+              use_sim_time:=true gui:=false enable_rviz:=false world:=flat.world \
+              > /tmp/smoke_launch.log 2>&1'
 
       - name: Wait for simulation (clock + nodes)
         id: wait_ros
@@ -371,6 +376,13 @@ jobs:
             sleep 2
           done
           echo "Simulation not ready after 180s"
+          echo "--- smoke_launch.log (tail) ---"
+          docker compose exec -T simulator bash -lc 'tail -120 /tmp/smoke_launch.log' || true
+          echo "--- процессы ---"
+          docker compose exec -T simulator bash -lc 'ps -eo pid,args | grep -E "gz sim|ros2 launch|robot_controller|controller_manager" | grep -v grep | head -10' || true
+          echo "--- compose ps ---"
+          docker compose ps || true
+          echo "--- container logs ---"
           docker compose logs --tail=80 simulator || true
           exit 1
 
