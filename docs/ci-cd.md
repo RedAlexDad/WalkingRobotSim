@@ -14,6 +14,7 @@ Rust-тесты, сборка Docker-образа и smoke-тесты в кон�
 |-----|----------|
 | **lint** | yamllint (`workflow-файлы`, `src/docker/*.yml`) + ruff для `src/` |
 | **rust-tests** | `cargo test --workspace`: юнит + golden-кросс-валидация + интеграционные (в контейнере) |
+| **coverage** | `cargo llvm-cov` по workspace, порог 90% строк для `quadropted-core`; отчёт (lcov/html/cobertura) в artifact `rust-coverage` |
 | **docker-build** | Сборка образа `walking_robot_sim:ci` |
 | **smoke-tests** | Запуск контейнера, проверка узлов и топиков, переключение режимов |
 
@@ -34,6 +35,9 @@ make ci-lint-python
 
 # Rust-тесты (юнит + golden-кросс-валидация + интеграционные)
 make test-rust
+
+# Покрытие (llvm-cov, порог 90% строк core; отчёт в reports/coverage)
+make test-coverage-rust
 
 # Скрипт напрямую (в контейнере; --host — локально)
 ./scripts/test_cross_validation.sh

@@ -301,8 +301,9 @@ cargo test -p quadropted-core                # тесты core (включая �
 # CRAWL runtime = C++ step_crawl, Odometry < 1e-9.
 ./scripts/test_cross_validation.sh
 
-# Покрытие кода (требование ≥ 90%, факт 97.34%):
-cargo tarpaulin -p quadropted-core --tests --out Html
+# Покрытие кода: порог 90% строк для quadropted-core,
+# отчёт (lcov/html/cobertura) в reports/coverage:
+make test-coverage-rust
 ```
 
 Интеграционные тесты (headless, без GUI):

@@ -226,6 +226,10 @@ make test-rust     # все тесты Rust (юнит + кросс-валида�
 ## Тестирование
 
 - `cargo test --workspace` — юнит-тесты всех пакетов.
+- `make test-coverage-rust` — покрытие через `cargo llvm-cov`: порог 90%
+  строк для `quadropted-core`, отчёты lcov/html/cobertura в `reports/coverage`.
+  ROS-узлы требуют живого rclrs-контекста и в порог не входят, но попадают
+  в отчёт.
 - `scripts/test_cross_validation.sh` — Rust unit + golden-кросс-валидация
   (1e-12/1e-9, IK 2e-3) + интеграционные тесты.
 - Интеграционные (headless):
