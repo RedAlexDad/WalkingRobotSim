@@ -9,8 +9,13 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     # Paths to files and directories
-    go1_description_pkg = get_package_share_directory('go1_gazebo')
-    xacro_path = os.path.join(go1_description_pkg, 'urdf', 'go1.urdf.xacro')
+    go1_description_pkg = get_package_share_directory('go1_description')
+    xacro_path = os.path.join(go1_description_pkg, 'xacro', 'robot.xacro')
+    # check_joint.rviz переехал в gazebo_sim вместе с остальными rviz-конфигами;
+    # Fixed Frame: base совпадает с корневой ссылкой go1.
+    check_joint_rviz = os.path.join(
+        get_package_share_directory('gazebo_sim'), 'rviz', 'check_joint.rviz'
+    )
 
     # Declare launch arguments
     user_debug_arg = DeclareLaunchArgument(
@@ -93,9 +98,7 @@ def generate_launch_description():
             executable='rviz2',
             name='rviz2',
             output='screen',
-            arguments=[
-                '-d', os.path.join(go1_description_pkg, 'config', 'check_joint.rviz')
-            ]
+            arguments=['-d', check_joint_rviz]
         ),
 
         # Controllers and other nodes

@@ -31,6 +31,8 @@
   <depend>teleop_twist_keyboard</depend>
 
   <exec_depend>ros2_controllers</exec_depend>
+  <!-- joints_move.launch.py берёт rviz/check_joint.rviz из gazebo_sim -->
+  <exec_depend>gazebo_sim</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

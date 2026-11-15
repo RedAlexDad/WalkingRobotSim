@@ -9,8 +9,8 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     # Paths to files and directories
-    go1_description_pkg = get_package_share_directory('go2_description')
-    xacro_path = os.path.join(go1_description_pkg, 'xacro', 'robot.xacro')
+    go2_description_pkg = get_package_share_directory('go2_description')
+    xacro_path = os.path.join(go2_description_pkg, 'xacro', 'robot.xacro')
 
     # Declare launch arguments
     user_debug_arg = DeclareLaunchArgument(

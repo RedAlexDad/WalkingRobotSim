@@ -11,7 +11,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    package_name='go1_gazebo'
+    package_name='go1_description'
     namespace = '/robot1'
     name = 'robot1'
 
