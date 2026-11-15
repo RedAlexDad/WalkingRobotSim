@@ -339,6 +339,32 @@ jobs:
           cd ${{ env.DOCKER_DIR }}
           docker compose up -d
 
+      - name: Verify Rust nodes in container
+        # Страховка от неполного named volume/образа: install/ содержит
+        # symlink'и на /root/ws/src/.../target/release. Если их целей нет,
+        # пересобираем Rust в контейнере — launch не упадёт с "not found".
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          NODE=/root/ws/install/quadropted_controller_rust/lib/quadropted_controller_rust/robot_controller_node
+          if docker compose exec -T simulator bash -lc "test -x $NODE"; then
+            echo "Rust nodes: OK"
+          else
+            echo "Rust nodes: MISSING — диагностика и пересборка"
+            docker compose exec -T simulator bash -lc \
+              "ls -l /root/ws/install/quadropted_controller_rust/lib/quadropted_controller_rust/ || true; \
+               ls /root/ws/src/quadropted_controller_rust/ || true"
+            docker compose exec -T simulator bash -lc '
+              source /root/.cargo/env
+              cd /root/ws/src/quadropted_controller_rust
+              cargo build --release'
+            if docker compose exec -T simulator bash -lc "test -x $NODE"; then
+              echo "Rust nodes: rebuilt OK"
+            else
+              echo "Rust nodes: still missing"
+              exit 1
+            fi
+          fi
+
       - name: Launch simulation (headless, flat world)
         # flat.world не требует загрузки моделей из Fuel — smoke-тест
         # не зависит от внешней сети и стартует за десятки секунд.
