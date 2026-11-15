@@ -1,6 +1,6 @@
 # makefiles/simulation.mk
 
-.PHONY: gazebo gazebo-rust teleop teleop-simple set-pose reset-pose kill-ros exec test-aliases save-logs \
+.PHONY: gazebo gazebo-rust gazebo-multi teleop teleop-simple set-pose reset-pose kill-ros exec test-aliases save-logs \
         mujoco mujoco-viewer mujoco-lite mujoco-kill rviz-kill flicker-check
 
 # ════ MuJoCo ════
@@ -34,6 +34,16 @@ RVIZ_LAUNCH_ARGS := enable_rviz:=$(if $(RVIZ_CUSTOM),false,$(if $(RVIZ_OFF),fals
 GAZEBO_COMMON_ARGS := use_sim_time:=true gui:=true
 GAZEBO_RUST_ARGS   := $(GAZEBO_COMMON_ARGS) $(if $(WORLD),world:=${WORLD}) $(if $(FPS),camera_fps:=${FPS}) $(RVIZ_LAUNCH_ARGS) $(if $(SLAM),slam:=${SLAM}) $(if $(ELEVATION),use_elevation:=${ELEVATION})
 GAZEBO_LITE_ARGS   := $(GAZEBO_COMMON_ARGS) camera_fps:=5 enable_rviz:=false $(if $(WORLD),world:=${WORLD}) $(if $(ELEVATION),use_elevation:=${ELEVATION})
+
+# ════ Gazebo: мультиробот ════
+# HEADLESS=1 — gz sim без окна (-s) и без RViz на каждом роботе: так сценарий
+# запускается на машине без X11. Без флага — GUI Gazebo + RViz на робота.
+GAZEBO_MULTI_GUI  := $(if $(HEADLESS),false,true)
+GAZEBO_MULTI_RVIZ := $(if $(HEADLESS),false,$(if $(RVIZ_CUSTOM),false,$(if $(RVIZ_OFF),false,true)))
+GAZEBO_MULTI_ARGS := use_sim_time:=true gui:=$(GAZEBO_MULTI_GUI) enable_rviz:=$(GAZEBO_MULTI_RVIZ) \
+                     $(if $(WORLD),world:=${WORLD}) $(if $(FPS),camera_fps:=${FPS}) \
+                     $(if $(ELEVATION),use_elevation:=${ELEVATION}) \
+                     $(if $(STARTUP_DELAY),startup_delay:=${STARTUP_DELAY})
 
 ##! Запуск MuJoCo симуляции (Rust контроллер — по умолчанию, с окном)
 mujoco: mujoco-viewer
@@ -93,6 +103,27 @@ gazebo-lite: rust-build
 	$(check-x11)
 	@printf "$(INFO)Запуск Gazebo (Rust) в лёгком режиме: RViz выключен, камера 5 FPS...${NC}\n"
 	$(call gazebo-launch,launch.launch.py,$(GAZEBO_LITE_ARGS))
+	@printf "$(INFO)Симуляция завершена, сохранение логов...${NC}\n"
+	@$(MAKE) save-logs
+
+## Мультироботный запуск (Gazebo + bridge + per-robot bringup на Rust-нодах)
+## Список роботов — src/gazebo_sim/config/robots.yaml.
+## Опции: HEADLESS=1 — gz sim без окна и без RViz (машина без X11);
+##        WORLD=..., FPS=..., ELEVATION=true, STARTUP_DELAY=6 (пауза до спавна).
+gazebo-multi: rust-build
+	$(require-container)
+	@if [ -z "$(HEADLESS)" ]; then \
+		if [ -z "$$DISPLAY" ]; then \
+			printf "$(ERR)DISPLAY не установлен — задайте DISPLAY или запустите HEADLESS=1${NC}\n" >&2; \
+			exit 1; \
+		fi; \
+		xhost +local:root >/dev/null 2>&1 || true; \
+		xhost +local:$(USER) >/dev/null 2>&1 || true; \
+		printf "$(OK)X11 настроен: DISPLAY=$$DISPLAY${NC}\n"; \
+	fi
+	@printf "$(INFO)Запуск мультироботной симуляции: Gazebo + per-robot bringup (Rust)...${NC}\n"
+	@printf "$(INFO)Роботы и позы: src/gazebo_sim/config/robots.yaml${NC}\n"
+	$(call gazebo-launch,gazebo_multi.launch.py,$(GAZEBO_MULTI_ARGS))
 	@printf "$(INFO)Симуляция завершена, сохранение логов...${NC}\n"
 	@$(MAKE) save-logs
 

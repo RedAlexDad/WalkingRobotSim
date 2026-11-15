@@ -94,6 +94,7 @@ make gazebo
 | `make shell` | Вход в bash контейнера |
 | `make logs` | Логи контейнера |
 | `make gazebo` | Запуск симуляции с Rust-контроллером |
+| `make gazebo-multi` | Мультироботный запуск по `src/gazebo_sim/config/robots.yaml` (`HEADLESS=1` — без GUI и RViz) |
 | `make yolo-detector`    | YOLO распознавание объектов (лог в терминал) |
 | `make yolo-visualizer`  | RViz split-screen: камера + детекции |
 | `make teleop` | Управление с клавиатуры |

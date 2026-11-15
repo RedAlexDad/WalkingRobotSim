@@ -10,6 +10,7 @@ from launch.actions import (
     IncludeLaunchDescription,
     OpaqueFunction,
 )
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node, SetRemap
@@ -200,8 +201,8 @@ def generate_launch_description():
     )
 
     # IMU приходит от ros_gz_bridge на абсолютный топик /<ns>/imu_plugin/out,
-    # а Rust-ноды подписываются на относительный "imu" (параметр imu_topic они
-    # не читают, в отличие от C++). Ремаппинг сохраняет прежнюю привязку.
+    # а Rust-ноды подписываются на относительный "imu" (imu_topic читает только
+    # odometry_node). Ремаппинг сохраняет привязку к абсолютному топику.
     imu_remap = ("imu", PythonExpression(["'/' + '", ns, "' + '/imu_plugin/out'"]))
     node_remaps = remaps + [imu_remap]
 
@@ -284,6 +285,9 @@ def generate_launch_description():
                 pkg_path, "rviz", "multi_nav2_default_view.rviz"
             ),
         }.items(),
+        # enable_rviz объявлен выше и приходит из мультироботного запуска:
+        # HEADLESS=1 (make gazebo-multi) гасит RViz на всех роботах.
+        condition=IfCondition(LaunchConfiguration("enable_rviz")),
     )
 
     cmd_vel = Node(
