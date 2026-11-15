@@ -1,3 +1,12 @@
+# Шаблон bridge Gazebo → ROS 2.
+#
+# Записи с `/robot1` и `robot1_my_bot` — шаблонные: мультироботный launch
+# (`gazebo_multi_nav2_per_robot.launch.py`) подставляет в них namespace каждого
+# робота из `config/robots.yaml`, а записи без этих токенов (/clock,
+# /world_poses_info) оставляет в одном экземпляре.
+#
+# Одиночные launch-файлы (`gazebo_multi_nav2_rust.launch.py`, `launch_core.py`)
+# читают файл как есть — для них это конфиг robot1.
 - ros_topic_name: "/clock"
   gz_topic_name: "/clock"
   ros_type_name: "rosgraph_msgs/msg/Clock"

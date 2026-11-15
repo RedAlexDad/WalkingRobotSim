@@ -15,4 +15,7 @@ robots:
   #   x_pose: '-2.0'
   #   y_pose: '-2.0'
   #   z_pose: '0.6'
-  # add more robots if you need, but unable multi robots in cyclonedds config file
+  # Добавить роботов можно, раскомментировав записи: мультироботный запуск
+# (`make gazebo-multi`) читает этот файл и поднимает bridge и bringup на
+# каждого робота. CycloneDDS в src/docker/cyclonedds.xml допускает до 100
+# автоматических participant index — проверено на двух роботах.
