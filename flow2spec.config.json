@@ -1,0 +1,19 @@
+{
+  "locale": "en-US",
+  "subAgent": true,
+  "switchAgentVerification": true,
+  "intentRecognition": true,
+  "changeTracking": {
+    "feat": true,
+    "fix": false,
+    "implement": true
+  },
+  "updateCheck": {
+    "enabled": true
+  },
+  "collaboration": {
+    "enabled": true,
+    "developerId": "",
+    "syncActiveTasks": true
+  }
+}
