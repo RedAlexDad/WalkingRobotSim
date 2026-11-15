@@ -88,13 +88,13 @@ backup:
 test-coverage: test-coverage-rust
 
 ##! Покрытие Rust через cargo llvm-cov: lcov + HTML + Cobertura в reports/coverage
-##! Порог 90% строк считается по пакету quadropted-core (математика,
-##! кинематика, контроллеры, одометрия) — как в прежнем tarpaulin-прогоне.
-##! ROS-узлы (robot_controller_node, odometry_node) требуют живого rclrs-контекста,
-##! юнит-тестами не покрываются, поэтому в порог не входят, но остаются в отчёте.
+##! Порог 90% строк считается по всему workspace (quadropted-core + quadropted-nodes),
+##! без исключения файлов: в узлах тестируемая логика вынесена в модули lib
+##! (`cmd_vel`, `controller`, `odometry`), в бинарниках остаётся только связка
+##! с rclrs, которая требует живого ROS-контекста и в гейт входит как есть.
 test-coverage-rust:
 	$(require-container)
-	@printf "$(INFO)Измерение покрытия Rust (cargo llvm-cov, порог 90%% строк core)...${NC}\n"
+	@printf "$(INFO)Измерение покрытия Rust (cargo llvm-cov, порог 90%% строк workspace)...${NC}\n"
 	@mkdir -p $(PROJECT_ROOT)/reports/coverage
 	@$(call ros-exec,set -o pipefail; source /root/.cargo/env 2>/dev/null; \
 		cd /root/ws/src/quadropted_controller_rust && \
@@ -102,7 +102,7 @@ test-coverage-rust:
 		cargo llvm-cov --workspace --lcov --output-path /tmp/wrs-coverage/lcov.info && \
 		cargo llvm-cov report --html --output-dir /tmp/wrs-coverage/html && \
 		cargo llvm-cov report --cobertura --output-path /tmp/wrs-coverage/cobertura.xml && \
-		cargo llvm-cov report -p quadropted-core --summary-only --fail-under-lines 90 \
+		cargo llvm-cov report --summary-only --fail-under-lines 90 \
 			| tee /tmp/wrs-coverage/summary.txt)
 	@docker cp $(CONTAINER_NAME):/tmp/wrs-coverage/. $(PROJECT_ROOT)/reports/coverage/
 	@printf "$(OK)Отчёт сохранён: reports/coverage (lcov.info, cobertura.xml, html/, summary.txt)${NC}\n"

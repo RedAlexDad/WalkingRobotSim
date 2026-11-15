@@ -164,7 +164,7 @@ jobs:
           rustup component add llvm-tools-preview
           cargo install cargo-llvm-cov --locked"
 
-    - name: Run coverage (report + gate ≥ 90% lines for quadropted-core)
+    - name: Run coverage (report + gate ≥ 90% lines for the whole workspace)
       run: |
         cd ${{ env.DOCKER_DIR }}
         docker compose exec -T simulator bash -c "
@@ -177,7 +177,7 @@ jobs:
           cargo llvm-cov --workspace --lcov --output-path /tmp/wrs-coverage/lcov.info
           cargo llvm-cov report --html --output-dir /tmp/wrs-coverage/html
           cargo llvm-cov report --cobertura --output-path /tmp/wrs-coverage/cobertura.xml
-          cargo llvm-cov report -p quadropted-core --summary-only --fail-under-lines 90 | tee /tmp/wrs-coverage/summary.txt"
+          cargo llvm-cov report --summary-only --fail-under-lines 90 | tee /tmp/wrs-coverage/summary.txt"
 
     - name: Extract coverage report
       if: always()
