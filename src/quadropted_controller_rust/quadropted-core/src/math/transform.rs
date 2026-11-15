@@ -41,6 +41,9 @@ pub fn homog_transform_inverse(m: &Matrix4<f64>) -> Matrix4<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    // Vector4 нужен только тестам: в рантайм-коде модуля он не используется,
+    // поэтому импорт живёт в тестовом модуле и не даёт unused-import warning.
+    use nalgebra::Vector4;
 
     #[test]
     fn test_homog_transxyz() {
