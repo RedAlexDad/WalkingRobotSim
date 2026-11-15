@@ -1,6 +1,6 @@
 # makefiles/docker.mk
 
-.PHONY: deploy smart-deploy build build-no-cache build-fresh prune-build-cache image-save image-load image-pull up up-bg up-foreground down restart clean status logs shell deploy-no-cache build-stage build-stage-list
+.PHONY: deploy smart-deploy build build-no-cache build-fresh prune-build-cache image-save image-load image-pull image-restore up up-bg up-foreground down restart clean status logs shell deploy-no-cache build-stage build-stage-list
 
 # Локальный кэш свежего образа: images/<name>-latest-<arch>.tar.zst.
 # Каталог в .gitignore (тяжёлый) и в .dockerignore (не тащим в контекст).
@@ -68,12 +68,25 @@ image-load:
 	@zstd -t $(IMAGE_ARCHIVE) && zstd -dc $(IMAGE_ARCHIVE) | docker load
 	@printf "$(OK)Образ загружен: walking_robot_sim:latest${NC}\n"
 
-## Скачать образ из GitHub Packages (GHCR) и пометить как walking_robot_sim:latest
+## Скачать образ из GitHub Packages (GHCR), пометить walking_robot_sim:latest и сохранить в images/
 image-pull:
 	$(require-docker)
 	@printf "$(INFO)Загрузка $(GHCR_IMAGE) ...${NC}\n"
 	@docker pull $(GHCR_IMAGE) && docker tag $(GHCR_IMAGE) walking_robot_sim:latest
 	@printf "$(OK)Образ $(GHCR_IMAGE) готов как walking_robot_sim:latest${NC}\n"
+	@printf "$(INFO)Кэшируем образ в images/, чтобы больше не качать из GHCR...${NC}\n"
+	@$(MAKE) --no-print-directory image-save
+
+## Восстановить образ: из images/ если архив есть, иначе скачать из GHCR и закэшировать
+image-restore:
+	$(require-docker)
+	@if [ -f "$(IMAGE_ARCHIVE)" ]; then \
+		printf "$(INFO)Найден локальный архив $(IMAGE_ARCHIVE), загружаем без сети...${NC}\n"; \
+		$(MAKE) --no-print-directory image-load; \
+	else \
+		printf "$(INFO)Локального архива нет, качаем из GHCR и кэшируем...${NC}\n"; \
+		$(MAKE) --no-print-directory image-pull; \
+	fi
 
 ## Запуск контейнера
 up:

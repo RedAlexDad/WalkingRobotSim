@@ -321,7 +321,7 @@ make test-coverage-rust
 - **Размер:** ~16 GB (Gazebo Sim, Nav2, PyTorch)
 - **6-stage сборка:** зависимости ROS, симуляция, навигация, Python, финальный
 - **Кэш первого уровня:** 30-60 секунд при повторной сборке
-- **Кэш образа:** `images/*.tar.zst` (в `.gitignore`) — восстановление после `docker purge`: `make image-load`; из GitHub Packages: `make image-pull`
+- **Кэш образа:** `images/*.tar.zst` (в `.gitignore`) — восстановление после `docker purge`: `make image-load`; скачать из GitHub Packages и закэшировать: `make image-pull`; универсально: `make image-restore`
 
 [Docker конфигурация](src/docker/README.md)
 

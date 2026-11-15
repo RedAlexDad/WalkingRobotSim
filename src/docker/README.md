@@ -74,9 +74,12 @@ make deploy-no-cache
 make build          # сборка; после успеха обновит images/walking_robot_sim-latest-<arch>.tar.zst
 make image-save     # сохранить образ вручную (пропустит, если образ не менялся)
 make image-load     # восстановить из images/ после docker purge
-make image-pull     # скачать из GitHub Packages: ghcr.io/redalexdad/walking_robot_sim:latest
+make image-pull     # скачать из GitHub Packages и сохранить в images/ (следующий раз — без сети)
+make image-restore  # есть архив → image-load, нет → image-pull (и кэширование в images/)
 ```
 
+`make image-pull` после скачивания сразу вызывает `image-save`, поэтому повторно
+качать из GHCR не придётся: достаточно `make image-load`/`make image-restore`.
 Автосохранение можно отключить: `make build SAVE_IMAGE=0`.
 Публикация в GHCR — workflow `.github/workflows/docker-image.yml`.
 
