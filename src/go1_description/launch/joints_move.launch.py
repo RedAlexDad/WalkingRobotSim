@@ -39,12 +39,13 @@ def generate_launch_description():
         output="screen",
     )
 
-    # Node for controlling the robot (C++)
+    # Node for controlling the robot (Rust)
     controller = Node(
-        package='quadropted_controller_cpp',
+        package='quadropted_controller_rust',
         executable='robot_controller_node',
-        name='robot_controller_cpp',
+        name='robot_controller_rust',
         output='screen',
+        remappings=[('imu', '/imu_plugin/out')],
     )
 
     # IMU bridge node
@@ -56,11 +57,11 @@ def generate_launch_description():
         output='screen',
     )
 
-    # Command velocity publisher (C++)
+    # Command velocity publisher (Rust)
     cmd_vel_pub = Node(
-        package='quadropted_controller_cpp',
+        package='quadropted_controller_rust',
         executable='cmd_vel_pub',
-        name='cmd_vel_pub_cpp',
+        name='cmd_vel_pub_rust',
         output='screen',
     )
 

@@ -112,43 +112,54 @@ def generate_launch_description():
 
     )
 
-    # Ноды для управления роботом (C++)
+    # Ноды для управления роботом (Rust).
+    # namespace задан с ведущим слешем, поэтому IMU-топик собираем без
+    # дополнительного "/": f"{namespace}/imu_plugin/out".
+    imu_topic = f'{namespace}/imu_plugin/out'
+    node_remappings = remappings + [('imu', imu_topic)]
+
     controller = Node(
-        package='quadropted_controller_cpp',
+        package='quadropted_controller_rust',
         executable='robot_controller_node',
-        name='robot_controller_cpp',
+        name='robot_controller_rust',
         namespace=namespace,
         output='screen',
-        remappings=remappings
+        parameters=[{'use_sim_time': use_sim_time}],
+        remappings=node_remappings
     )
 
     cmd_vel_pub = Node(
-        package='quadropted_controller_cpp',
+        package='quadropted_controller_rust',
         executable='cmd_vel_pub',
-        name='cmd_vel_pub_cpp',
+        name='cmd_vel_pub_rust',
         namespace=namespace,
         output='screen',
     )
 
     odom = Node(
-        package='quadropted_controller_cpp',
+        package='quadropted_controller_rust',
         executable='odometry_node',
-        name='odometry_cpp',
+        name='odometry_rust',
         namespace=namespace,
         output='screen',
         parameters=[{
+            'use_sim_time': use_sim_time,
             "verbose": False,
             'publish_rate': 50,
             'open_loop': False,
             'has_imu_heading': True,
             'is_gazebo': True,
-            'imu_topic': f"/{namespace}/imu_plugin/out",
+            'imu_topic': imu_topic,
             'base_frame_id': "base_link",
             'odom_frame_id': "odom",
             'clock_topic': '/clock',
             'enable_odom_tf': True,
+            'filter_window_size': 14,
+            'stall_window': 20,
+            'stall_ang_vel_threshold': 0.05,
+            'stall_exit_ang_vel_threshold': 0.1,
         }],
-        remappings=remappings
+        remappings=node_remappings
     )
 
     map_dir = os.path.join(get_package_share_directory(package_name), 'maps', 'warehouse_map.yaml')

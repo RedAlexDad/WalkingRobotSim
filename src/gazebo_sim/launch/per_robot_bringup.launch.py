@@ -199,23 +199,31 @@ def generate_launch_description():
         remappings=remaps,
     )
 
+    # IMU приходит от ros_gz_bridge на абсолютный топик /<ns>/imu_plugin/out,
+    # а Rust-ноды подписываются на относительный "imu" (параметр imu_topic они
+    # не читают, в отличие от C++). Ремаппинг сохраняет прежнюю привязку.
+    imu_remap = ("imu", PythonExpression(["'/' + '", ns, "' + '/imu_plugin/out'"]))
+    node_remaps = remaps + [imu_remap]
+
     controller = Node(
-        package="quadropted_controller_cpp",
+        package="quadropted_controller_rust",
         executable="robot_controller_node",
-        name="robot_controller_cpp",
+        name="robot_controller_rust",
         namespace=ns,
         output="screen",
-        remappings=remaps,
+        parameters=[{"use_sim_time": LaunchConfiguration("use_sim_time")}],
+        remappings=node_remaps,
     )
 
     odom = Node(
-        package="quadropted_controller_cpp",
+        package="quadropted_controller_rust",
         executable="odometry_node",
-        name="odometry_cpp",
+        name="odometry_rust",
         namespace=ns,
         output="screen",
         parameters=[
             {
+                "use_sim_time": LaunchConfiguration("use_sim_time"),
                 "verbose": False,
                 "publish_rate": 50,
                 "open_loop": False,
@@ -226,9 +234,13 @@ def generate_launch_description():
                 "odom_frame_id": "odom",
                 "clock_topic": "/clock",
                 "enable_odom_tf": False,
+                "filter_window_size": 14,
+                "stall_window": 20,
+                "stall_ang_vel_threshold": 0.05,
+                "stall_exit_ang_vel_threshold": 0.1,
             }
         ],
-        remappings=remaps,
+        remappings=node_remaps,
     )
 
     nav2 = IncludeLaunchDescription(
@@ -275,10 +287,10 @@ def generate_launch_description():
     )
 
     cmd_vel = Node(
-        package="quadropted_controller_cpp",
+        package="quadropted_controller_rust",
         executable="cmd_vel_pub",
         namespace=ns,
-        name="cmd_vel_pub_cpp",
+        name="cmd_vel_pub_rust",
         output="screen",
         remappings=remaps,
     )
