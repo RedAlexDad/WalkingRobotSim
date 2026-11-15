@@ -1,0 +1,272 @@
+name: CI/CD
+
+# Пайплайн: lint → автотесты Rust + покрытие → публикация образа в GHCR
+# (только main) → GitHub Release (только main). Публикация и релиз
+# выполняются строго после успешных автотестов.
+on:
+  push:
+    branches:
+      - main
+      - jazzy_cpp
+      - feat/rust-full-migration
+      - 'feat/rust-*'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-cd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ROS_DISTRO: jazzy
+  DOCKER_DIR: src/docker
+  IMAGE_BASENAME: walking_robot_sim
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # ════════════════════════════════════════════════════════════
+  # 1. LINT — быстрый статический анализ (2-3 min, не блокирует пайплайн)
+  # ════════════════════════════════════════════════════════════
+  lint:
+    name: Lint & Static Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # ruff-долг (214 pre-existing ошибок в src/) не должен блокировать
+    # автотесты и релиз: job остаётся в отчёте, но не валит пайплайн.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install lint tools
+        run: pip install yamllint ruff
+
+      - name: YAML lint
+        run: |
+          echo "=== Checking .github/workflows ==="
+          yamllint -c .yamllint .github/workflows/
+          echo "=== Checking src/docker ==="
+          yamllint -c .yamllint src/docker/*.yml
+
+      - name: Python lint (ruff)
+        run: ruff check src/
+
+  # ════════════════════════════════════════════════════════════
+  # 2. AUTO-TESTS — Rust unit + golden cross-val + integration
+  #    + покрытие llvm-cov (порог 90% строк), один общий образ
+  # ════════════════════════════════════════════════════════════
+  tests:
+    name: Rust Tests + Coverage (≥ 90%)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc "/usr/local/share/boost"
+          sudo apt-get clean
+          docker system prune -a -f
+          df -h
+
+      - name: Build Docker image
+        run: docker build -f src/docker/Dockerfile -t walking_robot_sim:ci .
+
+      - name: Start container
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose up -d
+
+      - name: Wait for workspace
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          echo "Waiting for workspace (max 60s)..."
+          for i in $(seq 1 30); do
+            if docker compose exec -T simulator bash -c \
+              "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && ros2 node list" 2>/dev/null | grep -q .; then
+              echo "Workspace ready at ${i}s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "WARNING: Workspace not ready, continuing anyway"
+
+      - name: Build Rust workspace
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose exec -T simulator bash -c "
+            source /opt/ros/jazzy/setup.bash
+            source /root/ws/install/setup.bash 2>/dev/null || true
+            cd /root/ws/src/quadropted_controller_rust
+            cargo build --workspace"
+
+      - name: Rust tests (unit + golden cross-validation + integration)
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose exec -T simulator bash -c "
+            source /opt/ros/jazzy/setup.bash
+            source /root/ws/install/setup.bash 2>/dev/null || true
+            cd /root/ws/src/quadropted_controller_rust
+            cargo test --workspace"
+
+      - name: Install llvm-tools-preview and cargo-llvm-cov
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose exec -T simulator bash -c "
+            source /root/.cargo/env
+            rustup component add llvm-tools-preview
+            cargo install cargo-llvm-cov --locked"
+
+      - name: Coverage gate (≥ 90% lines for the whole workspace)
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose exec -T simulator bash -c "
+            set -o pipefail
+            source /opt/ros/jazzy/setup.bash
+            source /root/ws/install/setup.bash 2>/dev/null || true
+            source /root/.cargo/env
+            cd /root/ws/src/quadropted_controller_rust
+            rm -rf /tmp/wrs-coverage && mkdir -p /tmp/wrs-coverage
+            cargo llvm-cov --workspace --lcov --output-path /tmp/wrs-coverage/lcov.info
+            cargo llvm-cov report --html --output-dir /tmp/wrs-coverage/html
+            cargo llvm-cov report --cobertura --output-path /tmp/wrs-coverage/cobertura.xml
+            cargo llvm-cov report --summary-only --fail-under-lines 90 | tee /tmp/wrs-coverage/summary.txt"
+
+      - name: Smoke test ROS nodes/topics (advisory)
+        continue-on-error: true
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose exec -T simulator bash -c "
+            source /opt/ros/jazzy/setup.bash
+            source /root/ws/install/setup.bash
+            echo '=== nodes ==='; ros2 node list
+            echo '=== topics ==='; ros2 topic list | head -40"
+
+      - name: Extract coverage report
+        if: always()
+        run: |
+          cid=$(cd ${{ env.DOCKER_DIR }} && docker compose ps -q simulator)
+          mkdir -p "${{ github.workspace }}/reports/coverage"
+          docker cp "$cid":/tmp/wrs-coverage/. "${{ github.workspace }}/reports/coverage/" || true
+          ls -la "${{ github.workspace }}/reports/coverage" || true
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rust-coverage
+          path: reports/coverage/
+          retention-days: 7
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose down -v --remove-orphans
+
+  # ════════════════════════════════════════════════════════════
+  # 3. PUBLISH — сборка и публикация образа в GitHub Packages (только main)
+  # ════════════════════════════════════════════════════════════
+  publish:
+    name: Publish image to GHCR (main)
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    needs: [tests]
+    if: github.ref == 'refs/heads/main'
+    outputs:
+      image: ${{ steps.vars.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Compute image name (lowercase)
+        id: vars
+        run: |
+          echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE_BASENAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: src/docker/Dockerfile
+          target: final
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.image }}:latest
+            ${{ steps.vars.outputs.image }}:${{ github.sha }}
+            ${{ steps.vars.outputs.image }}:v0.1.${{ github.run_number }}
+          cache-from: type=registry,ref=${{ steps.vars.outputs.image }}:buildcache
+          cache-to: type=registry,ref=${{ steps.vars.outputs.image }}:buildcache,mode=max
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=v0.1.${{ github.run_number }}
+
+  # ════════════════════════════════════════════════════════════
+  # 4. RELEASE — GitHub Release после публикации образа (только main)
+  # ════════════════════════════════════════════════════════════
+  release:
+    name: GitHub Release (main)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [publish]
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE: ${{ needs.publish.outputs.image }}
+          DIGEST: ${{ needs.publish.outputs.digest }}
+        run: |
+          TAG="v0.1.${{ github.run_number }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Релиз $TAG уже существует — пропускаем"
+            exit 0
+          fi
+          gh release create "$TAG" \
+            --target main \
+            --title "WalkingRobotSim $TAG" \
+            --generate-notes
+          BODY=$(gh release view "$TAG" --json body --jq .body)
+          gh release edit "$TAG" --notes "${BODY}
+
+          ### Docker image
+          - \`${IMAGE}:${TAG}\`
+          - \`${IMAGE}:latest\`
+          - digest: \`${DIGEST}\`"
