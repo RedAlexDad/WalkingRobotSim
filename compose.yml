@@ -93,6 +93,9 @@ services:
     privileged: false
     group_add:
       - "44"
+    # PID 1 в контейнере — docker-init (tini): без него завершившиеся дочерние
+    # процессы ROS/Gazebo остаются зомби (PPID=1), т.к. PID 1 их не пожинает.
+    init: true
     command: bash -c "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash && tail -f /dev/null"
     environment:
       <<: [*env_gui, *env_ros]
