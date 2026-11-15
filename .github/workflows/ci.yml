@@ -2,9 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main, jazzy_cpp]
+    branches:
+      - main
+      - jazzy_cpp
+      - feat/rust-full-migration
+      - 'feat/rust-*'
   pull_request:
-    branches: [main, jazzy_cpp]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:

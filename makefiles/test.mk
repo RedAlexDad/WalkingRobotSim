@@ -98,9 +98,14 @@ test-coverage:
 test-rust:
 	$(require-container)
 	@printf "$(INFO)Запуск всех Rust тестов (юнит + кросс-валидация + интеграционные)...${NC}\n"
-	@$(call ros-exec,cd /root/ws/src/quadropted_controller_rust && cargo test --workspace 2>&1 | tail -40)
+	@$(call ros-exec,set -o pipefail; cd /root/ws/src/quadropted_controller_rust && cargo test --workspace 2>&1 | tail -40)
 	@printf "$(INFO)Запуск скрипта кросс-валидации (на хосте, C++ харнесс + Rust)...${NC}\n"
-	@bash scripts/test_cross_validation.sh 2>&1 | tail -40
+	@set -o pipefail; log=$$(mktemp); \
+	bash scripts/test_cross_validation.sh 2>&1 | tee "$$log" | tail -40 || { \
+		printf "$(ERR)Кросс-валидация провалена. Полный лог: $$log${NC}\n" >&2; \
+		exit 1; \
+	}; \
+	rm -f "$$log"
 	@printf "$(OK)Rust тесты завершены${NC}\n"
 
 ##! Интеграционные тесты против ЖИВОЙ симуляции (нужен запущенный make gazebo)

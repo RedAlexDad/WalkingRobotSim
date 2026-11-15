@@ -13,6 +13,10 @@
 
 set -e
 
+# Счётчик проваленных секций: прогон доходит до сводной таблицы,
+# но завершается non-zero, если хотя бы один тест/сборка провалились.
+FAILURES=0
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 BUILD_DIR="$PROJECT_DIR/build"
@@ -53,8 +57,11 @@ success "C++ пакет собран"
 header "2. Сборка Rust пакета"
 cd "$RUST_DIR"
 
-if cargo build --release 2>&1 | grep -q "error"; then
-    fail "Rust сборка не удалась"
+RUST_BUILD_STATUS=0
+RUST_BUILD_OUTPUT=$(cargo build --release 2>&1) || RUST_BUILD_STATUS=$?
+if [ "$RUST_BUILD_STATUS" -ne 0 ]; then
+    echo "$RUST_BUILD_OUTPUT" | tail -20
+    fail "Rust сборка не удалась (exit $RUST_BUILD_STATUS)"
     exit 1
 fi
 success "Rust пакет собран"
@@ -89,12 +96,17 @@ done
 header "4. Rust Unit тесты"
 cd "$RUST_DIR"
 
-RUST_UNIT_OUTPUT=$(cargo test --package quadropted-core --lib 2>&1) || true
-RUST_UNIT_PASSED=$(echo "$RUST_UNIT_OUTPUT" | grep "test result:" | grep -oP '\d+ passed' | grep -oP '\d+' || echo "0")
-RUST_UNIT_FAILED=$(echo "$RUST_UNIT_OUTPUT" | grep "test result:" | grep -oP '\d+ failed' | grep -oP '\d+' || echo "0")
+RUST_UNIT_STATUS=0
+RUST_UNIT_OUTPUT=$(cargo test --package quadropted-core --lib 2>&1) || RUST_UNIT_STATUS=$?
+RUST_UNIT_PASSED=$(echo "$RUST_UNIT_OUTPUT" | grep "test result:" | grep -oP '\d+ passed' | grep -oP '\d+' | awk '{s+=$1} END {print s+0}')
+RUST_UNIT_FAILED=$(echo "$RUST_UNIT_OUTPUT" | grep "test result:" | grep -oP '\d+ failed' | grep -oP '\d+' | awk '{s+=$1} END {print s+0}')
 
-if [ "$RUST_UNIT_FAILED" -gt 0 ] 2>/dev/null; then
-    fail "Rust unit тесты: $RUST_UNIT_PASSED passed, $RUST_UNIT_FAILED failed"
+# Non-zero exit (ошибка компиляции/падение) и ноль выполненных тестов —
+# это провал, а не «все прошли».
+if [ "$RUST_UNIT_STATUS" -ne 0 ] || [ "$RUST_UNIT_PASSED" -eq 0 ]; then
+    echo "$RUST_UNIT_OUTPUT" | tail -20
+    fail "Rust unit тесты: exit $RUST_UNIT_STATUS, $RUST_UNIT_PASSED passed, $RUST_UNIT_FAILED failed"
+    FAILURES=$((FAILURES + 1))
 else
     success "Rust unit тесты: $RUST_UNIT_PASSED passed"
 fi
@@ -112,12 +124,15 @@ if [ ! -f "$HARNESS" ]; then
 fi
 success "C++ харнесс найден: $HARNESS"
 
-RUST_XVAL_OUTPUT=$(cd "$RUST_DIR" && CPP_XVAL_HARNESS="$HARNESS" cargo test --package quadropted-core --test cross_validation 2>&1) || true
-RUST_XVAL_PASSED=$(echo "$RUST_XVAL_OUTPUT" | grep "test result:" | grep -oP '\d+ passed' | grep -oP '\d+' || echo "0")
-RUST_XVAL_FAILED=$(echo "$RUST_XVAL_OUTPUT" | grep "test result:" | grep -oP '\d+ failed' | grep -oP '\d+' || echo "0")
+RUST_XVAL_STATUS=0
+RUST_XVAL_OUTPUT=$(cd "$RUST_DIR" && CPP_XVAL_HARNESS="$HARNESS" cargo test --package quadropted-core --test cross_validation 2>&1) || RUST_XVAL_STATUS=$?
+RUST_XVAL_PASSED=$(echo "$RUST_XVAL_OUTPUT" | grep "test result:" | grep -oP '\d+ passed' | grep -oP '\d+' | awk '{s+=$1} END {print s+0}')
+RUST_XVAL_FAILED=$(echo "$RUST_XVAL_OUTPUT" | grep "test result:" | grep -oP '\d+ failed' | grep -oP '\d+' | awk '{s+=$1} END {print s+0}')
 
-if [ "$RUST_XVAL_FAILED" -gt 0 ] 2>/dev/null; then
-    fail "Cross-validation: $RUST_XVAL_PASSED passed, $RUST_XVAL_FAILED failed"
+if [ "$RUST_XVAL_STATUS" -ne 0 ] || [ "$RUST_XVAL_PASSED" -eq 0 ]; then
+    echo "$RUST_XVAL_OUTPUT" | tail -20
+    fail "Cross-validation: exit $RUST_XVAL_STATUS, $RUST_XVAL_PASSED passed, $RUST_XVAL_FAILED failed"
+    FAILURES=$((FAILURES + 1))
 else
     success "Cross-validation: $RUST_XVAL_PASSED passed (математика < 1e-9, IK < 2e-3 из-за fast_atan2)"
 fi
@@ -127,12 +142,15 @@ fi
 # ═══════════════════════════════════════════════════════
 header "5a. Rust Интеграционные тесты (CRAWL + Odometry)"
 
-RUST_INT_OUTPUT=$(cargo test --package quadropted-core --test test_crawl_no_saturation --test test_odometry_cross_validation 2>&1) || true
+RUST_INT_STATUS=0
+RUST_INT_OUTPUT=$(cargo test --package quadropted-core --test test_crawl_no_saturation --test test_odometry_cross_validation 2>&1) || RUST_INT_STATUS=$?
 RUST_INT_PASSED=$(echo "$RUST_INT_OUTPUT" | grep "test result:" | grep -oP '\d+ passed' | grep -oP '\d+' | awk '{s+=$1} END {print s+0}')
 RUST_INT_FAILED=$(echo "$RUST_INT_OUTPUT" | grep "test result:" | grep -oP '\d+ failed' | grep -oP '\d+' | awk '{s+=$1} END {print s+0}')
 
-if [ "$RUST_INT_FAILED" -gt 0 ] 2>/dev/null; then
-    fail "Интеграционные: $RUST_INT_PASSED passed, $RUST_INT_FAILED failed"
+if [ "$RUST_INT_STATUS" -ne 0 ] || [ "$RUST_INT_PASSED" -eq 0 ]; then
+    echo "$RUST_INT_OUTPUT" | tail -20
+    fail "Интеграционные: exit $RUST_INT_STATUS, $RUST_INT_PASSED passed, $RUST_INT_FAILED failed"
+    FAILURES=$((FAILURES + 1))
 else
     success "Интеграционные: $RUST_INT_PASSED passed (CRAWL без насыщения, Odometry < 1e-9)"
 fi
@@ -208,5 +226,11 @@ printf "%-35s %-14s %-22s\n" "OdometryState + update" "✅ Готово" "< 1e-9
 printf "%-35s %-14s %-22s\n" "Покрытие (tarpaulin)" "✅ Готово" "≥ 97%"
 
 echo ""
+
+if [ "$FAILURES" -ne 0 ]; then
+    fail "Секций с провалом: $FAILURES — тест-гейт красный"
+    exit 1
+fi
+
 echo -e "${GREEN}✅ Кросс-валидация: 21 тест Rust против реального C++-бинарника (cpp_xval_harness)${NC}"
 echo ""
