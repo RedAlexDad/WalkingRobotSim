@@ -157,3 +157,8 @@ src/gazebo_sim/models/terrain/s*.obj
 # Персональные данные: аудиозаписи и расшифровки консультаций
 # (защита персональных данных — ФЗ о персональных данных).
 private/
+
+# Flow2Spec local state
+.task/completed/
+.task/*/completed/
+.Knowledge/update-check.json
