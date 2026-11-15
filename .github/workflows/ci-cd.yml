@@ -310,7 +310,7 @@ jobs:
   smoke:
     name: Docker Smoke Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     needs: [build-image]
     steps:
       - uses: actions/checkout@v4
@@ -339,15 +339,29 @@ jobs:
           cd ${{ env.DOCKER_DIR }}
           docker compose up -d
 
-      - name: Wait for ROS nodes (poll-based)
+      - name: Launch simulation (headless, flat world)
+        # flat.world не требует загрузки моделей из Fuel — smoke-тест
+        # не зависит от внешней сети и стартует за десятки секунд.
+        run: |
+          cd ${{ env.DOCKER_DIR }}
+          docker compose exec -d simulator bash -lc '
+            source /opt/ros/jazzy/setup.bash
+            source /root/ws/install/setup.bash
+            ros2 launch gazebo_sim launch.launch.py \
+              use_sim_time:=true gui:=false enable_rviz:=false world:=flat.world'
+
+      - name: Wait for simulation (clock + nodes)
         id: wait_ros
         run: |
           cd ${{ env.DOCKER_DIR }}
-          echo "Waiting for ROS nodes (max 90s)..."
-          for i in $(seq 1 45); do
+          echo "Waiting for /clock and ROS nodes (max 180s)..."
+          for i in $(seq 1 90); do
             if docker compose exec -T simulator bash -c \
-              "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && ros2 node list" 2>/dev/null | grep -q .; then
-              echo "ROS ready at ${i}s"
+              "source /opt/ros/jazzy/setup.bash && \
+               source /root/ws/install/setup.bash 2>/dev/null && \
+               timeout 3 ros2 topic echo /clock --once >/dev/null 2>&1 && \
+               ros2 node list" 2>/dev/null | grep -qi robot; then
+              echo "Simulation ready at ~$((i * 2))s"
               docker compose exec -T simulator bash -c \
                 "source /opt/ros/jazzy/setup.bash && source /root/ws/install/setup.bash 2>/dev/null && ros2 node list" \
                 > ros_nodes.txt 2>&1
@@ -356,8 +370,8 @@ jobs:
             fi
             sleep 2
           done
-          echo "ROS nodes not ready after 90s"
-          docker compose logs --tail=50 simulator || true
+          echo "Simulation not ready after 180s"
+          docker compose logs --tail=80 simulator || true
           exit 1
 
       - name: Check critical nodes

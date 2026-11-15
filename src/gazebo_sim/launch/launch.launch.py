@@ -3,6 +3,7 @@
 
 Поддерживаемые аргументы:
   use_sim_time:=true  camera_fps:=10  use_elevation:=true
+  gui:=true|false  enable_rviz:=true|false  world:=cafe.world|flat.world
 """
 import os
 
@@ -12,7 +13,7 @@ from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchD
 from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import SetParameter
 
 
@@ -26,6 +27,7 @@ def generate_launch_description():
     use_elevation = LaunchConfiguration('use_elevation', default='false')
     enable_rviz = LaunchConfiguration('enable_rviz', default='true')
     gui = LaunchConfiguration('gui', default='true')
+    world = LaunchConfiguration('world', default='cafe.world')
 
     ld.add_action(DeclareLaunchArgument('use_sim_time', default_value='true',
                                        description='Использовать симуляционное время'))
@@ -37,9 +39,11 @@ def generate_launch_description():
                                        description='Включить RViz (false — лёгкий режим, меньше нагрузка на CPU)'))
     ld.add_action(DeclareLaunchArgument('gui', default_value='true',
                                        description='Gazebo GUI (false — headless, только сервер gz sim -s)'))
+    ld.add_action(DeclareLaunchArgument('world', default_value='cafe.world',
+                                       description='Файл мира из share/gazebo_sim/world (cafe.world, flat.world)'))
     ld.add_action(SetParameter(name='use_sim_time', value=use_sim_time))
 
-    world_file = os.path.join(pkg_path, 'world', 'cafe.world')
+    world_file = PathJoinSubstitution([pkg_path, 'world', world])
     gz_sim_launch = os.path.join(
         get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
     gazebo_gui = IncludeLaunchDescription(
