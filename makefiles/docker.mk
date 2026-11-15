@@ -1,6 +1,15 @@
 # makefiles/docker.mk
 
-.PHONY: deploy smart-deploy build build-no-cache build-fresh prune-build-cache up up-bg up-foreground down restart clean status logs shell deploy-no-cache build-stage build-stage-list
+.PHONY: deploy smart-deploy build build-no-cache build-fresh prune-build-cache image-save image-load image-pull up up-bg up-foreground down restart clean status logs shell deploy-no-cache build-stage build-stage-list
+
+# Локальный кэш свежего образа: images/<name>-latest-<arch>.tar.zst.
+# Каталог в .gitignore (тяжёлый) и в .dockerignore (не тащим в контекст).
+IMAGE_DIR     ?= images
+IMAGE_ARCHIVE ?= $(IMAGE_DIR)/walking_robot_sim-latest-$(shell uname -m).tar.zst
+IMAGE_ID_FILE ?= $(IMAGE_DIR)/.last-image-id
+GHCR_IMAGE    ?= ghcr.io/redalexdad/walking_robot_sim:latest
+# Автосохранение свежего образа после make build (SAVE_IMAGE=0 — отключить)
+SAVE_IMAGE    ?= 1
 
 ## Умная сборка и запуск (deploy, smart-deploy): пересобирает только при C++/Docker изменениях
 deploy smart-deploy:
@@ -12,6 +21,7 @@ build:
 	@printf "$(INFO)Сборка Docker образа$(if $(NO_CACHE), БЕЗ кэширования,)$(if $(PULL), с обновлением базы,) ...${NC}\n"
 	@$(COMPOSE) --progress=auto build $(if $(NO_CACHE),--no-cache )$(if $(or $(NO_CACHE),$(PULL)),--pull,)
 	@printf "$(OK)Образ собран${NC}\n"
+	$(if $(filter 1,$(SAVE_IMAGE)),@$(MAKE) --no-print-directory image-save)
 
 ##! Сборка и запуск контейнера без кэша (make deploy-no-cache)
 deploy-no-cache: build-no-cache up
@@ -23,11 +33,47 @@ build-no-cache:
 ##! Полностью чистая пересборка: чистка BuildKit-кэша + сборка без кэша (make build-fresh)
 build-fresh: prune-build-cache build-no-cache
 
-##! Удалить кэш сборки BuildKit (buildx prune -af; ВНИМАНИЕ: затронет все проекты)
+##! Удалить кэш сборки BuildKit (docker buildx prune -af; ВНИМАНИЕ: затронет все проекты)
 prune-build-cache:
 	@printf "$(WARN)Чистка кэша BuildKit (buildx prune -af)...${NC}\n"
 	@docker buildx prune -af >/dev/null
 	@printf "$(OK)Кэш сборки очищен${NC}\n"
+
+## Сохранить свежий образ в images/ (tar.zst) для восстановления после docker purge
+image-save:
+	$(require-docker)
+	@mkdir -p $(IMAGE_DIR)
+	@CUR=$$(docker image inspect walking_robot_sim:latest -f '{{.Id}}' 2>/dev/null || true); \
+	if [ -z "$$CUR" ]; then \
+		printf "$(ERR)Образ walking_robot_sim:latest не найден. Сначала make build${NC}\n"; exit 1; \
+	fi; \
+	if [ -f "$(IMAGE_ARCHIVE)" ] && [ -f "$(IMAGE_ID_FILE)" ] && [ "$$CUR" = "$$(cat $(IMAGE_ID_FILE))" ]; then \
+		printf "$(OK)Кэш актуален: %s (%s)${NC}\n" "$(IMAGE_ARCHIVE)" "$$(du -h $(IMAGE_ARCHIVE) | cut -f1)"; \
+	else \
+		printf "$(INFO)Сохранение образа в $(IMAGE_ARCHIVE) (zstd)...${NC}\n"; \
+		docker save walking_robot_sim:latest | zstd -T0 -3 -q -f -o $(IMAGE_ARCHIVE) || exit 1; \
+		sha256sum $(IMAGE_ARCHIVE) > $(IMAGE_ARCHIVE).sha256; \
+		cat $(IMAGE_ARCHIVE).sha256; \
+		echo "$$CUR" > $(IMAGE_ID_FILE); \
+		printf "$(OK)Образ сохранён: %s${NC}\n" "$$(du -h $(IMAGE_ARCHIVE) | cut -f1)"; \
+	fi
+
+## Загрузить образ из images/ в Docker (восстановление после docker purge)
+image-load:
+	$(require-docker)
+	@if [ ! -f "$(IMAGE_ARCHIVE)" ]; then \
+		printf "$(ERR)Нет $(IMAGE_ARCHIVE). Сделай make image-save или make image-pull${NC}\n"; exit 1; \
+	fi
+	@printf "$(INFO)Проверка и загрузка $(IMAGE_ARCHIVE) ...${NC}\n"
+	@zstd -t $(IMAGE_ARCHIVE) && zstd -dc $(IMAGE_ARCHIVE) | docker load
+	@printf "$(OK)Образ загружен: walking_robot_sim:latest${NC}\n"
+
+## Скачать образ из GitHub Packages (GHCR) и пометить как walking_robot_sim:latest
+image-pull:
+	$(require-docker)
+	@printf "$(INFO)Загрузка $(GHCR_IMAGE) ...${NC}\n"
+	@docker pull $(GHCR_IMAGE) && docker tag $(GHCR_IMAGE) walking_robot_sim:latest
+	@printf "$(OK)Образ $(GHCR_IMAGE) готов как walking_robot_sim:latest${NC}\n"
 
 ## Запуск контейнера
 up:

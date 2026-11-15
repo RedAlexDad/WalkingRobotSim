@@ -65,6 +65,23 @@ make deploy-no-cache
 
 ---
 
+## Кэш образа и восстановление после `docker purge`
+
+Свежий образ автоматически сохраняется в `images/` (каталог в `.gitignore`,
+в Docker-контекст не попадает — см. корневой `.dockerignore`):
+
+```bash
+make build          # сборка; после успеха обновит images/walking_robot_sim-latest-<arch>.tar.zst
+make image-save     # сохранить образ вручную (пропустит, если образ не менялся)
+make image-load     # восстановить из images/ после docker purge
+make image-pull     # скачать из GitHub Packages: ghcr.io/redalexdad/walking_robot_sim:latest
+```
+
+Автосохранение можно отключить: `make build SAVE_IMAGE=0`.
+Публикация в GHCR — workflow `.github/workflows/docker-image.yml`.
+
+---
+
 ## Основные команды
 
 ```bash

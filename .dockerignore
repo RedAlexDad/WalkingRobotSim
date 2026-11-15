@@ -25,3 +25,4 @@ elevation_mapping_cupy/
 .venv*/
 venv/
 coverage/
+images/

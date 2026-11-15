@@ -18,8 +18,9 @@ SECTIONS: list[tuple[str, list[str], str | None]] = [
     ("Основные команды", ["Makefile"], None),
     ("Docker / контейнер", ["makefiles/docker.mk"],
      "Аргументы: NO_CACHE=1 — сборка без кэша, PULL=1 — обновить базу (build); "
-     "build-fresh — полная очистка кэша; BG=1 — запуск в фоне без ожидания ROS (up); "
-     "STAGE=<этап> — этап сборки (build-stage)"),
+     "SAVE_IMAGE=0 — не сохранять образ в images/; build-fresh — полная очистка кэша; "
+     "BG=1 — запуск в фоне без ожидания ROS (up); STAGE=<этап> — этап сборки (build-stage); "
+     "images/: image-save, image-load, image-pull — кэш образа для восстановления"),
     ("Диагностика", ["makefiles/safety.mk"], None),
     ("ROS MCP", ["makefiles/mcp.mk"], None),
     ("Микросервисы Docker", ["makefiles/microservices.mk"],

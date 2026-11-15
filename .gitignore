@@ -162,3 +162,7 @@ private/
 .task/completed/
 .task/*/completed/
 .Knowledge/update-check.json
+
+# Локальный кэш Docker-образа (тяжёлый tar.zst, восстановление после docker purge)
+images/*
+!images/.gitkeep
