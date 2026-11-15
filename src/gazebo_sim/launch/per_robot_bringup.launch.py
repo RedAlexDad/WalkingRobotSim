@@ -212,7 +212,17 @@ def generate_launch_description():
         name="robot_controller_rust",
         namespace=ns,
         output="screen",
-        parameters=[{"use_sim_time": LaunchConfiguration("use_sim_time")}],
+        parameters=[
+            {
+                "use_sim_time": LaunchConfiguration("use_sim_time"),
+                # Параметры контроллера объявляются в Rust-узле через
+                # declare_parameter, поэтому значения из launch применяются.
+                "use_imu": False,
+                "robot_height": -0.25,
+                "control_period_ms": 16,
+                "startup_grace_ticks": 120,
+            }
+        ],
         remappings=node_remaps,
     )
 

@@ -9,9 +9,8 @@
 //! живут в `quadropted_nodes::controller` и покрыты юнит-тестами; здесь —
 //! только связка с rclrs.
 
-use quadropted_nodes::controller::{
-    SharedState, CONTROL_PERIOD_MS, ROBOT_ID,
-};
+use quadropted_nodes::controller::{SharedState, ROBOT_ID};
+use quadropted_nodes::params::ControllerParamHandles;
 use rclrs::{Context, CreateBasicExecutor, Publisher, SpinOptions};
 use rosidl_runtime_rs::Sequence;
 use std::sync::{Arc, Mutex};
@@ -36,7 +35,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let node = executor.create_node("robot_controller_rust")?;
     println!("✅ Node created: robot_controller_rust");
 
-    let state = Arc::new(Mutex::new(SharedState::new()));
+    // Параметры контроллера объявляются явно: в rclrs override из launch/CLI
+    // (`-p name:=value`) применяется только при declare_parameter, поэтому
+    // `use_undeclared_parameters()` его не видел. Дескрипторы держим до конца
+    // main, иначе drop снимает параметры с регистрации.
+    let ctrl_param_handles = ControllerParamHandles::declare(&node)?;
+    let ctrl_params = ctrl_param_handles.to_params();
+    let control_period = ctrl_params.control_period();
+    println!(
+        "✅ Parameters: use_imu={}, robot_height={:.3}, control_period={} ms, startup_grace={} ticks",
+        ctrl_params.use_imu,
+        ctrl_params.robot_height,
+        ctrl_params.control_period_ms,
+        ctrl_params.startup_grace_ticks
+    );
+
+    let state = Arc::new(Mutex::new(SharedState::with_params(&ctrl_params)));
     {
         let s = state.lock().unwrap();
         let stance = s.default_stance();
@@ -156,7 +170,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if finished {
                 println!("[Rust] Startup grace period complete, controller active");
             }
-            std::thread::sleep(Duration::from_millis(CONTROL_PERIOD_MS));
+            std::thread::sleep(control_period);
             continue;
         };
 
@@ -178,7 +192,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         contact_pub.publish(&contact_msg).ok();
 
         drop(s);
-        std::thread::sleep(Duration::from_millis(CONTROL_PERIOD_MS)); // 60Hz
+        std::thread::sleep(control_period);
     });
 
     println!("✅ 60Hz control loop with State Machine");

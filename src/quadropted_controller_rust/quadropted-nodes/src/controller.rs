@@ -14,6 +14,7 @@ use quadropted_core::kinematics::inverse::{compute_all_joint_angles, compute_loc
 use quadropted_core::math::quaternion::{euler_pitch, euler_roll};
 use quadropted_core::math::rotation::rotxyz;
 use quadropted_core::state::behavior::BehaviorState;
+use std::time::Duration;
 
 /// Длина корпуса (C++ `body_length`).
 pub const BODY_LENGTH: f64 = 0.3762;
@@ -34,6 +35,46 @@ pub const STARTUP_GRACE_TICKS: i32 = 120;
 /// Период управляющего цикла, мс (60 Гц).
 pub const CONTROL_PERIOD_MS: u64 = 16;
 
+/// Параметры узла контроллера.
+///
+/// Объявляются в `params::ControllerParamHandles`; дефолты совпадают с
+/// константами выше, поэтому без launch-параметров поведение прежнее.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ControllerParams {
+    /// IMU-компенсация наклона в TROT (C++ флаг `use_imu`).
+    pub use_imu: bool,
+    /// Высота корпуса для IK (C++ `step(-0.25)`).
+    pub robot_height: f64,
+    /// Период управляющего цикла, мс.
+    pub control_period_ms: i64,
+    /// Пауза перед активацией контроллера, тиков.
+    pub startup_grace_ticks: i64,
+}
+
+impl Default for ControllerParams {
+    fn default() -> Self {
+        Self {
+            use_imu: false,
+            robot_height: STEP_HEIGHT,
+            control_period_ms: CONTROL_PERIOD_MS as i64,
+            startup_grace_ticks: STARTUP_GRACE_TICKS as i64,
+        }
+    }
+}
+
+impl ControllerParams {
+    /// Период управляющего цикла. Значения вне диапазона [1, 1000] мс
+    /// зажимаются, чтобы узел не уходил в busy-loop.
+    pub fn control_period(&self) -> Duration {
+        Duration::from_millis(self.control_period_ms.clamp(1, 1000) as u64)
+    }
+
+    /// Пауза старта в тиках; отрицательные значения означают «без паузы».
+    pub fn startup_grace_ticks(&self) -> i32 {
+        self.startup_grace_ticks.clamp(0, 1000) as i32
+    }
+}
+
 /// Полное состояние контроллера: контроллеры режимов, команды и IMU.
 pub struct SharedState {
     ticks: i32,
@@ -53,12 +94,22 @@ pub struct SharedState {
     mode_msg_count: u64,
     vel_msg_count: u64,
     startup_grace: i32,
+    /// Высота корпуса для IK (параметр `robot_height`).
+    robot_height: f64,
 }
 
 impl SharedState {
     /// Создать состояние с дефолтной стойкой (C++ `SharedState::SharedState`).
     pub fn new() -> Self {
         Self::with_imu_compensation(false)
+    }
+
+    /// Создать состояние по параметрам узла контроллера.
+    pub fn with_params(params: &ControllerParams) -> Self {
+        let mut state = Self::with_imu_compensation(params.use_imu);
+        state.startup_grace = params.startup_grace_ticks();
+        state.robot_height = params.robot_height;
+        state
     }
 
     /// Создать состояние с включённой/выключенной IMU-компенсацией TROT.
@@ -110,7 +161,13 @@ impl SharedState {
             mode_msg_count: 0,
             vel_msg_count: 0,
             startup_grace: STARTUP_GRACE_TICKS,
+            robot_height: STEP_HEIGHT,
         }
+    }
+
+    /// Высота корпуса для IK (значение параметра `robot_height`).
+    pub fn robot_height(&self) -> f64 {
+        self.robot_height
     }
 
     /// Дефолтная стойка (столбцы — ноги FR/FL/RR/RL).
@@ -351,7 +408,7 @@ impl SharedState {
         if self.startup_grace_tick() {
             return None;
         }
-        let angles = self.step(STEP_HEIGHT, now_sec);
+        let angles = self.step(self.robot_height, now_sec);
         let debug_line = if self.ticks % 120 == 0 {
             Some(format!(
                 "[Rust DEBUG] Tick #{} ({:.1}s) {:?} mode, vx={:.3}",
@@ -679,5 +736,68 @@ mod tests {
                 .any(|(a, b)| (a - b).abs() > 1e-9),
             "компенсация наклона должна менять углы суставов"
         );
+    }
+
+    #[test]
+    fn controller_params_defaults_match_constants() {
+        let p = ControllerParams::default();
+        assert!(!p.use_imu);
+        assert!((p.robot_height - STEP_HEIGHT).abs() < 1e-12);
+        assert_eq!(p.control_period_ms, CONTROL_PERIOD_MS as i64);
+        assert_eq!(p.startup_grace_ticks, STARTUP_GRACE_TICKS as i64);
+        assert_eq!(p.control_period(), Duration::from_millis(16));
+        assert_eq!(p.startup_grace_ticks(), STARTUP_GRACE_TICKS);
+    }
+
+    #[test]
+    fn controller_params_clamp_out_of_range_values() {
+        // Период меньше 1 мс дал бы busy-loop, больше 1000 мс — мёртвый цикл.
+        let mut p = ControllerParams::default();
+        p.control_period_ms = 0;
+        assert_eq!(p.control_period(), Duration::from_millis(1));
+        p.control_period_ms = -10;
+        assert_eq!(p.control_period(), Duration::from_millis(1));
+        p.control_period_ms = 5000;
+        assert_eq!(p.control_period(), Duration::from_millis(1000));
+        p.control_period_ms = 33;
+        assert_eq!(p.control_period(), Duration::from_millis(33));
+
+        // Отрицательная пауза старта означает «без паузы».
+        p.startup_grace_ticks = -5;
+        assert_eq!(p.startup_grace_ticks(), 0);
+        p.startup_grace_ticks = 5000;
+        assert_eq!(p.startup_grace_ticks(), 1000);
+        p.startup_grace_ticks = 7;
+        assert_eq!(p.startup_grace_ticks(), 7);
+    }
+
+    #[test]
+    fn with_params_applies_height_and_grace() {
+        let params = ControllerParams {
+            use_imu: false,
+            robot_height: -0.3,
+            control_period_ms: 20,
+            startup_grace_ticks: 5,
+        };
+        let mut state = SharedState::with_params(&params);
+        assert!((state.robot_height() + 0.3).abs() < 1e-12);
+        assert_eq!(state.startup_grace(), 5);
+        // Высота из параметра уходит в IK: 5 тиков паузы, затем один тик.
+        for _ in 0..5 {
+            assert!(state.control_tick(0.0).is_none());
+        }
+        let out = state.control_tick(0.0).expect("тик после паузы");
+        assert_eq!(out.angles.len(), 12);
+        assert!(out.angles.iter().all(|a| a.is_finite()));
+    }
+
+    #[test]
+    fn with_params_enables_imu_compensation_branch() {
+        let params = ControllerParams {
+            use_imu: true,
+            ..ControllerParams::default()
+        };
+        let state = SharedState::with_params(&params);
+        assert!(state.trot_gait.use_imu());
     }
 }

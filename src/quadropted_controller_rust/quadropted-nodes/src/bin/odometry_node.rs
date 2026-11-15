@@ -11,28 +11,11 @@
 //! `quadropted_nodes::odometry` и покрыты юнит-тестами; здесь — только
 //! связка с rclrs.
 
-use quadropted_nodes::odometry::{OdomShared, OdometryParams, ParamLookup};
+use quadropted_nodes::odometry::OdomShared;
+use quadropted_nodes::params::OdometryParamHandles;
 use rclrs::{Context, CreateBasicExecutor, Publisher, SpinOptions};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-
-/// Адаптер rclrs-параметров под [`ParamLookup`] (rclrs хранит строки как `Arc<str>`).
-struct RosParamLookup<'a>(&'a rclrs::Parameters<'a>);
-
-impl ParamLookup for RosParamLookup<'_> {
-    fn get_i64(&self, name: &str) -> Option<i64> {
-        self.0.get(name)
-    }
-    fn get_bool(&self, name: &str) -> Option<bool> {
-        self.0.get(name)
-    }
-    fn get_f64(&self, name: &str) -> Option<f64> {
-        self.0.get(name)
-    }
-    fn get_str(&self, name: &str) -> Option<String> {
-        self.0.get::<Arc<str>>(name).map(|v| v.to_string())
-    }
-}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🦀 Rust Odometry Node starting...");
@@ -46,14 +29,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // иначе EKF/TF видят нулевой timestamp и «прыжки назад во времени».
     let clock = node.get_clock();
 
-    // Parameters (C++-совместимые, читаются из launch; дефолты как в C++).
-    // Разбор имён/дефолтов — в `OdometryParams::from_lookup`, здесь только
-    // адаптер над rclrs.
-    let params_handle = node.use_undeclared_parameters();
-    let params = OdometryParams::from_lookup(&RosParamLookup(&params_handle));
-    let has_imu_heading = params.has_imu_heading;
-    let enable_odom_tf = params.enable_odom_tf;
+    // Parameters (C++-совместимые). В rclrs override (`-p name:=value`,
+    // параметры launch-файла) применяется только при declare_parameter,
+    // поэтому каждый параметр объявляется явно, а дескрипторы (структура
+    // `param_handles`) живут до конца main: drop снял бы параметры
+    // с регистрации и спрятал их из параметр-сервисов.
+    let param_handles = OdometryParamHandles::declare(&node)?;
+    let params = param_handles.to_params();
+    let has_imu_heading = param_handles.has_imu_heading();
+    let enable_odom_tf = param_handles.enable_odom_tf();
     let timer_period = params.timer_period();
+    println!(
+        "✅ Parameters: publish_rate={} Hz, frames={} -> {}, imu_heading={}, odom_tf={}",
+        params.publish_rate,
+        params.odom_frame_id,
+        params.base_frame_id,
+        has_imu_heading,
+        enable_odom_tf
+    );
 
     let shared = Arc::new(Mutex::new(OdomShared::new(&params)));
 

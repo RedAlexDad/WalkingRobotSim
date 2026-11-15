@@ -190,6 +190,15 @@ def generate_launch_description():
             name='robot_controller_rust',
             namespace=namespace,
             output='screen',
+            parameters=[{
+                # Параметры объявляются в узле через declare_parameter,
+                # поэтому значения из launch реально применяются.
+                'use_sim_time': use_sim_time,
+                'use_imu': False,
+                'robot_height': -0.25,
+                'control_period_ms': 16,
+                'startup_grace_ticks': 120,
+            }],
             remappings=[
                 ("imu", f"/{namespace}/imu_plugin/out"),
             ],

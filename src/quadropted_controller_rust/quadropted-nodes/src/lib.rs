@@ -9,3 +9,4 @@
 pub mod cmd_vel;
 pub mod controller;
 pub mod odometry;
+pub mod params;
