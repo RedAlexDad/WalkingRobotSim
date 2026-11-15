@@ -133,7 +133,6 @@ mod tests {
         let result = controller.next_foot_location(0.5, 0, &foot, &cmd_vel, -0.25);
 
         // With zero velocity, should be near default stance with swing height
-        let foot_z: f64 = foot[(2, 0)];
         assert!((result.z - (0.08 + (-0.25))).abs() < 0.01, "Z = {}", result.z);
     }
 

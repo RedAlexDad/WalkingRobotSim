@@ -6,5 +6,3 @@ description = "Core robotics algorithms: kinematics, controllers, odometry"
 
 [dependencies]
 nalgebra = "0.33"
-serde = { version = "1", features = ["derive"] }
-thiserror = "2"

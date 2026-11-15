@@ -92,9 +92,7 @@ impl CppOdom {
 }
 
 /// Simulated route: robot walks forward with periodic foot lifts, slight yaw.
-struct Route {
-    tick: usize,
-}
+struct Route;
 
 impl Route {
     fn contacts(&self, tick: usize) -> [bool; 4] {
@@ -133,7 +131,7 @@ impl Route {
 fn test_odometry_cross_validation_10s_route() {
     let mut rust_state = OdometryState::new(14);
     let mut cpp = CppOdom::new(14);
-    let route = Route { tick: 0 };
+    let route = Route;
     let dt = 1.0 / 50.0;
     let coeff = 0.65;
 

@@ -50,7 +50,7 @@ fn parameter_overrides_change_node_values_and_behavior() {
     .collect();
 
     let ctx = Context::new(args, InitOptions::new()).expect("rclrs context");
-    let mut executor = ctx.create_basic_executor();
+    let executor = ctx.create_basic_executor();
     let node = executor
         .create_node("param_overrides_test_node")
         .expect("create rclrs node");
