@@ -41,6 +41,7 @@ def generate_launch_description():
     enable_rviz = LaunchConfiguration('enable_rviz')
     use_elevation = LaunchConfiguration('use_elevation')
     startup_delay = LaunchConfiguration('startup_delay')
+    slam = LaunchConfiguration('slam')
 
     ld.add_action(DeclareLaunchArgument(
         'world', default_value='cafe.world',
@@ -63,6 +64,9 @@ def generate_launch_description():
     ld.add_action(DeclareLaunchArgument(
         'startup_delay', default_value='6.0',
         description='Пауза перед спавном роботов, с (gz sim должен подняться)'))
+    ld.add_action(DeclareLaunchArgument(
+        'slam', default_value='False',
+        description='SLAM (slam_toolbox) вместо AMCL для всех роботов'))
 
     world_file = PathJoinSubstitution([pkg_path, 'world', world])
     gz_sim_launch = os.path.join(
@@ -99,6 +103,7 @@ def generate_launch_description():
             'camera_fps': camera_fps,
             'enable_rviz': enable_rviz,
             'use_elevation': use_elevation,
+            'slam': slam,
         }.items(),
     )
     ld.add_action(TimerAction(period=startup_delay, actions=[robots]))

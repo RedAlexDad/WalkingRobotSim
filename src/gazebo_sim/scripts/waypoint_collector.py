@@ -49,6 +49,10 @@ def _get_waypoints_dir():
 class WaypointCollector(Node):
     def __init__(self):
         super().__init__("waypoint_collector")
+        # Контракт с Nav2: localizer должен совпадать с запущенным
+        # lifecycle-узлом локализации (slam_toolbox при slam:=True,
+        # amcl при slam:=False). per_robot_bringup передаёт параметр;
+        # иначе waitUntilNav2Active() ждёт несуществующий get_state.
         self.declare_parameter("localizer", "slam_toolbox")
         self.waypoints = []
         ns = self.get_namespace().lstrip("/")
@@ -573,10 +577,11 @@ class WaypointCollector(Node):
 
     def _wait_for_nav2(self):
         try:
-            self.get_logger().info("Waiting for Nav2 to become active...")
-            self.navigator.waitUntilNav2Active(
-                localizer=self.get_parameter("localizer").value
+            localizer = self.get_parameter("localizer").value
+            self.get_logger().info(
+                f"Waiting for Nav2 to become active (localizer={localizer})..."
             )
+            self.navigator.waitUntilNav2Active(localizer=localizer)
             self.nav2_ready = True
             self.get_logger().info("Nav2 is active")
         except Exception as e:

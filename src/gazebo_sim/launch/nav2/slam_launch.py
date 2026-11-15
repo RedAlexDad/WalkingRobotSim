@@ -141,6 +141,13 @@ def generate_launch_description():
                     {"use_sim_time": use_sim_time},
                     {"autostart": autostart},
                     {"node_names": lifecycle_nodes},
+                    # slam_toolbox не создаёт bond-соединение (в node info нет
+                    # publisher/subscriber /bond), поэтому lifecycle_manager
+                    # не может его «достичь» и с дефолтными 4 с пишет ERROR
+                    # "unable to be reached after 4.00s by bond". 0.0 отключает
+                    # bond для этого менеджера, состояние ноды по-прежнему
+                    # управляется через change_state/get_state.
+                    {"bond_timeout": 0.0},
                 ],
             ),
         ]

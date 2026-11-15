@@ -9,7 +9,10 @@ slam_toolbox:
     map_frame: map
     scan_topic: scan
     map_update_rate: 5.0
-    max_laser_range: 20.0
+    # Лазер Go2 в симуляции видит до 12 м (`<range><max>12</max>` в
+    # go2_description/xacro/gazebo.xacro), поэтому slam_toolbox не должен
+    # ждать дальности 20 м — иначе часть лучей отбрасывается как невалидная.
+    max_laser_range: 12.0
     minimum_time_interval: 0.5
     transform_timeout: 0.2
     tf_buffer_duration: 30.0

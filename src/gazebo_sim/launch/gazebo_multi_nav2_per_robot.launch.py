@@ -84,6 +84,13 @@ def generate_launch_description():
     ld.add_action(DeclareLaunchArgument("enable_rviz", default_value="true"))
     ld.add_action(DeclareLaunchArgument("camera_fps", default_value="30"))
     ld.add_action(DeclareLaunchArgument("use_elevation", default_value="false"))
+    ld.add_action(
+        DeclareLaunchArgument(
+            "slam",
+            default_value="False",
+            description="SLAM (slam_toolbox) вместо AMCL; пробрасывается в bringup",
+        )
+    )
 
     use_sim_time = LaunchConfiguration("use_sim_time")
 
@@ -114,6 +121,7 @@ def generate_launch_description():
                     "use_sim_time": use_sim_time,
                     "use_elevation": LaunchConfiguration("use_elevation"),
                     "enable_rviz": LaunchConfiguration("enable_rviz"),
+                    "slam": LaunchConfiguration("slam"),
                 }.items(),
             )
         )

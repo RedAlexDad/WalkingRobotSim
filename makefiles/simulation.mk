@@ -43,6 +43,7 @@ GAZEBO_MULTI_RVIZ := $(if $(HEADLESS),false,$(if $(RVIZ_CUSTOM),false,$(if $(RVI
 GAZEBO_MULTI_ARGS := use_sim_time:=true gui:=$(GAZEBO_MULTI_GUI) enable_rviz:=$(GAZEBO_MULTI_RVIZ) \
                      $(if $(WORLD),world:=${WORLD}) $(if $(FPS),camera_fps:=${FPS}) \
                      $(if $(ELEVATION),use_elevation:=${ELEVATION}) \
+                     $(if $(SLAM),slam:=${SLAM}) \
                      $(if $(STARTUP_DELAY),startup_delay:=${STARTUP_DELAY})
 
 ##! Запуск MuJoCo симуляции (Rust контроллер — по умолчанию, с окном)

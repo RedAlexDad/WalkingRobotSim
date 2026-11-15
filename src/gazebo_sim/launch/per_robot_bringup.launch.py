@@ -71,6 +71,11 @@ def generate_launch_description():
         "use_sim_time": "true",
         "use_elevation": "false",
         "enable_rviz": "true",
+        # Режим локализации Nav2: False — AMCL по готовой карте, True —
+        # slam_toolbox. Значение пробрасывается в nav2 bringup и в
+        # waypoint_collector (параметр localizer), чтобы коллектор ждал
+        # ровно тот lifecycle-узел, который реально запущен.
+        "slam": "False",
     }
 
     ld = LaunchDescription(
@@ -263,6 +268,7 @@ def generate_launch_description():
             "use_namespace": "True",
             "namespace": ns,
             "use_elevation": LaunchConfiguration("use_elevation"),
+            "slam": LaunchConfiguration("slam"),
             "autostart": "true",
             "use_sim_time": "true",
             "log_level": "warn",
@@ -374,6 +380,17 @@ def generate_launch_description():
         namespace=ns,
         name="waypoint_collector",
         output="screen",
+        parameters=[
+            {
+                # Контракт с Nav2: коллектор ждёт lifecycle-узел локализации,
+                # который реально запущен. При slam:=True это slam_toolbox,
+                # при slam:=False — AMCL, иначе waitUntilNav2Active() висит
+                # на несуществующем сервисе get_state.
+                "localizer": PythonExpression(
+                    ["'slam_toolbox' if ", LaunchConfiguration("slam"), " else 'amcl'"]
+                ),
+            }
+        ],
         remappings=remaps,
     )
 
