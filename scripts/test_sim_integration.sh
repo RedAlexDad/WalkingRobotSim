@@ -96,7 +96,7 @@ info "═══ 1. Критические узлы в namespace /robot1 ══�
 NODES=$(run "ros2 node list 2>&1")
 REQUIRED_NODES="robot_controller_rust odometry_rust ekf_filter_node slam_toolbox
                 robot_state_publisher joint_group_controller controller_manager
-                ros_gz_bridge cmd_vel_pub_cpp"
+                ros_gz_bridge cmd_vel_pub_rust"
 for n in $REQUIRED_NODES; do
     if echo "$NODES" | grep -q "/robot1/$n"; then
         ok "узел /robot1/$n"
@@ -181,7 +181,7 @@ VEL_PUBS=$(run "ros2 topic info /robot1/robot_velocity 2>&1" | grep -oP 'Publish
 CMDVEL_PUBS=$(run "ros2 topic info /robot1/cmd_vel 2>&1" | grep -oP 'Publisher count: \K\d+')
 TELEOP=$(run "ps aux 2>&1" | grep -c teleop_twist_keyboard || true)
 TELEOP=$(echo "${TELEOP:-0}" | tr -d ' ')
-# robot_velocity должен публиковать ТОЛЬКО cmd_vel_pub_cpp (1).
+# robot_velocity должен публиковать ТОЛЬКО cmd_vel_pub_rust (1).
 # cmd_vel штатно публикуют Nav2 (behavior_server, controller_server и т.д.) — их >1 нормально,
 # НО если активен teleop_twist_keyboard — это посторонняя команда движения.
 if [ "${VEL_PUBS:-0}" -gt 1 ] || [ "${TELEOP:-0}" -gt 0 ]; then

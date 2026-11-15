@@ -288,10 +288,10 @@ def generate_launch_description():
         )
 
         cmd_vel_pub = Node(
-            package='quadropted_controller_cpp',
+            package='quadropted_controller_rust',
             executable='cmd_vel_pub',
             namespace=namespace,
-            name='cmd_vel_pub_cpp',
+            name='cmd_vel_pub_rust',
             output='screen',
             remappings=remappings_initial
         )

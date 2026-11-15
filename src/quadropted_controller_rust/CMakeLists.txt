@@ -26,6 +26,7 @@ endif()
 install(
     PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/target/release/robot_controller_node
             ${CMAKE_CURRENT_SOURCE_DIR}/target/release/odometry_node
+            ${CMAKE_CURRENT_SOURCE_DIR}/target/release/cmd_vel_pub
     DESTINATION lib/${PROJECT_NAME}
 )
 

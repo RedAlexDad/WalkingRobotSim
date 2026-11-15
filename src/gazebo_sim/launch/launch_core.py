@@ -123,8 +123,8 @@ def _add_robot(ld, pkg_path, namespace, robot, use_sim_time, remappings_initial)
         remappings=[('imu', f'/{namespace}/imu_plugin/out')])
 
     cmd_vel_pub = Node(
-        package='quadropted_controller_cpp', executable='cmd_vel_pub',
-        namespace=namespace, name='cmd_vel_pub_cpp', output='screen',
+        package='quadropted_controller_rust', executable='cmd_vel_pub',
+        namespace=namespace, name='cmd_vel_pub_rust', output='screen',
         remappings=remappings_initial)
 
     ekf = Node(

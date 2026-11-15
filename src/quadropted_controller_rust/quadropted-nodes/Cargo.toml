@@ -12,6 +12,10 @@ path = "src/bin/robot_controller_node.rs"
 name = "odometry_node"
 path = "src/bin/odometry_node.rs"
 
+[[bin]]
+name = "cmd_vel_pub"
+path = "src/bin/cmd_vel_pub.rs"
+
 [dependencies]
 rclrs = "0.7"
 rosidl_runtime_rs = "0.6"

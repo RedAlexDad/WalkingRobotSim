@@ -11,9 +11,9 @@
     w / x — +/- линейная скорость
 
 По умолчанию (Gazebo) скорость идёт как Twist в ``<ns>/cmd_vel`` — штатный
-путь launch: cmd_vel_pub_cpp конвертирует его в RobotVelocity (robot_velocity)
+путь launch: cmd_vel_pub_rust конвертирует его в RobotVelocity (robot_velocity)
 и масштабирует скорость. ``--direct`` публикует RobotVelocity в
-``<ns>/robot_velocity`` напрямую (MuJoCo-мост, IsaacLab — без cmd_vel_pub_cpp).
+``<ns>/robot_velocity`` напрямую (MuJoCo-мост, IsaacLab — без cmd_vel_pub_rust).
 
 Запуск (в контейнере, где есть quadropted_msgs):
     ros2 run ... ИЛИ: python3 robot_teleop.py --ros-args -r __ns:=/robot1
@@ -52,7 +52,7 @@ class Teleop(Node):
                 RobotVelocity, f"{ns}/robot_velocity", 10
             )
         else:
-            # Штатный путь Gazebo: cmd_vel -> cmd_vel_pub_cpp -> robot_velocity.
+            # Штатный путь Gazebo: cmd_vel -> cmd_vel_pub_rust -> robot_velocity.
             self.pub_vel = self.create_publisher(Twist, f"{ns}/cmd_vel", 10)
         self.pub_mode = self.create_publisher(RobotModeCommand, f"{ns}/robot_mode", 10)
         self.get_logger().info(
